@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import './event/list.dart';
-import '../../http.dart';
-
-import 'package:provider/provider.dart';
-import 'package:whispering_time/main.dart';
+import 'package:whispering_time/env.dart';
+import 'package:whispering_time/http.dart';
 
 // 主题页面 - 列表页面
 class Item {
   bool isSubmitted;
   TextEditingController _textEditingController = TextEditingController();
-  final String? themeid;
-  final String? themename;
-  Item({this.themeid, this.themename, required this.isSubmitted}):_textEditingController = TextEditingController(text: themename);
+  String? themeid;
+  String? themename;
+  Item({this.themeid, this.themename, required this.isSubmitted})
+      : _textEditingController = TextEditingController(text: themename);
 }
 
 class ThemePage extends StatefulWidget {
@@ -25,7 +24,8 @@ class _ThemePageState extends State<ThemePage> {
   @override
   void initState() {
     super.initState();
-    final uid = Provider.of<MyAppState>(context, listen: false).uid;
+    String uid =SharedPrefsManager().getuid();
+
     final list = Http(uid: uid).gettheme();
     list.then((list) {
       for (int i = 0; i < list.length; i++) {
@@ -118,19 +118,64 @@ class _ThemePageState extends State<ThemePage> {
     if (item._textEditingController.text == "") {
       return;
     }
-    Http(
-            data: item._textEditingController.text,
-            uid: Provider.of<MyAppState>(context, listen: false).uid)
-        .posttheme();
+    String uid = SharedPrefsManager().getuid();
 
-    setState(() {
-      item.isSubmitted = true;
-    });
+    if (item.themeid == null) {
+      final res =
+          Http(data: item._textEditingController.text, uid: uid).posttheme();
+      res.then((res) {
+        if (res['err'] != 0) {
+          return;
+        }
+        setState(() {
+          item.themename = res['data']['name'];
+          item.themeid = res['data']['id'];
+          item.isSubmitted = true;
+        });
+      });
+    } else {
+      if (item.themename == item._textEditingController.text){
+          item.isSubmitted = true;
+        return;
+      }
+      String uid = SharedPrefsManager().getuid();
+
+      final res = Http(data: item._textEditingController.text, uid: uid)
+          .puttheme(item.themename!, item.themeid!);
+
+      res.then((res) {
+        if (res['err'] != 0) {
+          return;
+        }
+
+        setState(() {
+          item.themename = res['data']['name'];
+          item.isSubmitted = true;
+        });
+      });
+    }
   }
 
   void remove(Item item) {
-    setState(() {
-      _items.remove(item);
+    if (item.themeid == null) {
+      setState(() {
+        _items.remove(item);
+      });
+      return;
+    }
+    String uid =SharedPrefsManager().getuid();
+
+    final res = Http(
+            data: item.themeid,
+            uid: uid)
+        .deletetheme();
+    res.then((res) {
+      if (res['err'] != 0) {
+        return;
+      }
+      setState(() {
+        _items.remove(item);
+      });
     });
   }
 }

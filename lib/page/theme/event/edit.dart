@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:whispering_time/main.dart';
-import '../../../http.dart';
+import 'package:whispering_time/env.dart';
+import 'package:whispering_time/http.dart';
 
 // 事件编辑页面
 class EEdit extends StatefulWidget {
@@ -40,10 +39,10 @@ class _EEdit extends State<EEdit> with RouteAware {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    String uid = Provider.of<MyAppState>(context, listen: false).uid;
+    String uid =SharedPrefsManager().getuid();
 
     _localHistoryEntry = LocalHistoryEntry(onRemove: () async {
-      Http(data:edit.text, uid: uid).postdoc(widget.docid);
+      Http(data:edit.text, uid:uid).postdoc(widget.docid);
       print('EEdit 页面离开了');
     });
     ModalRoute.of(context)?.addLocalHistoryEntry(_localHistoryEntry!);

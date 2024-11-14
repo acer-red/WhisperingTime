@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import './page/setting/setting.dart';
 import 'page/theme/theme.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uuid/uuid.dart';
+import 'package:whispering_time/env.dart';
 
-void main() {
+// import 'package:shared_preferences/shared_preferences.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await SharedPrefsManager().init(); // 在这里调用 init()
+
   runApp(const MyApp());
 }
 
@@ -29,34 +33,43 @@ class MyApp extends StatelessWidget {
   }
 }
 
+// class MyAppState extends ChangeNotifier {
+//   String _uid = ""; // 使用 _uid 私有变量存储 uid
+
+//   MyAppState() {
+//     _loadUid();
+//   }
+
+//   Future<void> _loadUid() async {
+//     final prefs = await SharedPreferences.getInstance();
+//     _uid = prefs.getString('uid') ??
+//     prefs.setString('uid', _uid);
+//     print("create uid=$_uid");
+//     notifyListeners();
+//   }
+
+//   String get uid {
+//     if (_uid.isEmpty) {
+//       // 如果 _uid 还没有初始化，则返回一个占位值或抛出异常
+//       return "loading..."; // 或者 throw Exception("UID is not initialized yet.");
+//     }
+//     return _uid;
+//   }
+
+//   set uid(String value) {
+//     _uid = value;
+//     notifyListeners();
+//   }
+// }
 class MyAppState extends ChangeNotifier {
-  String _uid = "";
-  String get uid => _uid;
-  Future<SharedPreferences> prefs = SharedPreferences.getInstance();
-  MyAppState() : _uid = Uuid().v4() {
-    loadUid();
-  }
-
-  Future<void> loadUid() async {
-    // prefs = await SharedPreferences.getInstance();
-    _uid = (await prefs).getString('uid') ?? const Uuid().v4();
-    print("uid=$_uid");
-    await (await prefs).setString('uid', _uid);
-
-    notifyListeners();
-  }
+  MyAppState();
 }
-
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
 
-  // 告诉 Dart 编译器这个方法是重写父类 ( StatefulWidget ) 的方法。
   @override
-  // 它返回一个 _MyHomePageState 类型的对象
-  State<MyHomePage> createState() =>
-      // 它创建了一个 _MyHomePageState 的实例并返回。 _MyHomePageState  是一个私有类，它定义了 MyHomePage 这个 Widget 的状态和行为。
-      _MyHomePageState();
+  State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {

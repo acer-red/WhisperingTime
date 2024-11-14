@@ -2,10 +2,10 @@ package web
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"modb"
 	"net/http"
-	"sys"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/tengfei-xy/go-log"
@@ -13,24 +13,24 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func THEMEGet(g *gin.Context, db *mongo.Database) {
+func ThemeGet(g *gin.Context, db *mongo.Database) {
 	type response struct {
 		Data string `json:"name" `
 		ID   string `json:"id"`
 	}
-	uid := g.Query("uid")
 
-	id, err := modb.GetUserObjectID(db, uid)
+	obj_uid, err := modb.GetUserObjectUID(db, g.Query("uid"))
 	if err != nil {
-		g.String(http.StatusInternalServerError, "内部系统错误")
+		log.Error(err)
+		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
 		return
 	}
-	log.Infof("id=%s uid=%s", id.String(), uid)
+	log.Infof("获取主题 %s", obj_uid.String())
 
 	coll := db.Collection("theme")
 
 	filter := bson.D{
-		{Key: "_uid", Value: id},
+		{Key: "_uid", Value: obj_uid},
 	}
 
 	var result bson.M
@@ -44,7 +44,7 @@ func THEMEGet(g *gin.Context, db *mongo.Database) {
 			return
 		}
 		log.Error(err)
-		g.JSON(http.StatusInternalServerError, msgInternalServer())
+		g.AbortWithStatusJSON(http.StatusInternalServerError, msgNoParam())
 		return
 	}
 
@@ -58,7 +58,7 @@ func THEMEGet(g *gin.Context, db *mongo.Database) {
 		doc, ok := item.(bson.M) //  类型断言为 bson.M
 		if !ok {
 			log.Errorf("doc 元素类型错误: %v", item)
-			g.JSON(http.StatusInternalServerError, msgInternalServer())
+			g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
 			return
 
 		}
@@ -66,7 +66,7 @@ func THEMEGet(g *gin.Context, db *mongo.Database) {
 		data, ok := doc["data"].(string)
 		if !ok {
 			log.Errorf("doc.data 类型错误: %v", doc["data"])
-			g.JSON(http.StatusInternalServerError, msgInternalServer())
+			g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
 			return
 
 		}
@@ -74,7 +74,7 @@ func THEMEGet(g *gin.Context, db *mongo.Database) {
 		id, ok := doc["id"].(string)
 		if !ok {
 			log.Errorf("doc.id 类型错误: %v", doc["id"])
-			g.JSON(http.StatusInternalServerError, msgInternalServer())
+			g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
 			return
 
 		}
@@ -84,111 +84,111 @@ func THEMEGet(g *gin.Context, db *mongo.Database) {
 	g.JSON(http.StatusOK, msgOK().setData(res))
 }
 
-type req struct {
-	Data   string `json:"data" `
-	UpTime string `json:"uptime"`
-}
-
-func THEMEPost(g *gin.Context, db *mongo.Database) {
-
+func ThemePost(g *gin.Context, db *mongo.Database) {
+	type request struct {
+		Data struct {
+			Name string `json:"name"`
+			ID   string `json:"id"`
+		} `json:"data" `
+		UpTime string `json:"uptime"`
+	}
 	type response struct {
-		ThemeID string `json:"themeid"`
+		Name string `json:"name"`
+		ID   string `json:"id"`
 	}
 
-	uid := g.Query("uid")
-
-	var req req
+	var req request
 	if err := g.ShouldBindJSON(&req); err != nil {
-		log.Debug("请求体错误")
-		g.String(http.StatusBadRequest, "请求体错误")
+		log.Error(err)
+		g.AbortWithStatusJSON(http.StatusInternalServerError, msgNoParam())
 		return
 	}
-	log.Infof("theme uid:%s data:%s uptime:%s", uid, req.Data, req.UpTime)
 
-	id, err := modb.GetUserObjectID(db, uid)
+	obj_uid, err := modb.GetUserObjectUID(db, g.Query("uid"))
 	if err != nil {
-		g.String(http.StatusInternalServerError, "内部系统错误")
+		log.Error(err)
+		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
+		return
+	}
+	themeid, err := modb.InsertTheme(db, obj_uid, &req.Data.Name)
+	if err != nil {
+		log.Error(err)
+		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
 		return
 	}
 
-	// theme := bson.D{
-	// 	{Key: "_uid", Value: id},
-	// 	{Key: "theme", Value: bson.D{
-	// 		{Key: "$elemMatch", Value: bson.D{
-	// 			{Key: "data", Value: req.Data},
-	// 		}},
-	// 	}},
-	// }
-	InternalServer := fmt.Errorf("内部系统错误")
+	log.Infof("插入主题 %s data:%s uptime:%s", obj_uid, req.Data.Name, req.UpTime)
+	g.JSON(http.StatusOK, msgOK().setData(response{Name: req.Data.Name, ID: themeid}))
 
-	// find := bson.D{
-	// 	{Key: "_uid", Value: id},
-	// 	{Key: "theme", Value: bson.A{
-	// 		bson.D{
-	// 			{Key: "id", Value: themeid},
-	// 		},
-	// 	}},
-	// }
+}
+func ThemePut(g *gin.Context, db *mongo.Database) {
+	type request struct {
+		Data struct {
+			Name string `json:"name"`
+			ID   string `json:"id"`
+		} `json:"data" `
+		UpTime string `json:"uptime"`
+	}
+	type response struct {
+		Name string `json:"name"`
+		ID   string `json:"id"`
+	}
+	var req request
+	if err := g.ShouldBindJSON(&req); err != nil {
+		log.Error(err)
+		g.AbortWithStatusJSON(http.StatusInternalServerError, msgNoParam())
+		return
+	}
+	formattedJSON, _ := json.MarshalIndent(req, "", "  ")
+	fmt.Println(string(formattedJSON))
 
-	// _, err = coll.CountDocuments(context.TODO(), bson.D{
-	// 	{Key: "_uid", Value: id}})
-	// if err != nil {
-	// 	log.Error(InternalServer)
-	// 	g.AbortWithError(http.StatusInternalServerError, InternalServer)
-	// }
-	themeid := sys.CreateUUID()
-	// themeid := "233"
-	theme := bson.D{
-		{Key: "_uid", Value: id},
-		{Key: "theme", Value: bson.A{
-			bson.D{
-				{Key: "data", Value: req.Data},
-				{Key: "id", Value: themeid},
-			},
-		}},
+	obj_uid, err := modb.GetUserObjectUID(db, g.Query("uid"))
+	if err != nil {
+		log.Error(err)
+		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
+		return
+	}
+
+	theme_obj_id, err := modb.IsExistThemeID(db, obj_uid)
+	if err != nil {
+		log.Error(err)
+		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
+		return
+	}
+
+	err = modb.UpdateTheme(db, theme_obj_id, req.Data.Name, req.Data.ID)
+	if err != nil {
+		log.Error(err)
+		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
+		return
+	}
+	log.Infof("更新主题 %s themeid:%s uptime:%s", theme_obj_id.String(), req.Data.ID, req.UpTime)
+
+	g.JSON(http.StatusOK, msgOK().setData(response{Name: req.Data.Name, ID: ""}))
+}
+func ThemeDelete(g *gin.Context, db *mongo.Database) {
+	themeid := g.Query("themeid")
+
+	if themeid == "" {
+		log.Errorf(mstrNoThemeID)
+		g.AbortWithStatusJSON(http.StatusInternalServerError, msgNoParam().setMSG(mstrNoThemeID))
+		return
+	}
+
+	obj_uid, err := modb.GetUserObjectUID(db, g.Query("uid"))
+	if err != nil {
+		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
+		return
 	}
 	coll := db.Collection("theme")
-	_, err = coll.InsertOne(context.TODO(), theme)
+	result, err := coll.UpdateOne(context.TODO(),
+		bson.M{"_uid": obj_uid},
+		bson.M{"$pull": bson.M{"theme": bson.M{"id": themeid}}},
+	)
 	if err != nil {
-		log.Error(InternalServer)
-		g.AbortWithError(http.StatusInternalServerError, InternalServer)
+		g.AbortWithStatusJSON(http.StatusInternalServerError, msgNoParam().setMSG(mstrNoThemeID))
+		return
 	}
-	log.Infof("插入主题成功 uid:%s themeid:%s", uid, themeid)
-
-	g.JSON(http.StatusOK, msgOK().setData(response{ThemeID: themeid}))
-
-	// coll = db.Collection("theme")
-
-	// // 查询单个文档
-	// var exist bool = false
-	// var result bson.M
-	// if err := coll.FindOne(context.TODO(), filter).Decode(&result); err != nil {
-	// 	if err != mongo.ErrNoDocuments {
-	// 		log.Error(err)
-	// 		g.String(http.StatusInternalServerError, "内部系统错误")
-	// 		return
-	// 	}
-	// 	exist = false
-	// }
-	// if exist {
-	// 	log.Debugf("主题已存在")
-	// 	return
-	// }
-
-	// id := uid.New().String()
-	// doc := bson.D{
-	// 	{Key: "uid", Value: uid},
-	// 	{Key: "theme", Value: bson.D{
-	// 		{Key: "data", Value: req.Data},
-	// 		{Key: "id", Value: id},
-	// 	}},
-	// }
-	// if _, err := coll.InsertOne(context.TODO(), doc); err != nil {
-	// 	log.Error(err)
-	// 	g.String(http.StatusInternalServerError, "内部系统错误")
-	// }
-	// log.Debugf("创建主题 %s", id)
-
-	// col := db.Collection("theme")
-
+	log.Infof("删除主题数%d %s themeid:%s", result.ModifiedCount, obj_uid.String(), themeid)
+	g.JSON(http.StatusOK, msgOK())
 }

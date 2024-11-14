@@ -5,6 +5,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func USERPost(g *gin.Context, db *mongo.Database) {
+func UserPost(g *gin.Context, db *mongo.Database) {
 
 }

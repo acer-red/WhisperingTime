@@ -12,7 +12,6 @@ require (
 
 replace modb => ../modb
 
-replace sys => ../sys
 
 require (
 	github.com/bytedance/sonic v1.12.4 // indirect

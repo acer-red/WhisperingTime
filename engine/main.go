@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 	"os/signal"
@@ -20,6 +21,12 @@ import (
 
 var mongosh *mongo.Client
 var db *mongo.Database
+
+type appS struct {
+	loglevel int
+}
+
+var app appS
 
 func init_mongo() {
 	// 替换为您自己的连接字符串
@@ -49,36 +56,45 @@ func init_mongo() {
 	log.Infof("mongo连接成功!")
 }
 func init_log() {
-	log.SetLevelDebug()
+	log.SetLevelInt(app.loglevel)
 	_, g := log.GetLevel()
 	fmt.Printf("日志等级:%s\n", g)
 }
-
+func init_flag() {
+	flag.IntVar(&app.loglevel, "v", log.LEVELINFOINT, fmt.Sprintf("日志等级,%d-%d", log.LEVELFATALINT, log.LEVELDEBUG3INT))
+	flag.Parse()
+}
 func main() {
+	init_flag()
 	init_log()
 	init_mongo()
 	go quit()
+	port := "21523"
 
 	gin.SetMode(gin.ReleaseMode)
 	g := gin.Default()
 
 	g.Use(modb.ExistUser(db))
 
-	port := "21523"
 	g.POST("/doc", func(g *gin.Context) {
-		web.DOCPost(g, db)
+		web.DocPost(g, db)
 	})
 
 	g.POST("/theme", func(g *gin.Context) {
-		web.THEMEPost(g, db)
+		web.ThemePost(g, db)
 	})
 
 	g.GET("/theme", func(g *gin.Context) {
-		web.THEMEGet(g, db)
+		web.ThemeGet(g, db)
 	})
-
+	g.DELETE("/theme", func(g *gin.Context) {
+		web.ThemeDelete(g, db)
+	})
+	g.PUT("/theme", func(g *gin.Context) {
+		web.ThemePut(g, db)
+	})
 	g.POST("/user", func(g *gin.Context) {
-		web.USERPost(g, db)
+		web.UserPost(g, db)
 	})
 
 	log.Infof("监听端口:%s", port)
@@ -98,7 +114,7 @@ func quit() {
 	log.Infof("PID: %d", os.Getpid())
 	// 阻塞等待信号
 	sig := <-sigs
-	fmt.Println("收到信号:", sig)
+	fmt.Println(sig)
 
 	err := mongosh.Disconnect(context.TODO())
 	if err != nil {
