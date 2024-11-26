@@ -18,13 +18,12 @@ class SharedPrefsManager {
   String getuid() {
     String? uid =  _prefs?.getString("uid");
     if (uid == null || uid.isEmpty) {
-      uid = Uuid().v4();
-      setString("uid", uid);
+      uid = Uuid().v7();
+      setString("uid", uid.replaceAll("-", ""));
       return uid;
     }
-    return uid;
+    return uid.replaceAll("-", "");
   }
-
 
   Future<bool> setString(String key, String value) {
     return _prefs?.setString(key, value) ?? Future.value(false);

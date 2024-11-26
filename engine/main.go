@@ -29,7 +29,6 @@ type appS struct {
 var app appS
 
 func init_mongo() {
-	// 替换为您自己的连接字符串
 	username := "wt"
 	password := "SR7Yqb959q9k38qBFDKE"
 	port := "28018"
@@ -37,17 +36,16 @@ func init_mongo() {
 	database := "whisperingtime"
 	uri := fmt.Sprintf("mongodb://%s:%s@%s:%s/%s", username, password, host, port, database)
 
-	// 创建客户端选项
+	log.Infof("mongo连接中")
+
 	clientOptions := options.Client().ApplyURI(uri)
 
-	// 连接到 MongoDB
 	var err error
 	mongosh, err = mongo.Connect(context.TODO(), clientOptions)
 	if err != nil {
 		log.Fatal(err)
 	}
 	db = mongosh.Database(database)
-	// 检查连接
 	err = mongosh.Ping(context.TODO(), nil)
 	if err != nil {
 		log.Fatal(err)
@@ -81,17 +79,17 @@ func main() {
 	})
 
 	g.POST("/theme", func(g *gin.Context) {
-		web.ThemePost(g, db)
+		web.PostTheme(g, db)
 	})
 
 	g.GET("/theme", func(g *gin.Context) {
-		web.ThemeGet(g, db)
+		web.GetTheme(g, db)
 	})
 	g.DELETE("/theme", func(g *gin.Context) {
-		web.ThemeDelete(g, db)
+		web.DeleteTheme(g, db)
 	})
 	g.PUT("/theme", func(g *gin.Context) {
-		web.ThemePut(g, db)
+		web.PutTheme(g, db)
 	})
 	g.POST("/user", func(g *gin.Context) {
 		web.UserPost(g, db)

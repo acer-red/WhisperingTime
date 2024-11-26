@@ -10,7 +10,7 @@ require (
 replace sys => ../sys
 
 require (
-	github.com/tengfei-xy/go-log v0.2.6
+	github.com/tengfei-xy/go-log v0.2.7
 	sys v0.0.0-00010101000000-000000000000
 )
 

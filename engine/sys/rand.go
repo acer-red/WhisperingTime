@@ -1,9 +1,16 @@
 package sys
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/google/uuid"
 )
 
 func CreateUUID() string {
-	return uuid.New().String()
+	u, err := uuid.NewV7()
+	if err != nil {
+		fmt.Println(err)
+	}
+	return strings.ReplaceAll(u.String(), "-", "")
 }

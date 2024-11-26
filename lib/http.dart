@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:whispering_time/env.dart';
 
-// import 'package:sprintf/sprintf.dart';
 class Themerequest {
   final String name;
   final String id;
@@ -12,71 +12,98 @@ class Themerequest {
       };
 }
 
+class ThemeListData {
+  String name;
+  String id;
+  ThemeListData({required this.name, required this.id});
+
+  factory ThemeListData.fromJson(Map<String, dynamic> json) {
+    return ThemeListData(
+      name: json['name'] as String,
+      id: json['id'] as String,
+    );
+  }
+}
+
 class Http {
-  final String? data;
-  final String uid;
+  final String? content;
+  final String? themeid;
+  final String? docid;
+  static final String uid = SharedPrefsManager().getuid();
   static const String baseurl = "192.168.1.201:21523";
   // static const String baseurl="127.0.0.1:21523";
   // static const String baseurl = "192.168.3.68:21523";
 
-  Http({this.data, required this.uid});
+  Http({this.content, this.themeid, this.docid});
 
-  postdoc(String docid) async {
+  postdoc({String? group, String? title}) async {
+    const String path = "/doc";
     Map<String, String> param = {
       'uid': uid,
     };
-    Map<String, dynamic> postdata = {
-      'data': data,
-      "uptime": DateTime.now().microsecondsSinceEpoch.toString(),
-      "docid": docid,
-    };
-
-    final packageUrl = Uri.http(baseurl, "/doc", param);
-    final response = await http.post(packageUrl, body: postdata);
-    print(response.body);
-    return jsonDecode(response.body);
-  }
-
-  posttheme() async {
-    final Map<String, String> param = {
-      'uid': uid,
-    };
-    final Map<String, dynamic> postdata = {
-      'data': Themerequest(data!, "").toJson(),
+    Map<String, dynamic> data = {
+      'data': content,
+      'themeid': themeid!,
+      'title': title,
+      'group': group,
       "uptime": DateTime.now().microsecondsSinceEpoch.toString(),
     };
     final Map<String, String> headers = {
       "Content-Type": "application/json",
     };
-    final url = Uri.http(baseurl, "/theme", param);
-    print("$url\n$postdata");
+    print(data);
+
+    final u = Uri.http(baseurl, path, param);
     final response =
-        await http.post(url, body: jsonEncode(postdata), headers: headers);
+        await http.post(u, body: jsonEncode(data), headers: headers);
+
+    print(response.body);
+    return jsonDecode(response.body);
+  }
+
+  posttheme() async {
+    const String path = "/theme";
+
+    final Map<String, String> param = {
+      'uid': uid,
+    };
+    final Map<String, dynamic> data = {
+      'data': Themerequest(content!, "").toJson(),
+      "uptime": DateTime.now().microsecondsSinceEpoch.toString(),
+    };
+    final Map<String, String> headers = {
+      "Content-Type": "application/json",
+    };
+    final u = Uri.http(baseurl, path, param);
+
+    final response =
+        await http.post(u, body: jsonEncode(data), headers: headers);
     print(response.body);
     return jsonDecode(response.body);
   }
 
   puttheme(String name, String id) async {
+    const String path = "/theme";
+
     final Map<String, String> param = {
       'uid': uid,
     };
-    final Map<String, dynamic> postdata = {
+    final Map<String, dynamic> data = {
       'data': Themerequest(name, id),
       "uptime": DateTime.now().microsecondsSinceEpoch.toString(),
     };
     final Map<String, String> headers = {
       "Content-Type": "application/json",
     };
-    final url = Uri.http(baseurl, "/theme", param);
-    print("$url\n$postdata");
+    final u = Uri.http(baseurl, path, param);
     final response =
-        await http.put(url, body: jsonEncode(postdata), headers: headers);
+        await http.put(u, body: jsonEncode(data), headers: headers);
     print(response.body);
     return jsonDecode(response.body);
   }
 
   Future<List<ThemeListData>> gettheme() async {
-    if (uid==""){
+    if (uid == "") {
       print("跳过");
       return List.empty();
     }
@@ -104,26 +131,15 @@ class Http {
   }
 
   deletetheme() async {
+    const String path = "/theme";
+
     final Map<String, String> param = {
       'uid': uid,
-      'themeid': data!,
+      'themeid': content!,
     };
-    final url = Uri.http(baseurl, "/theme", param);
+    final url = Uri.http(baseurl, path, param);
     final response = await http.delete(url);
     print(response.body);
     return jsonDecode(response.body);
-  }
-}
-
-class ThemeListData {
-  String name;
-  String id;
-  ThemeListData({required this.name, required this.id});
-
-  factory ThemeListData.fromJson(Map<String, dynamic> json) {
-    return ThemeListData(
-      name: json['name'] as String,
-      id: json['id'] as String,
-    );
   }
 }

@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:whispering_time/env.dart';
 import 'package:whispering_time/http.dart';
 
 // 事件编辑页面
 class EEdit extends StatefulWidget {
-  final String docid;
+  final String themeid;
+
+  final String? docid;
 
   EEdit({
-    required this.docid,
+    required this.themeid,
+    this.docid,
   });
   @override
   State<EEdit> createState() => _EEdit();
@@ -39,11 +41,9 @@ class _EEdit extends State<EEdit> with RouteAware {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    String uid =SharedPrefsManager().getuid();
 
     _localHistoryEntry = LocalHistoryEntry(onRemove: () async {
-      Http(data:edit.text, uid:uid).postdoc(widget.docid);
-      print('EEdit 页面离开了');
+      upload();
     });
     ModalRoute.of(context)?.addLocalHistoryEntry(_localHistoryEntry!);
   }
@@ -53,5 +53,9 @@ class _EEdit extends State<EEdit> with RouteAware {
     // 在页面销毁时，注销监听器
     ModalRoute.of(context)?.removeLocalHistoryEntry(_localHistoryEntry!);
     super.dispose();
+  }
+
+  void upload() {
+    Http(content: edit.text).postdoc();
   }
 }

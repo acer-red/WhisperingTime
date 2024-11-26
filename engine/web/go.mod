@@ -4,14 +4,14 @@ go 1.22.5
 
 require (
 	github.com/gin-gonic/gin v1.10.0
-	github.com/tengfei-xy/go-log v0.2.6
+	github.com/tengfei-xy/go-log v0.2.7
 	go.mongodb.org/mongo-driver v1.17.1
 	modb v0.0.0-00010101000000-000000000000
-	sys v0.0.0-00010101000000-000000000000
 )
 
 replace modb => ../modb
 
+replace sys => ../sys
 
 require (
 	github.com/bytedance/sonic v1.12.4 // indirect
@@ -49,4 +49,5 @@ require (
 	golang.org/x/text v0.20.0 // indirect
 	google.golang.org/protobuf v1.35.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	sys v0.0.0-00010101000000-000000000000 // indirect
 )

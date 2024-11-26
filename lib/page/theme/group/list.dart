@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
 import 'edit.dart';
 
 // 事件列表页面
-class Data {
-  final String name;
-  final String? id;
-  Data({required this.name, this.id});
-}
+class LPData {}
 
 class ListPage extends StatefulWidget {
-  final Data title;
-  ListPage(this.title);
+  final String? id;
+  final String themeid;
+  final String titlename;
+
+  ListPage({required this.titlename, required this.themeid, this.id});
 
   @override
   State<StatefulWidget> createState() => _ListPage();
@@ -21,7 +19,7 @@ class _ListPage extends State<ListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title.name)),
+      appBar: AppBar(title: Text(widget.titlename)),
       body: Column(children: [
         Spacer(),
         Center(
@@ -30,7 +28,8 @@ class _ListPage extends State<ListPage> {
                 Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => EEdit(docid: Uuid().v4())));
+                        builder: (context) =>
+                            EEdit(themeid: widget.themeid,)));
               },
               child: Text('来记录心路历程吧！')),
         ),

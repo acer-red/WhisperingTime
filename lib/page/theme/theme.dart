@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import './event/list.dart';
-import 'package:whispering_time/env.dart';
+import 'group/list.dart';
 import 'package:whispering_time/http.dart';
 
 // 主题页面 - 列表页面
@@ -24,9 +23,8 @@ class _ThemePageState extends State<ThemePage> {
   @override
   void initState() {
     super.initState();
-    String uid =SharedPrefsManager().getuid();
 
-    final list = Http(uid: uid).gettheme();
+    final list = Http().gettheme();
     list.then((list) {
       for (int i = 0; i < list.length; i++) {
         if (list[i].id == "") {
@@ -118,42 +116,50 @@ class _ThemePageState extends State<ThemePage> {
     if (item._textEditingController.text == "") {
       return;
     }
-    String uid = SharedPrefsManager().getuid();
 
     if (item.themeid == null) {
-      final res =
-          Http(data: item._textEditingController.text, uid: uid).posttheme();
-      res.then((res) {
-        if (res['err'] != 0) {
-          return;
-        }
-        setState(() {
-          item.themename = res['data']['name'];
-          item.themeid = res['data']['id'];
-          item.isSubmitted = true;
-        });
-      });
-    } else {
-      if (item.themename == item._textEditingController.text){
-          item.isSubmitted = true;
+      submitNoID(item);
+      return;
+    }
+    submitID(item);
+  }
+
+  void submitNoID(Item item) {
+    final res = Http(content: item._textEditingController.text).posttheme();
+    res.then((res) {
+      if (res['err'] != 0) {
         return;
       }
-      String uid = SharedPrefsManager().getuid();
-
-      final res = Http(data: item._textEditingController.text, uid: uid)
-          .puttheme(item.themename!, item.themeid!);
-
-      res.then((res) {
-        if (res['err'] != 0) {
-          return;
-        }
-
-        setState(() {
-          item.themename = res['data']['name'];
-          item.isSubmitted = true;
-        });
+      setState(() {
+        item.themename = res['data']['name'];
+        item.themeid = res['data']['id'];
+        item.isSubmitted = true;
       });
+    });
+  }
+
+  void submitID(Item item) {
+    if (item.themename == item._textEditingController.text ||
+        item._textEditingController.text == "") {
+      setState(() {
+        item.isSubmitted = true;
+      });
+      return;
     }
+
+    final res = Http(content: item._textEditingController.text)
+        .puttheme(item._textEditingController.text, item.themeid!);
+
+    res.then((res) {
+      if (res['err'] != 0) {
+        return;
+      }
+
+      setState(() {
+        item.themename = res['data']['name'];
+        item.isSubmitted = true;
+      });
+    });
   }
 
   void remove(Item item) {
@@ -163,12 +169,8 @@ class _ThemePageState extends State<ThemePage> {
       });
       return;
     }
-    String uid =SharedPrefsManager().getuid();
 
-    final res = Http(
-            data: item.themeid,
-            uid: uid)
-        .deletetheme();
+    final res = Http(content: item.themeid).deletetheme();
     res.then((res) {
       if (res['err'] != 0) {
         return;
@@ -210,12 +212,8 @@ class _EditableTextFieldState extends State<EditableTextField> {
                   padding: const EdgeInsets.only(right: 8.0),
                   child: TextButton(
                     onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => ListPage(Data(
-                                  name: widget
-                                      .item._textEditingController.text))));
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) => letadd()));
                     },
                     child: Text(widget.item._textEditingController.text),
                   ),
@@ -236,5 +234,11 @@ class _EditableTextFieldState extends State<EditableTextField> {
         ],
       ),
     );
+  }
+
+  Widget letadd() {
+    return ListPage(
+        titlename: widget.item._textEditingController.text,
+        themeid: widget.item.themeid!);
   }
 }
