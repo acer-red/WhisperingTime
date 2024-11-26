@@ -6,9 +6,9 @@ import 'package:whispering_time/http.dart';
 class Item {
   bool isSubmitted;
   TextEditingController _textEditingController = TextEditingController();
-  String? themeid;
+  String? tid;
   String? themename;
-  Item({this.themeid, this.themename, required this.isSubmitted})
+  Item({this.tid, this.themename, required this.isSubmitted})
       : _textEditingController = TextEditingController(text: themename);
 }
 
@@ -32,7 +32,7 @@ class _ThemePageState extends State<ThemePage> {
         }
         setState(() {
           _items.add(Item(
-              themeid: list[i].id, themename: list[i].name, isSubmitted: true));
+              tid: list[i].id, themename: list[i].name, isSubmitted: true));
         });
       }
     });
@@ -117,7 +117,7 @@ class _ThemePageState extends State<ThemePage> {
       return;
     }
 
-    if (item.themeid == null) {
+    if (item.tid == null) {
       submitNoID(item);
       return;
     }
@@ -132,7 +132,7 @@ class _ThemePageState extends State<ThemePage> {
       }
       setState(() {
         item.themename = res['data']['name'];
-        item.themeid = res['data']['id'];
+        item.tid = res['data']['id'];
         item.isSubmitted = true;
       });
     });
@@ -148,7 +148,7 @@ class _ThemePageState extends State<ThemePage> {
     }
 
     final res = Http(content: item._textEditingController.text)
-        .puttheme(item._textEditingController.text, item.themeid!);
+        .puttheme(item._textEditingController.text, item.tid!);
 
     res.then((res) {
       if (res['err'] != 0) {
@@ -163,14 +163,14 @@ class _ThemePageState extends State<ThemePage> {
   }
 
   void remove(Item item) {
-    if (item.themeid == null) {
+    if (item.tid == null) {
       setState(() {
         _items.remove(item);
       });
       return;
     }
 
-    final res = Http(content: item.themeid).deletetheme();
+    final res = Http(content: item.tid).deletetheme();
     res.then((res) {
       if (res['err'] != 0) {
         return;
@@ -239,6 +239,6 @@ class _EditableTextFieldState extends State<EditableTextField> {
   Widget letadd() {
     return ListPage(
         titlename: widget.item._textEditingController.text,
-        themeid: widget.item.themeid!);
+        tid: widget.item.tid!);
   }
 }

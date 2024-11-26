@@ -17,7 +17,7 @@ func ExistUser(db *mongo.Database) gin.HandlerFunc {
 	return func(g *gin.Context) {
 		uid := g.Query("uid")
 		if uid == "" {
-			g.AbortWithStatus(http.StatusBadRequest)
+			g.AbortWithStatusJSON(http.StatusBadRequest, "缺少uid")
 			return
 		}
 

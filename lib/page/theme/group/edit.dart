@@ -3,13 +3,14 @@ import 'package:whispering_time/http.dart';
 
 // 事件编辑页面
 class EEdit extends StatefulWidget {
-  final String themeid;
-
+  final String tid;
+  final String? groupname;
   final String? docid;
 
   EEdit({
-    required this.themeid,
+    required this.tid,
     this.docid,
+    this.groupname,
   });
   @override
   State<EEdit> createState() => _EEdit();
@@ -56,6 +57,6 @@ class _EEdit extends State<EEdit> with RouteAware {
   }
 
   void upload() {
-    Http(content: edit.text).postdoc();
+    Http(content: edit.text, tid: widget.tid).postdoc();
   }
 }

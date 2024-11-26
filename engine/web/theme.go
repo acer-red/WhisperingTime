@@ -13,11 +13,13 @@ func GetTheme(g *gin.Context, db *mongo.Database) {
 
 	uid := g.Query("uid")
 	log.Infof("获取主题 uid=%s", uid)
+
 	response, err := modb.GetTheme(db, uid)
 	if err != nil {
 		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
 		return
 	}
+
 	g.JSON(http.StatusOK, msgOK().setData(response))
 }
 func PostTheme(g *gin.Context, db *mongo.Database) {
@@ -40,15 +42,19 @@ func PostTheme(g *gin.Context, db *mongo.Database) {
 	}
 	uid := g.Query("uid")
 
-	themeid, err := modb.CreateTheme(db, uid, &req.Data.Name)
+	tid, err := modb.CreateTheme(db, uid, &req.Data.Name)
 	if err != nil {
 		log.Error(err)
 		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
 		return
 	}
 
+	if _, err := modb.CreateGroupDefault(db, tid); err != nil {
+		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
+		return
+	}
 	log.Infof("插入主题 %s data:%s uptime:%s", uid, req.Data.Name, req.UpTime)
-	g.JSON(http.StatusOK, msgOK().setData(response{Name: req.Data.Name, ID: themeid}))
+	g.JSON(http.StatusOK, msgOK().setData(response{Name: req.Data.Name, ID: tid}))
 }
 func PutTheme(g *gin.Context, db *mongo.Database) {
 	type request struct {
@@ -67,8 +73,6 @@ func PutTheme(g *gin.Context, db *mongo.Database) {
 		g.AbortWithStatusJSON(http.StatusBadRequest, msgBadRequest())
 		return
 	}
-	// formattedJSON, _ := json.MarshalIndent(req, "", "  ")
-	// fmt.Println(string(formattedJSON))
 	uid := g.Query("uid")
 	if err := modb.UpdateTheme(db, uid, req.Data.Name, req.Data.ID); err != nil {
 		log.Error(err)
@@ -80,9 +84,9 @@ func PutTheme(g *gin.Context, db *mongo.Database) {
 	g.JSON(http.StatusOK, msgOK().setData(response{Name: req.Data.Name, ID: req.Data.ID}))
 }
 func DeleteTheme(g *gin.Context, db *mongo.Database) {
-	themeid := g.Query("themeid")
+	tid := g.Query("themeid")
 
-	if themeid == "" {
+	if tid == "" {
 		log.Errorf(mstrNoThemeID)
 		g.AbortWithStatusJSON(http.StatusInternalServerError, msgNoParam().setMSG(mstrNoThemeID))
 		return
@@ -90,11 +94,18 @@ func DeleteTheme(g *gin.Context, db *mongo.Database) {
 
 	uid := g.Query("uid")
 
-	err := modb.DeleteTheme(db, uid, themeid)
+	if err := modb.DeleteGroupAll(db, tid); err != nil {
+		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
+		return
+	}
+	log.Infof("删除分组 uid:%s tid:%s", uid, tid)
+
+	err := modb.DeleteTheme(db, uid, tid)
 	if err != nil {
 		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
 		return
 	}
-	log.Infof("删除主题  uid:%s themeid:%s", uid, themeid)
+	log.Infof("删除主题 uid:%s tid:%s", uid, tid)
+
 	g.JSON(http.StatusOK, msgOK())
 }

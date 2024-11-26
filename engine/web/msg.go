@@ -17,11 +17,11 @@ const (
 const mstrOK string = "ok"
 const mstrInternalServer string = "内部系统错误"
 const mstrNoParam string = "缺少参数"
-const mstrNoUID string = "缺少uid参数"
-const mstrNoDocID string = "缺少docID参数"
 const mstrNoThemeID string = "缺少themeID参数"
 const mstrBadRequest string = "错误参数"
 
+// const mstrNoUID string = "缺少uid参数"
+// const mstrNoDocID string = "缺少docID参数"
 func (msg MSG) setData(data interface{}) MSG {
 	msg.Data = data
 	return msg

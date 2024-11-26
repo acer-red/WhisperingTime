@@ -74,10 +74,9 @@ func main() {
 
 	g.Use(modb.ExistUser(db))
 
-	g.POST("/doc", func(g *gin.Context) {
-		web.DocPost(g, db)
+	g.POST("/user", func(g *gin.Context) {
+		web.UserPost(g, db)
 	})
-
 	g.POST("/theme", func(g *gin.Context) {
 		web.PostTheme(g, db)
 	})
@@ -91,8 +90,11 @@ func main() {
 	g.PUT("/theme", func(g *gin.Context) {
 		web.PutTheme(g, db)
 	})
-	g.POST("/user", func(g *gin.Context) {
-		web.UserPost(g, db)
+	g.GET("/group", func(g *gin.Context) {
+		web.GetGroup(g, db)
+	})
+	g.POST("/doc", func(g *gin.Context) {
+		web.DocPost(g, db)
 	})
 
 	log.Infof("监听端口:%s", port)

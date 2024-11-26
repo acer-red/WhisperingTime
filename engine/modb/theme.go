@@ -38,20 +38,12 @@ func GetThemeObjID(db *mongo.Database, uid string) (primitive.ObjectID, primitiv
 
 	return uoid, toid, nil
 }
-func GetThemeObjIDFromTOID(db *mongo.Database, uid, toid string) (primitive.ObjectID, error) {
+func GetThemeObjIDFromTID(db *mongo.Database, tid string) (primitive.ObjectID, error) {
 
-	uoid, err := GetUserObjectUID(db, uid)
-	if err != nil {
-		return primitive.NilObjectID, err
-	}
-
-	coll := db.Collection("theme")
-	ctx := context.TODO()
-
-	identified := bson.D{{Key: "_uid", Value: uoid}}
+	identified := bson.D{{Key: "tid", Value: tid}}
 	var result bson.M
 
-	if err := coll.FindOne(ctx, identified).Decode(&result); err != nil {
+	if err := db.Collection("theme").FindOne(context.TODO(), identified).Decode(&result); err != nil {
 		return primitive.NilObjectID, err
 	}
 
@@ -62,30 +54,6 @@ func GetThemeObjIDFromTOID(db *mongo.Database, uid, toid string) (primitive.Obje
 
 	return id, nil
 }
-func CreateTheme(db *mongo.Database, uid string, name *string) (string, error) {
-	// uoid, toid, err := GetThemeObjID(db, uid)
-	// if err != nil {
-	// 	return "", err
-	// }
-	// if isNil(toid) {
-	// 	return createTheme(toid, data)
-	// }
-	uoid, err := GetUserObjectUID(db, uid)
-	if err != nil {
-		return "", err
-	}
-
-	tid := sys.CreateUUID()
-	theme := bson.D{
-		{Key: "_uid", Value: uoid},
-		{Key: "name", Value: name},
-		{Key: "tid", Value: tid},
-	}
-	_, err = db.Collection("theme").InsertOne(context.TODO(), theme)
-	return tid, err
-
-}
-
 func GetTheme(db *mongo.Database, uid string) ([]Theme, error) {
 
 	var results []Theme
@@ -122,6 +90,21 @@ func GetTheme(db *mongo.Database, uid string) ([]Theme, error) {
 	}
 
 	return results, nil
+}
+func CreateTheme(db *mongo.Database, uid string, name *string) (string, error) {
+	uoid, err := GetUserObjectUID(db, uid)
+	if err != nil {
+		return "", err
+	}
+
+	tid := sys.CreateUUID()
+	theme := bson.D{
+		{Key: "_uid", Value: uoid},
+		{Key: "name", Value: name},
+		{Key: "tid", Value: tid},
+	}
+	_, err = db.Collection("theme").InsertOne(context.TODO(), theme)
+	return tid, err
 }
 func UpdateTheme(db *mongo.Database, uid string, name string, tid string) error {
 
@@ -165,13 +148,3 @@ func DeleteTheme(db *mongo.Database, uid, tid string) error {
 	)
 	return err
 }
-
-// func addTheme(toid primitive.ObjectID, data *string) (string, error) {
-
-// 	tid := sys.CreateUUID()
-// 	filter := bson.M{"_id": toid}
-// 	update := bson.M{"$push": bson.M{"theme": bson.M{"data": data, "id": tid}}}
-
-// 	_, err := db.Collection("theme").UpdateOne(context.TODO(), filter, update)
-// 	return tid, err
-// }
