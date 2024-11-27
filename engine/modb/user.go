@@ -9,10 +9,9 @@ import (
 	log "github.com/tengfei-xy/go-log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func ExistUser(db *mongo.Database) gin.HandlerFunc {
+func ExistUser() gin.HandlerFunc {
 
 	return func(g *gin.Context) {
 		uid := g.Query("uid")
@@ -40,7 +39,7 @@ func ExistUser(db *mongo.Database) gin.HandlerFunc {
 		log.Infof("新用户 uid=%s", uid)
 	}
 }
-func GetUserObjectUID(db *mongo.Database, uid string) (primitive.ObjectID, error) {
+func UserGetObjectUID(uid string) (primitive.ObjectID, error) {
 	var result bson.M
 
 	if err := db.Collection("user").FindOne(context.TODO(), bson.D{{Key: "uid", Value: uid}}).Decode(&result); err != nil {

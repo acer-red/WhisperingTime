@@ -6,15 +6,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	log "github.com/tengfei-xy/go-log"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func GetTheme(g *gin.Context, db *mongo.Database) {
+func ThemeGet(g *gin.Context) {
 
 	uid := g.Query("uid")
 	log.Infof("获取主题 uid=%s", uid)
 
-	response, err := modb.GetTheme(db, uid)
+	response, err := modb.GetTheme(uid)
 	if err != nil {
 		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
 		return
@@ -22,7 +21,7 @@ func GetTheme(g *gin.Context, db *mongo.Database) {
 
 	g.JSON(http.StatusOK, msgOK().setData(response))
 }
-func PostTheme(g *gin.Context, db *mongo.Database) {
+func ThemePost(g *gin.Context) {
 	type request struct {
 		Data struct {
 			Name string `json:"name"`
@@ -42,21 +41,21 @@ func PostTheme(g *gin.Context, db *mongo.Database) {
 	}
 	uid := g.Query("uid")
 
-	tid, err := modb.CreateTheme(db, uid, &req.Data.Name)
+	tid, err := modb.CreateTheme(uid, &req.Data.Name)
 	if err != nil {
 		log.Error(err)
 		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
 		return
 	}
 
-	if _, err := modb.CreateGroupDefault(db, tid); err != nil {
+	if _, err := modb.CreateGroupDefault(tid); err != nil {
 		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
 		return
 	}
 	log.Infof("插入主题 %s data:%s uptime:%s", uid, req.Data.Name, req.UpTime)
 	g.JSON(http.StatusOK, msgOK().setData(response{Name: req.Data.Name, ID: tid}))
 }
-func PutTheme(g *gin.Context, db *mongo.Database) {
+func ThemePut(g *gin.Context) {
 	type request struct {
 		Data struct {
 			Name string `json:"name"`
@@ -74,7 +73,7 @@ func PutTheme(g *gin.Context, db *mongo.Database) {
 		return
 	}
 	uid := g.Query("uid")
-	if err := modb.UpdateTheme(db, uid, req.Data.Name, req.Data.ID); err != nil {
+	if err := modb.UpdateTheme(uid, req.Data.Name, req.Data.ID); err != nil {
 		log.Error(err)
 		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
 		return
@@ -83,7 +82,7 @@ func PutTheme(g *gin.Context, db *mongo.Database) {
 
 	g.JSON(http.StatusOK, msgOK().setData(response{Name: req.Data.Name, ID: req.Data.ID}))
 }
-func DeleteTheme(g *gin.Context, db *mongo.Database) {
+func ThemeDelete(g *gin.Context) {
 	tid := g.Query("themeid")
 
 	if tid == "" {
@@ -94,13 +93,13 @@ func DeleteTheme(g *gin.Context, db *mongo.Database) {
 
 	uid := g.Query("uid")
 
-	if err := modb.DeleteGroupAll(db, tid); err != nil {
+	if err := modb.DeleteGroupAll(tid); err != nil {
 		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
 		return
 	}
 	log.Infof("删除分组 uid:%s tid:%s", uid, tid)
 
-	err := modb.DeleteTheme(db, uid, tid)
+	err := modb.DeleteTheme(uid, tid)
 	if err != nil {
 		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
 		return

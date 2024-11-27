@@ -7,7 +7,6 @@ import (
 	log "github.com/tengfei-xy/go-log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Theme struct {
@@ -15,8 +14,8 @@ type Theme struct {
 	ID   string `json:"id" bson:"tid"`
 }
 
-func GetThemeObjID(db *mongo.Database, uid string) (primitive.ObjectID, primitive.ObjectID, error) {
-	uoid, err := GetUserObjectUID(db, uid)
+func GetThemeObjID(uid string) (primitive.ObjectID, primitive.ObjectID, error) {
+	uoid, err := UserGetObjectUID(uid)
 	if err != nil {
 		return primitive.NilObjectID, primitive.NilObjectID, err
 	}
@@ -38,7 +37,7 @@ func GetThemeObjID(db *mongo.Database, uid string) (primitive.ObjectID, primitiv
 
 	return uoid, toid, nil
 }
-func GetThemeObjIDFromTID(db *mongo.Database, tid string) (primitive.ObjectID, error) {
+func GetThemeObjIDFromTID(tid string) (primitive.ObjectID, error) {
 
 	identified := bson.D{{Key: "tid", Value: tid}}
 	var result bson.M
@@ -54,10 +53,10 @@ func GetThemeObjIDFromTID(db *mongo.Database, tid string) (primitive.ObjectID, e
 
 	return id, nil
 }
-func GetTheme(db *mongo.Database, uid string) ([]Theme, error) {
+func GetTheme(uid string) ([]Theme, error) {
 
 	var results []Theme
-	uoid, err := GetUserObjectUID(db, uid)
+	uoid, err := UserGetObjectUID(uid)
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -91,8 +90,8 @@ func GetTheme(db *mongo.Database, uid string) ([]Theme, error) {
 
 	return results, nil
 }
-func CreateTheme(db *mongo.Database, uid string, name *string) (string, error) {
-	uoid, err := GetUserObjectUID(db, uid)
+func CreateTheme(uid string, name *string) (string, error) {
+	uoid, err := UserGetObjectUID(uid)
 	if err != nil {
 		return "", err
 	}
@@ -106,9 +105,9 @@ func CreateTheme(db *mongo.Database, uid string, name *string) (string, error) {
 	_, err = db.Collection("theme").InsertOne(context.TODO(), theme)
 	return tid, err
 }
-func UpdateTheme(db *mongo.Database, uid string, name string, tid string) error {
+func UpdateTheme(uid string, name string, tid string) error {
 
-	_, toid, err := GetThemeObjID(db, uid)
+	_, toid, err := GetThemeObjID(uid)
 	if err != nil {
 		log.Error(err)
 		return err
@@ -132,8 +131,8 @@ func UpdateTheme(db *mongo.Database, uid string, name string, tid string) error 
 	)
 	return err
 }
-func DeleteTheme(db *mongo.Database, uid, tid string) error {
-	uoid, err := GetUserObjectUID(db, uid)
+func DeleteTheme(uid, tid string) error {
+	uoid, err := UserGetObjectUID(uid)
 	if err != nil {
 		log.Error(err)
 		return err

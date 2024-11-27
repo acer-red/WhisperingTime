@@ -4,10 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func DocPost(g *gin.Context, db *mongo.Database) {
+func DocPost(g *gin.Context) {
 	g.Query("uid")
 	type request struct {
 		Data    string `json:"data"`
@@ -26,7 +25,7 @@ func DocPost(g *gin.Context, db *mongo.Database) {
 	// title := req.Title
 	// group := req.Group
 
-	// toid, err := modb.InsertGroup(db, uid, tid, group)
+	// toid, err := modb.InsertGroup( uid, tid, group)
 	// if err != nil {
 	// 	log.Error(err)
 	// 	g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())

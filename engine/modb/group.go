@@ -6,7 +6,6 @@ import (
 
 	"github.com/tengfei-xy/go-log"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Group struct {
@@ -14,9 +13,9 @@ type Group struct {
 	ID   string `json:"id" bson:"gid"`
 }
 
-func GetGroup(db *mongo.Database, tid string) ([]Group, error) {
+func GetGroup(tid string) ([]Group, error) {
 	var results []Group
-	toid, err := GetThemeObjIDFromTID(db, tid)
+	toid, err := GetThemeObjIDFromTID(tid)
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -49,9 +48,9 @@ func GetGroup(db *mongo.Database, tid string) ([]Group, error) {
 
 	return results, nil
 }
-func CreateGroupDefault(db *mongo.Database, tid string) (string, error) {
+func CreateGroupDefault(tid string) (string, error) {
 
-	toid, err := GetThemeObjIDFromTID(db, tid)
+	toid, err := GetThemeObjIDFromTID(tid)
 	if err != nil {
 		log.Error(err)
 		return "", err
@@ -72,9 +71,9 @@ func CreateGroupDefault(db *mongo.Database, tid string) (string, error) {
 	}
 	return gid, nil
 }
-func CreateGroup(db *mongo.Database, tid, groupname string) (string, error) {
+func CreateGroup(tid, groupname string) (string, error) {
 
-	toid, err := GetThemeObjIDFromTID(db, tid)
+	toid, err := GetThemeObjIDFromTID(tid)
 	if err != nil {
 		log.Error(err)
 		return "", err
@@ -95,8 +94,8 @@ func CreateGroup(db *mongo.Database, tid, groupname string) (string, error) {
 	}
 	return gid, nil
 }
-func DeleteGroupAll(db *mongo.Database, tid string) error {
-	toid, err := GetThemeObjIDFromTID(db, tid)
+func DeleteGroupAll(tid string) error {
+	toid, err := GetThemeObjIDFromTID(tid)
 	if err != nil {
 		log.Error(err)
 		return err
