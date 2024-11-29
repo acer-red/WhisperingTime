@@ -83,7 +83,7 @@ func ThemePut(g *gin.Context) {
 	g.JSON(http.StatusOK, msgOK().setData(response{Name: req.Data.Name, ID: req.Data.ID}))
 }
 func ThemeDelete(g *gin.Context) {
-	tid := g.Query("themeid")
+	tid := g.Query("tid")
 
 	if tid == "" {
 		log.Errorf(mstrNoThemeID)

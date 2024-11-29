@@ -23,11 +23,12 @@ type appS struct {
 var app appS
 
 func init_mongo() {
+	log.Infof("mongo连接中...")
 	err := modb.Init()
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Infof("mongo连接成功!")
+	log.Infof("mongo连接成功!!")
 }
 func init_log() {
 	log.SetLevelInt(app.loglevel)
@@ -68,9 +69,9 @@ func main() {
 	Group := g.Group("/group")
 	{
 		Group.GET("", web.GroupGet)
-		// Group.POST("", web.GroupPost)
-		// Group.PUT("", web.GroupPut)
-		// Group.DELETE("", web.GroupDelete)
+		Group.POST("", web.GroupPost)
+		Group.PUT("", web.GroupPut)
+		Group.DELETE("", web.GroupDelete)
 
 	}
 	Doc := g.Group("/Doc")

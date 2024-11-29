@@ -20,21 +20,24 @@ func ExistUser() gin.HandlerFunc {
 			return
 		}
 
-		coll := db.Collection("user")
 		ctx := context.TODO()
 		identified := bson.D{{Key: "uid", Value: uid}}
 
-		count, err := coll.CountDocuments(ctx, identified)
+		count, err := db.Collection("user").CountDocuments(ctx, identified)
 		if err != nil {
-			g.AbortWithStatus(http.StatusBadRequest)
+			g.AbortWithStatus(http.StatusInternalServerError)
+			return
 		}
+		// 存在用户
 		if count > 0 {
 			return
 		}
 
-		_, err = coll.InsertOne(ctx, identified)
+		// 创建用户
+		_, err = db.Collection("user").InsertOne(ctx, identified)
 		if err != nil {
-			g.AbortWithStatus(http.StatusBadRequest)
+			g.AbortWithStatus(http.StatusInternalServerError)
+			return
 		}
 		log.Infof("新用户 uid=%s", uid)
 	}
@@ -43,7 +46,6 @@ func UserGetObjectUID(uid string) (primitive.ObjectID, error) {
 	var result bson.M
 
 	if err := db.Collection("user").FindOne(context.TODO(), bson.D{{Key: "uid", Value: uid}}).Decode(&result); err != nil {
-		log.Error(err)
 		return primitive.NilObjectID, err
 	}
 

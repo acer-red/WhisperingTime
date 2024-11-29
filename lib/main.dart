@@ -44,7 +44,6 @@ class MyApp extends StatelessWidget {
 //     final prefs = await SharedPreferences.getInstance();
 //     _uid = prefs.getString('uid') ??
 //     prefs.setString('uid', _uid);
-//     print("create uid=$_uid");
 //     notifyListeners();
 //   }
 

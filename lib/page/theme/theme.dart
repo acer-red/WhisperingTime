@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'group/list.dart';
 import 'package:whispering_time/http.dart';
 
-// 主题页面 - 列表页面
 class Item {
   bool isSubmitted;
   TextEditingController _textEditingController = TextEditingController();
@@ -12,6 +11,7 @@ class Item {
       : _textEditingController = TextEditingController(text: themename);
 }
 
+// 主题页面
 class ThemePage extends StatefulWidget {
   @override
   State createState() => _ThemePageState();
@@ -26,6 +26,9 @@ class _ThemePageState extends State<ThemePage> {
 
     final list = Http().gettheme();
     list.then((list) {
+      if (list.isEmpty) {
+        return;
+      }
       for (int i = 0; i < list.length; i++) {
         if (list[i].id == "") {
           continue;

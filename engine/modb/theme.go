@@ -14,6 +14,7 @@ type Theme struct {
 	ID   string `json:"id" bson:"tid"`
 }
 
+// 输入uid，返回uoid和toid
 func GetThemeObjID(uid string) (primitive.ObjectID, primitive.ObjectID, error) {
 	uoid, err := UserGetObjectUID(uid)
 	if err != nil {
@@ -37,6 +38,9 @@ func GetThemeObjID(uid string) (primitive.ObjectID, primitive.ObjectID, error) {
 
 	return uoid, toid, nil
 }
+
+// 输入tid，返回toid
+
 func GetThemeObjIDFromTID(tid string) (primitive.ObjectID, error) {
 
 	identified := bson.D{{Key: "tid", Value: tid}}
