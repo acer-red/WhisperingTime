@@ -241,7 +241,7 @@ class _EditableTextFieldState extends State<EditableTextField> {
 
   Widget letadd() {
     return ListPage(
-        titlename: widget.item._textEditingController.text,
+        themename: widget.item._textEditingController.text,
         tid: widget.item.tid!);
   }
 }

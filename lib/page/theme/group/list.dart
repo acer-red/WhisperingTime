@@ -1,21 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'edit.dart';
 import 'package:whispering_time/http.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-
-// 事件列表页面
-
-class ListPage extends StatefulWidget {
-  final String? id;
-  final String tid;
-  final String titlename;
-
-  ListPage({required this.titlename, required this.tid, this.id});
-
-  @override
-  State<StatefulWidget> createState() => _ListPage();
-}
 
 class Group {
   String name;
@@ -26,19 +12,35 @@ class Group {
       : _textEditingController = TextEditingController(text: name);
 }
 
+// 组、事件列表页面
+
+class ListPage extends StatefulWidget {
+  final String? id;
+  final String tid;
+  final String themename;
+
+  ListPage({required this.themename, required this.tid, this.id});
+
+  @override
+  State<StatefulWidget> createState() => _ListPage();
+}
+
 class _ListPage extends State<ListPage> {
   List<Group> _items = [];
+  late String pageTitleName;
 
   @override
   void initState() {
     super.initState();
+    pageTitleName = widget.themename;
     getGroupList();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.titlename)),
+      appBar: AppBar(title: Text(pageTitleName)),
+      
       drawer: Drawer(
         child: Column(children: [
           Expanded(
@@ -47,7 +49,8 @@ class _ListPage extends State<ListPage> {
             itemBuilder: (context, index) {
               final item = _items[index];
               return Padding(
-                  padding: EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0,bottom: 0.0),
+                  padding: EdgeInsets.only(
+                      left: 20.0, right: 20.0, top: 10.0, bottom: 0.0),
                   child: item.isSubmitted
                       ? Slidable(
                           key: ValueKey(item.id), // 每个 ListTile 需要一个唯一的 Key
@@ -74,6 +77,10 @@ class _ListPage extends State<ListPage> {
                             title: Text(item.name),
                             onTap: () {
                               Navigator.pop(context); // 关闭 drawer
+                              setState(() {
+                                pageTitleName =
+                                    "${widget.themename}-${item.name}";
+                              });
                             },
                           ))
                       : Row(children: [
@@ -153,9 +160,9 @@ class _ListPage extends State<ListPage> {
 
   submitItem(Group item) async {
     if (item.id.isEmpty) {
-      addgroup(item);
+      addItem(item);
     } else {
-      modgroup(item);
+      modItem(item);
     }
   }
 
@@ -167,24 +174,22 @@ class _ListPage extends State<ListPage> {
     }
   }
 
-  addgroup(Group item) async {
+  addItem(Group item) async {
     print("创建分组");
     final inputName = item._textEditingController.text;
-    final stateName = item.name;
     final res = await Http(tid: widget.tid)
         .postgroup(RequestPostGroup(name: inputName));
     if (res.err != 0) {
       return;
     }
     setState(() {
-      item.name = stateName;
+      item.name = inputName;
       item.id = res.id;
-        item.isSubmitted = true;
-
+      item.isSubmitted = true;
     });
   }
 
-  modgroup(Group item) async {
+  modItem(Group item) async {
     print("修改分组");
     final inputName = item._textEditingController.text;
     final stateName = item.name;
