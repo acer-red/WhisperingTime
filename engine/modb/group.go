@@ -4,8 +4,8 @@ import (
 	"context"
 	"sys"
 
-	"github.com/tengfei-xy/go-log"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Group struct {
@@ -13,11 +13,26 @@ type Group struct {
 	ID   string `json:"id" bson:"gid"`
 }
 
+func GetGroupObjIDFromgID(gid string) (primitive.ObjectID, error) {
+
+	identified := bson.D{{Key: "gid", Value: gid}}
+	var result bson.M
+
+	if err := db.Collection("group").FindOne(context.TODO(), identified).Decode(&result); err != nil {
+		return primitive.NilObjectID, err
+	}
+
+	oid, ok := result["_id"].(primitive.ObjectID)
+	if !ok {
+		return primitive.NilObjectID, nil
+	}
+
+	return oid, nil
+}
 func GroupGet(tid string) ([]Group, error) {
 	var results []Group
 	toid, err := GetThemeObjIDFromTID(tid)
 	if err != nil {
-		log.Error(err)
 		return nil, err
 	}
 	filter := bson.D{
@@ -26,23 +41,19 @@ func GroupGet(tid string) ([]Group, error) {
 
 	cursor, err := db.Collection("group").Find(context.TODO(), filter)
 	if err != nil {
-		log.Error(err)
 		return nil, err
 	}
 
-	// 遍历结果
 	for cursor.Next(context.TODO()) {
 		var result Group
 		err := cursor.Decode(&result)
 		if err != nil {
-			log.Error(err)
 			return nil, err
 		}
 		results = append(results, result)
 	}
-	// 检查错误
+
 	if err := cursor.Err(); err != nil {
-		log.Error(err)
 		return nil, err
 	}
 
@@ -51,7 +62,7 @@ func GroupGet(tid string) ([]Group, error) {
 func GroupPost(tid, groupname string) (string, error) {
 	toid, err := GetThemeObjIDFromTID(tid)
 	if err != nil {
-		log.Error(err)
+
 		return "", err
 	}
 	gid := sys.CreateUUID()
@@ -64,7 +75,7 @@ func GroupPost(tid, groupname string) (string, error) {
 	_, err = db.Collection("group").InsertOne(context.TODO(), data)
 
 	if err != nil {
-		log.Error(err)
+
 		return "", err
 	}
 	return gid, nil
@@ -98,7 +109,6 @@ func CreateGroupDefault(tid string) (string, error) {
 
 	toid, err := GetThemeObjIDFromTID(tid)
 	if err != nil {
-		log.Error(err)
 		return "", err
 	}
 	gid := sys.CreateUUID()
@@ -112,7 +122,6 @@ func CreateGroupDefault(tid string) (string, error) {
 	_, err = db.Collection("group").InsertOne(context.TODO(), data)
 
 	if err != nil {
-		log.Error(err)
 		return "", err
 	}
 	return gid, nil
@@ -120,7 +129,6 @@ func CreateGroupDefault(tid string) (string, error) {
 func DeleteGroupAll(tid string) error {
 	toid, err := GetThemeObjIDFromTID(tid)
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 	data := bson.D{
@@ -129,7 +137,7 @@ func DeleteGroupAll(tid string) error {
 
 	_, err = db.Collection("group").DeleteMany(context.TODO(), data)
 	if err != nil {
-		log.Error(err)
+		return err
 	}
 	return err
 }

@@ -1,45 +1,54 @@
 package web
 
 import (
-	"net/http"
+	"modb"
 
 	"github.com/gin-gonic/gin"
+	log "github.com/tengfei-xy/go-log"
 )
 
-func DocPost(g *gin.Context) {
-	g.Query("uid")
-	type request struct {
-		Data    string `json:"data"`
-		ThemeID string `json:"themeid"`
-		Group   string `json:"group"`
-		Title   string `json:"title"`
-		UpTime  string `json:"uptime"`
-	}
-	var req request
-	if err := g.ShouldBindBodyWithJSON(&req); err != nil {
-		g.AbortWithStatusJSON(http.StatusBadRequest, msgBadRequest())
+func DocsGet(g *gin.Context) {
+	gid := g.Query("gid")
+	if gid == "" {
+		badRequest(g)
 		return
 	}
-	// uid := g.Query("uid")
-	// tid := req.ThemeID
-	// title := req.Title
-	// group := req.Group
+	ret, err := modb.DocsGet(gid)
+	if err != nil {
+		internalServerError(g)
+		return
+	}
+	okData(g, ret)
+}
+func DocPost(g *gin.Context) {
 
-	// toid, err := modb.InsertGroup( uid, tid, group)
-	// if err != nil {
-	// 	log.Error(err)
-	// 	g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
-	// 	return
-	// }
+	type request struct {
+		Data struct {
+			Content string `json:"content"`
+			Title   string `json:"title"`
+		} `json:"data"`
+		UpTime string `json:"uptime"`
+	}
 
-	// 根据themeid和userid创建group，和doc
+	type response struct {
+		ID string `json:"id"`
+	}
 
-	// result, err := db.Collection("doc").InsertOne(context.TODO(), ash)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
+	gid := g.Query("gid")
 
-	// fmt.Println("插入文档的 ID:", result.InsertedID)
+	var req request
 
-	g.String(http.StatusOK, "")
+	if err := g.ShouldBindBodyWithJSON(&req); err != nil {
+		badRequest(g)
+		return
+	}
+
+	did, err := modb.DocPost(gid, req.Data.Content, req.Data.Title)
+	if err != nil {
+		log.Error(err)
+		internalServerError(g)
+		return
+	}
+	log.Infof("创建文档的 ID: %s", did)
+	okData(g, response{ID: did})
 }

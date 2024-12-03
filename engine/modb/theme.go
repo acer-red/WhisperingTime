@@ -4,7 +4,6 @@ import (
 	"context"
 	"sys"
 
-	log "github.com/tengfei-xy/go-log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -40,7 +39,6 @@ func GetThemeObjID(uid string) (primitive.ObjectID, primitive.ObjectID, error) {
 }
 
 // 输入tid，返回toid
-
 func GetThemeObjIDFromTID(tid string) (primitive.ObjectID, error) {
 
 	identified := bson.D{{Key: "tid", Value: tid}}
@@ -62,7 +60,6 @@ func GetTheme(uid string) ([]Theme, error) {
 	var results []Theme
 	uoid, err := UserGetObjectUID(uid)
 	if err != nil {
-		log.Error(err)
 		return nil, err
 	}
 
@@ -72,23 +69,19 @@ func GetTheme(uid string) ([]Theme, error) {
 
 	cursor, err := db.Collection("theme").Find(context.TODO(), filter)
 	if err != nil {
-		log.Error(err)
 		return nil, err
 	}
 
-	// 遍历结果
 	for cursor.Next(context.TODO()) {
 		var result Theme
 		err := cursor.Decode(&result)
 		if err != nil {
-			log.Error(err)
 			return nil, err
 		}
 		results = append(results, result)
 	}
-	// 检查错误
+
 	if err := cursor.Err(); err != nil {
-		log.Error(err)
 		return nil, err
 	}
 
@@ -113,7 +106,6 @@ func UpdateTheme(uid string, name string, tid string) error {
 
 	_, toid, err := GetThemeObjID(uid)
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 
@@ -138,7 +130,6 @@ func UpdateTheme(uid string, name string, tid string) error {
 func DeleteTheme(uid, tid string) error {
 	uoid, err := UserGetObjectUID(uid)
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 	filter := bson.M{

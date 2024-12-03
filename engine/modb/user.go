@@ -53,6 +53,5 @@ func UserGetObjectUID(uid string) (primitive.ObjectID, error) {
 	if !ok {
 		return primitive.NilObjectID, errors.New("无法获取_id")
 	}
-	log.Debug3f("查找用户 uid=%s", uid)
 	return id, nil
 }

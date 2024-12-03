@@ -51,7 +51,7 @@ func main() {
 
 	g.Use(modb.ExistUser())
 
-	User := g.Group("/User")
+	User := g.Group("/user")
 	{
 		// User.GET("", web.UserGet)
 		User.POST("", web.UserPost)
@@ -72,17 +72,21 @@ func main() {
 		Group.POST("", web.GroupPost)
 		Group.PUT("", web.GroupPut)
 		Group.DELETE("", web.GroupDelete)
-
 	}
-	Doc := g.Group("/Doc")
+	Doc := g.Group("/doc")
 	{
 		// Doc.GET("", web.DocGet)
 		Doc.POST("", web.DocPost)
 		// Doc.PUT("", web.DocPut)
 		// Doc.DELETE("", web.DocDelete)
-
 	}
-
+	Docs := g.Group("/docs")
+	{
+		Docs.GET("", web.DocsGet)
+		// Docs.POST("", web.DocsPost)
+		// Docs.PUT("", web.DocsPut)
+		// Docs.DELETE("", web.DocsDelete)
+	}
 	log.Infof("监听端口:%s", port)
 
 	err := g.Run(":" + port)

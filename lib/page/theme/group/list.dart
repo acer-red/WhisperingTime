@@ -13,7 +13,6 @@ class Group {
 }
 
 // 组、事件列表页面
-
 class ListPage extends StatefulWidget {
   final String? id;
   final String tid;
@@ -26,8 +25,10 @@ class ListPage extends StatefulWidget {
 }
 
 class _ListPage extends State<ListPage> {
-  List<Group> _items = [];
-  late String pageTitleName;
+  List<Group> _gitems = [];
+  List<Doc> _ditems = [];
+  int gidx = 0;
+  String? pageTitleName;
 
   @override
   void initState() {
@@ -39,26 +40,30 @@ class _ListPage extends State<ListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(pageTitleName)),
-      
+      // 页面
+      appBar: AppBar(title: Text(pageTitleName!)),
+
+      // 左侧分组列表
       drawer: Drawer(
         child: Column(children: [
           Expanded(
               child: ListView.builder(
-            itemCount: _items.length,
+            itemCount: _gitems.length,
             itemBuilder: (context, index) {
-              final item = _items[index];
+              final item = _gitems[index];
               return Padding(
                   padding: EdgeInsets.only(
                       left: 20.0, right: 20.0, top: 10.0, bottom: 0.0),
                   child: item.isSubmitted
+                      // 显示标题
                       ? Slidable(
                           key: ValueKey(item.id), // 每个 ListTile 需要一个唯一的 Key
                           endActionPane: ActionPane(
                             motion: ScrollMotion(), // 滑动动画效果
                             children: [
                               SlidableAction(
-                                onPressed: (context) => editLine(_items[index]),
+                                onPressed: (context) =>
+                                    editLine(_gitems[index]),
                                 backgroundColor: Colors.transparent,
                                 foregroundColor: Colors.blue,
                                 icon: Icons.edit,
@@ -77,12 +82,14 @@ class _ListPage extends State<ListPage> {
                             title: Text(item.name),
                             onTap: () {
                               Navigator.pop(context); // 关闭 drawer
+                              setDocs(item);
                               setState(() {
                                 pageTitleName =
                                     "${widget.themename}-${item.name}";
                               });
                             },
                           ))
+                      // 显示标题的编辑框
                       : Row(children: [
                           SizedBox(
                             width: 150,
@@ -90,57 +97,108 @@ class _ListPage extends State<ListPage> {
                               decoration: InputDecoration(
                                 labelText: '组名',
                               ),
-                              controller: _items[index]._textEditingController,
+                              controller: _gitems[index]._textEditingController,
                             ),
                           ),
                           IconButton(
                             icon: Icon(Icons.check),
-                            onPressed: () => submitItem(_items[index]),
+                            onPressed: () => submitItem(_gitems[index]),
                           ),
                           IconButton(
                             icon: Icon(Icons.remove_circle_rounded),
                             onPressed: () => removeItem(index),
-                            // onPressed: () => remove(_items[index])),
+                            // onPressed: () => remove(_gitems[index])),
                           )
                         ]));
             },
           )),
           BottomActionButtons(onAddPressed: () {
             setState(() {
-              _items.add(Group(name: "", id: "", isSubmitted: false));
+              _gitems.add(Group(name: "", id: "", isSubmitted: false));
             });
           }, onSearchPressed: () {
-            for (Group l in _items) {
+            for (Group l in _gitems) {
               print(l.name);
             }
           }),
         ]),
       ),
+
+      // 主体内容
       body: SafeArea(
         // 使用 SafeArea 避免内容被遮挡
-        child: Column(
-          children: [
-            Expanded(
-              // 使用 Expanded 占据剩余空间
-              child: Center(
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => EEdit(tid: widget.tid),
-                      ),
-                    );
-                  },
-                  child: const Text('来记录心路历程吧！'), // 使用 const
-                ),
-              ),
-            ),
-            const SizedBox(height: 40.0), // 使用 SizedBox 添加 padding
-          ],
-        ),
+        child: ListView.builder(
+            itemCount: _ditems.length,
+            itemBuilder: (context, index) {
+              final item = _ditems[index];
+              return SizedBox(
+                  width: 100,
+                  height: 20,
+                  child: Row(children: [Text(item.content)]));
+            }),
+        // Expanded(
+        //   // 使用 Expanded 占据剩余空间
+        //   child: Center(
+        //     child: ElevatedButton(
+        //       onPressed: enterDocEditPage,
+        //       child: const Text('来记录心路历程吧！'), // 使用 const
+        //     ),
+        //   ),
+        // ),
+        // const SizedBox(height: 40.0), // 使用 SizedBox 添加 padding
       ),
     );
+  }
+
+  getGroupList() async {
+    print("获取分组列表");
+
+    final groupList = await Http(tid: widget.tid).getGroup();
+    setState(() {
+      _gitems = groupList
+          .map((l) => Group(name: l.name, id: l.id, isSubmitted: true))
+          .toList();
+      if (_gitems.isEmpty) {
+        return;
+      }
+      _ditems.clear();
+    });
+  }
+
+  Future<List<Doc>> getDocs(String gid) async {
+    print("获取分组的日志列表");
+    return await Http(gid: gid).getDocs();
+  }
+
+  setDocs(Group item) async {
+    final ret = await getDocs(item.id);
+
+    setState(() {
+      if (_ditems.isNotEmpty){
+      _ditems.clear();
+
+      }
+      _ditems = ret;
+    });
+  }
+
+  clickGroupTitle(Group item) {
+    setState(() {
+      pageTitleName = "${widget.themename}-${item.name}";
+    });
+    Navigator.pop(context); // 关闭 drawer
+  }
+
+  enterDocEditPage() async {
+    final Doc ret = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              EEdit(gid: _gitems[gidx].id, gname: _gitems[gidx].name,title: "",),
+        ));
+    setState(() {
+      _ditems.add(ret);
+    });
   }
 
   editLine(Group item) {
@@ -150,10 +208,10 @@ class _ListPage extends State<ListPage> {
   }
 
   removeLine(int index) async {
-    var onValue = await Http(gid: _items[index].id).deletegroup();
+    var onValue = await Http(gid: _gitems[index].id).deleteGroup();
     if (onValue.err == 0) {
       setState(() {
-        _items.removeAt(index);
+        _gitems.removeAt(index);
       });
     }
   }
@@ -167,9 +225,9 @@ class _ListPage extends State<ListPage> {
   }
 
   removeItem(int index) async {
-    if (_items[index].id == "") {
+    if (_gitems[index].id == "") {
       setState(() {
-        _items.removeAt(index);
+        _gitems.removeAt(index);
       });
     }
   }
@@ -178,7 +236,7 @@ class _ListPage extends State<ListPage> {
     print("创建分组");
     final inputName = item._textEditingController.text;
     final res = await Http(tid: widget.tid)
-        .postgroup(RequestPostGroup(name: inputName));
+        .postGroup(RequestPostGroup(name: inputName));
     if (res.err != 0) {
       return;
     }
@@ -202,24 +260,13 @@ class _ListPage extends State<ListPage> {
       return;
     }
     final res = await Http(tid: widget.tid)
-        .putgroup(RequestPutGroup(name: inputName, id: item.id));
+        .putGroup(RequestPutGroup(name: inputName, id: item.id));
     if (res.err != 0) {
       return;
     }
     setState(() {
       item.name = inputName;
       item.isSubmitted = true;
-    });
-  }
-
-  getGroupList() async {
-    print("获取分组列表");
-
-    final groupList = await Http(tid: widget.tid).getgroup();
-    setState(() {
-      _items = groupList
-          .map((l) => Group(name: l.name, id: l.id, isSubmitted: true))
-          .toList();
     });
   }
 }

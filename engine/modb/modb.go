@@ -8,9 +8,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-//	func isNil(id primitive.ObjectID) bool {
-//		return primitive.NilObjectID == id
-//	}
 var mongosh *mongo.Client
 var db *mongo.Database
 
@@ -39,3 +36,7 @@ func Init() error {
 func Disconnect() error {
 	return mongosh.Disconnect(context.TODO())
 }
+
+//	func isNil(id primitive.ObjectID) bool {
+//		return primitive.NilObjectID == id
+//	}
