@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'group/list.dart';
+import 'group/group.dart';
 import 'package:whispering_time/http.dart';
 
 class Item {
@@ -240,7 +240,7 @@ class _EditableTextFieldState extends State<EditableTextField> {
   }
 
   Widget letadd() {
-    return ListPage(
+    return GroupPage(
         themename: widget.item._textEditingController.text,
         tid: widget.item.tid!);
   }

@@ -1,5 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:whispering_time/http.dart';
+import 'package:whispering_time/env.dart';
+import './setting.dart';
+
+class LastPageDoc extends Doc {
+  LastPage state;
+  LastPageDoc(
+      {required this.state,
+      required super.title,
+      required super.content,
+      required super.id});
+}
 
 // 事件编辑页面
 class EEdit extends StatefulWidget {
@@ -31,12 +42,21 @@ class _EEdit extends State<EEdit> with RouteAware {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        // 标题
         appBar: AppBar(
+          // 标题左侧
           leading: IconButton(
             icon: Icon(Icons.arrow_back_ios),
             onPressed: () => backPage(),
           ),
+          // 标题
           title: Text(widget.title),
+          actions: <Widget>[
+            IconButton(
+              icon: Icon(Icons.settings),
+              onPressed: () => enterSettingPage(),
+            )
+          ],
         ),
         body: SizedBox.expand(
             child: Padding(
@@ -57,15 +77,32 @@ class _EEdit extends State<EEdit> with RouteAware {
   void backPage() async {
     if (widget.content == edit.text) {
       print("无变化");
-      if (mounted) {
-        Navigator.of(context).pop(Doc(title: widget.title,content: widget.content,id:widget.id!));
-      }
 
+      if (mounted) {
+        Navigator.of(context).pop(
+            LastPageDoc(state:LastPage.nochange, title: widget.title, content: widget.content, id: widget.id!));
+      }
       return;
     }
-    final ret = await upload();
+    await upload();
     if (mounted) {
-      Navigator.of(context).pop(ret);
+      Navigator.of(context).pop(LastPageDoc(state:LastPage.change, title: widget.title, content: widget.content, id: widget.id!));
+    }
+  }
+
+  void enterSettingPage() async {
+    final LastPage ret = await Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => Setting(gid: widget.gid, did: widget.id!)));
+    switch (ret) {
+      case LastPage.delete:
+      print("返回并删除文档");
+        Navigator.of(context)
+            .pop(LastPageDoc(state: ret, title: "", content: "", id: ""));
+        break;
+      default:
+        break;
     }
   }
 

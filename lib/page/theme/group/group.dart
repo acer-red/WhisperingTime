@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'edit.dart';
+import 'package:whispering_time/env.dart';
+import 'doc/edit.dart';
 import 'package:whispering_time/http.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
@@ -13,18 +14,18 @@ class Group {
 }
 
 // 组、事件列表页面
-class ListPage extends StatefulWidget {
+class GroupPage extends StatefulWidget {
   final String? id;
   final String tid;
   final String themename;
 
-  ListPage({required this.themename, required this.tid, this.id});
+  GroupPage({required this.themename, required this.tid, this.id});
 
   @override
-  State<StatefulWidget> createState() => _ListPage();
+  State<StatefulWidget> createState() => _GroupPage();
 }
 
-class _ListPage extends State<ListPage> {
+class _GroupPage extends State<GroupPage> {
   List<Group> _gitems = [];
   List<Doc> _ditems = [];
   int gidx = 0;
@@ -133,26 +134,7 @@ class _ListPage extends State<ListPage> {
               final item = _ditems[index];
               return InkWell(
                 // 点击 卡片
-                onTap: () async {
-                  
-                  Group group = _gitems[gidx];
-                  Doc doc = _ditems[index];
-                  final Doc ret = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (con) => EEdit(
-                          gid: group.id,
-                          gname: group.name,
-                          title: doc.title,
-                          content: doc.content,
-                          id: doc.id,
-                        ),
-                      ));
-                      setState(() {
-                          _ditems[index].content = ret.content;
-                          _ditems[index].title = ret.title;
-                      });
-                },
+                onTap: () => clickCard(gidx, index),
                 child: Card(
                   // 阴影大小
                   elevation: 5,
@@ -193,6 +175,30 @@ class _ListPage extends State<ListPage> {
     );
   }
 
+  clickCard(int gidx, int didx) async {
+    Group group = _gitems[gidx];
+    Doc doc = _ditems[didx];
+    final LastPageDoc ret = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (con) => EEdit(
+            gid: group.id,
+            gname: group.name,
+            title: doc.title,
+            content: doc.content,
+            id: doc.id,
+          ),
+        ));
+    setState(() {
+      if (ret.state == LastPage.delete) {
+        _ditems.removeAt(didx);
+      } else {
+        _ditems[didx].content = ret.content;
+        _ditems[didx].title = ret.title;
+      }
+    });
+  }
+
   getGroupList() async {
     print("获取分组列表");
 
@@ -230,8 +236,6 @@ class _ListPage extends State<ListPage> {
     });
     Navigator.pop(context); // 关闭 drawer
   }
-
-
 
   editLine(Group item) {
     setState(() {

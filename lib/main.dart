@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import './page/setting/setting.dart';
 import 'page/theme/theme.dart';
+
 import 'package:whispering_time/env.dart';
 
 // import 'package:shared_preferences/shared_preferences.dart';
@@ -28,38 +29,12 @@ class MyApp extends StatelessWidget {
               seedColor: const Color.fromARGB(255, 211, 118, 5)),
         ),
         home: const MyHomePage(),
+        routes: {},
       ),
     );
   }
 }
 
-// class MyAppState extends ChangeNotifier {
-//   String _uid = ""; // 使用 _uid 私有变量存储 uid
-
-//   MyAppState() {
-//     _loadUid();
-//   }
-
-//   Future<void> _loadUid() async {
-//     final prefs = await SharedPreferences.getInstance();
-//     _uid = prefs.getString('uid') ??
-//     prefs.setString('uid', _uid);
-//     notifyListeners();
-//   }
-
-//   String get uid {
-//     if (_uid.isEmpty) {
-//       // 如果 _uid 还没有初始化，则返回一个占位值或抛出异常
-//       return "loading..."; // 或者 throw Exception("UID is not initialized yet.");
-//     }
-//     return _uid;
-//   }
-
-//   set uid(String value) {
-//     _uid = value;
-//     notifyListeners();
-//   }
-// }
 class MyAppState extends ChangeNotifier {
   MyAppState();
 }

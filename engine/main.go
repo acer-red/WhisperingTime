@@ -78,7 +78,7 @@ func main() {
 		// Doc.GET("", web.DocGet)
 		Doc.POST("", web.DocPost)
 		Doc.PUT("", web.DocPut)
-		// Doc.DELETE("", web.DocDelete)
+		Doc.DELETE("", web.DocDelete)
 	}
 	Docs := g.Group("/docs")
 	{

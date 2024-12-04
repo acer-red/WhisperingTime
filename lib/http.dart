@@ -129,11 +129,11 @@ class Doc {
   }
 }
 
-class ReponseGetDocs {
-  // Array<Doc> data ;
-  Doc data;
-  ReponseGetDocs({required this.data});
-}
+// class ReponseGetDocs {
+//   Doc data;
+//   ReponseGetDocs({required this.data});
+// }
+
 class ResponsePutDoc extends Basic {
   String id;
 
@@ -143,6 +143,21 @@ class ResponsePutDoc extends Basic {
       err: json['err'] as int,
       msg: json['msg'] as String,
       id: json['data']['id'] as String,
+    );
+  }
+}
+class RequestDeleteDoc {
+  String did;
+  String gid;
+  RequestDeleteDoc({required this.gid, required this.did});
+}
+class ResponseDeleteDoc extends Basic {
+
+  ResponseDeleteDoc({required super.err, required super.msg});
+  factory ResponseDeleteDoc.fromJson(Map<String, dynamic> json) {
+    return ResponseDeleteDoc(
+      err: json['err'] as int,
+      msg: json['msg'] as String,
     );
   }
 }
@@ -437,6 +452,20 @@ class Http {
 
     final res = ResponsePutDoc.fromJson(await jsonDecode(response.body));
 
+    return res;
+  }
+
+  Future<ResponseDeleteDoc> deleteDoc(RequestDeleteDoc req) async {
+    print("删除文档");
+    const String path = "/doc";
+
+    final Map<String, String> param = {'uid': uid, 'gid': req.gid,'did':req.did};
+    final url = Uri.http(baseurl, path, param);
+    final response = await http.delete(url);
+    print(response.body);
+    final json = jsonDecode(response.body);
+
+    final res = ResponseDeleteDoc(err:json['err'], msg:json['msg']);
     return res;
   }
 

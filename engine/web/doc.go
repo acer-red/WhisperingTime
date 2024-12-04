@@ -79,3 +79,18 @@ func DocPut(g *gin.Context) {
 	res.ID = req.Doc.ID
 	okData(g, res)
 }
+func DocDelete(g *gin.Context) {
+
+	gid := g.Query("gid")
+	did := g.Query("did")
+	if gid == "" || did == "" {
+		badRequest(g)
+		return
+	}
+	if err := modb.DocDelete(gid, did); err != nil {
+		log.Error(err)
+		internalServerError(g)
+		return
+	}
+	ok(g)
+}

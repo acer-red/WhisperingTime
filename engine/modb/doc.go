@@ -96,3 +96,18 @@ func DocPut(gid string, data *ReponseDocPut) error {
 	)
 	return err
 }
+func DocDelete(gid, did string) error {
+	goid, err := GetGroupObjIDFromgID(gid)
+	if err != nil {
+		return err
+	}
+	filter := bson.M{
+		"_goid": goid,
+		"did":   did,
+	}
+	_, err = db.Collection("doc").DeleteOne(context.TODO(),
+		filter,
+		nil,
+	)
+	return err
+}

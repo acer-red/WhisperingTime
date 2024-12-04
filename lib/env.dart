@@ -1,6 +1,12 @@
 import 'package:uuid/uuid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+enum LastPage {
+  delete ,
+  nochange,
+  change,
+}
+
 class SharedPrefsManager {
   static final SharedPrefsManager _instance = SharedPrefsManager._internal();
   SharedPreferences? _prefs;
