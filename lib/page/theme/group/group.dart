@@ -172,7 +172,30 @@ class _GroupPage extends State<GroupPage> {
               );
             }),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: enterNewEdit,
+        child: const Icon(Icons.add),
+      ),
     );
+  }
+
+  enterNewEdit() async {
+    final LastPageDoc ret = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DocEditPage(
+          gid: _gitems[gidx].id,
+          id: "",
+          title: "",
+          content: "",
+        ),
+      ),
+    );
+    if (ret.state == LastPage.create) {
+      setState(() {
+        _ditems.add(Doc(title: ret.title, content: ret.content, id: ret.id));
+      });
+    }
   }
 
   clickCard(int gidx, int didx) async {
@@ -181,7 +204,7 @@ class _GroupPage extends State<GroupPage> {
     final LastPageDoc ret = await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (con) => EEdit(
+          builder: (con) => DocEditPage(
             gid: group.id,
             gname: group.name,
             title: doc.title,

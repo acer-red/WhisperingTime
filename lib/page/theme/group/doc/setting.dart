@@ -3,8 +3,8 @@ import 'package:whispering_time/http.dart';
 import 'package:whispering_time/env.dart';
 
 class Setting extends StatefulWidget {
-  String gid;
-  String did;
+  final String gid;
+  final String did;
   Setting({required this.gid, required this.did});
   @override
   State<Setting> createState() => _Setting();

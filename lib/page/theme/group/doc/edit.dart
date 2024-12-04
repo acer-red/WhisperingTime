@@ -13,13 +13,13 @@ class LastPageDoc extends Doc {
 }
 
 // 事件编辑页面
-class EEdit extends StatefulWidget {
+class DocEditPage extends StatefulWidget {
   final String gid;
   final String? gname;
   final String? id;
-  String title;
-  String content;
-  EEdit({
+  final String title;
+  final String content;
+  DocEditPage({
     required this.gid,
     this.id,
     this.gname,
@@ -27,16 +27,21 @@ class EEdit extends StatefulWidget {
     required this.content,
   });
   @override
-  State<EEdit> createState() => _EEdit();
+  State<DocEditPage> createState() => _DocEditPage();
 }
 
-class _EEdit extends State<EEdit> with RouteAware {
+class _DocEditPage extends State<DocEditPage> with RouteAware {
   TextEditingController edit = TextEditingController();
+  TextEditingController titleEdit = TextEditingController();
 
+  bool isTitleSubmited = true;
   @override
   void initState() {
     super.initState();
     edit = TextEditingController(text: widget.content);
+    widget.title.isEmpty
+        ? titleEdit.text = "未命名的标题"
+        : titleEdit.text = widget.title;
   }
 
   @override
@@ -50,7 +55,50 @@ class _EEdit extends State<EEdit> with RouteAware {
             onPressed: () => backPage(),
           ),
           // 标题
-          title: Text(widget.title),
+          title: Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                isTitleSubmited
+                    ? Row(
+                        children: [
+                          Text(titleEdit.text),
+                          IconButton(
+                              onPressed: () => {
+                                    setState(() {
+                                      isTitleSubmited = !isTitleSubmited;
+                                    })
+                                  },
+                              icon: Icon(Icons.mode_edit_outline)),
+                        ],
+                      )
+                    : Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: SizedBox(
+                          width: 300,
+                          child: MouseRegion(
+                            onExit: (_) =>
+                                setState(() => isTitleSubmited = true),
+                            child: TextField(
+                              style: TextStyle(height: 20, fontSize: 23),
+                              controller: titleEdit,
+                              maxLines: 1,
+                              autofocus: true,
+                              keyboardType: TextInputType.text,
+                              decoration: InputDecoration(
+                                border: InputBorder.none,
+                              ),
+                              onSubmitted: (text) => setState(() =>
+                                  isTitleSubmited =
+                                      !isTitleSubmited), // 或者添加一个"完成"按钮
+                            ),
+                          ),
+                        ),
+                      ),
+              ],
+            ),
+          ),
           actions: <Widget>[
             IconButton(
               icon: Icon(Icons.settings),
@@ -75,18 +123,26 @@ class _EEdit extends State<EEdit> with RouteAware {
   }
 
   void backPage() async {
-    if (widget.content == edit.text) {
+    if (widget.content == edit.text && widget.title == titleEdit.text) {
       print("无变化");
 
       if (mounted) {
-        Navigator.of(context).pop(
-            LastPageDoc(state:LastPage.nochange, title: widget.title, content: widget.content, id: widget.id!));
+        Navigator.of(context).pop(LastPageDoc(
+            state: LastPage.nochange,
+            title: titleEdit.text,
+            content: widget.content,
+            id: widget.id!));
       }
       return;
     }
-    await upload();
-    if (mounted) {
-      Navigator.of(context).pop(LastPageDoc(state:LastPage.change, title: widget.title, content: widget.content, id: widget.id!));
+    if (widget.id == "") {
+      if (mounted) {
+        Navigator.of(context).pop(createDoc());
+      }
+    } else {
+      if (mounted) {
+        Navigator.of(context).pop(updateDoc());
+      }
     }
   }
 
@@ -97,7 +153,7 @@ class _EEdit extends State<EEdit> with RouteAware {
             builder: (context) => Setting(gid: widget.gid, did: widget.id!)));
     switch (ret) {
       case LastPage.delete:
-      print("返回并删除文档");
+        print("返回并删除文档");
         Navigator.of(context)
             .pop(LastPageDoc(state: ret, title: "", content: "", id: ""));
         break;
@@ -106,15 +162,23 @@ class _EEdit extends State<EEdit> with RouteAware {
     }
   }
 
-  Future<Doc> upload() async {
-    if (widget.id == "") {
-      final ret = await Http(gid: widget.gid)
-          .postDoc(RequestPostDoc(content: edit.text, title: widget.title));
-      return Doc(content: edit.text, id: ret.id, title: widget.title);
-    } else {
-      final ret = await Http(gid: widget.gid).putDoc(RequestPutDoc(
-          content: edit.text, title: widget.title, id: widget.id!));
-      return Doc(content: edit.text, id: ret.id, title: widget.title);
-    }
+  Future<LastPageDoc> createDoc() async {
+    final ret = await Http(gid: widget.gid)
+        .postDoc(RequestPostDoc(content: edit.text, title: titleEdit.text));
+    return LastPageDoc(
+        state: LastPage.create,
+        content: edit.text,
+        id: ret.id,
+        title: titleEdit.text);
+  }
+
+  Future<LastPageDoc> updateDoc() async {
+    final ret = await Http(gid: widget.gid).putDoc(
+        RequestPutDoc(content: edit.text, title: titleEdit.text, id: widget.id!));
+    return LastPageDoc(
+        state: LastPage.change,
+        content: edit.text,
+        id: ret.id,
+        title: titleEdit.text);
   }
 }

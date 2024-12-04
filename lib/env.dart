@@ -5,6 +5,7 @@ enum LastPage {
   delete ,
   nochange,
   change,
+  create,
 }
 
 class SharedPrefsManager {
