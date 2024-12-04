@@ -131,21 +131,64 @@ class _ListPage extends State<ListPage> {
             itemCount: _ditems.length,
             itemBuilder: (context, index) {
               final item = _ditems[index];
-              return SizedBox(
-                  width: 100,
-                  height: 20,
-                  child: Row(children: [Text(item.content)]));
+              return InkWell(
+                // 点击 卡片
+                onTap: () async {
+                  
+                  Group group = _gitems[gidx];
+                  Doc doc = _ditems[index];
+                  final Doc ret = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (con) => EEdit(
+                          gid: group.id,
+                          gname: group.name,
+                          title: doc.title,
+                          content: doc.content,
+                          id: doc.id,
+                        ),
+                      ));
+                      setState(() {
+                          _ditems[index].content = ret.content;
+                          _ditems[index].title = ret.title;
+                      });
+                },
+                child: Card(
+                  // 阴影大小
+                  elevation: 5,
+                  // 圆角
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15.0),
+                  ),
+                  // 外边距
+                  margin: EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+                  child: Padding(
+                    padding: EdgeInsets.all(16.0), // 内边距
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min, // 确保Card包裹内容
+                      // 内容左对齐
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        // 日记标题
+                        ListTile(
+                          title: Text(item.title,
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+
+                        // 日记具体内容
+                        Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Text(
+                            item.content,
+                            style: TextStyle(color: Colors.grey[700]),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
             }),
-        // Expanded(
-        //   // 使用 Expanded 占据剩余空间
-        //   child: Center(
-        //     child: ElevatedButton(
-        //       onPressed: enterDocEditPage,
-        //       child: const Text('来记录心路历程吧！'), // 使用 const
-        //     ),
-        //   ),
-        // ),
-        // const SizedBox(height: 40.0), // 使用 SizedBox 添加 padding
       ),
     );
   }
@@ -174,9 +217,8 @@ class _ListPage extends State<ListPage> {
     final ret = await getDocs(item.id);
 
     setState(() {
-      if (_ditems.isNotEmpty){
-      _ditems.clear();
-
+      if (_ditems.isNotEmpty) {
+        _ditems.clear();
       }
       _ditems = ret;
     });
@@ -189,17 +231,7 @@ class _ListPage extends State<ListPage> {
     Navigator.pop(context); // 关闭 drawer
   }
 
-  enterDocEditPage() async {
-    final Doc ret = await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              EEdit(gid: _gitems[gidx].id, gname: _gitems[gidx].name,title: "",),
-        ));
-    setState(() {
-      _ditems.add(ret);
-    });
-  }
+
 
   editLine(Group item) {
     setState(() {

@@ -7,10 +7,17 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
+type ReponseDocPut struct {
+	Doc Doc `json:"data"`
+	T   Time
+}
 type Doc struct {
 	Title   string `json:"title" bson:"title"`
 	Content string `json:"content" bson:"content"`
 	ID      string `json:"id" bson:"did"`
+}
+type Time struct {
+	UpTime string `json:"uptime"`
 }
 
 func DocsGet(gid string) ([]Doc, error) {
@@ -63,4 +70,29 @@ func DocPost(gid, content, title string) (string, error) {
 		return "", err
 	}
 	return did, err
+}
+func DocPut(gid string, data *ReponseDocPut) error {
+
+	goid, err := GetGroupObjIDFromgID(gid)
+	if err != nil {
+		return err
+	}
+	filter := bson.M{
+		"_goid": goid,
+		"did":   data.Doc.ID,
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"content": data.Doc.Content,
+			"title":   data.Doc.Title,
+		},
+	}
+
+	_, err = db.Collection("doc").UpdateOne(
+		context.TODO(),
+		filter,
+		update,
+		nil,
+	)
+	return err
 }

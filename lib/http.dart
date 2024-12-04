@@ -101,7 +101,15 @@ class RequestPostDoc {
 
   Map<String, dynamic> toJson() => {'content': content, 'title': title};
 }
+class RequestPutDoc {
+  String content;
+  String title;
+  String id;
 
+  RequestPutDoc({required this.content, required this.title,required this.id});
+
+  Map<String, dynamic> toJson() => {'content': content, 'title': title,'id':id};
+}
 class Doc {
   String title;
   String content;
@@ -126,7 +134,18 @@ class ReponseGetDocs {
   Doc data;
   ReponseGetDocs({required this.data});
 }
+class ResponsePutDoc extends Basic {
+  String id;
 
+  ResponsePutDoc({required super.err, required super.msg, required this.id});
+  factory ResponsePutDoc.fromJson(Map<String, dynamic> json) {
+    return ResponsePutDoc(
+      err: json['err'] as int,
+      msg: json['msg'] as String,
+      id: json['data']['id'] as String,
+    );
+  }
+}
 class Http {
   final String? content;
 
@@ -388,4 +407,37 @@ class Http {
 
     return res;
   }
+
+  Future<ResponsePutDoc> putDoc(RequestPutDoc req) async {
+    print("更新文档");
+    if (tid == "") {
+      throw ArgumentError('缺少tid');
+    }
+    const String path = "/doc";
+
+    final Map<String, String> param = {
+      'uid': uid,
+      'gid': gid!,
+    };
+    final Map<String, dynamic> data = {
+      'data': req.toJson(),
+      "uptime": DateTime.now().microsecondsSinceEpoch.toString(),
+    };
+    final Map<String, String> headers = {
+      "Content-Type": "application/json",
+    };
+    print(data);
+    final url = Uri.http(baseurl, path, param);
+    final response =
+        await http.put(url, body: jsonEncode(data), headers: headers);
+
+    if (response.statusCode != 200) {
+      throw ArgumentError('请求错误');
+    }
+
+    final res = ResponsePutDoc.fromJson(await jsonDecode(response.body));
+
+    return res;
+  }
+
 }

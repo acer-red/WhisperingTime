@@ -5,13 +5,15 @@ import 'package:whispering_time/http.dart';
 class EEdit extends StatefulWidget {
   final String gid;
   final String? gname;
-  final String? docid;
+  final String? id;
   String title;
+  String content;
   EEdit({
     required this.gid,
-    this.docid,
+    this.id,
     this.gname,
     required this.title,
+    required this.content,
   });
   @override
   State<EEdit> createState() => _EEdit();
@@ -19,6 +21,13 @@ class EEdit extends StatefulWidget {
 
 class _EEdit extends State<EEdit> with RouteAware {
   TextEditingController edit = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    edit = TextEditingController(text: widget.content);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -46,7 +55,14 @@ class _EEdit extends State<EEdit> with RouteAware {
   }
 
   void backPage() async {
-    print("echo");
+    if (widget.content == edit.text) {
+      print("无变化");
+      if (mounted) {
+        Navigator.of(context).pop(Doc(title: widget.title,content: widget.content,id:widget.id!));
+      }
+
+      return;
+    }
     final ret = await upload();
     if (mounted) {
       Navigator.of(context).pop(ret);
@@ -54,7 +70,14 @@ class _EEdit extends State<EEdit> with RouteAware {
   }
 
   Future<Doc> upload() async {
-    final ret = await Http(gid: widget.gid).postDoc(RequestPostDoc(content: edit.text,title: widget.title));
-    return Doc(content: edit.text,id: ret.id,title: widget.title);
+    if (widget.id == "") {
+      final ret = await Http(gid: widget.gid)
+          .postDoc(RequestPostDoc(content: edit.text, title: widget.title));
+      return Doc(content: edit.text, id: ret.id, title: widget.title);
+    } else {
+      final ret = await Http(gid: widget.gid).putDoc(RequestPutDoc(
+          content: edit.text, title: widget.title, id: widget.id!));
+      return Doc(content: edit.text, id: ret.id, title: widget.title);
+    }
   }
 }
