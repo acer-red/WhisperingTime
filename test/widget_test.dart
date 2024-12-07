@@ -14,17 +14,18 @@ void main() {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const MyApp() as Widget);
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // 添加大量列表项
+    final addButtonFinder = find.byKey(Key('addtheme')); // 假设添加按钮有一个 Key
+    for (int i = 0; i < 10000; i++) {
+      await tester.tap(addButtonFinder);
+      await tester.pumpAndSettle(); // 等待界面渲染完成
+    }
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    // 检查列表是否正确渲染
+    expect(find.byType(ListTile), findsNWidgets(10000));
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // 使用 DevTools 监控 CPU 和内存使用情况
+    // ...
   });
 }
 

@@ -113,6 +113,10 @@ class _ThemePageState extends State<ThemePage> {
     setState(() {
       _items.add(Item(isSubmitted: false));
     });
+    // 用于测试
+    // for (int i = 0; i <= 10; i++) {
+    //   submitNoID(Item(isSubmitted: false, themename: i.toString()));
+    // }
   }
 
   void submit(Item item) {

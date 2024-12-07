@@ -64,14 +64,14 @@ class _GroupPage extends State<GroupPage> {
                             children: [
                               SlidableAction(
                                 onPressed: (context) =>
-                                    editLine(_gitems[index]),
+                                    editLineGroup(_gitems[index]),
                                 backgroundColor: Colors.transparent,
                                 foregroundColor: Colors.blue,
                                 icon: Icons.edit,
                                 label: '编辑',
                               ),
                               SlidableAction(
-                                onPressed: (context) => removeLine(index),
+                                onPressed: (context) => deleteLineGroup(index),
                                 backgroundColor: Colors.transparent,
                                 foregroundColor: Colors.red,
                                 icon: Icons.delete,
@@ -81,14 +81,7 @@ class _GroupPage extends State<GroupPage> {
                           ),
                           child: ListTile(
                             title: Text(item.name),
-                            onTap: () {
-                              Navigator.pop(context); // 关闭 drawer
-                              setDocs(item);
-                              setState(() {
-                                pageTitleName =
-                                    "${widget.themename}-${item.name}";
-                              });
-                            },
+                            onTap: () => clickGroupTitle(index),
                           ))
                       // 显示标题的编辑框
                       : Row(children: [
@@ -103,12 +96,11 @@ class _GroupPage extends State<GroupPage> {
                           ),
                           IconButton(
                             icon: Icon(Icons.check),
-                            onPressed: () => submitItem(_gitems[index]),
+                            onPressed: () => submitEditGroup(_gitems[index]),
                           ),
                           IconButton(
                             icon: Icon(Icons.remove_circle_rounded),
-                            onPressed: () => removeItem(index),
-                            // onPressed: () => remove(_gitems[index])),
+                            onPressed: () => cancelEditGroup(index),
                           )
                         ]));
             },
@@ -134,7 +126,7 @@ class _GroupPage extends State<GroupPage> {
               final item = _ditems[index];
               return InkWell(
                 // 点击 卡片
-                onTap: () => clickCard(gidx, index),
+                onTap: () => clickCard(index),
                 child: Card(
                   // 阴影大小
                   elevation: 5,
@@ -173,18 +165,35 @@ class _GroupPage extends State<GroupPage> {
             }),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: enterNewEdit,
+        onPressed: clickNewEdit,
         child: const Icon(Icons.add),
       ),
     );
   }
 
-  enterNewEdit() async {
+  Future<List<Doc>> getDocs(String gid) async {
+    print("获取分组的日志列表");
+    return await Http(gid: gid).getDocs();
+  }
+
+  setDocs(int i) async {
+    final ret = await getDocs(_gitems[i].id);
+
+    setState(() {
+      if (_ditems.isNotEmpty) {
+        _ditems.clear();
+      }
+      _ditems = ret;
+    });
+  }
+
+  clickNewEdit() async {
+    Group item = _gitems[gidx];
     final LastPageDoc ret = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => DocEditPage(
-          gid: _gitems[gidx].id,
+          gid: item.id,
           id: "",
           title: "",
           content: "",
@@ -198,9 +207,9 @@ class _GroupPage extends State<GroupPage> {
     }
   }
 
-  clickCard(int gidx, int didx) async {
+  clickCard(int index) async {
     Group group = _gitems[gidx];
-    Doc doc = _ditems[didx];
+    Doc doc = _ditems[index];
     final LastPageDoc ret = await Navigator.push(
         context,
         MaterialPageRoute(
@@ -214,10 +223,10 @@ class _GroupPage extends State<GroupPage> {
         ));
     setState(() {
       if (ret.state == LastPage.delete) {
-        _ditems.removeAt(didx);
+        _ditems.removeAt(index);
       } else {
-        _ditems[didx].content = ret.content;
-        _ditems[didx].title = ret.title;
+        _ditems[index].content = ret.content;
+        _ditems[index].title = ret.title;
       }
     });
   }
@@ -237,53 +246,56 @@ class _GroupPage extends State<GroupPage> {
     });
   }
 
-  Future<List<Doc>> getDocs(String gid) async {
-    print("获取分组的日志列表");
-    return await Http(gid: gid).getDocs();
-  }
-
-  setDocs(Group item) async {
-    final ret = await getDocs(item.id);
-
+// 左侧抽屉菜单 - 分组列表 - 点击分组
+  clickGroupTitle(int index) {
     setState(() {
-      if (_ditems.isNotEmpty) {
-        _ditems.clear();
-      }
-      _ditems = ret;
+      gidx = index;
     });
-  }
 
-  clickGroupTitle(Group item) {
-    setState(() {
-      pageTitleName = "${widget.themename}-${item.name}";
-    });
     Navigator.pop(context); // 关闭 drawer
+    setDocs(gidx);
+    setState(() {
+      pageTitleName = "${widget.themename}-${_gitems[gidx].name}";
+    });
   }
 
-  editLine(Group item) {
+  // 左侧抽屉菜单 - 分组列表 - 编辑按钮
+  editLineGroup(Group item) {
     setState(() {
       item.isSubmitted = false;
     });
   }
 
-  removeLine(int index) async {
+  // 左侧抽屉菜单 - 分组列表 - 删除按钮
+  deleteLineGroup(int index) async {
     var onValue = await Http(gid: _gitems[index].id).deleteGroup();
     if (onValue.err == 0) {
       setState(() {
         _gitems.removeAt(index);
       });
     }
+
+    // 如果删除的分组不是当前选择的分组
+    if (gidx != index) {
+      return;
+    }
+    setState(() {
+      pageTitleName = widget.themename;
+      _ditems.clear();
+    });
   }
 
-  submitItem(Group item) async {
+  // 左侧抽屉菜单 - 添加分组 - 提交按钮
+  submitEditGroup(Group item) async {
     if (item.id.isEmpty) {
-      addItem(item);
+      addGroup(item);
     } else {
-      modItem(item);
+      modGroup(item);
     }
   }
 
-  removeItem(int index) async {
+  // 左侧抽屉菜单 - 添加分组 - 取消按钮
+  cancelEditGroup(int index) async {
     if (_gitems[index].id == "") {
       setState(() {
         _gitems.removeAt(index);
@@ -291,7 +303,7 @@ class _GroupPage extends State<GroupPage> {
     }
   }
 
-  addItem(Group item) async {
+  addGroup(Group item) async {
     print("创建分组");
     final inputName = item._textEditingController.text;
     final res = await Http(tid: widget.tid)
@@ -306,7 +318,7 @@ class _GroupPage extends State<GroupPage> {
     });
   }
 
-  modItem(Group item) async {
+  modGroup(Group item) async {
     print("修改分组");
     final inputName = item._textEditingController.text;
     final stateName = item.name;
