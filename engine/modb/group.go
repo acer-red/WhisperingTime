@@ -173,7 +173,7 @@ func GroupDeleteFromGID(gid string) error {
 // 注意 这只会删除一个分组
 func GroupDeleteFromGOID(goid primitive.ObjectID) error {
 	filter := bson.M{
-		"id": goid,
+		"_id": goid,
 	}
 	_, err := db.Collection("group").DeleteOne(context.TODO(), filter, nil)
 	return err
