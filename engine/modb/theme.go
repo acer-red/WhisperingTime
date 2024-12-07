@@ -128,13 +128,34 @@ func UpdateTheme(uid string, name string, tid string) error {
 	return err
 }
 func DeleteTheme(uid, tid string) error {
-	uoid, err := UserGetObjectUID(uid)
+
+	// 根据uid返回toid
+	_, toid, err := GetThemeObjID(uid)
 	if err != nil {
 		return err
 	}
+
+	// 根据toid返回所有goids
+	goids, err := GetGOIDsFromTOID(toid)
+	if err != nil {
+		return err
+	}
+
+	for _, goid := range goids {
+
+		// 根据goid删除所有文档
+		if err := DocDeleteFromGOID(goid); err != nil {
+			return err
+		}
+
+		// 根据goid删除分组
+		if err := GroupDeleteFromGOID(goid); err != nil {
+			return err
+		}
+	}
+
 	filter := bson.M{
-		"_uid": uoid,
-		"tid":  tid,
+		"_id": toid,
 	}
 	_, err = db.Collection("theme").DeleteOne(context.TODO(),
 		filter,

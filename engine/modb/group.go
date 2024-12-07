@@ -13,7 +13,7 @@ type Group struct {
 	ID   string `json:"id" bson:"gid"`
 }
 
-func GetGroupObjIDFromgID(gid string) (primitive.ObjectID, error) {
+func GetGOIDFromGID(gid string) (primitive.ObjectID, error) {
 
 	identified := bson.D{{Key: "gid", Value: gid}}
 	var result bson.M
@@ -28,6 +28,27 @@ func GetGroupObjIDFromgID(gid string) (primitive.ObjectID, error) {
 	}
 
 	return oid, nil
+}
+func GetGOIDsFromTOID(toid primitive.ObjectID) ([]primitive.ObjectID, error) {
+
+	ctx := context.TODO()
+	filter := bson.D{{Key: "_toid", Value: toid}}
+
+	cursor, err := db.Collection("group").Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	var results []primitive.ObjectID
+	for cursor.Next(ctx) {
+		var b bson.M
+		if err := cursor.Decode(&b); err != nil {
+			return nil, err
+		}
+		result, _ := b["_id"].(primitive.ObjectID)
+		results = append(results, result)
+	}
+
+	return results, nil
 }
 func GroupGet(tid string) ([]Group, error) {
 	var results []Group
@@ -126,25 +147,48 @@ func CreateGroupDefault(tid string) (string, error) {
 	}
 	return gid, nil
 }
-func DeleteGroupAll(tid string) error {
-	toid, err := GetThemeObjIDFromTID(tid)
+
+// 说明 根据gid删除分组
+// 注意 这将删除一个分组和所有日志
+func GroupDeleteFromGID(gid string) error {
+	goid, err := GetGOIDFromGID(gid)
 	if err != nil {
 		return err
 	}
+
+	if err := DocDeleteFromGOID(goid); err != nil {
+		return err
+	}
+
+	filter := bson.M{
+		"_id": goid,
+	}
+
+	_, err = db.Collection("group").DeleteOne(context.TODO(), filter, nil)
+
+	return err
+}
+
+// 说明 根据goid删除分组
+// 注意 这只会删除一个分组
+func GroupDeleteFromGOID(goid primitive.ObjectID) error {
+	filter := bson.M{
+		"id": goid,
+	}
+	_, err := db.Collection("group").DeleteOne(context.TODO(), filter, nil)
+	return err
+}
+
+// 说明 根据theme的objid 删除group
+// 注意 这将删除所有group
+func GroupDeleteFromTOID(toid primitive.ObjectID) error {
 	data := bson.D{
 		{Key: "_toid", Value: toid},
 	}
 
-	_, err = db.Collection("group").DeleteMany(context.TODO(), data)
-	if err != nil {
+	if _, err := db.Collection("group").DeleteMany(context.TODO(), data); err != nil {
 		return err
 	}
-	return err
-}
-func GroupDelete(gid string) error {
-	filter := bson.M{
-		"gid": gid,
-	}
-	_, err := db.Collection("group").DeleteOne(context.TODO(), filter, nil)
-	return err
+
+	return nil
 }

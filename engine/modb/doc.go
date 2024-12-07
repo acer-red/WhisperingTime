@@ -5,6 +5,7 @@ import (
 	"sys"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type ReponseDocPut struct {
@@ -22,7 +23,7 @@ type Time struct {
 
 func DocsGet(gid string) ([]Doc, error) {
 	var results []Doc
-	goid, err := GetGroupObjIDFromgID(gid)
+	goid, err := GetGOIDFromGID(gid)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +53,7 @@ func DocsGet(gid string) ([]Doc, error) {
 }
 func DocPost(gid, content, title string) (string, error) {
 
-	goid, err := GetGroupObjIDFromgID(gid)
+	goid, err := GetGOIDFromGID(gid)
 	if err != nil {
 		return "", err
 	}
@@ -73,7 +74,7 @@ func DocPost(gid, content, title string) (string, error) {
 }
 func DocPut(gid string, data *ReponseDocPut) error {
 
-	goid, err := GetGroupObjIDFromgID(gid)
+	goid, err := GetGOIDFromGID(gid)
 	if err != nil {
 		return err
 	}
@@ -97,7 +98,7 @@ func DocPut(gid string, data *ReponseDocPut) error {
 	return err
 }
 func DocDelete(gid, did string) error {
-	goid, err := GetGroupObjIDFromgID(gid)
+	goid, err := GetGOIDFromGID(gid)
 	if err != nil {
 		return err
 	}
@@ -109,5 +110,16 @@ func DocDelete(gid, did string) error {
 		filter,
 		nil,
 	)
+	return err
+}
+func DocDeleteFromGOID(goid primitive.ObjectID) error {
+	data := bson.D{
+		{Key: "_goid", Value: goid},
+	}
+
+	_, err := db.Collection("doc").DeleteMany(context.TODO(), data)
+	if err != nil {
+		return err
+	}
 	return err
 }

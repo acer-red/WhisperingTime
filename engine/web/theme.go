@@ -87,24 +87,19 @@ func ThemeDelete(g *gin.Context) {
 
 	if tid == "" {
 		log.Errorf(mstrNoThemeID)
-		g.AbortWithStatusJSON(http.StatusInternalServerError, msgNoParam().setMSG(mstrNoThemeID))
+		badRequest(g)
 		return
 	}
 
 	uid := g.Query("uid")
 
-	if err := modb.DeleteGroupAll(tid); err != nil {
-		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
-		return
-	}
-	log.Infof("删除分组 uid:%s tid:%s", uid, tid)
-
 	err := modb.DeleteTheme(uid, tid)
 	if err != nil {
-		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
+		log.Error(err)
+		internalServerError(g)
 		return
 	}
 	log.Infof("删除主题 uid:%s tid:%s", uid, tid)
 
-	g.JSON(http.StatusOK, msgOK())
+	ok(g)
 }

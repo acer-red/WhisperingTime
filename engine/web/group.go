@@ -78,7 +78,7 @@ func GroupDelete(g *gin.Context) {
 	gid := g.Query("gid")
 	log.Infof("获取分组 gid=%s", gid)
 
-	err := modb.GroupDelete(gid)
+	err := modb.GroupDeleteFromGID(gid)
 	if err != nil {
 		log.Error(err)
 		internalServerError(g)
