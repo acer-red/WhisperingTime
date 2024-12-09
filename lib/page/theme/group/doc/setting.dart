@@ -16,6 +16,10 @@ class _Setting extends State<Setting> {
     return Scaffold(
       appBar: AppBar(
         title: Text("设置"),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios),
+          onPressed: () => backPage(),
+        ),
       ),
       body: Center(
         child: Column(
@@ -40,8 +44,13 @@ class _Setting extends State<Setting> {
     );
   }
 
+  backPage() {
+    return Navigator.of(context).pop(LastPage.ok);
+  }
+
   deleteDoc() async {
-    final ret = await Http().deleteDoc(RequestDeleteDoc(gid:widget.gid, did: widget.did));
+    final ret = await Http()
+        .deleteDoc(RequestDeleteDoc(gid: widget.gid, did: widget.did));
     if (ret.err != 0) {
       return;
     }

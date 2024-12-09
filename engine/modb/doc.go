@@ -8,6 +8,15 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type RequestDocPost struct {
+	Data struct {
+		Content string `json:"content"`
+		Title   string `json:"title"`
+		Level   int    `json:"level"`
+	} `json:"data"`
+	UpTime string `json:"uptime"`
+}
+
 type ReponseDocPut struct {
 	Doc Doc `json:"data"`
 	T   Time
@@ -15,6 +24,7 @@ type ReponseDocPut struct {
 type Doc struct {
 	Title   string `json:"title" bson:"title"`
 	Content string `json:"content" bson:"content"`
+	Level   int    `json:"level" bson:"level"`
 	ID      string `json:"id" bson:"did"`
 }
 type Time struct {
@@ -51,7 +61,7 @@ func DocsGet(gid string) ([]Doc, error) {
 
 	return results, nil
 }
-func DocPost(gid, content, title string) (string, error) {
+func DocPost(gid string, req *RequestDocPost) (string, error) {
 
 	goid, err := GetGOIDFromGID(gid)
 	if err != nil {
@@ -62,17 +72,19 @@ func DocPost(gid, content, title string) (string, error) {
 	data := bson.D{
 		{Key: "_goid", Value: goid},
 		{Key: "did", Value: did},
-		{Key: "content", Value: content},
-		{Key: "title", Value: title},
+		{Key: "content", Value: (*req).Data.Content},
+		{Key: "title", Value: (*req).Data.Title},
+		{Key: "level", Value: (*req).Data.Level},
 	}
 
 	_, err = db.Collection("doc").InsertOne(context.TODO(), data)
 	if err != nil {
 		return "", err
 	}
+
 	return did, err
 }
-func DocPut(gid string, data *ReponseDocPut) error {
+func DocPut(gid string, req *ReponseDocPut) error {
 
 	goid, err := GetGOIDFromGID(gid)
 	if err != nil {
@@ -80,12 +92,13 @@ func DocPut(gid string, data *ReponseDocPut) error {
 	}
 	filter := bson.M{
 		"_goid": goid,
-		"did":   data.Doc.ID,
+		"did":   (*req).Doc.ID,
 	}
 	update := bson.M{
 		"$set": bson.M{
-			"content": data.Doc.Content,
-			"title":   data.Doc.Title,
+			"content": (*req).Doc.Content,
+			"title":   (*req).Doc.Title,
+			"level":   (*req).Doc.Level,
 		},
 	}
 

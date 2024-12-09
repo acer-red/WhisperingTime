@@ -22,28 +22,20 @@ func DocsGet(g *gin.Context) {
 }
 func DocPost(g *gin.Context) {
 
-	type request struct {
-		Data struct {
-			Content string `json:"content"`
-			Title   string `json:"title"`
-		} `json:"data"`
-		UpTime string `json:"uptime"`
-	}
-
 	type response struct {
 		ID string `json:"id"`
 	}
 
 	gid := g.Query("gid")
 
-	var req request
+	var req modb.RequestDocPost
 
 	if err := g.ShouldBindBodyWithJSON(&req); err != nil {
 		badRequest(g)
 		return
 	}
 
-	did, err := modb.DocPost(gid, req.Data.Content, req.Data.Title)
+	did, err := modb.DocPost(gid, &req)
 	if err != nil {
 		log.Error(err)
 		internalServerError(g)

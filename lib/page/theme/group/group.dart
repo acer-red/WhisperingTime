@@ -26,8 +26,16 @@ class GroupPage extends StatefulWidget {
 }
 
 class _GroupPage extends State<GroupPage> {
-  List<Group> _gitems = [];
-  List<Doc> _ditems = [];
+  List<Group> _gitems = <Group>[];
+  List<Doc> _ditems = <Doc>[];
+  List<bool> _isSelected = [
+    true,
+    false,
+    false,
+    false,
+    false
+  ]; // 两个按钮，初始状态第一个被选中
+
   int gidx = 0;
   String? pageTitleName;
 
@@ -42,7 +50,23 @@ class _GroupPage extends State<GroupPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       // 页面
-      appBar: AppBar(title: Text(pageTitleName!)),
+      appBar: AppBar(
+        title: Text(pageTitleName!),
+        // leading: IconButton(
+        //   icon: Icon(Icons.menu),
+        //   onPressed: () {
+        //     Scaffold.of(context).openDrawer();
+        //   },
+        // ),
+        // actions: [
+        //   IconButton(
+        //     icon: Icon(Icons.settings),
+        //     onPressed: () {
+        //       Scaffold.of(context).openEndDrawer();
+        //     },
+        //   ),
+        // ],
+      ),
 
       // 左侧分组列表
       drawer: Drawer(
@@ -109,60 +133,97 @@ class _GroupPage extends State<GroupPage> {
             setState(() {
               _gitems.add(Group(name: "", id: "", isSubmitted: false));
             });
-          }, onSearchPressed: () {
-            for (Group l in _gitems) {
-              print(l.name);
-            }
           }),
         ]),
       ),
 
+      // 右侧设置
+      // endDrawer: Drawer(
+      //   child: ListView(
+      //     children: [
+      //       ListTile(
+      //         title: Text("右侧抽屉项 1"),
+      //       ),
+      //       ListTile(
+      //         title: Text("右侧抽屉项 2"),
+      //       ),
+      //     ],
+      //   ),
+      // ),
+
       // 主体内容
       body: SafeArea(
-        // 使用 SafeArea 避免内容被遮挡
-        child: ListView.builder(
-            itemCount: _ditems.length,
-            itemBuilder: (context, index) {
-              final item = _ditems[index];
-              return InkWell(
-                // 点击 卡片
-                onTap: () => clickCard(index),
-                child: Card(
-                  // 阴影大小
-                  elevation: 5,
-                  // 圆角
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15.0),
-                  ),
-                  // 外边距
-                  margin: EdgeInsets.symmetric(horizontal: 25, vertical: 10),
-                  child: Padding(
-                    padding: EdgeInsets.all(16.0), // 内边距
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min, // 确保Card包裹内容
-                      // 内容左对齐
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        // 日记标题
-                        ListTile(
-                          title: Text(item.title,
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-
-                        // 日记具体内容
-                        Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Text(
-                            item.content,
-                            style: TextStyle(color: Colors.grey[700]),
+        child: Center(
+          child: Column(
+            children: [
+              // 分级
+              ToggleButtons(
+                onPressed: (int index) {
+                  setState(() {
+                    for (int buttonIndex = 0;
+                        buttonIndex < _isSelected.length;
+                        buttonIndex++) {
+                      _isSelected[buttonIndex] =
+                          buttonIndex == index ? true : false;
+                    }
+                  });
+                  setDocs();
+                },
+                isSelected: _isSelected,
+                children: List.generate(
+                    Level.l.length, (index) => Level.levelWidget(index)),
+              ),
+              const SizedBox(height: 20),
+              // 日记主题
+              Expanded(
+                child: ListView.builder(
+                    itemCount: _ditems.length,
+                    itemBuilder: (context, index) {
+                      final item = _ditems[index];
+                      return InkWell(
+                        // 点击 卡片
+                        onTap: () => clickCard(index),
+                        child: Card(
+                          // 阴影大小
+                          elevation: 5,
+                          // 圆角
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15.0),
+                          ),
+                          // 外边距
+                          margin: EdgeInsets.symmetric(
+                              horizontal: 25, vertical: 10),
+                          child: Padding(
+                            padding: EdgeInsets.all(16.0), // 内边距
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min, // 确保Card包裹内容
+                              // 内容左对齐
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                // 日记标题
+                                ListTile(
+                                  title: Text(item.title,
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold)),
+                                ),
+                                // 日记具体内容
+                                Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Text(
+                                    item.content,
+                                    style: TextStyle(color: Colors.grey[700]),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }),
+                      );
+                    }),
+              ),
+            ],
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: clickNewEdit,
@@ -176,15 +237,44 @@ class _GroupPage extends State<GroupPage> {
     return await Http(gid: gid).getDocs();
   }
 
-  setDocs(int i) async {
-    final ret = await getDocs(_gitems[i].id);
-
+  setDocs() async {
+    final ret = await getDocs(_gitems[gidx].id);
+    final curLevel = getSelectLevel();
     setState(() {
       if (_ditems.isNotEmpty) {
         _ditems.clear();
       }
-      _ditems = ret;
+      if (isNoSelectLevel()) {
+        print("没选择");
+        _ditems = ret;
+        return;
+      }
+      print("当前选择$curLevel");
+
+      for (Doc doc in ret) {
+        if (doc.level == curLevel) {
+          _ditems.add(doc);
+        }
+      }
     });
+  }
+
+  bool isNoSelectLevel() {
+    for (bool one in _isSelected) {
+      if (one) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  int getSelectLevel() {
+    for (int buttonIndex = 0; buttonIndex < _isSelected.length; buttonIndex++) {
+      if (_isSelected[buttonIndex]) {
+        return buttonIndex;
+      }
+    }
+    return 0;
   }
 
   clickNewEdit() async {
@@ -197,13 +287,25 @@ class _GroupPage extends State<GroupPage> {
           id: "",
           title: "",
           content: "",
+          level: getSelectLevel(),
         ),
       ),
     );
-    if (ret.state == LastPage.create) {
-      setState(() {
-        _ditems.add(Doc(title: ret.title, content: ret.content, id: ret.id));
-      });
+
+    switch (ret.state) {
+      case LastPage.create:
+        setState(() {
+          _ditems.add(Doc(
+              title: ret.title,
+              content: ret.content,
+              level: ret.level,
+              id: ret.id));
+        });
+        break;
+      case LastPage.nocreate:
+        return;
+      default:
+        return;
     }
   }
 
@@ -219,6 +321,7 @@ class _GroupPage extends State<GroupPage> {
             title: doc.title,
             content: doc.content,
             id: doc.id,
+            level: doc.level,
           ),
         ));
     setState(() {
@@ -250,13 +353,11 @@ class _GroupPage extends State<GroupPage> {
   clickGroupTitle(int index) {
     setState(() {
       gidx = index;
+      pageTitleName = "${widget.themename}-${_gitems[gidx].name}";
     });
 
     Navigator.pop(context); // 关闭 drawer
-    setDocs(gidx);
-    setState(() {
-      pageTitleName = "${widget.themename}-${_gitems[gidx].name}";
-    });
+    setDocs();
   }
 
   // 左侧抽屉菜单 - 分组列表 - 编辑按钮
@@ -345,12 +446,10 @@ class _GroupPage extends State<GroupPage> {
 // 提取成独立的 Widget
 class BottomActionButtons extends StatelessWidget {
   final VoidCallback onAddPressed;
-  final VoidCallback onSearchPressed;
 
   const BottomActionButtons({
     Key? key,
     required this.onAddPressed,
-    required this.onSearchPressed,
   }) : super(key: key);
 
   @override
@@ -361,10 +460,6 @@ class BottomActionButtons extends StatelessWidget {
         IconButton(
           icon: const Icon(Icons.add), // 使用 const
           onPressed: onAddPressed,
-        ),
-        IconButton(
-          icon: const Icon(Icons.search), // 使用 const
-          onPressed: onSearchPressed,
         ),
       ],
     );

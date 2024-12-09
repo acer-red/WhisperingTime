@@ -3,12 +3,15 @@ import 'package:whispering_time/http.dart';
 import 'package:whispering_time/env.dart';
 import './setting.dart';
 
+const String defaultTitle = "未命名的标题";
+
 class LastPageDoc extends Doc {
   LastPage state;
   LastPageDoc(
       {required this.state,
       required super.title,
       required super.content,
+      required super.level,
       required super.id});
 }
 
@@ -19,13 +22,14 @@ class DocEditPage extends StatefulWidget {
   final String? id;
   final String title;
   final String content;
-  DocEditPage({
-    required this.gid,
-    this.id,
-    this.gname,
-    required this.title,
-    required this.content,
-  });
+  final int level;
+  DocEditPage(
+      {required this.gid,
+      this.id,
+      this.gname,
+      required this.title,
+      required this.content,
+      required this.level});
   @override
   State<DocEditPage> createState() => _DocEditPage();
 }
@@ -33,15 +37,18 @@ class DocEditPage extends StatefulWidget {
 class _DocEditPage extends State<DocEditPage> with RouteAware {
   TextEditingController edit = TextEditingController();
   TextEditingController titleEdit = TextEditingController();
-
+  bool chooseLeveled = false;
+  bool _isSelected = true;
   bool isTitleSubmited = true;
+  int levelSelect = 0;
   @override
   void initState() {
     super.initState();
     edit = TextEditingController(text: widget.content);
     widget.title.isEmpty
-        ? titleEdit.text = "未命名的标题"
+        ? titleEdit.text = defaultTitle
         : titleEdit.text = widget.title;
+    levelSelect = widget.level;
   }
 
   @override
@@ -54,6 +61,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
             icon: Icon(Icons.arrow_back_ios),
             onPressed: () => backPage(),
           ),
+
           // 标题
           title: Center(
             child: Row(
@@ -99,6 +107,8 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
               ],
             ),
           ),
+
+          // 标题右侧按钮
           actions: <Widget>[
             IconButton(
               icon: Icon(Icons.settings),
@@ -106,22 +116,54 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
             )
           ],
         ),
-        body: SizedBox.expand(
-            child: Padding(
-          padding: const EdgeInsets.only(left: 10.0, right: 10.0),
-          child: TextField(
-            controller: edit,
-            autofocus: true,
-            keyboardType: TextInputType.multiline,
-            maxLines: null,
-            decoration: InputDecoration(
-              hintText: '或简单，或详尽～',
-              border: InputBorder.none,
+
+        // 主体
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.center, // 使 Text 组件左右居中
+          children: [
+            _isSelected
+                ? TextButton(
+                    child: Text(Level().string(levelSelect)),
+                    onPressed: () => {
+                      setState(() {
+                        _isSelected = false;
+                      })
+                    },
+                  )
+                : ToggleButtons(
+                    onPressed: (int index) {
+                      setState(() {
+                        levelSelect = index;
+                        _isSelected = true;
+                      });
+                    },
+                    isSelected: [true, false, false, false, false],
+                    children: List.generate(
+                        Level.l.length, (index) => Level.levelWidget(index)),
+                  ),
+            ConstrainedBox(
+              constraints: BoxConstraints.expand(height: 300),
+              child: SizedBox.expand(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 10.0, right: 10.0),
+                  child: TextField(
+                    controller: edit,
+                    autofocus: true,
+                    keyboardType: TextInputType.multiline,
+                    maxLines: null,
+                    decoration: InputDecoration(
+                      hintText: '或简单，或详尽～',
+                      border: InputBorder.none,
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ),
-        )));
+          ],
+        ));
   }
 
+  changeLevel() {}
   void backPage() async {
     if (widget.content == edit.text && widget.title == titleEdit.text) {
       print("无变化");
@@ -131,13 +173,15 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
             state: LastPage.nochange,
             title: titleEdit.text,
             content: widget.content,
+            level: widget.level,
             id: widget.id!));
       }
       return;
     }
     if (widget.id == "") {
       if (mounted) {
-        Navigator.of(context).pop(createDoc());
+        Navigator.of(context)
+            .pop(edit.text.isEmpty ? nocreateDoc() : createDoc());
       }
     } else {
       if (mounted) {
@@ -154,31 +198,48 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     switch (ret) {
       case LastPage.delete:
         print("返回并删除文档");
-        Navigator.of(context)
-            .pop(LastPageDoc(state: ret, title: "", content: "", id: ""));
+        Navigator.of(context).pop(
+            LastPageDoc(state: ret, title: "", content: "", level: 0, id: ""));
         break;
       default:
         break;
     }
   }
 
-  Future<LastPageDoc> createDoc() async {
-    final ret = await Http(gid: widget.gid)
-        .postDoc(RequestPostDoc(content: edit.text, title: titleEdit.text));
+  LastPageDoc nocreateDoc() {
     return LastPageDoc(
-        state: LastPage.create,
-        content: edit.text,
-        id: ret.id,
-        title: titleEdit.text);
+      state: LastPage.nocreate,
+      content: "",
+      level: 0,
+      title: "",
+      id: "",
+    );
+  }
+
+  Future<LastPageDoc> createDoc() async {
+    final realTitle = titleEdit.text == defaultTitle ? "" : titleEdit.text;
+    final ret = await Http(gid: widget.gid).postDoc(RequestPostDoc(
+        content: edit.text, title: realTitle, level: levelSelect));
+    return LastPageDoc(
+      state: LastPage.create,
+      content: edit.text,
+      id: ret.id,
+      title: realTitle,
+      level: levelSelect,
+    );
   }
 
   Future<LastPageDoc> updateDoc() async {
+    final realTitle = titleEdit.text == defaultTitle ? "" : titleEdit.text;
+
     final ret = await Http(gid: widget.gid).putDoc(
-        RequestPutDoc(content: edit.text, title: titleEdit.text, id: widget.id!));
+        RequestPutDoc(content: edit.text, title: realTitle, id: widget.id!));
     return LastPageDoc(
-        state: LastPage.change,
-        content: edit.text,
-        id: ret.id,
-        title: titleEdit.text);
+      state: LastPage.change,
+      content: edit.text,
+      id: ret.id,
+      title: realTitle,
+      level:levelSelect,
+    );
   }
 }

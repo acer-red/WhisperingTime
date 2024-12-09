@@ -94,12 +94,12 @@ class GroupListData {
 }
 
 class RequestPostDoc {
-  String content;
   String title;
+  String content;
+  int level;
+  RequestPostDoc({required this.content, required this.title , required this.level});
 
-  RequestPostDoc({required this.content, required this.title});
-
-  Map<String, dynamic> toJson() => {'content': content, 'title': title};
+  Map<String, dynamic> toJson() => {'content': content, 'title': title,'level':level};
 }
 class RequestPutDoc {
   String content;
@@ -110,13 +110,16 @@ class RequestPutDoc {
 
   Map<String, dynamic> toJson() => {'content': content, 'title': title,'id':id};
 }
+
 class Doc {
   String title;
   String content;
+  int level;
   String id;
   Doc({
     required this.title,
     required this.content,
+    required this.level,
     required this.id,
   });
 
@@ -124,6 +127,7 @@ class Doc {
     return Doc(
       title: json['title'] as String,
       content: json['content'] as String,
+      level: json['level'] as int,
       id: json['id'] as String,
     );
   }
@@ -136,7 +140,6 @@ class Doc {
 
 class ResponsePutDoc extends Basic {
   String id;
-
   ResponsePutDoc({required super.err, required super.msg, required this.id});
   factory ResponsePutDoc.fromJson(Map<String, dynamic> json) {
     return ResponsePutDoc(
@@ -391,7 +394,7 @@ class Http {
     return dataList.map((item) => Doc.fromJson(item)).toList();
   }
 
-  Future<ResponsePutGroup> postDoc(RequestPostDoc req) async {
+  Future<ResponsePutDoc> postDoc(RequestPostDoc req) async {
     print("创建日记");
     if (gid == "") {
       throw ArgumentError('缺少gid');
@@ -418,7 +421,7 @@ class Http {
       throw ArgumentError('请求错误');
     }
 
-    final res = ResponsePutGroup.fromJson(await jsonDecode(response.body));
+    final res = ResponsePutDoc.fromJson(await jsonDecode(response.body));
 
     return res;
   }
