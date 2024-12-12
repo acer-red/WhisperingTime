@@ -23,6 +23,8 @@ class MyApp extends StatelessWidget {
       create: (context) => MyAppState(),
       child: MaterialApp(
         title: '枫迹',
+        // 取消右上角的debug标识
+        debugShowCheckedModeBanner: false, 
         theme: ThemeData(
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(

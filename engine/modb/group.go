@@ -8,6 +8,12 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type RequestGroupPost struct {
+	Data struct {
+		Name string `json:"name"`
+	} `json:"data"`
+	CRTime string `json:"crtime"`
+}
 type Group struct {
 	Name string `json:"name" bson:"name"`
 	ID   string `json:"id" bson:"gid"`
@@ -80,7 +86,7 @@ func GroupGet(tid string) ([]Group, error) {
 
 	return results, nil
 }
-func GroupPost(tid, groupname string) (string, error) {
+func GroupPost(tid string, req *RequestGroupPost) (string, error) {
 	toid, err := GetThemeObjIDFromTID(tid)
 	if err != nil {
 
@@ -89,7 +95,8 @@ func GroupPost(tid, groupname string) (string, error) {
 	gid := sys.CreateUUID()
 	data := bson.D{
 		{Key: "_toid", Value: toid},
-		{Key: "name", Value: groupname},
+		{Key: "name", Value: req.Data.Name},
+		{Key: "crtime", Value: req.CRTime},
 		{Key: "gid", Value: gid},
 	}
 
@@ -126,7 +133,7 @@ func GroupPut(tid, groupname string, id string) error {
 	)
 	return err
 }
-func CreateGroupDefault(tid string) (string, error) {
+func CreateGroupDefault(tid string, crtime string) (string, error) {
 
 	toid, err := GetThemeObjIDFromTID(tid)
 	if err != nil {
@@ -137,6 +144,7 @@ func CreateGroupDefault(tid string) (string, error) {
 		{Key: "_toid", Value: toid},
 		{Key: "name", Value: "默认分组"},
 		{Key: "gid", Value: gid},
+		{Key: "crtime", Value: crtime},
 		{Key: "default", Value: true},
 	}
 

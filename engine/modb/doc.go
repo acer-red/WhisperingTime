@@ -13,22 +13,20 @@ type RequestDocPost struct {
 		Content string `json:"content"`
 		Title   string `json:"title"`
 		Level   int    `json:"level"`
+		CRTime  string `json:"crtime"`
 	} `json:"data"`
-	UpTime string `json:"uptime"`
 }
 
 type ReponseDocPut struct {
 	Doc Doc `json:"data"`
-	T   Time
 }
 type Doc struct {
 	Title   string `json:"title" bson:"title"`
 	Content string `json:"content" bson:"content"`
 	Level   int    `json:"level" bson:"level"`
+	CRTime  string `json:"crtime"`
+	UPTime  string `json:"uptime"`
 	ID      string `json:"id" bson:"did"`
-}
-type Time struct {
-	UpTime string `json:"uptime"`
 }
 
 func DocsGet(gid string) ([]Doc, error) {
@@ -75,6 +73,7 @@ func DocPost(gid string, req *RequestDocPost) (string, error) {
 		{Key: "content", Value: (*req).Data.Content},
 		{Key: "title", Value: (*req).Data.Title},
 		{Key: "level", Value: (*req).Data.Level},
+		{Key: "crtime", Value: (*req).Data.CRTime},
 	}
 
 	_, err = db.Collection("doc").InsertOne(context.TODO(), data)
@@ -94,18 +93,34 @@ func DocPut(gid string, req *ReponseDocPut) error {
 		"_goid": goid,
 		"did":   (*req).Doc.ID,
 	}
-	update := bson.M{
-		"$set": bson.M{
-			"content": (*req).Doc.Content,
-			"title":   (*req).Doc.Title,
-			"level":   (*req).Doc.Level,
-		},
+
+	data := bson.M{}
+	var onlyLevel bool = true
+
+	if (*req).Doc.UPTime != "" {
+		data["uptime"] = (*req).Doc.UPTime
+	}
+
+	if (*req).Doc.Content != "" {
+		data["content"] = (*req).Doc.Content
+		onlyLevel = false
+	}
+
+	if (*req).Doc.Title != "" {
+		data["title"] = (*req).Doc.Title
+		onlyLevel = false
+	}
+
+	if onlyLevel {
+		data["level"] = (*req).Doc.Level
 	}
 
 	_, err = db.Collection("doc").UpdateOne(
 		context.TODO(),
 		filter,
-		update,
+		bson.M{
+			"$set": data,
+		},
 		nil,
 	)
 	return err

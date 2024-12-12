@@ -12,6 +12,8 @@ class LastPageDoc extends Doc {
       required super.title,
       required super.content,
       required super.level,
+      required super.crtimeStr,
+      required super.uptimeStr,
       required super.id});
 }
 
@@ -19,17 +21,23 @@ class LastPageDoc extends Doc {
 class DocEditPage extends StatefulWidget {
   final String gid;
   final String? gname;
-  final String? id;
   final String title;
   final String content;
   final int level;
-  DocEditPage(
-      {required this.gid,
-      this.id,
-      this.gname,
-      required this.title,
-      required this.content,
-      required this.level});
+  final String? id;
+
+  final String crtimeStr;
+  final String uptimeStr;
+  DocEditPage({
+    required this.gid,
+    this.id,
+    this.gname,
+    required this.title,
+    required this.content,
+    required this.level,
+    required this.crtimeStr,
+    required this.uptimeStr,
+  });
   @override
   State<DocEditPage> createState() => _DocEditPage();
 }
@@ -40,7 +48,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   bool chooseLeveled = false;
   bool _isSelected = true;
   bool isTitleSubmited = true;
-  int levelSelect = 0;
+  int currentLevel = 0;
   @override
   void initState() {
     super.initState();
@@ -48,7 +56,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     widget.title.isEmpty
         ? titleEdit.text = defaultTitle
         : titleEdit.text = widget.title;
-    levelSelect = widget.level;
+    currentLevel = widget.level;
   }
 
   @override
@@ -97,9 +105,8 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
                               decoration: InputDecoration(
                                 border: InputBorder.none,
                               ),
-                              onSubmitted: (text) => setState(() =>
-                                  isTitleSubmited =
-                                      !isTitleSubmited), // 或者添加一个"完成"按钮
+                              onSubmitted: (text) =>
+                                  clickNewTitle(text), // 或者添加一个"完成"按钮
                             ),
                           ),
                         ),
@@ -123,7 +130,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
           children: [
             _isSelected
                 ? TextButton(
-                    child: Text(Level().string(levelSelect)),
+                    child: Text(Level().string(widget.level)),
                     onPressed: () => {
                       setState(() {
                         _isSelected = false;
@@ -131,12 +138,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
                     },
                   )
                 : ToggleButtons(
-                    onPressed: (int index) {
-                      setState(() {
-                        levelSelect = index;
-                        _isSelected = true;
-                      });
-                    },
+                    onPressed: (int index) => clickNewLevel(index),
                     isSelected: [true, false, false, false, false],
                     children: List.generate(
                         Level.l.length, (index) => Level.levelWidget(index)),
@@ -163,9 +165,31 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
         ));
   }
 
-  changeLevel() {}
+  clickNewLevel(int index) async {
+    final res = await Http(gid: widget.gid)
+        .putDoc(RequestPutDoc(id: widget.id!, level: index));
+    if (res.isNotOk()) {
+      return;
+    }
+    setState(() {
+      currentLevel = index;
+      _isSelected = true;
+    });
+  }
+
+  clickNewTitle(String newTitle) async {
+    final res = await Http(gid: widget.gid)
+        .putDoc(RequestPutDoc(id: widget.id!, title: newTitle));
+    if (res.isNotOk()) {
+      return;
+    }
+    setState(() => isTitleSubmited = !isTitleSubmited);
+  }
+
   void backPage() async {
-    if (widget.content == edit.text && widget.title == titleEdit.text) {
+    if (widget.content == edit.text &&
+        titleEdit.text == defaultTitle &&
+        widget.level == currentLevel) {
       print("无变化");
 
       if (mounted) {
@@ -174,6 +198,8 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
             title: titleEdit.text,
             content: widget.content,
             level: widget.level,
+            crtimeStr: widget.crtimeStr,
+            uptimeStr: widget.uptimeStr,
             id: widget.id!));
       }
       return;
@@ -198,8 +224,14 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     switch (ret) {
       case LastPage.delete:
         print("返回并删除文档");
-        Navigator.of(context).pop(
-            LastPageDoc(state: ret, title: "", content: "", level: 0, id: ""));
+        Navigator.of(context).pop(LastPageDoc(
+            state: ret,
+            title: "",
+            content: "",
+            level: 0,
+            id: "",
+            crtimeStr: "",
+            uptimeStr: ""));
         break;
       default:
         break;
@@ -212,34 +244,40 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
       content: "",
       level: 0,
       title: "",
+      crtimeStr: "",
+      uptimeStr: "",
       id: "",
     );
   }
 
   Future<LastPageDoc> createDoc() async {
     final realTitle = titleEdit.text == defaultTitle ? "" : titleEdit.text;
-    final ret = await Http(gid: widget.gid).postDoc(RequestPostDoc(
-        content: edit.text, title: realTitle, level: levelSelect));
+    final req = RequestPostDoc(
+        content: edit.text, title: realTitle, level: currentLevel);
+    final ret = await Http(gid: widget.gid).postDoc(req);
     return LastPageDoc(
       state: LastPage.create,
       content: edit.text,
       id: ret.id,
       title: realTitle,
-      level: levelSelect,
+      level: currentLevel,
+      crtimeStr: req.crtime,
+      uptimeStr: "",
     );
   }
 
   Future<LastPageDoc> updateDoc() async {
     final realTitle = titleEdit.text == defaultTitle ? "" : titleEdit.text;
-
-    final ret = await Http(gid: widget.gid).putDoc(
-        RequestPutDoc(content: edit.text, title: realTitle, id: widget.id!));
+    final req = RequestPutDoc(content: edit.text, id: widget.id!);
+    final res = await Http(gid: widget.gid).putDoc(req);
     return LastPageDoc(
       state: LastPage.change,
       content: edit.text,
-      id: ret.id,
+      id: res.id,
       title: realTitle,
-      level:levelSelect,
+      level: currentLevel,
+      crtimeStr: widget.crtimeStr,
+      uptimeStr: req.uptime,
     );
   }
 }

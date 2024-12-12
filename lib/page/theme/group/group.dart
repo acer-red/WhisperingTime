@@ -1,9 +1,12 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:whispering_time/env.dart';
 import 'doc/edit.dart';
 import 'package:whispering_time/http.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
+// import 'package:timelines/timelines.dart';
 class Group {
   String name;
   String id;
@@ -11,6 +14,37 @@ class Group {
   TextEditingController _textEditingController = TextEditingController();
   Group({required this.name, required this.id, required this.isSubmitted})
       : _textEditingController = TextEditingController(text: name);
+}
+
+class LineChartPainter extends CustomPainter {
+  final List<double> data;
+
+  LineChartPainter(this.data);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.blue
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke;
+
+    final path = Path();
+    final xScale = size.width / (data.length - 1);
+    final yScale = size.height / (data.reduce(max) - data.reduce(min));
+
+    path.moveTo(0, size.height - (data[0] - data.reduce(min)) * yScale);
+    for (int i = 1; i < data.length; i++) {
+      path.lineTo(
+          i * xScale, size.height - (data[i] - data.reduce(min)) * yScale);
+    }
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(LineChartPainter oldDelegate) {
+    return oldDelegate.data != data;
+  }
 }
 
 // 组、事件列表页面
@@ -36,9 +70,11 @@ class _GroupPage extends State<GroupPage> {
     false
   ]; // 两个按钮，初始状态第一个被选中
 
+  List<String> viewExplain = ["卡片", "时间轴", "日历"];
   int gidx = 0;
   String? pageTitleName;
-
+  int viewType = 0;
+  int currentLevel = 0;
   @override
   void initState() {
     super.initState();
@@ -58,14 +94,18 @@ class _GroupPage extends State<GroupPage> {
         //     Scaffold.of(context).openDrawer();
         //   },
         // ),
-        // actions: [
-        //   IconButton(
-        //     icon: Icon(Icons.settings),
-        //     onPressed: () {
-        //       Scaffold.of(context).openEndDrawer();
-        //     },
-        //   ),
-        // ],
+        actions: [
+          TextButton(
+              onPressed: () => {
+                    setState(() {
+                      viewType++;
+                      if (viewExplain.length == viewType) {
+                        viewType = 0;
+                      }
+                    })
+                  },
+              child: Text(viewExplain[viewType]))
+        ],
       ),
 
       // 左侧分组列表
@@ -156,75 +196,117 @@ class _GroupPage extends State<GroupPage> {
         child: Center(
           child: Column(
             children: [
-              // 分级
-              ToggleButtons(
-                onPressed: (int index) {
-                  setState(() {
-                    for (int buttonIndex = 0;
-                        buttonIndex < _isSelected.length;
-                        buttonIndex++) {
-                      _isSelected[buttonIndex] =
-                          buttonIndex == index ? true : false;
-                    }
-                  });
-                  setDocs();
-                },
-                isSelected: _isSelected,
-                children: List.generate(
-                    Level.l.length, (index) => Level.levelWidget(index)),
+              // 日记 分级按钮
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: ToggleButtons(
+                  onPressed: (int index) {
+                    setState(() {
+                      currentLevel = index;
+                      for (int buttonIndex = 0;
+                          buttonIndex < _isSelected.length;
+                          buttonIndex++) {
+                        _isSelected[buttonIndex] =
+                            buttonIndex == index ? true : false;
+                      }
+                    });
+                    setDocs();
+                  },
+                  isSelected: _isSelected,
+                  children: List.generate(
+                      Level.l.length, (index) => Level.levelWidget(index)),
+                ),
               ),
-              const SizedBox(height: 20),
-              // 日记主题
+
+              // 日记主体
               Expanded(
-                child: ListView.builder(
-                    itemCount: _ditems.length,
-                    itemBuilder: (context, index) {
-                      final item = _ditems[index];
-                      return InkWell(
-                        // 点击 卡片
-                        onTap: () => clickCard(index),
-                        child: Card(
-                          // 阴影大小
-                          elevation: 5,
-                          // 圆角
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15.0),
-                          ),
-                          // 外边距
-                          margin: EdgeInsets.symmetric(
-                              horizontal: 25, vertical: 10),
-                          child: Padding(
-                            padding: EdgeInsets.all(16.0), // 内边距
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min, // 确保Card包裹内容
-                              // 内容左对齐
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                // 日记标题
-                                ListTile(
-                                  title: Text(item.title,
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold)),
-                                ),
-                                // 日记具体内容
-                                Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Text(
-                                    item.content,
-                                    style: TextStyle(color: Colors.grey[700]),
+                child: IndexedStack(index: viewType, children: [
+                  // 卡片模式
+                  ListView.builder(
+                      itemCount: _ditems.length,
+                      itemBuilder: (context, index) {
+                        final item = _ditems[index];
+                        return InkWell(
+                          // 点击 卡片
+                          onTap: () => clickCard(index),
+                          child: Card(
+                            // 阴影大小
+                            elevation: 5,
+                            // 圆角
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15.0),
+                            ),
+                            // 外边距
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 25, vertical: 10),
+                            child: Padding(
+                              padding: EdgeInsets.all(16.0), // 内边距
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min, // 确保Card包裹内容
+                                // 内容左对齐
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  // 日记标题
+                                  ListTile(
+                                    title: Text(item.title,
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold)),
                                   ),
-                                ),
-                              ],
+                                  // 日记具体内容
+                                  Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Text(
+                                      item.content,
+                                      style: TextStyle(color: Colors.grey[700]),
+                                    ),
+                                  ),
+                                  Center(
+                                    child: Text(
+                                      item.getCreateTime(),
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color: Color(
+                                              Colors.grey.shade600.value)),
+                                    ),
+                                  )
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    }),
+                        );
+                      }),
+                  Text("时间轴"),
+                  //              Timeline.tileBuilder(
+                  //   builder: TimelineTileBuilder.fromStyle(
+                  //     contentsAlign: ContentsAlign.alternating,
+                  //     contentsBuilder: (context, index) => Padding(
+                  //       padding: const EdgeInsets.all(24.0),
+                  //       child: Text('Timeline Event $index'),
+                  //     ),
+                  //     itemCount: 5,
+                  //     builder: (context, child, indicator, connector) => GestureDetector(
+                  //       onTap: () {
+                  //         // 处理点击事件
+                  //         print('Timeline node $index tapped!');
+                  //       },
+                  //       child: child,
+                  //     ),
+                  //   ),
+                  // ),
+                  // 线性模式
+                  // CustomPaint(
+                  //   size: Size(300, 200),
+                  //   painter: LineChartPainter([10, 25, 15, 30, 5]),
+                  // ),
+                  Text("日历模式"),
+                ]),
               ),
             ],
           ),
         ),
       ),
+
+      // 悬浮按钮
       floatingActionButton: FloatingActionButton(
         onPressed: clickNewEdit,
         child: const Icon(Icons.add),
@@ -232,26 +314,19 @@ class _GroupPage extends State<GroupPage> {
     );
   }
 
-  Future<List<Doc>> getDocs(String gid) async {
-    print("获取分组的日志列表");
-    return await Http(gid: gid).getDocs();
-  }
-
   setDocs() async {
-    final ret = await getDocs(_gitems[gidx].id);
+    final ret = await Http(gid: _gitems[gidx].id).getDocs();
     final curLevel = getSelectLevel();
     setState(() {
       if (_ditems.isNotEmpty) {
         _ditems.clear();
       }
       if (isNoSelectLevel()) {
-        print("没选择");
-        _ditems = ret;
+        _ditems = ret.data;
         return;
       }
-      print("当前选择$curLevel");
 
-      for (Doc doc in ret) {
+      for (Doc doc in ret.data) {
         if (doc.level == curLevel) {
           _ditems.add(doc);
         }
@@ -288,6 +363,8 @@ class _GroupPage extends State<GroupPage> {
           title: "",
           content: "",
           level: getSelectLevel(),
+          crtimeStr: "",
+          uptimeStr: "",
         ),
       ),
     );
@@ -299,6 +376,8 @@ class _GroupPage extends State<GroupPage> {
               title: ret.title,
               content: ret.content,
               level: ret.level,
+              crtimeStr: ret.crtimeStr,
+              uptimeStr: ret.uptimeStr,
               id: ret.id));
         });
         break;
@@ -322,14 +401,36 @@ class _GroupPage extends State<GroupPage> {
             content: doc.content,
             id: doc.id,
             level: doc.level,
+            uptimeStr: doc.uptimeStr,
+            crtimeStr: doc.crtimeStr,
           ),
         ));
     setState(() {
-      if (ret.state == LastPage.delete) {
-        _ditems.removeAt(index);
-      } else {
-        _ditems[index].content = ret.content;
-        _ditems[index].title = ret.title;
+      switch (ret.state) {
+        case LastPage.delete:
+          _ditems.removeAt(index);
+          break;
+        case LastPage.change:
+          if (currentLevel != ret.level) {
+            _ditems.removeAt(index);
+            break;
+          }
+          if (doc.content != ret.content) {
+            doc.content = ret.content;
+          }
+          if (doc.title != ret.title) {
+            doc.title = ret.title;
+          }
+          if (doc.crtimeStr != ret.crtimeStr) {
+            doc.crtimeStr = ret.crtimeStr;
+          }
+          break;
+        default:
+          doc.content = ret.content;
+          doc.title = ret.title;
+          doc.crtimeStr = ret.crtimeStr;
+
+          break;
       }
     });
   }
@@ -339,7 +440,7 @@ class _GroupPage extends State<GroupPage> {
 
     final groupList = await Http(tid: widget.tid).getGroup();
     setState(() {
-      _gitems = groupList
+      _gitems = groupList.data
           .map((l) => Group(name: l.name, id: l.id, isSubmitted: true))
           .toList();
       if (_gitems.isEmpty) {
@@ -349,7 +450,7 @@ class _GroupPage extends State<GroupPage> {
     });
   }
 
-// 左侧抽屉菜单 - 分组列表 - 点击分组
+  // 左侧抽屉菜单 - 分组列表 - 点击分组
   clickGroupTitle(int index) {
     setState(() {
       gidx = index;

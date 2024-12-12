@@ -22,37 +22,31 @@ func ThemeGet(g *gin.Context) {
 	g.JSON(http.StatusOK, msgOK().setData(response))
 }
 func ThemePost(g *gin.Context) {
-	type request struct {
-		Data struct {
-			Name string `json:"name"`
-			ID   string `json:"id"`
-		} `json:"data" `
-		UpTime string `json:"uptime"`
-	}
+
 	type response struct {
 		Name string `json:"name"`
 		ID   string `json:"id"`
 	}
 
-	var req request
+	var req modb.RequestThemePost
 	if err := g.ShouldBindBodyWithJSON(&req); err != nil {
 		g.AbortWithStatusJSON(http.StatusBadRequest, msgBadRequest())
 		return
 	}
 	uid := g.Query("uid")
 
-	tid, err := modb.CreateTheme(uid, &req.Data.Name)
+	tid, err := modb.CreateTheme(uid, &req)
 	if err != nil {
 		log.Error(err)
 		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
 		return
 	}
 
-	if _, err := modb.CreateGroupDefault(tid); err != nil {
+	if _, err := modb.CreateGroupDefault(tid, req.CRTime); err != nil {
 		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
 		return
 	}
-	log.Infof("插入主题 %s data:%s uptime:%s", uid, req.Data.Name, req.UpTime)
+	log.Infof("插入主题 %s data:%s crtime:%s", uid, req.Data.Name, req.CRTime)
 	g.JSON(http.StatusOK, msgOK().setData(response{Name: req.Data.Name, ID: tid}))
 }
 func ThemePut(g *gin.Context) {

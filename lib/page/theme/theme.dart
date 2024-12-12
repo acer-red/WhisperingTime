@@ -26,16 +26,16 @@ class _ThemePageState extends State<ThemePage> {
 
     final list = Http().gettheme();
     list.then((list) {
-      if (list.isEmpty) {
+      if (list.data.isEmpty) {
         return;
       }
-      for (int i = 0; i < list.length; i++) {
-        if (list[i].id == "") {
+      for (int i = 0; i < list.data.length; i++) {
+        if (list.data[i].id == "") {
           continue;
         }
         setState(() {
           _items.add(Item(
-              tid: list[i].id, themename: list[i].name, isSubmitted: true));
+              tid: list.data[i].id, themename: list.data[i].name, isSubmitted: true));
         });
       }
     });
@@ -132,7 +132,8 @@ class _ThemePageState extends State<ThemePage> {
   }
 
   void submitNoID(Item item) {
-    final res = Http(content: item._textEditingController.text).posttheme();
+    final req = RequestPostTheme(name: item._textEditingController.text);
+    final res = Http().posttheme(req);
     res.then((res) {
       if (res['err'] != 0) {
         return;
@@ -154,8 +155,8 @@ class _ThemePageState extends State<ThemePage> {
       return;
     }
 
-    final res = Http(content: item._textEditingController.text)
-        .puttheme(item._textEditingController.text, item.tid!);
+    final res = Http(content: item._textEditingController.text).puttheme(
+        RequestPutTheme(name: item._textEditingController.text, id: item.tid!));
 
     res.then((res) {
       if (res['err'] != 0) {
@@ -179,7 +180,7 @@ class _ThemePageState extends State<ThemePage> {
 
     final res = Http(content: item.tid).deletetheme();
     res.then((res) {
-      if (res['err'] != 0) {
+      if (res.err != 0) {
         return;
       }
       setState(() {

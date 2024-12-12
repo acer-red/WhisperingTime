@@ -1,16 +1,7 @@
-# whisperingtime
+# 枫迹
 
-A new Flutter project.
+<p align="center">[enginsh](./README_en.md)</p>
 
-## Getting Started
+定义：红枫系列产品之一，一款根据主题去记录下从初心到终点的印迹app。
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+描述：感受平凡而不平淡的生活律动，记录下你的心路历程吧！以事件为主题，始于初心，终于华章。

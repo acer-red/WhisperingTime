@@ -24,24 +24,18 @@ func GroupPost(g *gin.Context) {
 	tid := g.Query("tid")
 	log.Infof("获取主题 tid=%s", tid)
 
-	type request struct {
-		Data struct {
-			Name string `json:"name"`
-		} `json:"data"`
-		UpTime string `json:"uptime"`
-	}
 	type response struct {
 		ID string `json:"id"`
 	}
 
-	var req request
+	var req modb.RequestGroupPost
 	if err := g.ShouldBindBodyWithJSON(&req); err != nil {
 		log.Error(err)
 		badRequest(g)
 		return
 	}
 
-	id, err := modb.GroupPost(tid, req.Data.Name)
+	id, err := modb.GroupPost(tid, &req)
 	if err != nil {
 		log.Error(err)
 		internalServerError(g)

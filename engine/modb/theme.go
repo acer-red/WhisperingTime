@@ -8,6 +8,13 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type RequestThemePost struct {
+	Data struct {
+		Name string `json:"name"`
+		ID   string `json:"id"`
+	} `json:"data" `
+	CRTime string `json:"crtime"`
+}
 type Theme struct {
 	Name string `json:"name" bson:"name"`
 	ID   string `json:"id" bson:"tid"`
@@ -87,7 +94,7 @@ func GetTheme(uid string) ([]Theme, error) {
 
 	return results, nil
 }
-func CreateTheme(uid string, name *string) (string, error) {
+func CreateTheme(uid string, req *RequestThemePost) (string, error) {
 	uoid, err := UserGetObjectUID(uid)
 	if err != nil {
 		return "", err
@@ -96,7 +103,8 @@ func CreateTheme(uid string, name *string) (string, error) {
 	tid := sys.CreateUUID()
 	theme := bson.D{
 		{Key: "_uid", Value: uoid},
-		{Key: "name", Value: name},
+		{Key: "name", Value: req.Data.Name},
+		{Key: "crtime", Value: req.CRTime},
 		{Key: "tid", Value: tid},
 	}
 	_, err = db.Collection("theme").InsertOne(context.TODO(), theme)
