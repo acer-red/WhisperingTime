@@ -69,12 +69,14 @@ class _GroupPage extends State<GroupPage> {
     false,
     false
   ]; // 两个按钮，初始状态第一个被选中
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   List<String> viewExplain = ["卡片", "时间轴", "日历"];
   int gidx = 0;
   String? pageTitleName;
   int viewType = 0;
   int currentLevel = 0;
+
   @override
   void initState() {
     super.initState();
@@ -85,15 +87,31 @@ class _GroupPage extends State<GroupPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // 页面
+      key: _scaffoldKey,
+
+      // 页面标题
       appBar: AppBar(
-        title: Text(pageTitleName!),
-        // leading: IconButton(
-        //   icon: Icon(Icons.menu),
-        //   onPressed: () {
-        //     Scaffold.of(context).openDrawer();
-        //   },
-        // ),
+        // 标题左侧的按钮
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        ),
+        // 标题
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(pageTitleName!),
+            IconButton(
+                onPressed: () {
+                  _scaffoldKey.currentState?.openDrawer();
+                },
+                icon: Icon(Icons.arrow_drop_down))
+          ],
+        ),
+
+        // 标题右侧的按钮
         actions: [
           TextButton(
               onPressed: () => {
@@ -106,6 +124,12 @@ class _GroupPage extends State<GroupPage> {
                   },
               child: Text(viewExplain[viewType]))
         ],
+      ),
+
+      // 悬浮按钮
+      floatingActionButton: FloatingActionButton(
+        onPressed: clickNewEdit,
+        child: const Icon(Icons.add),
       ),
 
       // 左侧分组列表
@@ -177,20 +201,6 @@ class _GroupPage extends State<GroupPage> {
         ]),
       ),
 
-      // 右侧设置
-      // endDrawer: Drawer(
-      //   child: ListView(
-      //     children: [
-      //       ListTile(
-      //         title: Text("右侧抽屉项 1"),
-      //       ),
-      //       ListTile(
-      //         title: Text("右侧抽屉项 2"),
-      //       ),
-      //     ],
-      //   ),
-      // ),
-
       // 主体内容
       body: SafeArea(
         child: Center(
@@ -247,11 +257,17 @@ class _GroupPage extends State<GroupPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: <Widget>[
                                   // 日记标题
-                                  ListTile(
-                                    title: Text(item.title,
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold)),
+                                  Visibility(
+                                    visible: item.title.isNotEmpty ||
+                                        (item.title.isEmpty &&
+                                            !Setting().isVisualNoneTitle),
+                                    child: ListTile(
+                                      title: Text(item.title,
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold)),
+                                    ),
                                   ),
+
                                   // 日记具体内容
                                   Padding(
                                     padding: const EdgeInsets.all(16.0),
@@ -304,12 +320,6 @@ class _GroupPage extends State<GroupPage> {
             ],
           ),
         ),
-      ),
-
-      // 悬浮按钮
-      floatingActionButton: FloatingActionButton(
-        onPressed: clickNewEdit,
-        child: const Icon(Icons.add),
       ),
     );
   }
@@ -438,15 +448,18 @@ class _GroupPage extends State<GroupPage> {
   getGroupList() async {
     print("获取分组列表");
 
-    final groupList = await Http(tid: widget.tid).getGroup();
+    final res = await Http(tid: widget.tid).getGroup();
     setState(() {
-      _gitems = groupList.data
-          .map((l) => Group(name: l.name, id: l.id, isSubmitted: true))
-          .toList();
-      if (_gitems.isEmpty) {
+      _ditems.clear();
+
+      if (res.data.isEmpty) {
         return;
       }
-      _ditems.clear();
+      _gitems = res.data
+          .map((l) => Group(name: l.name, id: l.id, isSubmitted: true))
+          .toList();
+      
+      pageTitleName = "${widget.themename}-${res.data[gidx].name}";
     });
   }
 

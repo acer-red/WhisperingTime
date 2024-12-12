@@ -10,7 +10,7 @@ import 'package:whispering_time/env.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SharedPrefsManager().init(); // 在这里调用 init()
-
+  Setting();
   runApp(const MyApp());
 }
 

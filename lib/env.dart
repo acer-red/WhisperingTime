@@ -52,3 +52,19 @@ class SharedPrefsManager {
     return _prefs?.setString(key, value) ?? Future.value(false);
   }
 }
+class Setting{
+  static final Setting _instance = Setting._internal(); // 私有静态实例
+
+  factory Setting() {
+    return _instance;
+  }
+
+  Setting._internal();
+
+  bool isVisualNoneTitle=true;
+
+  bool visualNoneTitle() {
+    return isVisualNoneTitle ==true;
+  }
+
+}

@@ -246,14 +246,17 @@ class RequestPutDoc {
     Map<String, dynamic> data = {'id': id, 'uptime': uptime};
 
     if (content != null) {
+      print("更新文档内容");
       data['content'] = content;
     }
 
     if (title != null) {
+      print("更新文档标题");
       data['title'] = title;
     }
 
     if (level != null) {
+      print("更新文档等级");
       data['level'] = level;
     }
 

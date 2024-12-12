@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:whispering_time/http.dart';
 import 'package:whispering_time/env.dart';
 
-class Setting extends StatefulWidget {
+class DocSetting extends StatefulWidget {
   final String gid;
   final String did;
-  Setting({required this.gid, required this.did});
+  DocSetting({required this.gid, required this.did});
   @override
-  State<Setting> createState() => _Setting();
+  State<DocSetting> createState() => _DocSetting();
 }
 
-class _Setting extends State<Setting> {
+class _DocSetting extends State<DocSetting> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(

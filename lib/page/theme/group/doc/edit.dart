@@ -64,9 +64,9 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     return Scaffold(
         // 标题
         appBar: AppBar(
-          // 标题左侧
+          // 标题左侧的返回按钮
           leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios),
+            icon: Icon(Icons.arrow_back),
             onPressed: () => backPage(),
           ),
 
@@ -94,8 +94,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
                         child: SizedBox(
                           width: 300,
                           child: MouseRegion(
-                            onExit: (_) =>
-                                setState(() => isTitleSubmited = true),
+                            onExit: (_) => clickNewTitle(titleEdit.text),
                             child: TextField(
                               style: TextStyle(height: 20, fontSize: 23),
                               controller: titleEdit,
@@ -105,8 +104,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
                               decoration: InputDecoration(
                                 border: InputBorder.none,
                               ),
-                              onSubmitted: (text) =>
-                                  clickNewTitle(text), // 或者添加一个"完成"按钮
+                              onSubmitted: (text) => clickNewTitle(text),
                             ),
                           ),
                         ),
@@ -220,7 +218,8 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     final LastPage ret = await Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) => Setting(gid: widget.gid, did: widget.id!)));
+            builder: (context) =>
+                DocSetting(gid: widget.gid, did: widget.id!)));
     switch (ret) {
       case LastPage.delete:
         print("返回并删除文档");
