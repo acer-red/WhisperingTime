@@ -2,20 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum LastPage {
-  ok,
-  delete ,
-  nochange,
-  change,
-  create,
-  nocreate
-}
-class Level {
-  static const List<String> l = ['未分类','平淡的','触动的','重要的','深刻的'];
+enum LastPage { ok, delete, nochange, change, create, nocreate }
 
-  String string(int index){
+class Level {
+  static const List<String> l = ['未分类', '平淡的', '触动的', '重要的', '深刻的'];
+
+  String string(int index) {
     return l[index];
   }
+
   static Widget levelWidget(int index) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.0),
@@ -36,13 +31,14 @@ class SharedPrefsManager {
 
   Future<void> init() async {
     _prefs ??= await SharedPreferences.getInstance();
+    print("用户ID${getuid()}");
   }
 
   String getuid() {
-    String? uid =  _prefs?.getString("uid");
-    if (uid == null || uid.isEmpty) {
-      uid = Uuid().v7();
-      setString("uid", uid.replaceAll("-", ""));
+    String? uid = _prefs?.getString("uid");
+    if (uid == null) {
+      uid = Uuid().v7().replaceAll("-", "");
+      setString("uid", uid);
       return uid;
     }
     return uid.replaceAll("-", "");
@@ -52,7 +48,8 @@ class SharedPrefsManager {
     return _prefs?.setString(key, value) ?? Future.value(false);
   }
 }
-class Setting{
+
+class Setting {
   static final Setting _instance = Setting._internal(); // 私有静态实例
 
   factory Setting() {
@@ -61,10 +58,9 @@ class Setting{
 
   Setting._internal();
 
-  bool isVisualNoneTitle=true;
+  bool isVisualNoneTitle = true;
 
   bool visualNoneTitle() {
-    return isVisualNoneTitle ==true;
+    return isVisualNoneTitle == true;
   }
-
 }

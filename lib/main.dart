@@ -71,7 +71,7 @@ class _MyHomePageState extends State<MyHomePage> {
         body: panel(idx),
         bottomNavigationBar: BottomNavigationBar(
             items: const <BottomNavigationBarItem>[
-              BottomNavigationBarItem(icon: Icon(Icons.checklist), label: "列表"),
+              BottomNavigationBarItem(icon: Icon(Icons.checklist), label: "列表4"),
               BottomNavigationBarItem(icon: Icon(Icons.settings), label: "设置"),
             ],
             currentIndex: idx,

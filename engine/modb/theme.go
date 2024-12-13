@@ -10,10 +10,9 @@ import (
 
 type RequestThemePost struct {
 	Data struct {
-		Name string `json:"name"`
-		ID   string `json:"id"`
+		Name   string `json:"name"`
+		CRTime string `json:"crtime"`
 	} `json:"data" `
-	CRTime string `json:"crtime"`
 }
 type Theme struct {
 	Name string `json:"name" bson:"name"`
@@ -104,7 +103,7 @@ func CreateTheme(uid string, req *RequestThemePost) (string, error) {
 	theme := bson.D{
 		{Key: "_uid", Value: uoid},
 		{Key: "name", Value: req.Data.Name},
-		{Key: "crtime", Value: req.CRTime},
+		{Key: "crtime", Value: req.Data.CRTime},
 		{Key: "tid", Value: tid},
 	}
 	_, err = db.Collection("theme").InsertOne(context.TODO(), theme)

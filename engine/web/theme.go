@@ -42,11 +42,11 @@ func ThemePost(g *gin.Context) {
 		return
 	}
 
-	if _, err := modb.CreateGroupDefault(tid, req.CRTime); err != nil {
+	if _, err := modb.CreateGroupDefault(tid, req.Data.CRTime); err != nil {
 		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
 		return
 	}
-	log.Infof("插入主题 %s data:%s crtime:%s", uid, req.Data.Name, req.CRTime)
+	log.Infof("插入主题 %s data:%s crtime:%s", uid, req.Data.Name, req.Data.CRTime)
 	g.JSON(http.StatusOK, msgOK().setData(response{Name: req.Data.Name, ID: tid}))
 }
 func ThemePut(g *gin.Context) {

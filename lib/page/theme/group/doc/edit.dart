@@ -69,47 +69,30 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
             icon: Icon(Icons.arrow_back),
             onPressed: () => backPage(),
           ),
-
+          centerTitle: true, // 添加这行
           // 标题
-          title: Center(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                isTitleSubmited
-                    ? Row(
-                        children: [
-                          Text(titleEdit.text),
-                          IconButton(
-                              onPressed: () => {
-                                    setState(() {
-                                      isTitleSubmited = !isTitleSubmited;
-                                    })
-                                  },
-                              icon: Icon(Icons.mode_edit_outline)),
-                        ],
-                      )
-                    : Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: SizedBox(
-                          width: 300,
-                          child: MouseRegion(
-                            onExit: (_) => clickNewTitle(titleEdit.text),
-                            child: TextField(
-                              style: TextStyle(height: 20, fontSize: 23),
-                              controller: titleEdit,
-                              maxLines: 1,
-                              autofocus: true,
-                              keyboardType: TextInputType.text,
-                              decoration: InputDecoration(
-                                border: InputBorder.none,
-                              ),
-                              onSubmitted: (text) => clickNewTitle(text),
-                            ),
-                          ),
-                        ),
-                      ),
-              ],
+          title: GestureDetector(
+            onTap: () {
+              setState(() {
+                isTitleSubmited = !isTitleSubmited;
+              });
+            },
+            child: TextField(
+              style: TextStyle(fontSize: 23),
+              textAlign: TextAlign.center, // 添加这行
+              controller: titleEdit,
+              maxLines: 1,
+              autofocus: true,
+              keyboardType: TextInputType.text,
+              decoration: InputDecoration(
+                border: InputBorder.none,
+              ),
+              onSubmitted: (text) => clickNewTitle(text),
+              onEditingComplete: () {
+                setState(() {
+                  isTitleSubmited = false;
+                });
+              },
             ),
           ),
 
@@ -267,7 +250,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
 
   Future<LastPageDoc> updateDoc() async {
     final realTitle = titleEdit.text == defaultTitle ? "" : titleEdit.text;
-    final req = RequestPutDoc(content: edit.text, id: widget.id!);
+    final req = RequestPutDoc(content: edit.text, id: widget.id!,title: titleEdit.text);
     final res = await Http(gid: widget.gid).putDoc(req);
     return LastPageDoc(
       state: LastPage.change,
