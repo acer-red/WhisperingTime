@@ -24,7 +24,8 @@ const (
 )
 const mstrOK string = "ok"
 const mstrInternalServer string = "内部系统错误"
-const mstrNoParam string = "缺少参数"
+
+// const mstrNoParam string = "缺少参数"
 const mstrNoThemeID string = "缺少ThemeID参数"
 const mstrBadRequest string = "错误参数"
 
@@ -34,10 +35,11 @@ func (msg message) setData(data interface{}) message {
 	msg.Data = data
 	return msg
 }
-func (msg message) setMSG(message string) message {
-	msg.Msg = message
-	return msg
-}
+
+//	func (msg message) setMSG(message string) message {
+//		msg.Msg = message
+//		return msg
+//	}
 func msgOK(msg ...string) message {
 	m := message{Err: mseqOK}
 	if len(msg) > 0 {
@@ -56,15 +58,16 @@ func msgInternalServer(msg ...string) message {
 	}
 	return m
 }
-func msgNoParam(msg ...string) message {
-	m := message{Err: mseqNoParam}
-	if len(msg) > 0 {
-		m.Msg = msg[0]
-	} else {
-		m.Msg = mstrNoParam
-	}
-	return m
-}
+
+//	func msgNoParam(msg ...string) message {
+//		m := message{Err: mseqNoParam}
+//		if len(msg) > 0 {
+//			m.Msg = msg[0]
+//		} else {
+//			m.Msg = mstrNoParam
+//		}
+//		return m
+//	}
 func msgBadRequest(msg ...string) message {
 	m := message{Err: mseqBadRequest}
 	if len(msg) > 0 {

@@ -202,7 +202,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
         context,
         MaterialPageRoute(
             builder: (context) =>
-                DocSetting(gid: widget.gid, did: widget.id!)));
+                DocSetting(gid: widget.gid, did: widget.id!,crtimeStr: widget.crtimeStr)));
     switch (ret) {
       case LastPage.delete:
         print("返回并删除文档");

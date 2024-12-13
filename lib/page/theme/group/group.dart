@@ -6,7 +6,7 @@ import 'doc/edit.dart';
 import 'package:whispering_time/http.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
-// import 'package:timelines/timelines.dart';
+import 'package:timelines/timelines.dart';
 class Group {
   String name;
   String id;
@@ -291,24 +291,16 @@ class _GroupPage extends State<GroupPage> {
                           ),
                         );
                       }),
-                  Text("时间轴"),
-                  //              Timeline.tileBuilder(
-                  //   builder: TimelineTileBuilder.fromStyle(
-                  //     contentsAlign: ContentsAlign.alternating,
-                  //     contentsBuilder: (context, index) => Padding(
-                  //       padding: const EdgeInsets.all(24.0),
-                  //       child: Text('Timeline Event $index'),
-                  //     ),
-                  //     itemCount: 5,
-                  //     builder: (context, child, indicator, connector) => GestureDetector(
-                  //       onTap: () {
-                  //         // 处理点击事件
-                  //         print('Timeline node $index tapped!');
-                  //       },
-                  //       child: child,
-                  //     ),
-                  //   ),
-                  // ),
+                  Timeline.tileBuilder(
+                    builder: TimelineTileBuilder.fromStyle(
+                      contentsAlign: ContentsAlign.alternating,
+                      contentsBuilder: (context, index) => Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Text('Timeline Event $index'),
+                      ),
+                      itemCount: 5,
+                    ),
+                  ),
                   // 线性模式
                   // CustomPaint(
                   //   size: Size(300, 200),
@@ -458,7 +450,7 @@ class _GroupPage extends State<GroupPage> {
       _gitems = res.data
           .map((l) => Group(name: l.name, id: l.id, isSubmitted: true))
           .toList();
-      
+
       pageTitleName = "${widget.themename}-${res.data[gidx].name}";
     });
   }

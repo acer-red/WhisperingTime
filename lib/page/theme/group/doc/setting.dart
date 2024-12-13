@@ -5,12 +5,22 @@ import 'package:whispering_time/env.dart';
 class DocSetting extends StatefulWidget {
   final String gid;
   final String did;
-  DocSetting({required this.gid, required this.did});
+  final String crtimeStr;
+  DocSetting({required this.gid, required this.did, required this.crtimeStr});
   @override
   State<DocSetting> createState() => _DocSetting();
 }
 
 class _DocSetting extends State<DocSetting> {
+  DateTime crtime = DateTime.now();
+  @override
+  void initState() {
+    super.initState();
+    if (widget.crtimeStr.isNotEmpty) {
+      crtime = Time.toDateTime(widget.crtimeStr);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -24,6 +34,42 @@ class _DocSetting extends State<DocSetting> {
       body: Center(
         child: Column(
           children: [
+            Row(
+              children: [
+                Text(
+                  '创建时间: ${Time.string(crtime)}',
+                  style: TextStyle(fontSize: 20),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    DateTime? pickedDate = await datePacker(context);
+
+                    TimeOfDay? pickedtime = await datePicker(context);
+
+                    pickedDate ??= crtime;
+                    if (pickedtime == null) {
+                      crtime = pickedDate;
+                    } else {
+                      crtime = DateTime(
+                        pickedDate.year,
+                        pickedDate.month,
+                        pickedDate.day,
+                        pickedtime.hour,
+                        pickedtime.minute,
+                        0, // 秒
+                      );
+                    }
+
+                    if (mounted) {
+                      setState(() {});
+                    }
+
+                    print("${pickedDate.toString()},${pickedtime.toString()}");
+                  },
+                  child: Text('修改时间'),
+                ),
+              ],
+            ),
             ElevatedButton(
               onPressed: () => deleteDoc(),
               style: ButtonStyle(
@@ -41,6 +87,23 @@ class _DocSetting extends State<DocSetting> {
           ],
         ),
       ),
+    );
+  }
+
+  Future<TimeOfDay?> datePicker(BuildContext context) {
+    return showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(crtime), // 如果没有选择过时间，则使用当前时间
+    );
+  }
+
+  Future<DateTime?> datePacker(BuildContext context) {
+    return showDatePicker(
+      context: context,
+      initialDate: crtime,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+      locale: const Locale('zh'),
     );
   }
 

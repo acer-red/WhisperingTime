@@ -42,7 +42,7 @@ class ResponseGetTheme extends Basic {
 
 class RequestPutTheme {
   String name;
-  String get uptime => DateTime.now().microsecondsSinceEpoch.toString();
+  String get uptime => DateTime.now().millisecondsSinceEpoch.toString();
 
   String id;
   RequestPutTheme({required this.name, required this.id});
@@ -51,7 +51,7 @@ class RequestPutTheme {
 
 class RequestPostTheme {
   String name;
-  String get crtime => DateTime.now().microsecondsSinceEpoch.toString();
+  String get crtime => (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString();
   RequestPostTheme({required this.name});
 
   Map<String, dynamic> toJson() => {
@@ -128,7 +128,7 @@ class ResponsePutGroup extends Basic {
 
 class RequestPutGroup {
   String name;
-  String get uptime => DateTime.now().microsecondsSinceEpoch.toString();
+  String get uptime => DateTime.now().millisecondsSinceEpoch.toString();
 
   String id;
   RequestPutGroup({required this.name, required this.id});
@@ -197,7 +197,7 @@ class Doc {
     int timestamp = int.parse(crtimeStr);
 
     // 创建 DateTime 对象
-    DateTime datetime = DateTime.fromMillisecondsSinceEpoch(timestamp ~/ 1000);
+    DateTime datetime = DateTime.fromMillisecondsSinceEpoch(timestamp *= 1000);
     // 使用 DateFormat 格式化日期和时间
     DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
     String formattedDatetime = formatter.format(datetime);
@@ -225,7 +225,7 @@ class ResponseGetDoc extends Basic {
 class RequestPostDoc {
   String title;
   String content;
-  String get crtime => DateTime.now().microsecondsSinceEpoch.toString();
+  String get crtime => DateTime.now().millisecondsSinceEpoch.toString();
   int level;
   RequestPostDoc(
       {required this.content, required this.title, required this.level});
@@ -239,7 +239,7 @@ class RequestPutDoc {
   String? content;
   String? title;
   int? level;
-  String get uptime => DateTime.now().microsecondsSinceEpoch.toString();
+  String get uptime => DateTime.now().millisecondsSinceEpoch.toString();
   RequestPutDoc({required this.id, this.title, this.content, this.level});
 
   Map<String, dynamic> toJson() {
@@ -351,7 +351,7 @@ class Http {
     };
     final Map<String, dynamic> data = {
       'data': req.toJson(),
-      "uptime": DateTime.now().microsecondsSinceEpoch.toString(),
+      "uptime": DateTime.now().millisecondsSinceEpoch.toString(),
     };
     final Map<String, String> headers = {
       "Content-Type": "application/json",
@@ -426,7 +426,7 @@ class Http {
     };
     final Map<String, dynamic> data = {
       'data': req.toJson(),
-      "crtime": DateTime.now().microsecondsSinceEpoch.toString(),
+      "crtime": DateTime.now().millisecondsSinceEpoch.toString(),
     };
     final Map<String, String> headers = {
       "Content-Type": "application/json",
@@ -510,7 +510,7 @@ class Http {
     };
     final Map<String, dynamic> data = {
       'data': req.toJson(),
-      "crtime": DateTime.now().microsecondsSinceEpoch.toString(),
+      "crtime": DateTime.now().millisecondsSinceEpoch.toString(),
     };
     final Map<String, String> headers = {
       "Content-Type": "application/json",

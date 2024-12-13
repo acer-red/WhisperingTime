@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import './page/setting/setting.dart';
 import 'page/theme/theme.dart';
-
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:whispering_time/env.dart';
 
 // import 'package:shared_preferences/shared_preferences.dart';
@@ -24,14 +24,23 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: '枫迹',
         // 取消右上角的debug标识
-        debugShowCheckedModeBanner: false, 
+        debugShowCheckedModeBanner: false,
         theme: ThemeData(
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(
               seedColor: const Color.fromARGB(255, 211, 118, 5)),
         ),
         home: const MyHomePage(),
-        routes: {},
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+        ],
+        supportedLocales: [
+          const Locale('zh', 'CH'),
+          const Locale('en', 'US'),
+        ],
+        locale: Locale('zh'),
       ),
     );
   }
@@ -71,7 +80,8 @@ class _MyHomePageState extends State<MyHomePage> {
         body: panel(idx),
         bottomNavigationBar: BottomNavigationBar(
             items: const <BottomNavigationBarItem>[
-              BottomNavigationBarItem(icon: Icon(Icons.checklist), label: "列表4"),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.checklist), label: "列表4"),
               BottomNavigationBarItem(icon: Icon(Icons.settings), label: "设置"),
             ],
             currentIndex: idx,

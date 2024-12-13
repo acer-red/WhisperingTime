@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
 
 enum LastPage { ok, delete, nochange, change, create, nocreate }
 
@@ -62,5 +63,18 @@ class Setting {
 
   bool visualNoneTitle() {
     return isVisualNoneTitle == true;
+  }
+}
+
+class Time {
+  static DateTime toDateTime(String t) {
+    int timestamp = int.parse(t);
+
+    return DateTime.fromMillisecondsSinceEpoch(timestamp *= 1000);
+  }
+
+  static String string(DateTime t) {
+    DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm');
+    return formatter.format(t);
   }
 }

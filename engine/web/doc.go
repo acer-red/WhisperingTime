@@ -9,10 +9,7 @@ import (
 
 func DocsGet(g *gin.Context) {
 	gid := g.Query("gid")
-	if gid == "" {
-		badRequest(g)
-		return
-	}
+
 	ret, err := modb.DocsGet(gid)
 	if err != nil {
 		internalServerError(g)
@@ -50,10 +47,6 @@ func DocPut(g *gin.Context) {
 	}
 
 	gid := g.Query("gid")
-	if gid == "" {
-		badRequest(g)
-		return
-	}
 
 	var req modb.ReponseDocPut
 	var res response
@@ -75,10 +68,7 @@ func DocDelete(g *gin.Context) {
 
 	gid := g.Query("gid")
 	did := g.Query("did")
-	if gid == "" || did == "" {
-		badRequest(g)
-		return
-	}
+
 	if err := modb.DocDelete(gid, did); err != nil {
 		log.Error(err)
 		internalServerError(g)
