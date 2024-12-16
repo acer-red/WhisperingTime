@@ -169,6 +169,7 @@ class Doc {
   String content;
   int level;
   String crtimeStr;
+  DateTime? crtime;
   String uptimeStr;
   String id;
   Doc({
@@ -178,6 +179,7 @@ class Doc {
     required this.crtimeStr,
     required this.uptimeStr,
     required this.id,
+    this.crtime,
   });
 
   factory Doc.fromJson(Map<String, dynamic> json) {
@@ -226,10 +228,13 @@ class ResponseGetDoc extends Basic {
 class RequestPostDoc {
   String title;
   String content;
-  String get crtime => Time.nowTimestampString();
+  String crtime;
   int level;
   RequestPostDoc(
-      {required this.content, required this.title, required this.level});
+      {required this.content,
+      required this.title,
+      required this.level,
+      required this.crtime});
 
   Map<String, dynamic> toJson() =>
       {'content': content, 'title': title, 'level': level, 'crtime': crtime};
@@ -501,6 +506,11 @@ class Http {
 
     final json = await jsonDecode(response.body);
     final res = ResponseGetDoc.fromJson(json);
+    if (res.err ==0){
+      for (Doc line in res.data){
+        line.crtime = Time.datetime(line.crtimeStr);
+      }
+    }
     return res;
   }
 

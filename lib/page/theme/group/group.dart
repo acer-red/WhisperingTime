@@ -7,6 +7,7 @@ import 'package:whispering_time/http.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
 import 'package:timelines/timelines.dart';
+
 class Group {
   String name;
   String id;
@@ -75,7 +76,6 @@ class _GroupPage extends State<GroupPage> {
   int gidx = 0;
   String? pageTitleName;
   int viewType = 0;
-  int currentLevel = 0;
 
   @override
   void initState() {
@@ -89,7 +89,7 @@ class _GroupPage extends State<GroupPage> {
     return Scaffold(
       key: _scaffoldKey,
 
-      // 页面标题
+      // 页面标题栏
       appBar: AppBar(
         // 标题左侧的按钮
         leading: IconButton(
@@ -113,7 +113,7 @@ class _GroupPage extends State<GroupPage> {
 
         // 标题右侧的按钮
         actions: [
-          TextButton(
+          TextButton.icon(
               onPressed: () => {
                     setState(() {
                       viewType++;
@@ -122,11 +122,12 @@ class _GroupPage extends State<GroupPage> {
                       }
                     })
                   },
-              child: Text(viewExplain[viewType]))
+              label: Text(viewExplain[viewType]),
+              icon: Icon(Icons.loop))
         ],
       ),
 
-      // 悬浮按钮
+      // 右下角悬浮按钮
       floatingActionButton: FloatingActionButton(
         onPressed: clickNewEdit,
         child: const Icon(Icons.add),
@@ -212,13 +213,14 @@ class _GroupPage extends State<GroupPage> {
                 child: ToggleButtons(
                   onPressed: (int index) {
                     setState(() {
-                      currentLevel = index;
-                      for (int buttonIndex = 0;
-                          buttonIndex < _isSelected.length;
-                          buttonIndex++) {
-                        _isSelected[buttonIndex] =
-                            buttonIndex == index ? true : false;
-                      }
+                      _isSelected[index] = !_isSelected[index];
+
+                      // for (int buttonIndex = 0;
+                      //     buttonIndex < _isSelected.length;
+                      //     buttonIndex++) {
+                      //   _isSelected[buttonIndex] =
+                      //       buttonIndex == index ? true : false;
+                      // }
                     });
                     setDocs();
                   },
@@ -256,6 +258,16 @@ class _GroupPage extends State<GroupPage> {
                                 // 内容左对齐
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: <Widget>[
+                                  Center(
+                                    child: Text(
+                                      Level.l[item.level],
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color: Color(
+                                              Colors.grey.shade600.value)),
+                                    ),
+                                  ),
+
                                   // 印迹标题
                                   Visibility(
                                     visible: item.title.isNotEmpty ||
@@ -291,12 +303,17 @@ class _GroupPage extends State<GroupPage> {
                           ),
                         );
                       }),
+
+                  // 时间轴模式
                   Timeline.tileBuilder(
                     builder: TimelineTileBuilder.fromStyle(
                       contentsAlign: ContentsAlign.alternating,
                       contentsBuilder: (context, index) => Padding(
                         padding: const EdgeInsets.all(24.0),
-                        child: Text('Timeline Event $index'),
+                        child: TextButton(
+                          child: Text('Timeline Event $index'),
+                          onPressed: () => {print('Timeline Event $index')},
+                        ),
                       ),
                       itemCount: 5,
                     ),
@@ -318,22 +335,28 @@ class _GroupPage extends State<GroupPage> {
 
   setDocs() async {
     final ret = await Http(gid: _gitems[gidx].id).getDocs();
-    final curLevel = getSelectLevel();
     setState(() {
       if (_ditems.isNotEmpty) {
         _ditems.clear();
       }
       if (isNoSelectLevel()) {
-        _ditems = ret.data;
+        _ditems.clear();
         return;
       }
 
       for (Doc doc in ret.data) {
-        if (doc.level == curLevel) {
+        if (isContainSelectLevel(doc.level)) {
           _ditems.add(doc);
         }
       }
+      _ditems.sort(compareDocs);
     });
+  }
+
+  int compareDocs(Doc a, Doc b) {
+    DateTime aTime = a.crtime ?? DateTime.fromMillisecondsSinceEpoch(0);
+    DateTime bTime = b.crtime ?? DateTime.fromMillisecondsSinceEpoch(0);
+    return aTime.compareTo(bTime);
   }
 
   bool isNoSelectLevel() {
@@ -352,6 +375,10 @@ class _GroupPage extends State<GroupPage> {
       }
     }
     return 0;
+  }
+
+  bool isContainSelectLevel(int i) {
+    return _isSelected[i];
   }
 
   clickNewEdit() async {
@@ -413,7 +440,7 @@ class _GroupPage extends State<GroupPage> {
           _ditems.removeAt(index);
           break;
         case LastPage.change:
-          if (currentLevel != ret.level) {
+          if (!isContainSelectLevel(ret.level)) {
             _ditems.removeAt(index);
             break;
           }
@@ -424,7 +451,9 @@ class _GroupPage extends State<GroupPage> {
             doc.title = ret.title;
           }
           if (doc.crtimeStr != ret.crtimeStr) {
-            doc.crtimeStr = ret.crtimeStr;
+            _ditems[index].crtimeStr = ret.crtimeStr;
+            _ditems[index].crtime = Time.datetime(ret.crtimeStr);
+            _ditems.sort(compareDocs);
           }
           break;
         default:
@@ -453,6 +482,7 @@ class _GroupPage extends State<GroupPage> {
 
       pageTitleName = "${widget.themename}-${res.data[gidx].name}";
     });
+    setDocs();
   }
 
   // 左侧抽屉菜单 - 分组列表 - 点击分组

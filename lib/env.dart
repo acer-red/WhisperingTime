@@ -18,6 +18,14 @@ class Level {
       child: Text(l[index]),
     );
   }
+
+  // static string(List<int> i) {
+  //   String ret = '';
+  //   for (int word in i) {
+  //     ret += l[word];
+  //   }
+  //   return ret;
+  // }
 }
 
 class SharedPrefsManager {
@@ -68,6 +76,9 @@ class Setting {
 
 class Time {
   static DateTime datetime(String t) {
+    if (t.isEmpty) {
+      return DateTime.now();
+    }
     int timestamp = int.parse(t);
 
     return DateTime.fromMillisecondsSinceEpoch(timestamp *= 1000);
@@ -77,11 +88,12 @@ class Time {
     DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm');
     return formatter.format(t);
   }
-  static nowTimestampString(){
+
+  static String nowTimestampString() {
     return (DateTime.now().millisecondsSinceEpoch / 1000).round().toString();
   }
-  static toTimestampString(DateTime t){
+
+  static String toTimestampString(DateTime t) {
     return (t.millisecondsSinceEpoch / 1000).round().toString();
   }
-
 }

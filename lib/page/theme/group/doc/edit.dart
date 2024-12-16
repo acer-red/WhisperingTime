@@ -171,11 +171,6 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   }
 
   void backPage() async {
-    print("----对比----");
-    print("${widget.content},${edit.text}");
-    print("${titleEdit.text},${widget.title}");
-    print("${widget.level},$currentLevel");
-    print("${widget.crtimeStr},${Time.toTimestampString(crtime)}");
 
     if (widget.content == edit.text &&
         (titleEdit.text == defaultTitle ||
@@ -253,9 +248,11 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   }
 
   Future<LastPageDoc> createDoc() async {
+    final newCRTime = Time.toTimestampString(crtime);
+
     final realTitle = titleEdit.text == defaultTitle ? "" : titleEdit.text;
     final req = RequestPostDoc(
-        content: edit.text, title: realTitle, level: currentLevel);
+        content: edit.text, title: realTitle, level: currentLevel,crtime: newCRTime);
     final ret = await Http(gid: widget.gid).postDoc(req);
     return LastPageDoc(
       state: LastPage.create,
