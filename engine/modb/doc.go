@@ -17,7 +17,7 @@ type RequestDocPost struct {
 	} `json:"data"`
 }
 
-type ReponseDocPut struct {
+type RequestDocPut struct {
 	Doc Doc `json:"data"`
 }
 type Doc struct {
@@ -83,7 +83,7 @@ func DocPost(gid string, req *RequestDocPost) (string, error) {
 
 	return did, err
 }
-func DocPut(gid string, req *ReponseDocPut) error {
+func DocPut(gid string, req *RequestDocPut) error {
 
 	goid, err := GetGOIDFromGID(gid)
 	if err != nil {
@@ -97,13 +97,22 @@ func DocPut(gid string, req *ReponseDocPut) error {
 	data := bson.M{}
 	var onlyLevel bool = true
 
-	if (*req).Doc.UPTime != "" {
-		data["uptime"] = (*req).Doc.UPTime
-	}
-
 	if (*req).Doc.Content != "" {
 		data["content"] = (*req).Doc.Content
 		onlyLevel = false
+	}
+
+	if (*req).Doc.Title != "" {
+		data["title"] = (*req).Doc.Title
+		onlyLevel = false
+	}
+
+	if (*req).Doc.CRTime != "" {
+		data["crtime"] = (*req).Doc.CRTime
+	}
+
+	if (*req).Doc.UPTime != "" {
+		data["uptime"] = (*req).Doc.UPTime
 	}
 
 	if (*req).Doc.Title != "" {

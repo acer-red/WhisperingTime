@@ -48,7 +48,7 @@ func DocPut(g *gin.Context) {
 
 	gid := g.Query("gid")
 
-	var req modb.ReponseDocPut
+	var req modb.RequestDocPut
 	var res response
 	if err := g.ShouldBindBodyWithJSON(&req); err != nil {
 		log.Error(err)
