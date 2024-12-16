@@ -49,6 +49,8 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   bool _isSelected = true;
   bool isTitleSubmited = true;
   int currentLevel = 0;
+  late DateTime crtime;
+
   @override
   void initState() {
     super.initState();
@@ -57,6 +59,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
         ? titleEdit.text = defaultTitle
         : titleEdit.text = widget.title;
     currentLevel = widget.level;
+    crtime = Time.datetime(widget.crtimeStr);
   }
 
   @override
@@ -168,9 +171,17 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   }
 
   void backPage() async {
+    print("----对比----");
+    print("${widget.content},${edit.text}");
+    print("${titleEdit.text},${widget.title}");
+    print("${widget.level},$currentLevel");
+    print("${widget.crtimeStr},${Time.toTimestampString(crtime)}");
+
     if (widget.content == edit.text &&
-        titleEdit.text == defaultTitle &&
-        widget.level == currentLevel) {
+        (titleEdit.text == defaultTitle ||
+            titleEdit.text == widget.title) && // 控件中的文字是默认标题或原始标题
+        widget.level == currentLevel &&
+        widget.crtimeStr == Time.toTimestampString(crtime)) {
       print("无变化");
 
       if (mounted) {
@@ -198,16 +209,25 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   }
 
   void enterSettingPage() async {
-    final LastPage ret = await Navigator.push(
+    final LastPageDocSetting ret = await Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) =>
-                DocSetting(gid: widget.gid, did: widget.id!,crtimeStr: widget.crtimeStr)));
-    switch (ret) {
+            builder: (context) => DocSetting(
+                gid: widget.gid,
+                did: widget.id!,
+                crtimeStr: widget.crtimeStr)));
+    switch (ret.state) {
+      case LastPage.change:
+        if (ret.crtime != null) {
+          setState(() {
+            crtime = ret.crtime!;
+          });
+        }
+        break;
       case LastPage.delete:
         print("返回并删除文档");
         Navigator.of(context).pop(LastPageDoc(
-            state: ret,
+            state: ret.state,
             title: "",
             content: "",
             level: 0,
@@ -249,8 +269,14 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   }
 
   Future<LastPageDoc> updateDoc() async {
+    final newCRTime = Time.toTimestampString(crtime);
+
     final realTitle = titleEdit.text == defaultTitle ? "" : titleEdit.text;
-    final req = RequestPutDoc(content: edit.text, id: widget.id!,title: titleEdit.text);
+    final req = RequestPutDoc(
+        content: edit.text,
+        id: widget.id!,
+        title: titleEdit.text,
+        crtime: newCRTime);
     final res = await Http(gid: widget.gid).putDoc(req);
     return LastPageDoc(
       state: LastPage.change,
@@ -258,7 +284,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
       id: res.id,
       title: realTitle,
       level: currentLevel,
-      crtimeStr: widget.crtimeStr,
+      crtimeStr: newCRTime,
       uptimeStr: req.uptime,
     );
   }

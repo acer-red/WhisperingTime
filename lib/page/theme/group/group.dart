@@ -206,7 +206,7 @@ class _GroupPage extends State<GroupPage> {
         child: Center(
           child: Column(
             children: [
-              // 日记 分级按钮
+              // 印迹 分级按钮
               Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: ToggleButtons(
@@ -228,7 +228,7 @@ class _GroupPage extends State<GroupPage> {
                 ),
               ),
 
-              // 日记主体
+              // 印迹主体
               Expanded(
                 child: IndexedStack(index: viewType, children: [
                   // 卡片模式
@@ -256,7 +256,7 @@ class _GroupPage extends State<GroupPage> {
                                 // 内容左对齐
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: <Widget>[
-                                  // 日记标题
+                                  // 印迹标题
                                   Visibility(
                                     visible: item.title.isNotEmpty ||
                                         (item.title.isEmpty &&
@@ -268,7 +268,7 @@ class _GroupPage extends State<GroupPage> {
                                     ),
                                   ),
 
-                                  // 日记具体内容
+                                  // 印迹具体内容
                                   Padding(
                                     padding: const EdgeInsets.all(16.0),
                                     child: Text(

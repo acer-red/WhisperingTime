@@ -67,7 +67,7 @@ class Setting {
 }
 
 class Time {
-  static DateTime toDateTime(String t) {
+  static DateTime datetime(String t) {
     int timestamp = int.parse(t);
 
     return DateTime.fromMillisecondsSinceEpoch(timestamp *= 1000);
@@ -77,4 +77,11 @@ class Time {
     DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm');
     return formatter.format(t);
   }
+  static nowTimestampString(){
+    return (DateTime.now().millisecondsSinceEpoch / 1000).round().toString();
+  }
+  static toTimestampString(DateTime t){
+    return (t.millisecondsSinceEpoch / 1000).round().toString();
+  }
+
 }

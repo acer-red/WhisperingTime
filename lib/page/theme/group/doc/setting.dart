@@ -11,13 +11,20 @@ class DocSetting extends StatefulWidget {
   State<DocSetting> createState() => _DocSetting();
 }
 
+class LastPageDocSetting {
+  LastPage state;
+
+  DateTime ?crtime;
+  LastPageDocSetting({required this.state,this.crtime});
+}
+
 class _DocSetting extends State<DocSetting> {
   DateTime crtime = DateTime.now();
   @override
   void initState() {
     super.initState();
     if (widget.crtimeStr.isNotEmpty) {
-      crtime = Time.toDateTime(widget.crtimeStr);
+      crtime = Time.datetime(widget.crtimeStr);
     }
   }
 
@@ -64,7 +71,7 @@ class _DocSetting extends State<DocSetting> {
                       setState(() {});
                     }
 
-                    print("${pickedDate.toString()},${pickedtime.toString()}");
+                    print(crtime.toString());
                   },
                   child: Text('修改时间'),
                 ),
@@ -108,7 +115,11 @@ class _DocSetting extends State<DocSetting> {
   }
 
   backPage() {
-    return Navigator.of(context).pop(LastPage.ok);
+    if (widget.crtimeStr != crtime.toString()) {
+      return Navigator.of(context).pop(LastPageDocSetting(state: LastPage.change, crtime: crtime));
+    } else {
+      return Navigator.of(context).pop(LastPageDocSetting(state: LastPage.ok));
+    }
   }
 
   deleteDoc() async {
@@ -118,7 +129,7 @@ class _DocSetting extends State<DocSetting> {
       return;
     }
     if (mounted) {
-      Navigator.of(context).pop(LastPage.delete);
+      Navigator.of(context).pop(LastPageDocSetting(state: LastPage.delete));
     }
   }
 }

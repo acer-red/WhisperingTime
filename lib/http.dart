@@ -42,7 +42,7 @@ class ResponseGetTheme extends Basic {
 
 class RequestPutTheme {
   String name;
-  String get uptime => DateTime.now().millisecondsSinceEpoch.toString();
+  String get uptime => Time.nowTimestampString();
 
   String id;
   RequestPutTheme({required this.name, required this.id});
@@ -51,7 +51,8 @@ class RequestPutTheme {
 
 class RequestPostTheme {
   String name;
-  String get crtime => (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString();
+  String get crtime =>
+      (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString();
   RequestPostTheme({required this.name});
 
   Map<String, dynamic> toJson() => {
@@ -128,7 +129,7 @@ class ResponsePutGroup extends Basic {
 
 class RequestPutGroup {
   String name;
-  String get uptime => DateTime.now().millisecondsSinceEpoch.toString();
+  String get uptime => Time.nowTimestampString();
 
   String id;
   RequestPutGroup({required this.name, required this.id});
@@ -225,7 +226,7 @@ class ResponseGetDoc extends Basic {
 class RequestPostDoc {
   String title;
   String content;
-  String get crtime => DateTime.now().millisecondsSinceEpoch.toString();
+  String get crtime => Time.nowTimestampString();
   int level;
   RequestPostDoc(
       {required this.content, required this.title, required this.level});
@@ -239,8 +240,10 @@ class RequestPutDoc {
   String? content;
   String? title;
   int? level;
-  String get uptime => DateTime.now().millisecondsSinceEpoch.toString();
-  RequestPutDoc({required this.id, this.title, this.content, this.level});
+  String? crtime;
+  String get uptime => Time.nowTimestampString();
+  RequestPutDoc(
+      {required this.id, this.title, this.content, this.level, this.crtime});
 
   Map<String, dynamic> toJson() {
     Map<String, dynamic> data = {'id': id, 'uptime': uptime};
@@ -255,11 +258,15 @@ class RequestPutDoc {
       data['title'] = title;
     }
 
+    if (crtime != null) {
+      print("更新文档创建时间");
+      data['crtime'] = crtime;
+    }
+
     if (level != null) {
       print("更新文档等级");
       data['level'] = level;
     }
-
     return data;
   }
 }
@@ -351,7 +358,7 @@ class Http {
     };
     final Map<String, dynamic> data = {
       'data': req.toJson(),
-      "uptime": DateTime.now().millisecondsSinceEpoch.toString(),
+      "uptime": Time.nowTimestampString(),
     };
     final Map<String, String> headers = {
       "Content-Type": "application/json",
@@ -426,7 +433,7 @@ class Http {
     };
     final Map<String, dynamic> data = {
       'data': req.toJson(),
-      "crtime": DateTime.now().millisecondsSinceEpoch.toString(),
+      "crtime": Time.nowTimestampString(),
     };
     final Map<String, String> headers = {
       "Content-Type": "application/json",
@@ -498,7 +505,7 @@ class Http {
   }
 
   Future<ResponsePutDoc> postDoc(RequestPostDoc req) async {
-    print("创建日记");
+    print("创建印迹");
     if (gid == "") {
       throw ArgumentError('缺少gid');
     }
@@ -510,7 +517,7 @@ class Http {
     };
     final Map<String, dynamic> data = {
       'data': req.toJson(),
-      "crtime": DateTime.now().millisecondsSinceEpoch.toString(),
+      "crtime": Time.nowTimestampString(),
     };
     final Map<String, String> headers = {
       "Content-Type": "application/json",
