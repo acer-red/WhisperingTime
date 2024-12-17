@@ -101,9 +101,6 @@ class Time {
     return DateTime.now().add(const Duration(days: 9999999));
   }
 
-  static String getNextDayTimestampString() {
-    return toTimestampString(DateTime.now().add(const Duration(days: 1)));
-  }
   // 默认为一天
   static Duration getOverTime(){
     return const Duration(days: 1);

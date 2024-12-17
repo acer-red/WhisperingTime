@@ -28,16 +28,17 @@ class DocEditPage extends StatefulWidget {
 
   final String crtimeStr;
   final String uptimeStr;
-  DocEditPage({
-    required this.gid,
-    this.id,
-    this.gname,
-    required this.title,
-    required this.content,
-    required this.level,
-    required this.crtimeStr,
-    required this.uptimeStr,
-  });
+  final bool freeze;
+  DocEditPage(
+      {this.id,
+      this.gname,
+      required this.gid,
+      required this.title,
+      required this.content,
+      required this.level,
+      required this.crtimeStr,
+      required this.uptimeStr,
+      required this.freeze});
   @override
   State<DocEditPage> createState() => _DocEditPage();
 }
@@ -91,6 +92,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
                 border: InputBorder.none,
               ),
               onSubmitted: (text) => clickNewTitle(text),
+              enabled: widget.freeze,
               onEditingComplete: () {
                 setState(() {
                   isTitleSubmited = false;
@@ -101,10 +103,15 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
 
           // 标题右侧按钮
           actions: <Widget>[
-            IconButton(
-              icon: Icon(Icons.settings),
-              onPressed: () => enterSettingPage(),
-            )
+            widget.freeze
+                ? IconButton(
+                    icon: Icon(Icons.settings, color: Colors.grey), // 灰色图标
+                    onPressed: null,
+                  )
+                : IconButton(
+                    icon: Icon(Icons.settings),
+                    onPressed: () => enterSettingPage(),
+                  ),
           ],
         ),
 
@@ -112,7 +119,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.center, // 使 Text 组件左右居中
           children: [
-            _isSelected
+            widget.freeze && _isSelected
                 ? TextButton(
                     child: Text(Level().string(widget.level)),
                     onPressed: () => {
@@ -137,6 +144,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
                     autofocus: true,
                     keyboardType: TextInputType.multiline,
                     maxLines: null,
+                    enabled: widget.freeze,
                     decoration: InputDecoration(
                       hintText: '或简单，或详尽～',
                       border: InputBorder.none,
@@ -171,7 +179,6 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   }
 
   void backPage() async {
-
     if (widget.content == edit.text &&
         (titleEdit.text == defaultTitle ||
             titleEdit.text == widget.title) && // 控件中的文字是默认标题或原始标题
@@ -252,7 +259,10 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
 
     final realTitle = titleEdit.text == defaultTitle ? "" : titleEdit.text;
     final req = RequestPostDoc(
-        content: edit.text, title: realTitle, level: currentLevel,crtime: newCRTime);
+        content: edit.text,
+        title: realTitle,
+        level: currentLevel,
+        crtime: newCRTime);
     final ret = await Http(gid: widget.gid).postDoc(req);
     return LastPageDoc(
       state: LastPage.create,

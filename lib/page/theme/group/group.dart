@@ -30,6 +30,7 @@ class Group {
   }
 
   int getOverTimeStatus() {
+    // 顺序不能修改
     if (isNotEnterOverTime()) {
       return 0;
     }
@@ -37,6 +38,10 @@ class Group {
       return 1;
     }
     return 2;
+  }
+
+  bool isFreeze() {
+    return getOverTimeStatus() == 2;
   }
 }
 
@@ -141,12 +146,11 @@ class _GroupPage extends State<GroupPage> {
             onPressed: () => {
               showDialog(
                 context: context,
-                barrierDismissible: true, // 设置为 true 允许点击外部区域关闭
+                barrierDismissible: true,
                 builder: (BuildContext context) {
                   final Group item = _gitems[gidx];
                   int status = item.getOverTimeStatus();
-                  bool isFreezed = status == 0 ? false : true;
-                  print("$status,$isFreezed");
+                  bool isFreezed = item.isNotEnterOverTime() ? false : true;
 
                   return AlertDialog(
                     content: SingleChildScrollView(
@@ -238,10 +242,12 @@ class _GroupPage extends State<GroupPage> {
       ),
 
       // 右下角悬浮按钮
-      floatingActionButton: FloatingActionButton(
-        onPressed: clickNewEdit,
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: _gitems[gidx].isFreeze()
+          ? null
+          : FloatingActionButton(
+              onPressed: clickNewEdit,
+              child: const Icon(Icons.add),
+            ),
 
       // 左侧抽屉 分组列表
       drawer: Drawer(
@@ -470,6 +476,7 @@ class _GroupPage extends State<GroupPage> {
           level: getSelectLevel(),
           crtimeStr: "",
           uptimeStr: "",
+          freeze: false,
         ),
       ),
     );
@@ -508,6 +515,7 @@ class _GroupPage extends State<GroupPage> {
             level: doc.level,
             uptimeStr: doc.uptimeStr,
             crtimeStr: doc.crtimeStr,
+            freeze: _gitems[gidx].isFreeze(),
           ),
         ));
     setState(() {

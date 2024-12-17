@@ -1,6 +1,6 @@
 # 枫迹
 
-<p align="center">[enginsh](./README_en.md)</p>
+<p align="center"><a href="https://github.com/tengfei-xy/WhisperingTime/edit/main/README_en.md"> enginsh </a></p>
 
 定义：红枫系列产品之一，一款根据主题去记录下从初心到终点的印迹app。
 

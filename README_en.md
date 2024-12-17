@@ -1,6 +1,6 @@
 # WhisperingTime
 
-<p align="center">[中文](./README.md)</p>
+<p align="center"><a href="https://github.com/tengfei-xy/WhisperingTime"> 中文 </a></p>
 
 Definition: One of the Red Maple series products, an app that records the traces from the initial intention to the end according to the theme.
 
