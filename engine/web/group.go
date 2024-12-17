@@ -47,26 +47,26 @@ func GroupPut(g *gin.Context) {
 	tid := g.Query("tid")
 	log.Infof("获取主题 tid=%s", tid)
 
-	type request struct {
-		Data struct {
-			Name string `json:"name"`
-			ID   string `json:"id"`
-		} `json:"data"`
-		UpTime string `json:"uptime"`
+	type response struct {
+		ID string `json:"id"`
 	}
-	var req request
+
+	var req modb.RequestGroupPut
+	var res response
 	if err := g.ShouldBindBodyWithJSON(&req); err != nil {
 		log.Error(err)
 		badRequest(g)
 		return
 	}
 
-	if err := modb.GroupPut(tid, req.Data.Name, req.Data.ID); err != nil {
+	if err := modb.GroupPut(tid, &req); err != nil {
 		log.Error(err)
 		internalServerError(g)
 		return
 	}
-	ok(g)
+
+	res.ID = tid
+	okData(g, res)
 }
 func GroupDelete(g *gin.Context) {
 	gid := g.Query("gid")

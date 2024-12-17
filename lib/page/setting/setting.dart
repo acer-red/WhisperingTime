@@ -34,13 +34,5 @@ class _SettingsPage extends State<SettingsPage> {
     );
   }
 
-  Divider divider() {
-    return Divider(
-      height: 20, // 分割线高度 (包含上下间距)
-      thickness: 1, // 分割线粗细
-      indent: 20, // 左侧缩进
-      endIndent: 20, // 右侧缩进
-      color: Colors.grey[200], // 分割线颜色
-    );
-  }
+
 }

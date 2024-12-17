@@ -55,7 +55,7 @@ func ThemePut(g *gin.Context) {
 			Name string `json:"name"`
 			ID   string `json:"id"`
 		} `json:"data" `
-		UpTime string `json:"uptime"`
+		UPTime string `json:"uptime"`
 	}
 	type response struct {
 		Name string `json:"name"`

@@ -81,7 +81,7 @@ class _MyHomePageState extends State<MyHomePage> {
         bottomNavigationBar: BottomNavigationBar(
             items: const <BottomNavigationBarItem>[
               BottomNavigationBarItem(
-                  icon: Icon(Icons.checklist), label: "列表4"),
+                  icon: Icon(Icons.sunny), label: "主题"),
               BottomNavigationBarItem(icon: Icon(Icons.settings), label: "设置"),
             ],
             currentIndex: idx,

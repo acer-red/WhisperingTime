@@ -128,19 +128,39 @@ class ResponsePutGroup extends Basic {
 }
 
 class RequestPutGroup {
-  String name;
-  String get uptime => Time.nowTimestampString();
-
   String id;
-  RequestPutGroup({required this.name, required this.id});
-  Map<String, dynamic> toJson() => {'name': name, 'id': id, 'uptime': uptime};
+
+  String? name;
+  DateTime? overtime;
+  RequestPutGroup({this.name, required this.id, this.overtime});
+  Map<String, dynamic> toJson() {
+    Map<String, dynamic> data = {
+      'id': id,
+      'uptime': Time.nowTimestampString()
+    };
+
+    if (name != null) {
+      data['name'] = name!;
+    }
+    if (overtime != null) {
+      data['overtime'] = Time.toTimestampString(overtime!);
+    } else {
+      // 这里有加这个代码的必要性，来混淆（在加密数据后）一个PUT操作到底更新了什么。
+      data['overtime'] = Time.toTimestampString(Time.getForver());
+    }
+    return data;
+  }
 }
 
 class RequestPostGroup {
   String name;
+
   RequestPostGroup({required this.name});
   Map<String, dynamic> toJson() => {
         'name': name,
+        'crtime': Time.nowTimestampString(),
+        'uptime': Time.nowTimestampString(),
+        'overtime': Time.toTimestampString(Time.getForver())
       };
 }
 
@@ -153,12 +173,23 @@ class ResponseDeleteGroup {
 class GroupListData {
   String name;
   String id;
-  GroupListData({required this.name, required this.id});
+  DateTime crtime;
+  DateTime uptime;
+  DateTime overtime;
+  GroupListData(
+      {required this.name,
+      required this.id,
+      required this.crtime,
+      required this.overtime,
+      required this.uptime});
 
   factory GroupListData.fromJson(Map<String, dynamic> json) {
     return GroupListData(
       name: json['name'] as String,
       id: json['id'] as String,
+      crtime: Time.datetime(json['crtime'] as String),
+      uptime: Time.datetime(json['uptime'] as String),
+      overtime: Time.datetime(json['overtime'] as String),
     );
   }
 }
@@ -506,8 +537,8 @@ class Http {
 
     final json = await jsonDecode(response.body);
     final res = ResponseGetDoc.fromJson(json);
-    if (res.err ==0){
-      for (Doc line in res.data){
+    if (res.err == 0) {
+      for (Doc line in res.data) {
         line.crtime = Time.datetime(line.crtimeStr);
       }
     }

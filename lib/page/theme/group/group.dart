@@ -1,50 +1,42 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:whispering_time/env.dart';
 import 'doc/edit.dart';
 import 'package:whispering_time/http.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
-
 import 'package:timelines/timelines.dart';
 
 class Group {
   String name;
   String id;
-  bool isSubmitted;
-  TextEditingController _textEditingController = TextEditingController();
-  Group({required this.name, required this.id, required this.isSubmitted})
-      : _textEditingController = TextEditingController(text: name);
-}
+  DateTime overtime;
 
-class LineChartPainter extends CustomPainter {
-  final List<double> data;
+  Group({required this.name, required this.id, required this.overtime});
 
-  LineChartPainter(this.data);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.blue
-      ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke;
-
-    final path = Path();
-    final xScale = size.width / (data.length - 1);
-    final yScale = size.height / (data.reduce(max) - data.reduce(min));
-
-    path.moveTo(0, size.height - (data[0] - data.reduce(min)) * yScale);
-    for (int i = 1; i < data.length; i++) {
-      path.lineTo(
-          i * xScale, size.height - (data[i] - data.reduce(min)) * yScale);
-    }
-
-    canvas.drawPath(path, paint);
+  // 判断当前时间是否在overtime的之内
+  bool isBufTime() {
+    DateTime now = DateTime.now();
+    return now.isAfter(overtime) &&
+        now.isBefore(overtime.add(Time.getOverTime()));
   }
 
-  @override
-  bool shouldRepaint(LineChartPainter oldDelegate) {
-    return oldDelegate.data != data;
+  // 判断当前时间是否在overtime之后
+  bool isEnterOverTime() {
+    return DateTime.now().isAfter(overtime);
+  }
+
+  // 判断当前时间是否在overtime之前
+  bool isNotEnterOverTime() {
+    DateTime oneDayBefore = overtime.subtract(Time.getOverTime());
+    return DateTime.now().isBefore(oneDayBefore);
+  }
+
+  int getOverTimeStatus() {
+    if (isNotEnterOverTime()) {
+      return 0;
+    }
+    if (isBufTime()) {
+      return 1;
+    }
+    return 2;
   }
 }
 
@@ -74,13 +66,14 @@ class _GroupPage extends State<GroupPage> {
 
   List<String> viewExplain = ["卡片", "时间轴", "日历"];
   int gidx = 0;
-  String? pageTitleName;
   int viewType = 0;
+  bool isGrouTitleSubmitted = true;
+
+  TextEditingController groupTitleEdit = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    pageTitleName = widget.themename;
     getGroupList();
   }
 
@@ -98,22 +91,40 @@ class _GroupPage extends State<GroupPage> {
             Navigator.of(context).pop();
           },
         ),
+
         // 标题
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(pageTitleName!),
-            IconButton(
-                onPressed: () {
-                  _scaffoldKey.currentState?.openDrawer();
-                },
-                icon: Icon(Icons.arrow_drop_down))
-          ],
+        title: MouseRegion(
+          onExit: (_) => submitEditGroup(_gitems[gidx]),
+          child: TextField(
+            style: TextStyle(fontSize: 23),
+            textAlign: TextAlign.center, // 添加这行
+            controller: groupTitleEdit,
+            maxLines: 1,
+            autofocus: false,
+            keyboardType: TextInputType.text,
+            decoration: InputDecoration(
+              border: InputBorder.none,
+            ),
+            onSubmitted: (text) => submitEditGroup(_gitems[gidx]),
+            onEditingComplete: () {
+              setState(() {
+                submitEditGroup(_gitems[gidx]);
+              });
+            },
+          ),
         ),
 
         // 标题右侧的按钮
         actions: [
-          TextButton.icon(
+          // 打开分组列表
+          IconButton(
+              onPressed: () {
+                _scaffoldKey.currentState?.openDrawer();
+              },
+              icon: Icon(Icons.format_list_bulleted)),
+
+          // 切换分组视图
+          IconButton(
               onPressed: () => {
                     setState(() {
                       viewType++;
@@ -122,8 +133,107 @@ class _GroupPage extends State<GroupPage> {
                       }
                     })
                   },
-              label: Text(viewExplain[viewType]),
-              icon: Icon(Icons.loop))
+              icon: Icon(Icons.view_carousel_outlined)),
+
+          // 打开分组设置
+          IconButton(
+            icon: Icon(Icons.settings),
+            onPressed: () => {
+              showDialog(
+                context: context,
+                barrierDismissible: true, // 设置为 true 允许点击外部区域关闭
+                builder: (BuildContext context) {
+                  final Group item = _gitems[gidx];
+                  int status = item.getOverTimeStatus();
+                  bool isFreezed = status == 0 ? false : true;
+                  print("$status,$isFreezed");
+
+                  return AlertDialog(
+                    content: SingleChildScrollView(
+                      child: ListBody(
+                        children: <Widget>[
+                          IndexedStack(
+                            index: status,
+                            children: [
+                              SwitchListTile(
+                                title: const Text('定格'),
+                                subtitle: Text(
+                                    "定格后，本篇分组将无法编辑印迹，无法取消操作，只能回顾。定格后有1天缓冲期，用以取消。"),
+                                value: isFreezed,
+                                onChanged: (bool value) async {
+                                  bool ok = await setFreezeOverTime(gidx);
+                                  if (!ok) {
+                                    return;
+                                  }
+                                  if (mounted) {
+                                    setState(() {
+                                      (context as Element).markNeedsBuild();
+
+                                      isFreezed = true;
+                                      status = 1;
+                                    });
+                                  }
+                                },
+                              ),
+                              SwitchListTile(
+                                title: const Text('定格'),
+                                subtitle: Text(
+                                    "进入缓冲期,定格时间:${item.overtime.toString()}"),
+                                value: isFreezed,
+                                onChanged: (bool value) async {
+                                  bool ok = await setForverOverTime(gidx);
+                                  if (!ok) {
+                                    return;
+                                  }
+                                  if (mounted) {
+                                    setState(() {
+                                      (context as Element).markNeedsBuild();
+                                      isFreezed = false;
+                                      status = 0;
+                                    });
+                                  }
+                                },
+                              ),
+                              SwitchListTile(
+                                  title: const Text('定格'),
+                                  subtitle:
+                                      Text("已定格于${item.overtime.toString()}"),
+                                  value: true,
+                                  onChanged: null),
+                            ],
+                          ),
+                          divider(),
+                          ElevatedButton(
+                            onPressed: () => deleteLineGroup(gidx),
+                            style: ButtonStyle(
+                              backgroundColor: WidgetStateProperty.all<Color>(
+                                  Colors.red.shade900), // 设置红色背景
+                              minimumSize: WidgetStateProperty.all(
+                                  Size(200, 60)), // 设置按钮大小为 200x60
+                            ),
+                            child: Text(
+                              "删除 ${_gitems[gidx].name}",
+                              style: TextStyle(
+                                  color: Color(Colors.white.value),
+                                  fontSize: 17),
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+                    actions: <Widget>[
+                      TextButton(
+                        child: Text('关闭'),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                    ],
+                  );
+                },
+              )
+            },
+          ),
         ],
       ),
 
@@ -133,9 +243,10 @@ class _GroupPage extends State<GroupPage> {
         child: const Icon(Icons.add),
       ),
 
-      // 左侧分组列表
+      // 左侧抽屉 分组列表
       drawer: Drawer(
         child: Column(children: [
+          // 分组列表内容
           Expanded(
               child: ListView.builder(
             itemCount: _gitems.length,
@@ -143,65 +254,30 @@ class _GroupPage extends State<GroupPage> {
               final item = _gitems[index];
               return Padding(
                   padding: EdgeInsets.only(
-                      left: 20.0, right: 20.0, top: 10.0, bottom: 0.0),
-                  child: item.isSubmitted
-                      // 显示标题
-                      ? Slidable(
-                          key: ValueKey(item.id), // 每个 ListTile 需要一个唯一的 Key
-                          endActionPane: ActionPane(
-                            motion: ScrollMotion(), // 滑动动画效果
-                            children: [
-                              SlidableAction(
-                                onPressed: (context) =>
-                                    editLineGroup(_gitems[index]),
-                                backgroundColor: Colors.transparent,
-                                foregroundColor: Colors.blue,
-                                icon: Icons.edit,
-                                label: '编辑',
-                              ),
-                              SlidableAction(
-                                onPressed: (context) => deleteLineGroup(index),
-                                backgroundColor: Colors.transparent,
-                                foregroundColor: Colors.red,
-                                icon: Icons.delete,
-                                label: '删除',
-                              ),
-                            ],
-                          ),
-                          child: ListTile(
-                            title: Text(item.name),
-                            onTap: () => clickGroupTitle(index),
-                          ))
-                      // 显示标题的编辑框
-                      : Row(children: [
-                          SizedBox(
-                            width: 150,
-                            child: TextField(
-                              decoration: InputDecoration(
-                                labelText: '组名',
-                              ),
-                              controller: _gitems[index]._textEditingController,
-                            ),
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.check),
-                            onPressed: () => submitEditGroup(_gitems[index]),
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.remove_circle_rounded),
-                            onPressed: () => cancelEditGroup(index),
-                          )
-                        ]));
+                      left: 0.0, right: 00.0, top: 10.0, bottom: 0.0),
+                  child: ListTile(
+                    title: Text(item.name),
+                    onTap: () => clickGroupTitle(index),
+                  ));
             },
           )),
-          BottomActionButtons(onAddPressed: () {
-            setState(() {
-              _gitems.add(Group(name: "", id: "", isSubmitted: false));
-            });
-          }),
+          // 底部按钮
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.add), // 使用 const
+                onPressed: () {
+                  setState(() {
+                    _gitems.add(
+                        Group(name: "", id: "", overtime: Time.getNextDay()));
+                  });
+                },
+              ),
+            ],
+          ),
         ]),
       ),
-
       // 主体内容
       body: SafeArea(
         child: Center(
@@ -466,6 +542,30 @@ class _GroupPage extends State<GroupPage> {
     });
   }
 
+  Future<bool> setFreezeOverTime(int index) async {
+    Group item = _gitems[index];
+    final req = RequestPutGroup(id: item.id, overtime: Time.getNextDay());
+    final res = await Http(tid: widget.tid).putGroup(req);
+
+    if (res.err == 0) {
+      _gitems[index].overtime = req.overtime!;
+      return true;
+    }
+    return false;
+  }
+
+  Future<bool> setForverOverTime(int index) async {
+    Group item = _gitems[index];
+    final req = RequestPutGroup(id: item.id, overtime: Time.getForver());
+    final res = await Http(tid: widget.tid).putGroup(req);
+
+    if (res.err == 0) {
+      _gitems[index].overtime = req.overtime!;
+      return true;
+    }
+    return false;
+  }
+
   getGroupList() async {
     print("获取分组列表");
 
@@ -477,10 +577,10 @@ class _GroupPage extends State<GroupPage> {
         return;
       }
       _gitems = res.data
-          .map((l) => Group(name: l.name, id: l.id, isSubmitted: true))
+          .map((l) => Group(name: l.name, id: l.id, overtime: l.overtime))
           .toList();
 
-      pageTitleName = "${widget.themename}-${res.data[gidx].name}";
+      groupTitleEdit.text = res.data[gidx].name;
     });
     setDocs();
   }
@@ -489,18 +589,11 @@ class _GroupPage extends State<GroupPage> {
   clickGroupTitle(int index) {
     setState(() {
       gidx = index;
-      pageTitleName = "${widget.themename}-${_gitems[gidx].name}";
+      groupTitleEdit.text = _gitems[gidx].name;
     });
 
     Navigator.pop(context); // 关闭 drawer
     setDocs();
-  }
-
-  // 左侧抽屉菜单 - 分组列表 - 编辑按钮
-  editLineGroup(Group item) {
-    setState(() {
-      item.isSubmitted = false;
-    });
   }
 
   // 左侧抽屉菜单 - 分组列表 - 删除按钮
@@ -517,7 +610,7 @@ class _GroupPage extends State<GroupPage> {
       return;
     }
     setState(() {
-      pageTitleName = widget.themename;
+      groupTitleEdit.text = widget.themename;
       _ditems.clear();
     });
   }
@@ -531,18 +624,9 @@ class _GroupPage extends State<GroupPage> {
     }
   }
 
-  // 左侧抽屉菜单 - 添加分组 - 取消按钮
-  cancelEditGroup(int index) async {
-    if (_gitems[index].id == "") {
-      setState(() {
-        _gitems.removeAt(index);
-      });
-    }
-  }
-
   addGroup(Group item) async {
     print("创建分组");
-    final inputName = item._textEditingController.text;
+    final inputName = groupTitleEdit.text;
     final res = await Http(tid: widget.tid)
         .postGroup(RequestPostGroup(name: inputName));
     if (res.err != 0) {
@@ -551,53 +635,27 @@ class _GroupPage extends State<GroupPage> {
     setState(() {
       item.name = inputName;
       item.id = res.id;
-      item.isSubmitted = true;
     });
   }
 
   modGroup(Group item) async {
-    print("修改分组");
-    final inputName = item._textEditingController.text;
+    final inputName = groupTitleEdit.text;
     final stateName = item.name;
     if (inputName == stateName) {
-      setState(() {
-        item.isSubmitted = false;
-      });
+      return;
     }
     if (inputName == "") {
       return;
     }
+    print("修改分组");
+
     final res = await Http(tid: widget.tid)
         .putGroup(RequestPutGroup(name: inputName, id: item.id));
     if (res.err != 0) {
       return;
     }
     setState(() {
-      item.name = inputName;
-      item.isSubmitted = true;
+      _gitems[gidx].name = inputName;
     });
-  }
-}
-
-// 提取成独立的 Widget
-class BottomActionButtons extends StatelessWidget {
-  final VoidCallback onAddPressed;
-
-  const BottomActionButtons({
-    Key? key,
-    required this.onAddPressed,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: [
-        IconButton(
-          icon: const Icon(Icons.add), // 使用 const
-          onPressed: onAddPressed,
-        ),
-      ],
-    );
   }
 }

@@ -10,13 +10,26 @@ import (
 
 type RequestGroupPost struct {
 	Data struct {
-		Name string `json:"name"`
+		Name     string `json:"name"`
+		CRTime   string `json:"crtime"`
+		UPTime   string `json:"uptime"`
+		OverTime string `json:"overtime"`
 	} `json:"data"`
-	CRTime string `json:"crtime"`
+}
+type RequestGroupPut struct {
+	Data struct {
+		Name     string `json:"name"`
+		ID       string `json:"id"`
+		UPTime   string `json:"uptime"`
+		OverTime string `json:"overtime"`
+	} `json:"data"`
 }
 type Group struct {
-	Name string `json:"name" bson:"name"`
-	ID   string `json:"id" bson:"gid"`
+	Name     string `json:"name" bson:"name"`
+	ID       string `json:"id" bson:"gid"`
+	CRTime   string `json:"crtime" bson:"crtime"`
+	UPTime   string `json:"uptime" bson:"uptime"`
+	OverTime string `json:"overtime" bson:"overtime"`
 }
 
 func GetGOIDFromGID(gid string) (primitive.ObjectID, error) {
@@ -96,7 +109,9 @@ func GroupPost(tid string, req *RequestGroupPost) (string, error) {
 	data := bson.D{
 		{Key: "_toid", Value: toid},
 		{Key: "name", Value: req.Data.Name},
-		{Key: "crtime", Value: req.CRTime},
+		{Key: "crtime", Value: req.Data.CRTime},
+		{Key: "uptime", Value: req.Data.UPTime},
+		{Key: "overtime", Value: req.Data.OverTime},
 		{Key: "gid", Value: gid},
 	}
 
@@ -108,7 +123,9 @@ func GroupPost(tid string, req *RequestGroupPost) (string, error) {
 	}
 	return gid, nil
 }
-func GroupPut(tid, groupname string, id string) error {
+func GroupPut(tid string, req *RequestGroupPut) error {
+
+	var id string = (*req).Data.ID
 
 	toid, err := GetThemeObjIDFromTID(tid)
 	if err != nil {
@@ -119,16 +136,27 @@ func GroupPut(tid, groupname string, id string) error {
 		"_toid": toid,
 		"gid":   id,
 	}
-	update := bson.M{
-		"$set": bson.M{
-			"name": groupname,
-		},
+
+	data := bson.M{}
+
+	if (*req).Data.Name != "" {
+		data["name"] = (*req).Data.Name
+	}
+
+	if (*req).Data.UPTime != "" {
+		data["uptime"] = (*req).Data.UPTime
+	}
+
+	if (*req).Data.OverTime != "" {
+		data["overtime"] = (*req).Data.OverTime
 	}
 
 	_, err = db.Collection("group").UpdateOne(
 		context.TODO(),
 		filter,
-		update,
+		bson.M{
+			"$set": data,
+		},
 		nil,
 	)
 	return err
