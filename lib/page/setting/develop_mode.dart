@@ -67,12 +67,9 @@ class _DevleopmodeState extends State<Devleopmode> {
           divider(),
         ],
       ),
-      // divider(),
     );
   }
-  // updateServerAddress(){
 
-  // }
   backPage() {
     if (_isOpened != SharedPrefsManager().getDevlopMode()) {
       SharedPrefsManager().setDevlopMode(_isOpened);
