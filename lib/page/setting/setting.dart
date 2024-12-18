@@ -1,6 +1,7 @@
 // 设置页面
 import 'package:flutter/material.dart';
 import '../../env.dart';
+import './develop_mode.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -28,11 +29,32 @@ class _SettingsPage extends State<SettingsPage> {
               });
             },
           ),
-          divider(), // 分割线
+          divider(),
+
+          // 开发者模式
+          TextButton(
+            style: ButtonStyle(
+              minimumSize: WidgetStateProperty.all(Size(double.infinity, 60)),
+            ),
+            onPressed: () {
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => Devleopmode()));
+            },
+            child: Container(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "开发者模式",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+          ),
+
+          divider(),
         ],
       ),
     );
   }
-
-
 }

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:whispering_time/env.dart';
 import 'package:intl/intl.dart';
@@ -134,10 +135,7 @@ class RequestPutGroup {
   DateTime? overtime;
   RequestPutGroup({this.name, required this.id, this.overtime});
   Map<String, dynamic> toJson() {
-    Map<String, dynamic> data = {
-      'id': id,
-      'uptime': Time.nowTimestampString()
-    };
+    Map<String, dynamic> data = {'id': id, 'uptime': Time.nowTimestampString()};
 
     if (name != null) {
       data['name'] = name!;
@@ -342,7 +340,7 @@ class Http {
   final String? gid;
   final String? docid;
   static final String uid = SharedPrefsManager().getuid();
-  static const String baseurl = "127.0.0.1:21523";
+  static final String serverAddress = SharedPrefsManager().getServerAddress();
 
   Http({this.content, this.tid, this.gid, this.docid});
 
@@ -355,15 +353,26 @@ class Http {
       'uid': uid,
     };
 
-    final url = Uri.http(baseurl, "/theme", param);
-    final response = await http.get(
-      url,
-    );
+    final url = Uri.http(serverAddress, "/theme", param);
 
-    final json = await jsonDecode(response.body);
-    print(json);
-    final res = ResponseGetTheme.fromJson(json);
-    return res;
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final json = await jsonDecode(response.body);
+        print(json);
+        final res = ResponseGetTheme.fromJson(json);
+        return res;
+      } else {
+        throw Exception('HTTP 请求失败，状态码: ${response.statusCode}');
+      }
+    } on SocketException catch (e) {
+      Msg.error("服务器连接错误");
+      throw Exception(e);
+    } catch (e) {
+      Msg.error("服务器连接错误");
+      throw Exception(e);
+    }
   }
 
   posttheme(RequestPostTheme req) async {
@@ -378,7 +387,7 @@ class Http {
     final Map<String, String> headers = {
       "Content-Type": "application/json",
     };
-    final u = Uri.http(baseurl, path, param);
+    final u = Uri.http(serverAddress, path, param);
 
     final response =
         await http.post(u, body: jsonEncode(data), headers: headers);
@@ -399,7 +408,7 @@ class Http {
     final Map<String, String> headers = {
       "Content-Type": "application/json",
     };
-    final u = Uri.http(baseurl, path, param);
+    final u = Uri.http(serverAddress, path, param);
     final response =
         await http.put(u, body: jsonEncode(data), headers: headers);
     print(response.body);
@@ -413,7 +422,7 @@ class Http {
       'uid': uid,
       'tid': content!,
     };
-    final url = Uri.http(baseurl, path, param);
+    final url = Uri.http(serverAddress, path, param);
     final response = await http.delete(url);
     print(response.body);
     final json = jsonDecode(response.body);
@@ -431,7 +440,7 @@ class Http {
       'tid': tid!,
     };
 
-    final url = Uri.http(baseurl, "/group", param);
+    final url = Uri.http(serverAddress, "/group", param);
     final response = await http.get(
       url,
     );
@@ -447,7 +456,7 @@ class Http {
     const String path = "/group";
 
     final Map<String, String> param = {'uid': uid, 'gid': gid!};
-    final url = Uri.http(baseurl, path, param);
+    final url = Uri.http(serverAddress, path, param);
     final response = await http.delete(url);
     print(response.body);
     final json = jsonDecode(response.body);
@@ -475,7 +484,7 @@ class Http {
       "Content-Type": "application/json",
     };
 
-    final url = Uri.http(baseurl, path, param);
+    final url = Uri.http(serverAddress, path, param);
     final response =
         await http.post(url, body: jsonEncode(data), headers: headers);
     if (response.statusCode != 200) {
@@ -504,7 +513,7 @@ class Http {
     final Map<String, String> headers = {
       "Content-Type": "application/json",
     };
-    final url = Uri.http(baseurl, path, param);
+    final url = Uri.http(serverAddress, path, param);
     final response =
         await http.put(url, body: jsonEncode(data), headers: headers);
 
@@ -530,7 +539,7 @@ class Http {
       'gid': gid!,
     };
 
-    final url = Uri.http(baseurl, "/docs", param);
+    final url = Uri.http(serverAddress, "/docs", param);
     final response = await http.get(
       url,
     );
@@ -564,7 +573,7 @@ class Http {
       "Content-Type": "application/json",
     };
     print(data);
-    final url = Uri.http(baseurl, path, param);
+    final url = Uri.http(serverAddress, path, param);
     final response =
         await http.post(url, body: jsonEncode(data), headers: headers);
 
@@ -595,7 +604,7 @@ class Http {
       "Content-Type": "application/json",
     };
     print(data);
-    final url = Uri.http(baseurl, path, param);
+    final url = Uri.http(serverAddress, path, param);
     final response =
         await http.put(url, body: jsonEncode(data), headers: headers);
 
@@ -617,7 +626,7 @@ class Http {
       'gid': req.gid,
       'did': req.did
     };
-    final url = Uri.http(baseurl, path, param);
+    final url = Uri.http(serverAddress, path, param);
     final response = await http.delete(url);
     print(response.body);
     final json = jsonDecode(response.body);

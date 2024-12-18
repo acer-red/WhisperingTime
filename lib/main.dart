@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import './page/setting/setting.dart';
 import 'page/theme/theme.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:whispering_time/env.dart';
-
-// import 'package:shared_preferences/shared_preferences.dart';
+import './page/setting/setting.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,14 +21,18 @@ class MyApp extends StatelessWidget {
       create: (context) => MyAppState(),
       child: MaterialApp(
         title: '枫迹',
-        // 取消右上角的debug标识
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(
               seedColor: const Color.fromARGB(255, 211, 118, 5)),
         ),
-        home: const MyHomePage(),
+        home: Overlay( 
+        key: Msg.overlayKey, 
+        initialEntries: [
+          OverlayEntry(builder: (context) => MyHomePage()),
+        ],
+      ),
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,

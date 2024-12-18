@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
+
 enum LastPage { ok, delete, nochange, change, create, nocreate }
 
 class Level {
@@ -44,8 +47,42 @@ class SharedPrefsManager {
     return uid.replaceAll("-", "");
   }
 
+  String getServerAddress() {
+    String? str = _prefs?.getString("server_address");
+    if (str == null) {
+      str = '127.0.0.1:21523';
+      setString("server_address", str);
+      return str;
+    }
+    return str;
+  }
+
+  Future<bool> setServerAddress(String str) {
+    print("更新配置 服务器地址 $str");
+    return setString("server_address", str);
+  }
+
+  bool getDevlopMode() {
+    bool? b = _prefs?.getBool("devlop_mode");
+    if (b == null) {
+      b = false;
+      setBool("devlop_mode", b);
+      return b;
+    }
+    return b;
+  }
+  Future<bool> setDevlopMode(bool b ) async {
+    print("更新配置 开发者模式 $b");
+
+    return setBool("devlop_mode", b);
+  }
+
   Future<bool> setString(String key, String value) {
     return _prefs?.setString(key, value) ?? Future.value(false);
+  }
+
+  Future<bool> setBool(String key, bool value) {
+    return _prefs?.setBool(key, value) ?? Future.value(false);
   }
 }
 
@@ -56,13 +93,9 @@ class Setting {
     return _instance;
   }
 
-  Setting._internal();
-
   bool isVisualNoneTitle = true;
 
-  bool visualNoneTitle() {
-    return isVisualNoneTitle == true;
-  }
+  Setting._internal();
 }
 
 class Time {
@@ -93,9 +126,10 @@ class Time {
   }
 
   // 默认为一天
-  static Duration getOverTime(){
+  static Duration getOverTime() {
     return const Duration(days: 1);
   }
+
   static DateTime getNextDay() {
     return DateTime.now().add(Time.getOverTime());
   }
@@ -152,4 +186,55 @@ Divider divider() {
     endIndent: 20, // 右侧缩进
     color: Colors.grey[200], // 分割线颜色
   );
+}
+
+class Msg {
+  static final GlobalKey<OverlayState> overlayKey = GlobalKey<OverlayState>();
+  static OverlayEntry? _overlayEntry;
+  static Timer? _timer; // 定义一个 Timer 变量
+
+  static void error(String content) {
+    if (_overlayEntry != null) return;
+    _overlayEntry = OverlayEntry(
+      builder: (context) => Center(
+        child: IntrinsicWidth(
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.red.shade50,
+              borderRadius: BorderRadius.circular(20.0),
+            ),
+            padding: EdgeInsets.all(16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error, color: Colors.red.shade800),
+                Padding(
+                  padding: const EdgeInsets.only(left: 10),
+                  child: Text(
+                    content,
+                    style: TextStyle(
+                        fontSize: 15.0,
+                        decoration: TextDecoration.none,
+                        fontWeight: FontWeight.w400),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    overlayKey.currentState!.insert(_overlayEntry!);
+
+    _timer = Timer(Duration(seconds: 5), () {
+      hideOverlay();
+    });
+  }
+
+  static void hideOverlay() {
+    _timer?.cancel(); // 取消定时器
+    _timer = null;
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
 }
