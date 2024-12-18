@@ -3,6 +3,8 @@ import 'package:whispering_time/env.dart';
 import 'doc/edit.dart';
 import 'package:whispering_time/http.dart';
 import 'package:timelines/timelines.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:io';
 
 class Group {
   String name;
@@ -40,8 +42,8 @@ class Group {
     return 2;
   }
 
-  bool isFreeze() {
-    return getOverTimeStatus() == 2;
+  bool isFreezed() {
+    return getOverTimeStatus() != 0;
   }
 }
 
@@ -139,7 +141,7 @@ class _GroupPage extends State<GroupPage> {
                     })
                   },
               icon: Icon(Icons.view_carousel_outlined)),
-
+          IconButton(onPressed: () => exportGroup(), icon: Icon(Icons.share)),
           // 打开分组设置
           IconButton(
             icon: Icon(Icons.settings),
@@ -242,12 +244,10 @@ class _GroupPage extends State<GroupPage> {
       ),
 
       // 右下角悬浮按钮
-      floatingActionButton: _gitems[gidx].isFreeze()
-          ? null
-          : FloatingActionButton(
-              onPressed: clickNewEdit,
-              child: const Icon(Icons.add),
-            ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: clickNewEdit,
+        child: const Icon(Icons.add),
+      ),
 
       // 左侧抽屉 分组列表
       drawer: Drawer(
@@ -465,6 +465,9 @@ class _GroupPage extends State<GroupPage> {
 
   clickNewEdit() async {
     Group item = _gitems[gidx];
+    if (item.isFreezed()) {
+      return;
+    }
     final LastPageDoc ret = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -515,7 +518,7 @@ class _GroupPage extends State<GroupPage> {
             level: doc.level,
             uptimeStr: doc.uptimeStr,
             crtimeStr: doc.crtimeStr,
-            freeze: _gitems[gidx].isFreeze(),
+            freeze: _gitems[gidx].isFreezed(),
           ),
         ));
     setState(() {
@@ -665,5 +668,74 @@ class _GroupPage extends State<GroupPage> {
     setState(() {
       _gitems[gidx].name = inputName;
     });
+  }
+
+  void exportGroup() async {
+    int ret = await showExportOption();
+    switch (ret) {
+      case 0:
+        exportDesktopTXT();
+        break;
+      default:
+        break;
+    }
+  }
+
+  Future<void> exportDesktopTXT() async {
+    String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
+
+    // 用户取消了操作
+    if (selectedDirectory == null) {
+      return;
+    }
+
+    Directory directory = Directory(selectedDirectory);
+    print('选择的文件夹路径：${directory.path}');
+
+    final ret = await Http(gid: _gitems[gidx].id).getDocs();
+
+    if (ret.err != 0) {
+      print(ret);
+      return;
+    }
+    // 遍历文件列表并写入
+    for (Doc item in ret.data) {
+      final String fileName = item.title.isEmpty
+          ? item.crtime.toString()
+          : "${item.title} - ${Time.string(item.crtime!)}" ".txt";
+      final String filePath = '$selectedDirectory/$fileName';
+
+      // 创建并写入文件
+      File file = File(filePath);
+      await file.writeAsString(item.content);
+      print('文件已写入: $filePath');
+    }
+  }
+
+  Future<int> showExportOption() async {
+    int? ret = await showDialog<int>(
+      context: context,
+      barrierDismissible: true, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("导出${_gitems[gidx].name}"),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text("导出到本地"),
+                ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(0);
+                    },
+                    child: Text("仅文本")),
+                divider(),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    return ret ?? -1; // 如果用户没有点击按钮，则默认为 false
   }
 }

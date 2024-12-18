@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
-
 enum LastPage { ok, delete, nochange, change, create, nocreate }
 
 class Level {
@@ -18,14 +17,6 @@ class Level {
       child: Text(l[index]),
     );
   }
-
-  // static string(List<int> i) {
-  //   String ret = '';
-  //   for (int word in i) {
-  //     ret += l[word];
-  //   }
-  //   return ret;
-  // }
 }
 
 class SharedPrefsManager {

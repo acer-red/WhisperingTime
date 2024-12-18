@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:whispering_time/http.dart';
 import 'package:whispering_time/env.dart';
 import './setting.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:io';
 
 const String defaultTitle = "未命名的标题";
 
@@ -68,12 +70,14 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     return Scaffold(
         // 标题
         appBar: AppBar(
+          centerTitle: true,
+
           // 标题左侧的返回按钮
           leading: IconButton(
             icon: Icon(Icons.arrow_back),
             onPressed: () => backPage(),
           ),
-          centerTitle: true, // 添加这行
+
           // 标题
           title: GestureDetector(
             onTap: () {
@@ -92,7 +96,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
                 border: InputBorder.none,
               ),
               onSubmitted: (text) => clickNewTitle(text),
-              enabled: widget.freeze,
+              enabled: !widget.freeze,
               onEditingComplete: () {
                 setState(() {
                   isTitleSubmited = false;
@@ -103,6 +107,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
 
           // 标题右侧按钮
           actions: <Widget>[
+            IconButton(onPressed: () => exportDoc(), icon: Icon(Icons.share)),
             widget.freeze
                 ? IconButton(
                     icon: Icon(Icons.settings, color: Colors.grey), // 灰色图标
@@ -119,7 +124,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.center, // 使 Text 组件左右居中
           children: [
-            widget.freeze && _isSelected
+            !widget.freeze && _isSelected
                 ? TextButton(
                     child: Text(Level().string(widget.level)),
                     onPressed: () => {
@@ -144,7 +149,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
                     autofocus: true,
                     keyboardType: TextInputType.multiline,
                     maxLines: null,
-                    enabled: widget.freeze,
+                    enabled: !widget.freeze,
                     decoration: InputDecoration(
                       hintText: '或简单，或详尽～',
                       border: InputBorder.none,
@@ -294,5 +299,61 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
       crtimeStr: newCRTime,
       uptimeStr: req.uptime,
     );
+  }
+
+  void exportDoc() async {
+    int ret = await showExportOption();
+    switch (ret) {
+      case 0:
+        exportDesktop();
+        break;
+      default:
+        break;
+    }
+  }
+
+  Future<void> exportDesktop() async {
+    String? outputFile = await FilePicker.platform.saveFile(
+      dialogTitle: '选择保存路径',
+      fileName: titleEdit.text,
+      type: FileType.custom,
+      allowedExtensions: ['txt'],
+    );
+
+    // 用户取消了操作
+    if (outputFile == null) {
+      return;
+    }
+
+    File file = File(outputFile);
+    await file.writeAsString(edit.text);
+    print("文件已保存：${file.path}");
+  }
+
+  Future<int> showExportOption() async {
+    int? ret = await showDialog<int>(
+      context: context,
+      barrierDismissible: true, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("导出印迹"),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text("导出到本地"),
+                ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(0);
+                    },
+                    child: Text("仅文本")),
+                divider(),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    return ret ?? -1; // 如果用户没有点击按钮，则默认为 false
   }
 }
