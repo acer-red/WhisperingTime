@@ -27,12 +27,12 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(
               seedColor: const Color.fromARGB(255, 211, 118, 5)),
         ),
-        home: Overlay( 
-        key: Msg.overlayKey, 
-        initialEntries: [
-          OverlayEntry(builder: (context) => MyHomePage()),
-        ],
-      ),
+        home: Overlay(
+          key: Msg.overlayKey,
+          initialEntries: [
+            OverlayEntry(builder: (context) => MyHomePage()),
+          ],
+        ),
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
@@ -60,38 +60,18 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int idx = 0;
-
-  Widget panel(int idx) {
-    switch (idx) {
-      case 0:
-        return ThemePage();
-      case 1:
-        return SettingsPage();
-      default:
-        throw UnimplementedError('no widget for $selectedIndex');
-    }
-  }
-
-  var selectedIndex = 0;
-
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
       return Scaffold(
-        body: panel(idx),
-        bottomNavigationBar: BottomNavigationBar(
-            items: const <BottomNavigationBarItem>[
-              BottomNavigationBarItem(
-                  icon: Icon(Icons.sunny), label: "主题"),
-              BottomNavigationBarItem(icon: Icon(Icons.settings), label: "设置"),
+        body: SafeArea(
+          child: Column(
+            children: [
+              SizedBox(height: 200, child: ThemePage()),
+              SizedBox(height: 200, child: SettingsPage()),
             ],
-            currentIndex: idx,
-            onTap: (x) {
-              setState(() {
-                idx = x;
-              });
-            }),
+          ),
+        ),
       );
     });
   }

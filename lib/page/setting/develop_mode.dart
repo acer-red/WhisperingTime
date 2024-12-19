@@ -7,14 +7,13 @@ class Devleopmode extends StatefulWidget {
 }
 
 class _DevleopmodeState extends State<Devleopmode> {
-  bool _isOpened = SharedPrefsManager().getDevlopMode();
+   bool _isOpened = SharedPrefsManager().getDevlopMode();
   TextEditingController serverAddressControl = TextEditingController();
   @override
   void initState() {
     super.initState();
     serverAddressControl.text = SharedPrefsManager().getServerAddress();
   }
-  
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +58,6 @@ class _DevleopmodeState extends State<Devleopmode> {
                     border: InputBorder.none,
                   ),
                   controller: serverAddressControl,
-
                 ),
               )
             ]),
@@ -75,7 +73,7 @@ class _DevleopmodeState extends State<Devleopmode> {
       SharedPrefsManager().setDevlopMode(_isOpened);
     }
     if (serverAddressControl.text != SharedPrefsManager().getServerAddress()) {
-      SharedPrefsManager().setServerAddress(serverAddressControl.text );
+      SharedPrefsManager().setServerAddress(serverAddressControl.text);
     }
     Navigator.of(context).pop();
   }

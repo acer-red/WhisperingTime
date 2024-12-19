@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:whispering_time/env.dart';
 import 'group/group.dart';
 import 'package:whispering_time/http.dart';
 
 class Item {
-  bool isSubmitted;
-  TextEditingController _textEditingController = TextEditingController();
+  bool? isPressed;
   String? tid;
   String? themename;
-  Item({this.tid, this.themename, required this.isSubmitted})
-      : _textEditingController = TextEditingController(text: themename);
+  Item({this.tid, this.themename, this.isPressed});
 }
 
 // 主题页面
@@ -35,7 +34,9 @@ class _ThemePageState extends State<ThemePage> {
         }
         setState(() {
           _items.add(Item(
-              tid: list.data[i].id, themename: list.data[i].name, isSubmitted: true));
+              tid: list.data[i].id,
+              themename: list.data[i].name,
+              isPressed: false));
         });
       }
     });
@@ -43,138 +44,307 @@ class _ThemePageState extends State<ThemePage> {
 
   @override
   Widget build(BuildContext context) {
+    final scrollController = ScrollController();
+    double initialDragPosition = 0;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('主题'),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: add,
-        child: const Icon(Icons.add),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              itemCount: _items.length,
-              itemBuilder: (context, index) {
-                return _buildItem(index);
-              },
+      body: Padding(
+        padding:
+            const EdgeInsets.only(bottom: 10, top: 10.0, left: 50, right: 50),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Text(
+                  "印迹主题",
+                  style: TextStyle(fontWeight: FontWeight.w500, fontSize: 17),
+                ),
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.more_horiz),
+                  onSelected: (String value) {
+                    // 处理菜单项点击事件
+                    switch (value) {
+                      case 'event_add_theme':
+                        add();
+                        break;
+                      case 'event_export':
+                        // 执行编辑操作
+                        break;
+                    }
+                  },
+                  itemBuilder: (BuildContext context) =>
+                      <PopupMenuEntry<String>>[
+                    const PopupMenuItem<String>(
+                      value: 'event_add_theme',
+                      child: Text('添加主题'),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'event_export',
+                      child: Text(
+                        '导出',
+                      ),
+                    ),
+                  ],
+                )
+              ],
             ),
-          ),
-        ],
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                
+                minHeight: 70,
+                maxHeight: 140,
+              ),
+              child: GestureDetector(
+                onHorizontalDragStart: (details) {
+                  initialDragPosition = details.localPosition.dx;
+                },
+                onHorizontalDragUpdate: (details) {
+                  final currentPosition = details.localPosition.dx;
+                  final delta = currentPosition - initialDragPosition;
+                  scrollController.jumpTo(scrollController.offset - delta);
+                  initialDragPosition = currentPosition;
+                },
+                child: ListView.builder(
+                  controller: scrollController,
+                  itemCount: _items.length,
+                  scrollDirection: Axis.horizontal, // 设置滚动方向为水平
+                  itemBuilder: (context, index) {
+                    return _buildItem(index);
+                  },
+                ),
+              ),
+            )
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildItem(int index) {
-    return FractionallySizedBox(
-      widthFactor: 1,
-      child: Padding(
-        padding: EdgeInsets.only(left: 40, top: 10.0),
-        child: StatefulBuilder(builder: (context, setState) {
-          return IntrinsicWidth(
-              child: _items[index].isSubmitted
-                  // 文本模式
-                  ? Row(
-                      children: [
-                        EditableTextField(
-                          _items[index],
-                          onEdit: () {
-                            setState(
-                                () {}); // Triggers a rebuild of the parent widget.
-                          },
+    return Padding(
+      padding: EdgeInsets.only(right: 16),
+      child: _items[index].isPressed!
+          ? Column(
+              children: [
+                Row(
+                  children: [
+                    Text(_items[index].themename!),
+                    PopupMenuButton<String>(
+                      icon: Icon(Icons.more_horiz),
+                      onSelected: (String value) {
+                        // 处理菜单项点击事件
+                        switch (value) {
+                          case '重命名':
+                            rename(index);
+                            break;
+                          case '导出':
+                            // 执行编辑操作
+                            print("导出");
+                            break;
+                          case '删除':
+                            remove(_items[index]);
+                            break;
+                        }
+                      },
+                      itemBuilder: (BuildContext context) =>
+                          <PopupMenuEntry<String>>[
+                        const PopupMenuItem<String>(
+                          value: '重命名',
+                          child: Text('重命名'),
+                        ),
+                        const PopupMenuItem<String>(
+                          value: '导出',
+                          child: Text(
+                            '导出',
+                          ),
+                        ),
+                        const PopupMenuItem<String>(
+                          value: '删除',
+                          child: Text(
+                            '删除',
+                          ),
                         ),
                       ],
-                    )
-                  // 编辑模式
-                  : Row(children: [
-                      SizedBox(
-                        width: 150,
-                        child: TextField(
-                          decoration: InputDecoration(
-                            labelText: '主题名',
-                          ),
-                          controller: _items[index]._textEditingController,
-                        ),
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.only( bottom: 8.0),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => GroupPage(
+                                  themename: _items[index].themename!,
+                                  tid: _items[index].tid!)));
+                    },
+                    style: ElevatedButton.styleFrom(
+                      elevation: 0, // 阴影大小
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0), // 圆角
                       ),
-                      IconButton(
-                          icon: Icon(Icons.check),
-                          onPressed: () => submit(_items[index])),
-                      IconButton(
-                          icon: Icon(Icons.remove_circle_rounded),
-                          onPressed: () => remove(_items[index])),
-                    ]));
-        }),
-      ),
+                  
+                    ),
+                    child: Text(
+                      "成长印迹",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only( bottom: 8.0),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => GroupPage(
+                                  themename: _items[index].themename!,
+                                  tid: _items[index].tid!)));
+                    },
+                    style: ElevatedButton.styleFrom(
+                      elevation: 0, // 阴影大小
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0), // 圆角
+                      ),
+                    ),
+                    child: Text(
+                      "定格印迹",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                )
+              ],
+            )
+          : ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _items[index].isPressed = true;
+                });
+              },
+              style: ElevatedButton.styleFrom(
+                elevation: 0, // 阴影大小
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0), // 圆角
+                ),
+                padding: EdgeInsets.only(left: 25,right: 25)
+              ),
+              child: Text(
+                _items[index].themename!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
     );
   }
 
-  void add() {
+  void add() async {
+    String? result;
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          content: TextField(
+            onChanged: (value) {
+              result = value;
+            },
+            decoration: const InputDecoration(hintText: "请输入主题名"),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('取消'),
+              onPressed: () {
+                Navigator.of(context).pop(); // 关闭对话框
+              },
+            ),
+            TextButton(
+              child: const Text('确定'),
+              onPressed: () {
+                Navigator.of(context).pop(result); // 返回结果并关闭对话框
+              },
+            ),
+          ],
+        );
+      },
+    );
+    if (result == null) {
+      return;
+    }
+    if (result!.isEmpty) {
+      return;
+    }
+
+    final res = await Http().posttheme(RequestPostTheme(name: result!));
+
+    if (res['err'] != 0) {
+      return;
+    }
+
     setState(() {
-      _items.add(Item(isSubmitted: false));
-    });
-    // 用于测试
-    // for (int i = 0; i <= 10; i++) {
-    //   submitNoID(Item(isSubmitted: false, themename: i.toString()));
-    // }
-  }
-
-  void submit(Item item) {
-    if (item._textEditingController.text == "") {
-      return;
-    }
-
-    if (item.tid == null) {
-      submitNoID(item);
-      return;
-    }
-    submitID(item);
-  }
-
-  void submitNoID(Item item) {
-    final req = RequestPostTheme(name: item._textEditingController.text);
-    final res = Http().posttheme(req);
-    res.then((res) {
-      if (res['err'] != 0) {
-        return;
-      }
-      setState(() {
-        item.themename = res['data']['name'];
-        item.tid = res['data']['id'];
-        item.isSubmitted = true;
-      });
+      _items.add(Item(themename: result, isPressed: false));
     });
   }
 
-  void submitID(Item item) {
-    if (item.themename == item._textEditingController.text ||
-        item._textEditingController.text == "") {
-      setState(() {
-        item.isSubmitted = true;
-      });
+  void rename(int index) async {
+    String? result;
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          content: TextField(
+            onChanged: (value) {
+              result = value;
+            },
+            decoration: InputDecoration(hintText: _items[index].themename!),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('取消'),
+              onPressed: () {
+                Navigator.of(context).pop(); // 关闭对话框
+              },
+            ),
+            TextButton(
+              child: const Text('确定'),
+              onPressed: () {
+                Navigator.of(context).pop(result); // 返回结果并关闭对话框
+              },
+            ),
+          ],
+        );
+      },
+    );
+    if (result == null) {
+      return;
+    }
+    if (result!.isEmpty) {
       return;
     }
 
-    final res = Http(content: item._textEditingController.text).puttheme(
-        RequestPutTheme(name: item._textEditingController.text, id: item.tid!));
+    final res = await Http().puttheme(RequestPutTheme(
+        name: _items[index].themename!, id: _items[index].tid!));
 
-    res.then((res) {
-      if (res['err'] != 0) {
-        return;
-      }
+    if (res['err'] != 0) {
+      return;
+    }
 
-      setState(() {
-        item.themename = res['data']['name'];
-        item.isSubmitted = true;
-      });
+    setState(() {
+      _items[index].themename = result;
     });
   }
 
-  void remove(Item item) {
+  void remove(Item item) async {
     if (item.tid == null) {
       setState(() {
         _items.remove(item);
       });
+      return;
+    }
+
+    if (!(await showConfirmationDialog(
+        context, MyDialog(content: "是否删除", title: "提示")))) {
       return;
     }
 
@@ -188,65 +358,57 @@ class _ThemePageState extends State<ThemePage> {
       });
     });
   }
-}
 
-// 主题条控件
-class EditableTextField extends StatefulWidget {
-  final Item item;
-  final Function onEdit;
-  EditableTextField(this.item, {Key? key, required this.onEdit})
-      : super(key: key);
-
-  @override
-  State<EditableTextField> createState() => _EditableTextFieldState();
-}
-
-class _EditableTextFieldState extends State<EditableTextField> {
-  bool _showEditButton = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _showEditButton = true),
-      onExit: (_) => setState(() => _showEditButton = false),
-      child: Stack(
-        alignment: Alignment.centerRight,
-        children: [
-          SizedBox(
-            height: 40,
-            child: Row(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (context) => letadd()));
-                    },
-                    child: Text(widget.item._textEditingController.text),
-                  ),
-                ),
-                if (_showEditButton)
-                  IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () {
-                      setState(() {
-                        widget.item.isSubmitted = false;
-                      });
-                      widget.onEdit();
-                    },
-                  )
-              ],
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget letadd() {
-    return GroupPage(
-        themename: widget.item._textEditingController.text,
-        tid: widget.item.tid!);
-  }
+  // Future<LastPageThemeSetting> ShowThemeSetting(Item item) async {
+  //   LastPageThemeSetting result =
+  //       LastPageThemeSetting(state: LastPage.nochange);
+  //   TextEditingController title = TextEditingController(text: item.themename);
+  //   await showDialog(
+  //     context: context,
+  //     builder: (context) {
+  //       return AlertDialog(
+  //         title: Text("主题设置"),
+  //         content: Row(
+  //           children: [
+  //             TextField(
+  //               controller: title,
+  //               decoration: InputDecoration(hintText: item.themename),
+  //             ),
+  //             ElevatedButton(
+  //               onPressed: () => {
+  //                 Navigator.of(context)
+  //                     .pop(LastPageThemeSetting(state: LastPage.delete))
+  //               },
+  //               style: ButtonStyle(
+  //                 backgroundColor: WidgetStateProperty.all<Color>(
+  //                     Colors.red.shade900), // 设置红色背景
+  //                 minimumSize:
+  //                     WidgetStateProperty.all(Size(200, 60)), // 设置按钮大小为 200x60
+  //               ),
+  //               child: Text(
+  //                 '删除',
+  //                 style:
+  //                     TextStyle(color: Color(Colors.white.value), fontSize: 17),
+  //               ),
+  //             )
+  //           ],
+  //         ),
+  //         actions: <Widget>[
+  //           TextButton(
+  //             child: const Text('关闭'),
+  //             onPressed: () {
+  //               if (title.text != item.themename) {
+  //                 Navigator.of(context).pop(LastPageThemeSetting(
+  //                     state: LastPage.change, name: title.text));
+  //               }
+  //               Navigator.of(context)
+  //                   .pop(LastPageThemeSetting(state: LastPage.nochange));
+  //             },
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  //   return result;
+  // }
 }

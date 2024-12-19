@@ -14,8 +14,8 @@ class DocSetting extends StatefulWidget {
 class LastPageDocSetting {
   LastPage state;
 
-  DateTime ?crtime;
-  LastPageDocSetting({required this.state,this.crtime});
+  DateTime? crtime;
+  LastPageDocSetting({required this.state, this.crtime});
 }
 
 class _DocSetting extends State<DocSetting> {
@@ -116,13 +116,19 @@ class _DocSetting extends State<DocSetting> {
 
   backPage() {
     if (widget.crtimeStr != crtime.toString()) {
-      return Navigator.of(context).pop(LastPageDocSetting(state: LastPage.change, crtime: crtime));
+      return Navigator.of(context)
+          .pop(LastPageDocSetting(state: LastPage.change, crtime: crtime));
     } else {
       return Navigator.of(context).pop(LastPageDocSetting(state: LastPage.ok));
     }
   }
 
   deleteDoc() async {
+    if (!(await showConfirmationDialog(
+        context, MyDialog(content: "是否删除", title: "提示")))) {
+      return;
+    }
+
     final ret = await Http()
         .deleteDoc(RequestDeleteDoc(gid: widget.gid, did: widget.did));
     if (ret.err != 0) {
