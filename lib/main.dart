@@ -7,8 +7,7 @@ import './page/setting/setting.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await SharedPrefsManager().init(); // 在这里调用 init()
-  Setting();
+  await Settings().init(); // 在这里调用 init()
   runApp(const MyApp());
 }
 

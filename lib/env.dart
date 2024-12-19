@@ -22,15 +22,15 @@ class Level {
   }
 }
 
-class SharedPrefsManager {
-  static final SharedPrefsManager _instance = SharedPrefsManager._internal();
+class Settings {
+  static final Settings _instance = Settings._internal();
   SharedPreferences? _prefs;
 
-  factory SharedPrefsManager() {
+  factory Settings() {
     return _instance;
   }
 
-  SharedPrefsManager._internal();
+  Settings._internal();
 
   Future<void> init() async {
     _prefs ??= await SharedPreferences.getInstance();
@@ -71,9 +71,24 @@ class SharedPrefsManager {
     }
     return b;
   }
-  Future<bool> setDevlopMode(bool b ) async {
-    print("更新配置 开发者模式 $b");
 
+  Future<bool> setDevlopMode(bool b) async {
+    print("更新配置 开发者模式 $b");
+    return setBool("devlop_mode", b);
+  }
+
+  bool getVisualNoneTitle() {
+    bool? b = _prefs?.getBool("VisualNoneTitle");
+    if (b == null) {
+      b = false;
+      setBool("VisualNoneTitle", b);
+      return b;
+    }
+    return b;
+  }
+
+  Future<bool> setVisualNoneTitle(bool b) async {
+    print("更新配置 隐藏空白标题 $b");
     return setBool("devlop_mode", b);
   }
 
@@ -84,18 +99,6 @@ class SharedPrefsManager {
   Future<bool> setBool(String key, bool value) {
     return _prefs?.setBool(key, value) ?? Future.value(false);
   }
-}
-
-class Setting {
-  static final Setting _instance = Setting._internal(); // 私有静态实例
-
-  factory Setting() {
-    return _instance;
-  }
-
-  bool isVisualNoneTitle = true;
-
-  Setting._internal();
 }
 
 class Time {

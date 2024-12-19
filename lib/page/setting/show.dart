@@ -7,12 +7,11 @@ class Show extends StatefulWidget {
 }
 
 class _ShowState extends State<Show> {
- 
-  TextEditingController serverAddressControl = TextEditingController();
+ bool visualNoneTitle = Settings().getVisualNoneTitle();
+
   @override
   void initState() {
     super.initState();
-    serverAddressControl.text = SharedPrefsManager().getServerAddress();
   }
 
   @override
@@ -27,11 +26,11 @@ class _ShowState extends State<Show> {
       ),
       body: SwitchListTile(
         title: const Text('隐藏空白标题'),
-        value: Setting().isVisualNoneTitle,
+        value: visualNoneTitle,
         onChanged: (bool value) {
           setState(() {
-            Setting().isVisualNoneTitle = value;
-            print(Setting().isVisualNoneTitle);
+            visualNoneTitle = value;
+            Settings().setVisualNoneTitle(value);
           });
         },
       ),

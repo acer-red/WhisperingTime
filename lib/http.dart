@@ -339,8 +339,8 @@ class Http {
   final String? tid;
   final String? gid;
   final String? docid;
-  static final String uid = SharedPrefsManager().getuid();
-  static final String serverAddress = SharedPrefsManager().getServerAddress();
+  static final String uid = Settings().getuid();
+  static final String serverAddress = Settings().getServerAddress();
 
   Http({this.content, this.tid, this.gid, this.docid});
 

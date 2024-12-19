@@ -354,7 +354,7 @@ class _GroupPage extends State<GroupPage> {
                                   Visibility(
                                     visible: item.title.isNotEmpty ||
                                         (item.title.isEmpty &&
-                                            !Setting().isVisualNoneTitle),
+                                            !Settings().getVisualNoneTitle()),
                                     child: ListTile(
                                       title: Text(item.title,
                                           style: TextStyle(
