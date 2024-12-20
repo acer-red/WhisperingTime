@@ -91,163 +91,81 @@ class _GroupPage extends State<GroupPage> {
 
       // 页面标题栏
       appBar: AppBar(
-        // 标题左侧的按钮
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-        ),
-
-        // 标题
-        title: MouseRegion(
-          onExit: (_) => submitEditGroup(_gitems[gidx]),
-          child: TextField(
-            style: TextStyle(fontSize: 23),
-            textAlign: TextAlign.center, // 添加这行
-            controller: groupTitleEdit,
-            maxLines: 1,
-            autofocus: false,
-            keyboardType: TextInputType.text,
-            decoration: InputDecoration(
-              border: InputBorder.none,
-            ),
-            onSubmitted: (text) => submitEditGroup(_gitems[gidx]),
-            onEditingComplete: () {
-              setState(() {
-                submitEditGroup(_gitems[gidx]);
-              });
+          // 标题左侧的按钮
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.of(context).pop();
             },
           ),
-        ),
 
-        // 标题右侧的按钮
-        actions: [
-          // 打开分组列表
-          IconButton(
-              onPressed: () {
-                _scaffoldKey.currentState?.openDrawer();
-              },
-              icon: Icon(Icons.format_list_bulleted)),
-
-          // 切换分组视图
-          IconButton(
-              onPressed: () => {
-                    setState(() {
-                      viewType++;
-                      if (viewExplain.length == viewType) {
-                        viewType = 0;
-                      }
-                    })
+          // 标题
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _gitems.isEmpty ? Text("") : Text(_gitems[gidx].name),
+              IconButton(
+                  onPressed: () {
+                    _scaffoldKey.currentState?.openDrawer();
                   },
-              icon: Icon(Icons.view_carousel_outlined)),
-          IconButton(onPressed: () => exportGroup(), icon: Icon(Icons.share)),
-          // 打开分组设置
-          IconButton(
-            icon: Icon(Icons.settings),
-            onPressed: () => {
-              showDialog(
-                context: context,
-                barrierDismissible: true,
-                builder: (BuildContext context) {
-                  final Group item = _gitems[gidx];
-                  int status = item.getOverTimeStatus();
-                  bool isFreezed = item.isNotEnterOverTime() ? false : true;
-
-                  return AlertDialog(
-                    content: SingleChildScrollView(
-                      child: ListBody(
-                        children: <Widget>[
-                          IndexedStack(
-                            index: status,
-                            children: [
-                              SwitchListTile(
-                                title: const Text('定格'),
-                                subtitle: Text(
-                                    "定格后，本篇分组将无法编辑印迹，无法取消操作，只能回顾。定格后有1天缓冲期，用以取消。"),
-                                value: isFreezed,
-                                onChanged: (bool value) async {
-                                  bool ok = await setFreezeOverTime(gidx);
-                                  if (!ok) {
-                                    return;
-                                  }
-                                  if (mounted) {
-                                    setState(() {
-                                      (context as Element).markNeedsBuild();
-
-                                      isFreezed = true;
-                                      status = 1;
-                                    });
-                                  }
-                                },
-                              ),
-                              SwitchListTile(
-                                title: const Text('定格'),
-                                subtitle: Text(
-                                    "进入缓冲期,定格时间:${item.overtime.toString()}"),
-                                value: isFreezed,
-                                onChanged: (bool value) async {
-                                  bool ok = await setForverOverTime(gidx);
-                                  if (!ok) {
-                                    return;
-                                  }
-                                  if (mounted) {
-                                    setState(() {
-                                      (context as Element).markNeedsBuild();
-                                      isFreezed = false;
-                                      status = 0;
-                                    });
-                                  }
-                                },
-                              ),
-                              SwitchListTile(
-                                  title: const Text('定格'),
-                                  subtitle:
-                                      Text("已定格于${item.overtime.toString()}"),
-                                  value: true,
-                                  onChanged: null),
-                            ],
-                          ),
-                          divider(),
-                          ElevatedButton(
-                            onPressed: () => deleteLineGroup(gidx),
-                            style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all<Color>(
-                                  Colors.red.shade900), // 设置红色背景
-                              minimumSize: WidgetStateProperty.all(
-                                  Size(200, 60)), // 设置按钮大小为 200x60
-                            ),
-                            child: Text(
-                              "删除 ${_gitems[gidx].name}",
-                              style: TextStyle(
-                                  color: Color(Colors.white.value),
-                                  fontSize: 17),
-                            ),
-                          )
-                        ],
-                      ),
-                    ),
-                    actions: <Widget>[
-                      TextButton(
-                        child: Text('关闭'),
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                      ),
-                    ],
-                  );
-                },
-              )
-            },
+                  icon: Icon(Icons.arrow_drop_down)),
+            ],
           ),
-        ],
-      ),
 
-      // 右下角悬浮按钮
-      floatingActionButton: FloatingActionButton(
-        onPressed: clickNewEdit,
-        child: const Icon(Icons.add),
-      ),
+          // 标题右侧的按钮
+          actions: <Widget>[
+            PopupMenuButton<int>(
+              onSelected: (int value) {
+                // 处理菜单项点击事件
+                switch (value) {
+                  case 10000:
+                    clickSwitchView();
+                    break;
+                  case 20000:
+                    clickExportGroup();
+                    break;
+                  case 30000:
+                    clickRename();
+                    break;
+                  case 40000:
+                    clickSetting();
+                    break;
+                  case 50000:
+                    clickAddGroup();
+                    break;
+                  case 60000:
+                    clickDeleteGroup(gidx);
+                    break;
+                }
+              },
+              itemBuilder: (BuildContext context) => <PopupMenuEntry<int>>[
+                const PopupMenuItem<int>(
+                  value: 10000,
+                  child: Text('视图切换'),
+                ),
+                const PopupMenuItem<int>(
+                  value: 50000,
+                  child: Text('添加分组'),
+                ),
+                const PopupMenuItem<int>(
+                  value: 30000,
+                  child: Text('重命名'),
+                ),
+                const PopupMenuItem<int>(
+                  value: 20000,
+                  child: Text('导出'),
+                ),
+                const PopupMenuItem<int>(
+                  value: 40000,
+                  child: Text('设置'),
+                ),
+                const PopupMenuItem<int>(
+                  value: 60000,
+                  child: Text("删除",style: TextStyle(color:Colors.red),),
+                )
+              ],
+            ),
+          ]),
 
       // 左侧抽屉 分组列表
       drawer: Drawer(
@@ -284,6 +202,7 @@ class _GroupPage extends State<GroupPage> {
           ),
         ]),
       ),
+
       // 主体内容
       body: SafeArea(
         child: Center(
@@ -408,7 +327,162 @@ class _GroupPage extends State<GroupPage> {
     );
   }
 
+  clickSwitchView() {
+    setState(() {
+      viewType++;
+      if (viewExplain.length == viewType) {
+        viewType = 0;
+      }
+    });
+  }
+
+  clickRename() async {
+    String? result;
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          content: TextField(
+            onChanged: (value) {
+              result = value;
+            },
+            decoration: InputDecoration(hintText: _gitems[gidx].name),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('取消'),
+              onPressed: () {
+                Navigator.of(context).pop(); // 关闭对话框
+              },
+            ),
+            TextButton(
+              child: const Text('确定'),
+              onPressed: () {
+                Navigator.of(context).pop(result); // 返回结果并关闭对话框
+              },
+            ),
+          ],
+        );
+      },
+    );
+    if (result == null) {
+      return;
+    }
+    if (result!.isEmpty) {
+      return;
+    }
+
+    final res = await Http().putGroup(
+        RequestPutGroup(name: _gitems[gidx].name, id: _gitems[gidx].id));
+
+    if (res.isNotOK()) {
+      return;
+    }
+
+    setState(() {
+      _gitems[gidx].name = result!;
+    });
+  }
+
+  clickSetting() async {
+    if (_gitems.isEmpty) {
+      return;
+    }
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        final Group item = _gitems[gidx];
+        int status = item.getOverTimeStatus();
+        bool isFreezed = item.isNotEnterOverTime() ? false : true;
+
+        return AlertDialog(
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                IndexedStack(
+                  index: status,
+                  children: [
+                    SwitchListTile(
+                      title: const Text('定格'),
+                      subtitle:
+                          Text("定格后，本篇分组将无法编辑印迹，无法取消操作，只能回顾。定格后有1天缓冲期，用以取消。"),
+                      value: isFreezed,
+                      onChanged: (bool value) async {
+                        bool ok = await setFreezeOverTime(gidx);
+                        if (!ok) {
+                          return;
+                        }
+                        if (mounted) {
+                          setState(() {
+                            (context as Element).markNeedsBuild();
+
+                            isFreezed = true;
+                            status = 1;
+                          });
+                        }
+                      },
+                    ),
+                    SwitchListTile(
+                      title: const Text('定格'),
+                      subtitle: Text("进入缓冲期,定格时间:${item.overtime.toString()}"),
+                      value: isFreezed,
+                      onChanged: (bool value) async {
+                        bool ok = await setForverOverTime(gidx);
+                        if (!ok) {
+                          return;
+                        }
+                        if (mounted) {
+                          setState(() {
+                            (context as Element).markNeedsBuild();
+                            isFreezed = false;
+                            status = 0;
+                          });
+                        }
+                      },
+                    ),
+                    SwitchListTile(
+                        title: const Text('定格'),
+                        subtitle: Text("已定格于${item.overtime.toString()}"),
+                        value: true,
+                        onChanged: null),
+                  ],
+                ),
+                divider(),
+                ElevatedButton(
+                  onPressed: () => clickDeleteGroup(gidx),
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.all<Color>(
+                        Colors.red.shade900), // 设置红色背景
+                    minimumSize: WidgetStateProperty.all(
+                        Size(200, 60)), // 设置按钮大小为 200x60
+                  ),
+                  child: Text(
+                    "删除 ${_gitems[gidx].name}",
+                    style: TextStyle(
+                        color: Color(Colors.white.value), fontSize: 17),
+                  ),
+                )
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('关闭'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   setDocs() async {
+    if (_gitems.isEmpty) {
+      return;
+    }
     final ret = await Http(gid: _gitems[gidx].id).getDocs();
     setState(() {
       if (_ditems.isNotEmpty) {
@@ -551,11 +625,11 @@ class _GroupPage extends State<GroupPage> {
     final req = RequestPutGroup(id: item.id, overtime: Time.getNextDay());
     final res = await Http(tid: widget.tid).putGroup(req);
 
-    if (res.err == 0) {
-      _gitems[index].overtime = req.overtime!;
-      return true;
+    if (res.isNotOK()) {
+      return false;
     }
-    return false;
+    _gitems[index].overtime = req.overtime!;
+    return true;
   }
 
   Future<bool> setForverOverTime(int index) async {
@@ -563,17 +637,21 @@ class _GroupPage extends State<GroupPage> {
     final req = RequestPutGroup(id: item.id, overtime: Time.getForver());
     final res = await Http(tid: widget.tid).putGroup(req);
 
-    if (res.err == 0) {
-      _gitems[index].overtime = req.overtime!;
-      return true;
+    if (res.isNotOK()) {
+      return false;
     }
-    return false;
+    _gitems[index].overtime = req.overtime!;
+    return true;
   }
 
   getGroupList() async {
     print("获取分组列表");
 
     final res = await Http(tid: widget.tid).getGroup();
+    if (res.data.isEmpty) {
+      clickAddGroup();
+      return;
+    }
     setState(() {
       _ditems.clear();
 
@@ -601,22 +679,25 @@ class _GroupPage extends State<GroupPage> {
   }
 
   // 左侧抽屉菜单 - 分组列表 - 删除按钮
-  deleteLineGroup(int index) async {
-    var onValue = await Http(gid: _gitems[index].id).deleteGroup();
-    if (onValue.err == 0) {
-      setState(() {
-        _gitems.removeAt(index);
-      });
+  clickDeleteGroup(int index) async {
+    if (_gitems.length == 1) {
+      Msg.diy(context, "无法删除，请保留至少一个项目。");
+      return;
     }
 
-    // 如果删除的分组不是当前选择的分组
-    if (gidx != index) {
+    if (!(await showConfirmationDialog(
+        context, MyDialog(content: "是否删除", title: "提示")))) {
+      return;
+    }
+
+    final ret = await Http(gid: _gitems[index].id).deleteGroup();
+    if (ret.isNotOK()) {
       return;
     }
     setState(() {
-      groupTitleEdit.text = widget.themename;
-      _ditems.clear();
+      _gitems.removeAt(index);
     });
+    // Navigator.of(context).pop();
   }
 
   // 左侧抽屉菜单 - 添加分组 - 提交按钮
@@ -628,12 +709,61 @@ class _GroupPage extends State<GroupPage> {
     }
   }
 
+  clickAddGroup() async {
+    String? result;
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("创建分组"),
+          content: TextField(
+            onChanged: (value) {
+              result = value;
+            },
+            decoration: const InputDecoration(hintText: "请输入"),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('取消'),
+              onPressed: () {
+                Navigator.of(context).pop(); // 关闭对话框
+              },
+            ),
+            TextButton(
+              child: const Text('确定'),
+              onPressed: () {
+                Navigator.of(context).pop(result); // 返回结果并关闭对话框
+              },
+            ),
+          ],
+        );
+      },
+    );
+    if (result == null) {
+      return;
+    }
+    if (result!.isEmpty) {
+      return;
+    }
+    final req = RequestPostGroup(name: result!);
+    final res = await Http(tid: widget.tid).postGroup(req);
+
+    if (res.isNotOK()) {
+      return;
+    }
+
+    setState(() {
+      _gitems.add(Group(name: result!, id: res.id, overtime: req.overtime));
+      gidx = _gitems.length - 1;
+    });
+  }
+
   addGroup(Group item) async {
     print("创建分组");
     final inputName = groupTitleEdit.text;
     final res = await Http(tid: widget.tid)
         .postGroup(RequestPostGroup(name: inputName));
-    if (res.err != 0) {
+    if (res.isNotOK()) {
       return;
     }
     setState(() {
@@ -655,7 +785,7 @@ class _GroupPage extends State<GroupPage> {
 
     final res = await Http(tid: widget.tid)
         .putGroup(RequestPutGroup(name: inputName, id: item.id));
-    if (res.err != 0) {
+    if (res.isNotOK()) {
       return;
     }
     setState(() {
@@ -663,7 +793,7 @@ class _GroupPage extends State<GroupPage> {
     });
   }
 
-  void exportGroup() async {
+  void clickExportGroup() async {
     int ret = await showExportOption();
     switch (ret) {
       case 0:
@@ -687,7 +817,7 @@ class _GroupPage extends State<GroupPage> {
 
     final ret = await Http(gid: _gitems[gidx].id).getDocs();
 
-    if (ret.err != 0) {
+    if (ret.isNotOK()) {
       print(ret);
       return;
     }

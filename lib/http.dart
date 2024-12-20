@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:whispering_time/env.dart';
 import 'package:intl/intl.dart';
@@ -8,13 +7,16 @@ class Basic {
   int err;
   String msg;
   Basic({required this.err, required this.msg});
-  bool isNotOk() {
-    if (err != 0) {
-      print(msg);
-      return true;
-    } else {
+  bool isNotOK() {
+    if (isOK()) {
       return false;
     }
+    print(msg);
+    return true;
+  }
+
+  bool isOK() {
+    return err == 0;
   }
 
   void getmsg() {
@@ -48,6 +50,19 @@ class RequestPutTheme {
   String id;
   RequestPutTheme({required this.name, required this.id});
   Map<String, dynamic> toJson() => {'name': name, 'id': id, 'uptime': uptime};
+}
+
+class ResponsePutTheme extends Basic {
+  String id;
+
+  ResponsePutTheme({required super.err, required super.msg, required this.id});
+  factory ResponsePutTheme.fromJson(Map<String, dynamic> json) {
+    return ResponsePutTheme(
+      err: json['err'] as int,
+      msg: json['msg'] as String,
+      id: json['data']['id'] as String,
+    );
+  }
 }
 
 class RequestPostTheme {
@@ -164,20 +179,25 @@ class RequestPutGroup {
 
 class RequestPostGroup {
   String name;
+  DateTime overtime = Time.getForver();
 
   RequestPostGroup({required this.name});
   Map<String, dynamic> toJson() => {
         'name': name,
         'crtime': Time.nowTimestampString(),
         'uptime': Time.nowTimestampString(),
-        'overtime': Time.toTimestampString(Time.getForver())
+        'overtime': Time.toTimestampString(overtime)
       };
 }
 
-class ResponseDeleteGroup {
-  int err;
-  String msg;
-  ResponseDeleteGroup(this.err, this.msg);
+class ResponseDeleteGroup extends Basic {
+  ResponseDeleteGroup({required super.err, required super.msg});
+  factory ResponseDeleteGroup.fromJson(Map<String, dynamic> json) {
+    return ResponseDeleteGroup(
+      err: json['err'] as int,
+      msg: json['msg'] as String,
+    );
+  }
 }
 
 class GroupListData {
@@ -280,6 +300,17 @@ class RequestPostDoc {
   Map<String, dynamic> toJson() =>
       {'content': content, 'title': title, 'level': level, 'crtime': crtime};
 }
+class ResponsePostDoc extends Basic {
+  String id;
+  ResponsePostDoc({required super.err, required super.msg, required this.id});
+  factory ResponsePostDoc.fromJson(Map<String, dynamic> json) {
+    return ResponsePostDoc(
+      err: json['err'] as int,
+      msg: json['msg'] as String,
+      id: json['data']['id'] as String,
+    );
+  }
+}
 
 class RequestPutDoc {
   String id;
@@ -345,9 +376,10 @@ class ResponseDeleteDoc extends Basic {
   }
 }
 
+enum Method { get, post, put, delete }
+
 class Http {
   final String? content;
-
   final String? tid;
   final String? gid;
   final String? docid;
@@ -355,6 +387,52 @@ class Http {
   static final String serverAddress = Settings().getServerAddress();
 
   Http({this.content, this.tid, this.gid, this.docid});
+
+  Future<T> _handleRequest<T>(
+      Method method, Uri u, Function(Map<String, dynamic>) fromJson,
+      {Map<String, dynamic>? data, Map<String, String>? headers}) async {
+    // final Map<String, String> param = {
+    //   'uid': uid,
+    // };
+
+    // final Map<String, dynamic> data = {
+    //   'data': req.toJson(),
+    //   if (method == Method.put || method == Method.post) "uptime": Time.nowTimestampString(),
+    // };
+
+    // final Map<String, String> headers = {
+    //   "Content-Type": "application/json",
+    // };
+
+    // final Uri u = Uri.http(serverAddress, path, param);
+
+    try {
+      final http.Response response;
+      switch (method) {
+        case Method.get:
+          response = await http.get(u);
+          break;
+        case Method.post:
+          response =
+              await http.post(u, body: jsonEncode(data), headers: headers);
+          break;
+        case Method.put:
+          response =
+              await http.put(u, body: jsonEncode(data), headers: headers);
+          break;
+        case Method.delete:
+          response = await http.delete(u);
+          break;
+      }
+      print(response.body);
+      final Map<String, dynamic> json = jsonDecode(response.body);
+      return fromJson(json);
+    } catch (e) {
+      print(e.toString());
+      // Msg.diy(context, "服务器连接错误");
+      return fromJson({'err': 1, 'msg': ''});
+    }
+  }
 
   Future<ResponseGetTheme> gettheme() async {
     if (uid == "") {
@@ -367,27 +445,15 @@ class Http {
 
     final url = Uri.http(serverAddress, "/theme", param);
 
-    try {
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        final json = await jsonDecode(response.body);
-        print(json);
-        final res = ResponseGetTheme.fromJson(json);
-        return res;
-      } else {
-        throw Exception('HTTP 请求失败，状态码: ${response.statusCode}');
-      }
-    } catch (e) {
-      print(e);
-      Msg.error("服务器连接错误");
-      return ResponseGetTheme(data: List.empty(), err: 0, msg: '');
-    }
+    return _handleRequest<ResponseGetTheme>(
+      Method.get,
+      url,
+      (json) => ResponseGetTheme.fromJson(json),
+    );
   }
 
   Future<ResponsePostTheme> posttheme(RequestPostTheme req) async {
     const String path = "/theme";
-
     final Map<String, String> param = {
       'uid': uid,
     };
@@ -397,19 +463,18 @@ class Http {
     final Map<String, String> headers = {
       "Content-Type": "application/json",
     };
-    final u = Uri.http(serverAddress, path, param);
+    final url = Uri.http(serverAddress, path, param);
 
-    final response =
-        await http.post(u, body: jsonEncode(data), headers: headers);
-    print(response.body);
-    final json = await jsonDecode(response.body);
-
-    final res = ResponsePostTheme.fromJson(json);
-    print(response.body);
-    return res;
+    return _handleRequest<ResponsePostTheme>(
+      Method.post,
+      url,
+      (json) => ResponsePostTheme.fromJson(json),
+      data: data,
+      headers: headers,
+    );
   }
 
-  puttheme(RequestPutTheme req) async {
+  Future<ResponsePutTheme> puttheme(RequestPutTheme req) async {
     const String path = "/theme";
 
     final Map<String, String> param = {
@@ -422,11 +487,15 @@ class Http {
     final Map<String, String> headers = {
       "Content-Type": "application/json",
     };
-    final u = Uri.http(serverAddress, path, param);
-    final response =
-        await http.put(u, body: jsonEncode(data), headers: headers);
-    print(response.body);
-    return jsonDecode(response.body);
+    final url = Uri.http(serverAddress, path, param);
+
+    return _handleRequest<ResponsePutTheme>(
+      Method.put,
+      url,
+      (json) => ResponsePutTheme.fromJson(json),
+      data: data,
+      headers: headers,
+    );
   }
 
   Future<ResponseDeleteTheme> deletetheme() async {
@@ -437,33 +506,29 @@ class Http {
       'tid': content!,
     };
     final url = Uri.http(serverAddress, path, param);
-    final response = await http.delete(url);
-    print(response.body);
-    final json = jsonDecode(response.body);
-
-    final res = ResponseDeleteTheme.fromJson(json);
-    return res;
+    return _handleRequest<ResponseDeleteTheme>(
+        Method.delete, url, (json) => ResponseDeleteTheme.fromJson(json));
   }
 
   Future<ResponseGetGroup> getGroup() async {
-    if (tid == "") {
+    const String path = "/group";
+
+    if (tid == null) {
       throw ArgumentError('缺少tid');
     }
+
     final Map<String, String> param = {
       'uid': uid,
       'tid': tid!,
     };
 
-    final url = Uri.http(serverAddress, "/group", param);
-    final response = await http.get(
+    final url = Uri.http(serverAddress, path, param);
+
+    return _handleRequest<ResponseGetGroup>(
+      Method.get,
       url,
+      (json) => ResponseGetGroup.fromJson(json),
     );
-
-    final json = await jsonDecode(response.body);
-
-    final res = ResponseGetGroup.fromJson(json);
-    print(response.body);
-    return res;
   }
 
   Future<ResponseDeleteGroup> deleteGroup() async {
@@ -471,18 +536,17 @@ class Http {
 
     final Map<String, String> param = {'uid': uid, 'gid': gid!};
     final url = Uri.http(serverAddress, path, param);
-    final response = await http.delete(url);
-    print(response.body);
-    final json = jsonDecode(response.body);
-
-    final res = ResponseDeleteGroup(json['err'], json['msg']);
-    return res;
+    return _handleRequest<ResponseDeleteGroup>(
+      Method.delete,
+      url,
+      (json) => ResponseDeleteGroup.fromJson(json),
+    );
   }
 
   Future<ResponsePostGroup> postGroup(RequestPostGroup req) async {
     const String path = "/group";
 
-    if (tid == "") {
+    if (tid == null) {
       throw ArgumentError('缺少tid');
     }
 
@@ -497,22 +561,19 @@ class Http {
     final Map<String, String> headers = {
       "Content-Type": "application/json",
     };
-
     final url = Uri.http(serverAddress, path, param);
-    final response =
-        await http.post(url, body: jsonEncode(data), headers: headers);
-    if (response.statusCode != 200) {
-      throw ArgumentError('请求错误');
-    }
-    final json = jsonDecode(response.body);
 
-    final res = ResponsePostGroup.fromJson(json);
-
-    return res;
+    return _handleRequest<ResponsePostGroup>(
+      Method.post,
+      url,
+      (json) => ResponsePostGroup.fromJson(json),
+      data: data,
+      headers: headers,
+    );
   }
 
   Future<ResponsePutGroup> putGroup(RequestPutGroup req) async {
-    if (tid == "") {
+    if (tid == null) {
       throw ArgumentError('缺少tid');
     }
     const String path = "/group";
@@ -528,23 +589,20 @@ class Http {
       "Content-Type": "application/json",
     };
     final url = Uri.http(serverAddress, path, param);
-    final response =
-        await http.put(url, body: jsonEncode(data), headers: headers);
 
-    if (response.statusCode != 200) {
-      throw ArgumentError('请求错误');
-    }
-    final json = jsonDecode(response.body);
-
-    final res = ResponsePutGroup.fromJson(json);
-
-    return res;
+    return _handleRequest<ResponsePutGroup>(
+      Method.put,
+      url,
+      (json) => ResponsePutGroup.fromJson(json),
+      data: data,
+      headers: headers,
+    );
   }
 
   Future<ResponseGetDoc> getDocs() async {
     print("获取分组的日志列表");
 
-    if (gid == "") {
+    if (gid == null) {
       throw ArgumentError('缺少gid');
     }
 
@@ -554,27 +612,28 @@ class Http {
     };
 
     final url = Uri.http(serverAddress, "/docs", param);
-    final response = await http.get(
+
+    final  res = await  _handleRequest<ResponseGetDoc>(
+      Method.get,
       url,
+      (json) => ResponseGetDoc.fromJson(json),
     );
 
-    final json = await jsonDecode(response.body);
-    final res = ResponseGetDoc.fromJson(json);
-    if (res.err == 0) {
+    if (res.isOK()) {
       for (Doc line in res.data) {
         line.crtime = Time.datetime(line.crtimeStr);
       }
     }
+
     return res;
   }
 
-  Future<ResponsePutDoc> postDoc(RequestPostDoc req) async {
+  Future<ResponsePostDoc> postDoc(RequestPostDoc req) async {
     print("创建印迹");
-    if (gid == "") {
+    if (gid == null) {
       throw ArgumentError('缺少gid');
     }
     const String path = "/doc";
-
     final Map<String, String> param = {
       'uid': uid,
       'gid': gid!,
@@ -586,23 +645,20 @@ class Http {
     final Map<String, String> headers = {
       "Content-Type": "application/json",
     };
-    print(data);
+
     final url = Uri.http(serverAddress, path, param);
-    final response =
-        await http.post(url, body: jsonEncode(data), headers: headers);
-
-    if (response.statusCode != 200) {
-      throw ArgumentError('请求错误');
-    }
-
-    final res = ResponsePutDoc.fromJson(await jsonDecode(response.body));
-
-    return res;
+    return _handleRequest<ResponsePostDoc>(
+      Method.post,
+      url,
+      (json) => ResponsePostDoc.fromJson(json),
+      data: data,
+      headers: headers,
+    );
   }
 
   Future<ResponsePutDoc> putDoc(RequestPutDoc req) async {
     print("更新文档");
-    if (tid == "") {
+    if (tid == null) {
       throw ArgumentError('缺少tid');
     }
     const String path = "/doc";
@@ -617,18 +673,14 @@ class Http {
     final Map<String, String> headers = {
       "Content-Type": "application/json",
     };
-    print(data);
     final url = Uri.http(serverAddress, path, param);
-    final response =
-        await http.put(url, body: jsonEncode(data), headers: headers);
-
-    if (response.statusCode != 200) {
-      throw ArgumentError('请求错误');
-    }
-
-    final res = ResponsePutDoc.fromJson(await jsonDecode(response.body));
-
-    return res;
+    return _handleRequest<ResponsePutDoc>(
+      Method.put,
+      url,
+      (json) => ResponsePutDoc.fromJson(json),
+      data: data,
+      headers: headers,
+    );
   }
 
   Future<ResponseDeleteDoc> deleteDoc(RequestDeleteDoc req) async {
@@ -641,11 +693,10 @@ class Http {
       'did': req.did
     };
     final url = Uri.http(serverAddress, path, param);
-    final response = await http.delete(url);
-    print(response.body);
-    final json = jsonDecode(response.body);
-
-    final res = ResponseDeleteDoc.fromJson(json);
-    return res;
+    return _handleRequest<ResponseDeleteDoc>(
+      Method.delete,
+      url,
+      (json) => ResponseDeleteDoc.fromJson(json),
+    );
   }
 }

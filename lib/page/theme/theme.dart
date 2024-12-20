@@ -163,7 +163,7 @@ class _ThemePageState extends State<ThemePage> {
                 // export();
                 break;
               case 3:
-                remove(_items[index]);
+                delete(_items[index]);
                 break;
               default:
                 throw ArgumentError("shwoMenu");
@@ -232,7 +232,7 @@ class _ThemePageState extends State<ThemePage> {
 
     final res = await Http().posttheme(RequestPostTheme(name: result!));
 
-    if (res.err != 0) {
+    if (res.isNotOK()) {
       return;
     }
 
@@ -280,7 +280,7 @@ class _ThemePageState extends State<ThemePage> {
     final res = await Http().puttheme(RequestPutTheme(
         name: _items[index].name, id: _items[index].id));
 
-    if (res['err'] != 0) {
+    if (res.isNotOK()) {
       return;
     }
 
@@ -289,7 +289,7 @@ class _ThemePageState extends State<ThemePage> {
     });
   }
 
-  void remove(Theme item) async {
+  void delete(Theme item) async {
     if (!(await showConfirmationDialog(
         context, MyDialog(content: "是否删除", title: "提示")))) {
       return;
@@ -297,7 +297,7 @@ class _ThemePageState extends State<ThemePage> {
 
     final res = Http(content: item.id).deletetheme();
     res.then((res) {
-      if (res.err != 0) {
+      if (res.isNotOK()) {
         return;
       }
       setState(() {

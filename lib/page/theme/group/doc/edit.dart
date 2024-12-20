@@ -165,7 +165,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   clickNewLevel(int index) async {
     final res = await Http(gid: widget.gid)
         .putDoc(RequestPutDoc(id: widget.id!, level: index));
-    if (res.isNotOk()) {
+    if (res.isNotOK()) {
       return;
     }
     setState(() {
@@ -177,7 +177,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   clickNewTitle(String newTitle) async {
     final res = await Http(gid: widget.gid)
         .putDoc(RequestPutDoc(id: widget.id!, title: newTitle));
-    if (res.isNotOk()) {
+    if (res.isNotOK()) {
       return;
     }
     setState(() => isTitleSubmited = !isTitleSubmited);

@@ -26,12 +26,7 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(
               seedColor: const Color.fromARGB(255, 211, 118, 5)),
         ),
-        home: Overlay(
-          key: Msg.overlayKey,
-          initialEntries: [
-            OverlayEntry(builder: (context) => MyHomePage()),
-          ],
-        ),
+        home: MyHomePage(),
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,

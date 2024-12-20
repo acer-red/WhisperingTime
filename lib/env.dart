@@ -192,52 +192,26 @@ Divider divider() {
 }
 
 class Msg {
-  static final GlobalKey<OverlayState> overlayKey = GlobalKey<OverlayState>();
-  static OverlayEntry? _overlayEntry;
-  static Timer? _timer; // 定义一个 Timer 变量
-
-  static void error(String content) {
-    if (_overlayEntry != null) return;
-    _overlayEntry = OverlayEntry(
-      builder: (context) => Center(
-        child: IntrinsicWidth(
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.red.shade50,
-              borderRadius: BorderRadius.circular(20.0),
+  static diy(BuildContext context, String content, {String? title}) {
+    showDialog(
+      barrierDismissible: true,
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: title == null ? null : Text(title),
+          content: Text(content),
+          actions: <Widget>[
+            TextButton(
+              child: Text("确定"),
+              onPressed: () {
+                // 处理确定按钮的逻辑
+                Navigator.of(context).pop(); // 关闭对话框
+              },
             ),
-            padding: EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error, color: Colors.red.shade800),
-                Padding(
-                  padding: const EdgeInsets.only(left: 10),
-                  child: Text(
-                    content,
-                    style: TextStyle(
-                        fontSize: 15.0,
-                        decoration: TextDecoration.none,
-                        fontWeight: FontWeight.w400),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+          ],
+        );
+      },
     );
-    overlayKey.currentState!.insert(_overlayEntry!);
-
-    _timer = Timer(Duration(seconds: 5), () {
-      hideOverlay();
-    });
   }
 
-  static void hideOverlay() {
-    _timer?.cancel(); // 取消定时器
-    _timer = null;
-    _overlayEntry?.remove();
-    _overlayEntry = null;
-  }
 }
