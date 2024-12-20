@@ -59,18 +59,34 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  int idx = 0;
+  Widget panel(int idx) {
+    switch (idx) {
+      case 0:
+        return ThemePage();
+      case 1:
+        return SettingsPage();
+      default:
+        throw UnimplementedError('no widget');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
       return Scaffold(
-        body: SafeArea(
-          child: Column(
-            children: [
-              SizedBox(height: 200, child: ThemePage()),
-              SizedBox(height: 200, child: SettingsPage()),
+        body: panel(idx),
+        bottomNavigationBar: BottomNavigationBar(
+            items: const <BottomNavigationBarItem>[
+              BottomNavigationBarItem(icon: Icon(Icons.home), label: "主页"),
+              BottomNavigationBarItem(icon: Icon(Icons.settings), label: "设置"),
             ],
-          ),
-        ),
+            currentIndex: idx,
+            onTap: (x) {
+              setState(() {
+                idx = x;
+              });
+            }),
       );
     });
   }

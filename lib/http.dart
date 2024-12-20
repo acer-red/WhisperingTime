@@ -378,12 +378,10 @@ class Http {
       } else {
         throw Exception('HTTP 请求失败，状态码: ${response.statusCode}');
       }
-    } on SocketException catch (e) {
-      Msg.error("服务器连接错误");
-      throw Exception(e);
     } catch (e) {
+      print(e);
       Msg.error("服务器连接错误");
-      throw Exception(e);
+      return ResponseGetTheme(data: List.empty(), err: 0, msg: '');
     }
   }
 
