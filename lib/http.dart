@@ -62,6 +62,18 @@ class RequestPostTheme {
       };
 }
 
+class ResponsePostTheme extends Basic {
+  String id;
+  ResponsePostTheme({required super.err, required super.msg, required this.id});
+  factory ResponsePostTheme.fromJson(Map<String, dynamic> json) {
+    return ResponsePostTheme(
+      err: json['err'] as int,
+      msg: json['msg'] as String,
+      id: json['data']['id'] as String,
+    );
+  }
+}
+
 class ResponseDeleteTheme extends Basic {
   ResponseDeleteTheme({required super.err, required super.msg});
   factory ResponseDeleteTheme.fromJson(Map<String, dynamic> json) {
@@ -375,7 +387,7 @@ class Http {
     }
   }
 
-  posttheme(RequestPostTheme req) async {
+  Future<ResponsePostTheme> posttheme(RequestPostTheme req) async {
     const String path = "/theme";
 
     final Map<String, String> param = {
@@ -392,7 +404,11 @@ class Http {
     final response =
         await http.post(u, body: jsonEncode(data), headers: headers);
     print(response.body);
-    return jsonDecode(response.body);
+    final json = await jsonDecode(response.body);
+
+    final res = ResponsePostTheme.fromJson(json);
+    print(response.body);
+    return res;
   }
 
   puttheme(RequestPutTheme req) async {

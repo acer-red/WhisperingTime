@@ -296,13 +296,6 @@ class _GroupPage extends State<GroupPage> {
                   onPressed: (int index) {
                     setState(() {
                       _isSelected[index] = !_isSelected[index];
-
-                      // for (int buttonIndex = 0;
-                      //     buttonIndex < _isSelected.length;
-                      //     buttonIndex++) {
-                      //   _isSelected[buttonIndex] =
-                      //       buttonIndex == index ? true : false;
-                      // }
                     });
                     setDocs();
                   },

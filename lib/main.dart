@@ -7,7 +7,7 @@ import './page/setting/setting.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Settings().init(); // 在这里调用 init()
+  await Settings().init();
   runApp(const MyApp());
 }
 
