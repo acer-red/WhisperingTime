@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:whispering_time/env.dart';
 import 'doc/edit.dart';
+import 'package:intl/intl.dart';
 import 'package:whispering_time/http.dart';
-import 'package:timelines/timelines.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 
@@ -16,7 +16,7 @@ class Group {
   // 判断当前时间是否在overtime的之内
   bool isBufTime() {
     DateTime now = DateTime.now();
-    return now.isAfter(overtime) &&
+    return now.isBefore(overtime) &&
         now.isBefore(overtime.add(Time.getOverTime()));
   }
 
@@ -42,12 +42,11 @@ class Group {
     return 2;
   }
 
-  bool isFreezed() {
+  bool isFreezedOrBuf() {
     return getOverTimeStatus() != 0;
   }
 }
 
-// 组、事件列表页面
 class GroupPage extends StatefulWidget {
   final String? id;
   final String tid;
@@ -62,20 +61,14 @@ class GroupPage extends StatefulWidget {
 class _GroupPage extends State<GroupPage> {
   List<Group> _gitems = <Group>[];
   List<Doc> _ditems = <Doc>[];
-  List<bool> _isSelected = [
-    true,
-    false,
-    false,
-    false,
-    false
-  ]; // 两个按钮，初始状态第一个被选中
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  List<bool> _isSelected = [true, false, false, false, false];
 
-  List<String> viewExplain = ["卡片", "时间轴", "日历"];
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  int view = 0;
   int gidx = 0;
   int viewType = 0;
   bool isGrouTitleSubmitted = true;
-
+  String mon = DateFormat('MMMM yyyy').format(DateTime.now());
   TextEditingController groupTitleEdit = TextEditingController();
 
   @override
@@ -111,58 +104,52 @@ class _GroupPage extends State<GroupPage> {
                   icon: Icon(Icons.arrow_drop_down)),
             ],
           ),
+          bottom: viewType != 1
+              ? null
+              : PreferredSize(
+                  preferredSize: Size.fromHeight(40),
+                  child: Container(
+                    alignment: Alignment.center,
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: TextButton(
+                        onPressed: () => chooseDate(), child: Text(mon)),
+                  ),
+                ),
 
           // 标题右侧的按钮
           actions: <Widget>[
             PopupMenuButton<int>(
-              onSelected: (int value) {
-                // 处理菜单项点击事件
-                switch (value) {
-                  case 10000:
-                    clickSwitchView();
-                    break;
-                  case 20000:
-                    clickExportGroup();
-                    break;
-                  case 30000:
-                    clickRename();
-                    break;
-                  case 40000:
-                    clickSetting();
-                    break;
-                  case 50000:
-                    clickAddGroup();
-                    break;
-                  case 60000:
-                    clickDeleteGroup(gidx);
-                    break;
-                }
-              },
               itemBuilder: (BuildContext context) => <PopupMenuEntry<int>>[
-                const PopupMenuItem<int>(
-                  value: 10000,
-                  child: Text('视图切换'),
-                ),
-                const PopupMenuItem<int>(
-                  value: 50000,
+                PopupMenuItem<int>(
                   child: Text('添加分组'),
+                  onTap: () {
+                    clickAddGroup();
+                  },
                 ),
-                const PopupMenuItem<int>(
-                  value: 30000,
+                PopupMenuItem<int>(
                   child: Text('重命名'),
+                  onTap: () {
+                    clickRename();
+                  },
                 ),
-                const PopupMenuItem<int>(
-                  value: 20000,
-                  child: Text('导出'),
+                PopupMenuItem<int>(
+                  child: const Text('导出'),
+                  onTap: () {
+                    clickExportGroup();
+                  },
                 ),
-                const PopupMenuItem<int>(
-                  value: 40000,
+                PopupMenuItem<int>(
                   child: Text('设置'),
+                  onTap: () {
+                    clickSetting();
+                  },
                 ),
-                const PopupMenuItem<int>(
-                  value: 60000,
-                  child: Text("删除",style: TextStyle(color:Colors.red),),
-                )
+                PopupMenuItem<int>(
+                  child: Text('测试'),
+                  onTap: () {
+                    print(viewType);
+                  },
+                ),
               ],
             ),
           ]),
@@ -194,7 +181,7 @@ class _GroupPage extends State<GroupPage> {
                 onPressed: () {
                   setState(() {
                     _gitems.add(
-                        Group(name: "", id: "", overtime: Time.getNextDay()));
+                        Group(name: "", id: "", overtime: Time.getOverDay()));
                   });
                 },
               ),
@@ -284,7 +271,7 @@ class _GroupPage extends State<GroupPage> {
                                   ),
                                   Center(
                                     child: Text(
-                                      item.getCreateTime(),
+                                      Time.string(item.crtime),
                                       style: TextStyle(
                                           fontSize: 12,
                                           color: Color(
@@ -298,42 +285,21 @@ class _GroupPage extends State<GroupPage> {
                         );
                       }),
 
-                  // 时间轴模式
-                  Timeline.tileBuilder(
-                    builder: TimelineTileBuilder.fromStyle(
-                      contentsAlign: ContentsAlign.alternating,
-                      contentsBuilder: (context, index) => Padding(
-                        padding: const EdgeInsets.all(24.0),
-                        child: TextButton(
-                          child: Text('Timeline Event $index'),
-                          onPressed: () => {print('Timeline Event $index')},
-                        ),
-                      ),
-                      itemCount: 5,
-                    ),
-                  ),
-                  // 线性模式
-                  // CustomPaint(
-                  //   size: Size(300, 200),
-                  //   painter: LineChartPainter([10, 25, 15, 30, 5]),
-                  // ),
-                  Text("日历模式"),
+                  CalendarScreen(
+                    items: _ditems,
+                  )
                 ]),
               ),
             ],
           ),
         ),
       ),
-    );
-  }
 
-  clickSwitchView() {
-    setState(() {
-      viewType++;
-      if (viewExplain.length == viewType) {
-        viewType = 0;
-      }
-    });
+      floatingActionButton: FloatingActionButton(
+        onPressed: clickNewEdit,
+        child: Icon(Icons.add),
+      ),
+    );
   }
 
   clickRename() async {
@@ -352,13 +318,13 @@ class _GroupPage extends State<GroupPage> {
             TextButton(
               child: const Text('取消'),
               onPressed: () {
-                Navigator.of(context).pop(); // 关闭对话框
+                Navigator.of(context).pop();
               },
             ),
             TextButton(
               child: const Text('确定'),
               onPressed: () {
-                Navigator.of(context).pop(result); // 返回结果并关闭对话框
+                Navigator.of(context).pop(result);
               },
             ),
           ],
@@ -371,9 +337,9 @@ class _GroupPage extends State<GroupPage> {
     if (result!.isEmpty) {
       return;
     }
-
-    final res = await Http().putGroup(
-        RequestPutGroup(name: _gitems[gidx].name, id: _gitems[gidx].id));
+    
+    final res = await Http(tid:widget.tid, gid: _gitems[gidx].id).putGroup(
+        RequestPutGroup(name: result!, id: _gitems[gidx].id));
 
     if (res.isNotOK()) {
       return;
@@ -400,9 +366,23 @@ class _GroupPage extends State<GroupPage> {
           content: SingleChildScrollView(
             child: ListBody(
               children: <Widget>[
+                Row(
+                  children: [
+                    Expanded(child: Text("样式")),
+                    Dropdown(
+                      value: viewType,
+                      onValueChanged: (int value) {
+                        setState(() {
+                          viewType = value;
+                        });
+                      },
+                    ),
+                  ],
+                ),
                 IndexedStack(
                   index: status,
                   children: [
+                    // 未定格，未进入缓冲期
                     SwitchListTile(
                       title: const Text('定格'),
                       subtitle:
@@ -423,6 +403,7 @@ class _GroupPage extends State<GroupPage> {
                         }
                       },
                     ),
+                    // 未定格，进入缓冲期
                     SwitchListTile(
                       title: const Text('定格'),
                       subtitle: Text("进入缓冲期,定格时间:${item.overtime.toString()}"),
@@ -441,6 +422,7 @@ class _GroupPage extends State<GroupPage> {
                         }
                       },
                     ),
+                    // 已定格
                     SwitchListTile(
                         title: const Text('定格'),
                         subtitle: Text("已定格于${item.overtime.toString()}"),
@@ -479,6 +461,188 @@ class _GroupPage extends State<GroupPage> {
     );
   }
 
+  clickNewEdit() async {
+    Group item = _gitems[gidx];
+    if (item.isFreezedOrBuf()) {
+      Msg.diy(context, "已定格，无法编辑");
+      return;
+    }
+    final LastPageDoc ret = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DocEditPage(
+          gid: item.id,
+          id: "",
+          title: "",
+          content: "",
+          level: getSelectLevel(),
+          crtime: DateTime.now(),
+          uptime: DateTime.now(),
+          freeze: false,
+        ),
+      ),
+    );
+
+    switch (ret.state) {
+      case LastPage.create:
+        setState(() {
+          _ditems.add(Doc(
+              title: ret.title,
+              content: ret.content,
+              level: ret.level,
+              crtime: ret.crtime,
+              uptime: ret.uptime,
+              id: ret.id));
+        });
+        break;
+      case LastPage.nocreate:
+        return;
+      default:
+        return;
+    }
+  }
+
+  clickCard(int index) async {
+    Group group = _gitems[gidx];
+    Doc doc = _ditems[index];
+    final LastPageDoc ret = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (con) => DocEditPage(
+            gid: group.id,
+            gname: group.name,
+            title: doc.title,
+            content: doc.content,
+            id: doc.id,
+            level: doc.level,
+            uptime: doc.uptime,
+            crtime: doc.crtime,
+            freeze: _gitems[gidx].isFreezedOrBuf(),
+          ),
+        ));
+    setState(() {
+      switch (ret.state) {
+        case LastPage.delete:
+          _ditems.removeAt(index);
+          break;
+        case LastPage.change:
+          if (!isContainSelectLevel(ret.level)) {
+            _ditems.removeAt(index);
+            break;
+          }
+          if (doc.content != ret.content) {
+            doc.content = ret.content;
+          }
+          if (doc.title != ret.title) {
+            doc.title = ret.title;
+          }
+          if (doc.crtime != ret.crtime) {
+            _ditems[index].crtime = ret.crtime;
+            _ditems[index].crtime = ret.crtime;
+            _ditems.sort(compareDocs);
+          }
+          break;
+        default:
+          doc.content = ret.content;
+          doc.title = ret.title;
+          doc.crtime = ret.crtime;
+
+          break;
+      }
+    });
+  }
+
+  clickGroupTitle(int index) {
+    setState(() {
+      gidx = index;
+      groupTitleEdit.text = _gitems[gidx].name;
+    });
+
+    Navigator.pop(context); // 关闭 drawer
+    setDocs();
+  }
+
+  clickDeleteGroup(int index) async {
+    if (_gitems.length == 1) {
+      Msg.diy(context, "无法删除，请保留至少一个项目。");
+      return;
+    }
+
+    if (!(await showConfirmationDialog(
+        context, MyDialog(content: "是否删除", title: "提示")))) {
+      return;
+    }
+
+    final ret = await Http(gid: _gitems[index].id).deleteGroup();
+    if (ret.isNotOK()) {
+      return;
+    }
+    setState(() {
+      _gitems.removeAt(index);
+    });
+    // Navigator.of(context).pop();
+  }
+
+  clickAddGroup() async {
+    String? result;
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("创建分组"),
+          content: TextField(
+            onChanged: (value) {
+              result = value;
+            },
+            decoration: const InputDecoration(hintText: "请输入"),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('取消'),
+              onPressed: () {
+                Navigator.of(context).pop(); // 关闭对话框
+              },
+            ),
+            TextButton(
+              child: const Text('确定'),
+              onPressed: () {
+                Navigator.of(context).pop(result);
+              },
+            ),
+          ],
+        );
+      },
+    );
+    if (result == null) {
+      return;
+    }
+    if (result!.isEmpty) {
+      return;
+    }
+    final req = RequestPostGroup(name: result!);
+    final res = await Http(tid: widget.tid).postGroup(req);
+
+    if (res.isNotOK()) {
+      return;
+    }
+
+    setState(() {
+      _gitems.add(Group(name: result!, id: res.id, overtime: req.overtime));
+      gidx = _gitems.length - 1;
+    });
+  }
+
+  clickExportGroup() async {
+    int ret = await showExportOption();
+    switch (ret) {
+      case 0:
+        exportDesktopTXT();
+        break;
+      default:
+        break;
+    }
+  }
+
   setDocs() async {
     if (_gitems.isEmpty) {
       return;
@@ -503,8 +667,8 @@ class _GroupPage extends State<GroupPage> {
   }
 
   int compareDocs(Doc a, Doc b) {
-    DateTime aTime = a.crtime ?? DateTime.fromMillisecondsSinceEpoch(0);
-    DateTime bTime = b.crtime ?? DateTime.fromMillisecondsSinceEpoch(0);
+    DateTime aTime = a.crtime;
+    DateTime bTime = b.crtime;
     return aTime.compareTo(bTime);
   }
 
@@ -530,99 +694,9 @@ class _GroupPage extends State<GroupPage> {
     return _isSelected[i];
   }
 
-  clickNewEdit() async {
-    Group item = _gitems[gidx];
-    if (item.isFreezed()) {
-      return;
-    }
-    final LastPageDoc ret = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => DocEditPage(
-          gid: item.id,
-          id: "",
-          title: "",
-          content: "",
-          level: getSelectLevel(),
-          crtimeStr: "",
-          uptimeStr: "",
-          freeze: false,
-        ),
-      ),
-    );
-
-    switch (ret.state) {
-      case LastPage.create:
-        setState(() {
-          _ditems.add(Doc(
-              title: ret.title,
-              content: ret.content,
-              level: ret.level,
-              crtimeStr: ret.crtimeStr,
-              uptimeStr: ret.uptimeStr,
-              id: ret.id));
-        });
-        break;
-      case LastPage.nocreate:
-        return;
-      default:
-        return;
-    }
-  }
-
-  clickCard(int index) async {
-    Group group = _gitems[gidx];
-    Doc doc = _ditems[index];
-    final LastPageDoc ret = await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (con) => DocEditPage(
-            gid: group.id,
-            gname: group.name,
-            title: doc.title,
-            content: doc.content,
-            id: doc.id,
-            level: doc.level,
-            uptimeStr: doc.uptimeStr,
-            crtimeStr: doc.crtimeStr,
-            freeze: _gitems[gidx].isFreezed(),
-          ),
-        ));
-    setState(() {
-      switch (ret.state) {
-        case LastPage.delete:
-          _ditems.removeAt(index);
-          break;
-        case LastPage.change:
-          if (!isContainSelectLevel(ret.level)) {
-            _ditems.removeAt(index);
-            break;
-          }
-          if (doc.content != ret.content) {
-            doc.content = ret.content;
-          }
-          if (doc.title != ret.title) {
-            doc.title = ret.title;
-          }
-          if (doc.crtimeStr != ret.crtimeStr) {
-            _ditems[index].crtimeStr = ret.crtimeStr;
-            _ditems[index].crtime = Time.datetime(ret.crtimeStr);
-            _ditems.sort(compareDocs);
-          }
-          break;
-        default:
-          doc.content = ret.content;
-          doc.title = ret.title;
-          doc.crtimeStr = ret.crtimeStr;
-
-          break;
-      }
-    });
-  }
-
   Future<bool> setFreezeOverTime(int index) async {
     Group item = _gitems[index];
-    final req = RequestPutGroup(id: item.id, overtime: Time.getNextDay());
+    final req = RequestPutGroup(id: item.id, overtime: Time.getOverDay());
     final res = await Http(tid: widget.tid).putGroup(req);
 
     if (res.isNotOK()) {
@@ -667,143 +741,6 @@ class _GroupPage extends State<GroupPage> {
     setDocs();
   }
 
-  // 左侧抽屉菜单 - 分组列表 - 点击分组
-  clickGroupTitle(int index) {
-    setState(() {
-      gidx = index;
-      groupTitleEdit.text = _gitems[gidx].name;
-    });
-
-    Navigator.pop(context); // 关闭 drawer
-    setDocs();
-  }
-
-  // 左侧抽屉菜单 - 分组列表 - 删除按钮
-  clickDeleteGroup(int index) async {
-    if (_gitems.length == 1) {
-      Msg.diy(context, "无法删除，请保留至少一个项目。");
-      return;
-    }
-
-    if (!(await showConfirmationDialog(
-        context, MyDialog(content: "是否删除", title: "提示")))) {
-      return;
-    }
-
-    final ret = await Http(gid: _gitems[index].id).deleteGroup();
-    if (ret.isNotOK()) {
-      return;
-    }
-    setState(() {
-      _gitems.removeAt(index);
-    });
-    // Navigator.of(context).pop();
-  }
-
-  // 左侧抽屉菜单 - 添加分组 - 提交按钮
-  submitEditGroup(Group item) async {
-    if (item.id.isEmpty) {
-      addGroup(item);
-    } else {
-      modGroup(item);
-    }
-  }
-
-  clickAddGroup() async {
-    String? result;
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text("创建分组"),
-          content: TextField(
-            onChanged: (value) {
-              result = value;
-            },
-            decoration: const InputDecoration(hintText: "请输入"),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('取消'),
-              onPressed: () {
-                Navigator.of(context).pop(); // 关闭对话框
-              },
-            ),
-            TextButton(
-              child: const Text('确定'),
-              onPressed: () {
-                Navigator.of(context).pop(result); // 返回结果并关闭对话框
-              },
-            ),
-          ],
-        );
-      },
-    );
-    if (result == null) {
-      return;
-    }
-    if (result!.isEmpty) {
-      return;
-    }
-    final req = RequestPostGroup(name: result!);
-    final res = await Http(tid: widget.tid).postGroup(req);
-
-    if (res.isNotOK()) {
-      return;
-    }
-
-    setState(() {
-      _gitems.add(Group(name: result!, id: res.id, overtime: req.overtime));
-      gidx = _gitems.length - 1;
-    });
-  }
-
-  addGroup(Group item) async {
-    print("创建分组");
-    final inputName = groupTitleEdit.text;
-    final res = await Http(tid: widget.tid)
-        .postGroup(RequestPostGroup(name: inputName));
-    if (res.isNotOK()) {
-      return;
-    }
-    setState(() {
-      item.name = inputName;
-      item.id = res.id;
-    });
-  }
-
-  modGroup(Group item) async {
-    final inputName = groupTitleEdit.text;
-    final stateName = item.name;
-    if (inputName == stateName) {
-      return;
-    }
-    if (inputName == "") {
-      return;
-    }
-    print("修改分组");
-
-    final res = await Http(tid: widget.tid)
-        .putGroup(RequestPutGroup(name: inputName, id: item.id));
-    if (res.isNotOK()) {
-      return;
-    }
-    setState(() {
-      _gitems[gidx].name = inputName;
-    });
-  }
-
-  void clickExportGroup() async {
-    int ret = await showExportOption();
-    switch (ret) {
-      case 0:
-        exportDesktopTXT();
-        break;
-      default:
-        break;
-    }
-  }
-
   Future<void> exportDesktopTXT() async {
     String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
 
@@ -825,7 +762,7 @@ class _GroupPage extends State<GroupPage> {
     for (Doc item in ret.data) {
       final String fileName = item.title.isEmpty
           ? item.crtime.toString()
-          : "${item.title} - ${Time.string(item.crtime!)}" ".txt";
+          : "${item.title} - ${Time.string(item.crtime)}" ".txt";
       final String filePath = '$selectedDirectory/$fileName';
 
       // 创建并写入文件
@@ -860,5 +797,212 @@ class _GroupPage extends State<GroupPage> {
     );
 
     return ret ?? -1; // 如果用户没有点击按钮，则默认为 false
+  }
+
+  chooseDate() async {
+    DateTime? pickedDate = await Time.datePacker(context);
+    if (pickedDate == null) {
+      return;
+    }
+    String ret = DateFormat('yyyy MMMM').format(pickedDate);
+    setState(() {
+      mon = ret;
+    });
+  }
+}
+
+class Dropdown extends StatefulWidget {
+  final int value;
+  final ValueChanged<int> onValueChanged; // 添加回调函数
+
+  const Dropdown({Key? key, required this.value, required this.onValueChanged})
+      : super(key: key);
+
+  @override
+  State<StatefulWidget> createState() => _Dropdown();
+}
+
+class _Dropdown extends State<Dropdown> {
+  late String _selectedValue;
+  List<String> viewExplain = ["卡片", "日历"];
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedValue = viewExplain[widget.value];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButton<String>(
+      hint: Text('请选择一个选项'),
+      value: _selectedValue,
+      onChanged: (String? newValue) {
+        setState(() {
+          _selectedValue = newValue!;
+          widget.onValueChanged(viewExplain.indexOf(_selectedValue));
+        });
+      },
+      items: viewExplain.map<DropdownMenuItem<String>>((String value) {
+        return DropdownMenuItem<String>(
+          value: value,
+          child: Text(value),
+        );
+      }).toList(),
+    );
+  }
+}
+
+// 日历
+class CalendarScreen extends StatefulWidget {
+  final List<Doc> items;
+
+  CalendarScreen({Key? key, required this.items}) : super(key: key);
+
+  @override
+  State<CalendarScreen> createState() => _CalendarScreen();
+}
+
+class _CalendarScreen extends State<CalendarScreen> {
+  DateTime _currentDate = DateTime.now();
+
+  @override
+  Widget build(BuildContext context) {
+    return _buildCalendarGrid();
+  }
+
+  Widget _buildCalendarGrid() {
+    // 获取当月的天数
+    int daysInMonth =
+        DateTime(_currentDate.year, _currentDate.month + 1, 0).day;
+
+    // 获取当月的第一天是星期几 (星期一为1，星期天为7)
+    int firstWeekdayOfMonth =
+        DateTime(_currentDate.year, _currentDate.month, 1).weekday;
+
+    // 计算需要多少行来显示整个月的日历
+    // +1 表示新增一行，用来放星期
+    int totalRows = ((daysInMonth + firstWeekdayOfMonth - 1) / 7).ceil() + 1;
+
+    // 构建一个7列的网格
+    return GridView.builder(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 7, // 7列，代表一周的7天
+        childAspectRatio: 1.0, // 单元格宽高比
+      ),
+      itemCount: totalRows * 7, // 总的单元格数量
+      itemBuilder: (context, index) {
+
+        // 构建 星期
+        if (index < 7) {
+          return _buildWeek(index);
+        }
+
+        index -= 7;
+
+        // 计算当前单元格对应的日期
+        int dayNumber = index - firstWeekdayOfMonth + 2;
+
+        // 如果dayNumber在有效日期范围内，显示日期；否则显示空单元格
+        if (!(dayNumber > 0 && dayNumber <= daysInMonth)) {
+          return Container(); // 空单元格
+        }
+        DateTime currentDate =
+            DateTime(_currentDate.year, _currentDate.month, dayNumber);
+
+        return _buildDate(currentDate);
+      },
+    );
+  }
+
+  Widget _buildWeek(int index) {
+    String week;
+    switch (index) {
+      case 0:
+        week = "周一";
+        break;
+      case 1:
+        week = "周二";
+        break;
+      case 2:
+        week = "周三";
+        break;
+      case 3:
+        week = "周四";
+        break;
+      case 4:
+        week = "周五";
+        break;
+      case 5:
+        week = "周六";
+        break;
+      default:
+        week = "周日";
+        break;
+    }
+    return Container(
+      margin: EdgeInsets.all(1.0),
+      decoration: BoxDecoration(
+        border: null,
+        borderRadius: BorderRadius.circular(8.0),
+        color: null,
+      ),
+      alignment: Alignment.center,
+      child: Text(week),
+    );
+  }
+
+  Widget _buildDate(DateTime date) {
+    bool isToday = date.day == DateTime.now().day &&
+        date.month == DateTime.now().month &&
+        date.year == DateTime.now().year;
+
+    return GestureDetector(
+      onTap: () {
+        _showDateDetailsDialog(date);
+      },
+      child: Container(
+        margin: EdgeInsets.all(1.0),
+        decoration: BoxDecoration(
+          border: null,
+          borderRadius: BorderRadius.circular(8.0),
+          color: null,
+        ),
+        alignment: Alignment.center,
+        child: isToday
+            ? Text(
+                "${date.day}",
+                style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.blue,
+                    fontWeight: FontWeight.w700),
+              )
+            : Text(
+                "${date.day}",
+                style: TextStyle(fontSize: 18),
+              ),
+      ),
+    );
+  }
+
+  void _showDateDetailsDialog(DateTime date) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(DateFormat('yyyy-MM-dd').format(date)),
+          content:
+              Text('这里可以添加 ${DateFormat('yyyy-MM-dd').format(date)} 的详细信息。'),
+          actions: [
+            TextButton(
+              child: Text('关闭'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 }

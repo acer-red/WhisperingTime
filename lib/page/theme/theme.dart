@@ -9,7 +9,6 @@ class Theme {
   Theme({required this.id, required this.name});
 }
 
-// 主题页面
 class ThemePage extends StatefulWidget {
   @override
   State createState() => _ThemePageState();
@@ -216,7 +215,7 @@ class _ThemePageState extends State<ThemePage> {
             TextButton(
               child: const Text('确定'),
               onPressed: () {
-                Navigator.of(context).pop(result); // 返回结果并关闭对话框
+                Navigator.of(context).pop(result);
               },
             ),
           ],
@@ -263,7 +262,7 @@ class _ThemePageState extends State<ThemePage> {
             TextButton(
               child: const Text('确定'),
               onPressed: () {
-                Navigator.of(context).pop(result); // 返回结果并关闭对话框
+                Navigator.of(context).pop(result);
               },
             ),
           ],
@@ -278,7 +277,7 @@ class _ThemePageState extends State<ThemePage> {
     }
 
     final res = await Http().puttheme(RequestPutTheme(
-        name: _items[index].name, id: _items[index].id));
+        name: result!, id: _items[index].id));
 
     if (res.isNotOK()) {
       return;

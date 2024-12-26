@@ -5,8 +5,8 @@ import 'package:whispering_time/env.dart';
 class DocSetting extends StatefulWidget {
   final String gid;
   final String did;
-  final String crtimeStr;
-  DocSetting({required this.gid, required this.did, required this.crtimeStr});
+  final DateTime crtime;
+  DocSetting({required this.gid, required this.did, required this.crtime});
   @override
   State<DocSetting> createState() => _DocSetting();
 }
@@ -23,9 +23,6 @@ class _DocSetting extends State<DocSetting> {
   @override
   void initState() {
     super.initState();
-    if (widget.crtimeStr.isNotEmpty) {
-      crtime = Time.datetime(widget.crtimeStr);
-    }
   }
 
   @override
@@ -115,7 +112,7 @@ class _DocSetting extends State<DocSetting> {
   }
 
   backPage() {
-    if (widget.crtimeStr != crtime.toString()) {
+    if (widget.crtime != crtime) {
       return Navigator.of(context)
           .pop(LastPageDocSetting(state: LastPage.change, crtime: crtime));
     } else {

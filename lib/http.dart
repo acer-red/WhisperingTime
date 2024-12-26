@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:whispering_time/env.dart';
-import 'package:intl/intl.dart';
 
 class Basic {
   int err;
@@ -45,11 +44,10 @@ class ResponseGetTheme extends Basic {
 
 class RequestPutTheme {
   String name;
-  String get uptime => Time.nowTimestampString();
-
   String id;
   RequestPutTheme({required this.name, required this.id});
-  Map<String, dynamic> toJson() => {'name': name, 'id': id, 'uptime': uptime};
+  Map<String, dynamic> toJson() =>
+      {'name': name, 'id': id, 'uptime': Time.nowTimestampString()};
 }
 
 class ResponsePutTheme extends Basic {
@@ -60,20 +58,18 @@ class ResponsePutTheme extends Basic {
     return ResponsePutTheme(
       err: json['err'] as int,
       msg: json['msg'] as String,
-      id: json['data']['id'] as String,
+      id: json['data']['id'] == null ? "" : json['data']['id'] as String,
     );
   }
 }
 
 class RequestPostTheme {
   String name;
-  String get crtime =>
-      (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString();
   RequestPostTheme({required this.name});
 
   Map<String, dynamic> toJson() => {
         'name': name,
-        'crtime': crtime,
+        'crtime': Time.nowTimestampString(),
       };
 }
 
@@ -84,7 +80,7 @@ class ResponsePostTheme extends Basic {
     return ResponsePostTheme(
       err: json['err'] as int,
       msg: json['msg'] as String,
-      id: json['data']['id'] as String,
+      id: json['data']['id'] == null ? "" : json['data']['id'] as String,
     );
   }
 }
@@ -137,7 +133,7 @@ class ResponsePostGroup extends Basic {
     return ResponsePostGroup(
       err: json['err'] as int,
       msg: json['msg'] as String,
-      id: json['data']['id'] as String,
+      id: json['data']['id'] == null ? "" : json['data']['id'] as String,
     );
   }
 }
@@ -150,7 +146,7 @@ class ResponsePutGroup extends Basic {
     return ResponsePutGroup(
       err: json['err'] as int,
       msg: json['msg'] as String,
-      id: json['data']['id'] as String,
+      id: json['data']['id'] == null ? "" : json['data']['id'] as String,
     );
   }
 }
@@ -165,13 +161,12 @@ class RequestPutGroup {
     Map<String, dynamic> data = {'id': id, 'uptime': Time.nowTimestampString()};
 
     if (name != null) {
+      print("更新分组名,$name");
       data['name'] = name!;
     }
     if (overtime != null) {
+      print("更新定格时间,$overtime");
       data['overtime'] = Time.toTimestampString(overtime!);
-    } else {
-      // 这里有加这个代码的必要性，来混淆（在加密数据后）一个PUT操作到底更新了什么。
-      data['overtime'] = Time.toTimestampString(Time.getForver());
     }
     return data;
   }
@@ -229,18 +224,16 @@ class Doc {
   String title;
   String content;
   int level;
-  String crtimeStr;
-  DateTime? crtime;
-  String uptimeStr;
+  DateTime crtime;
+  DateTime uptime;
   String id;
   Doc({
     required this.title,
     required this.content,
     required this.level,
-    required this.crtimeStr,
-    required this.uptimeStr,
+    required this.crtime,
+    required this.uptime,
     required this.id,
-    this.crtime,
   });
 
   factory Doc.fromJson(Map<String, dynamic> json) {
@@ -248,25 +241,10 @@ class Doc {
       title: json['title'] as String,
       content: json['content'] as String,
       level: json['level'] as int,
-      crtimeStr: json['crtime'] as String,
-      uptimeStr: json['crtime'] as String,
+      crtime: Time.datetime(json['crtime'] as String),
+      uptime: Time.datetime(json['uptime'] as String),
       id: json['id'] as String,
     );
-  }
-  String getCreateTime() {
-    if (crtimeStr.isEmpty) {
-      return crtimeStr;
-    }
-    // 将字符串转换为整数
-    int timestamp = int.parse(crtimeStr);
-
-    // 创建 DateTime 对象
-    DateTime datetime = DateTime.fromMillisecondsSinceEpoch(timestamp *= 1000);
-    // 使用 DateFormat 格式化日期和时间
-    DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
-    String formattedDatetime = formatter.format(datetime);
-
-    return formattedDatetime;
   }
 }
 
@@ -289,7 +267,7 @@ class ResponseGetDoc extends Basic {
 class RequestPostDoc {
   String title;
   String content;
-  String crtime;
+  DateTime crtime;
   int level;
   RequestPostDoc(
       {required this.content,
@@ -297,9 +275,14 @@ class RequestPostDoc {
       required this.level,
       required this.crtime});
 
-  Map<String, dynamic> toJson() =>
-      {'content': content, 'title': title, 'level': level, 'crtime': crtime};
+  Map<String, dynamic> toJson() => {
+        'content': content,
+        'title': title,
+        'level': level,
+        'crtime': Time.toTimestampString(crtime)
+      };
 }
+
 class ResponsePostDoc extends Basic {
   String id;
   ResponsePostDoc({required super.err, required super.msg, required this.id});
@@ -307,7 +290,7 @@ class ResponsePostDoc extends Basic {
     return ResponsePostDoc(
       err: json['err'] as int,
       msg: json['msg'] as String,
-      id: json['data']['id'] as String,
+      id: json['data']['id'] == null ? "" : json['data']['id'] as String,
     );
   }
 }
@@ -317,13 +300,16 @@ class RequestPutDoc {
   String? content;
   String? title;
   int? level;
-  String? crtime;
-  String get uptime => Time.nowTimestampString();
+  DateTime? crtime;
+  DateTime get uptime => DateTime.now();
   RequestPutDoc(
       {required this.id, this.title, this.content, this.level, this.crtime});
 
   Map<String, dynamic> toJson() {
-    Map<String, dynamic> data = {'id': id, 'uptime': uptime};
+    Map<String, dynamic> data = {
+      'id': id,
+      'uptime': Time.toTimestampString(uptime)
+    };
 
     if (content != null) {
       print("更新文档内容");
@@ -337,7 +323,7 @@ class RequestPutDoc {
 
     if (crtime != null) {
       print("更新文档创建时间");
-      data['crtime'] = crtime;
+      data['crtime'] = Time.toTimestampString(crtime!);
     }
 
     if (level != null) {
@@ -355,7 +341,7 @@ class ResponsePutDoc extends Basic {
     return ResponsePutDoc(
       err: json['err'] as int,
       msg: json['msg'] as String,
-      id: json['data']['id'] as String,
+      id: json['data']['id'] == null ? "" : json['data']['id'] as String,
     );
   }
 }
@@ -391,21 +377,9 @@ class Http {
   Future<T> _handleRequest<T>(
       Method method, Uri u, Function(Map<String, dynamic>) fromJson,
       {Map<String, dynamic>? data, Map<String, String>? headers}) async {
-    // final Map<String, String> param = {
-    //   'uid': uid,
-    // };
-
-    // final Map<String, dynamic> data = {
-    //   'data': req.toJson(),
-    //   if (method == Method.put || method == Method.post) "uptime": Time.nowTimestampString(),
-    // };
-
-    // final Map<String, String> headers = {
-    //   "Content-Type": "application/json",
-    // };
-
-    // final Uri u = Uri.http(serverAddress, path, param);
-
+    if (data != null) {
+      log.d(data);
+    }
     try {
       final http.Response response;
       switch (method) {
@@ -424,20 +398,21 @@ class Http {
           response = await http.delete(u);
           break;
       }
+      if (response.body.isEmpty) {
+        print("服务器返回空");
+        return fromJson({'err': 1, 'msg': ''});
+      }
       print(response.body);
       final Map<String, dynamic> json = jsonDecode(response.body);
       return fromJson(json);
     } catch (e) {
-      print(e.toString());
+      log.e(e.toString());
       // Msg.diy(context, "服务器连接错误");
       return fromJson({'err': 1, 'msg': ''});
     }
   }
 
   Future<ResponseGetTheme> gettheme() async {
-    if (uid == "") {
-      throw ArgumentError('缺少uid');
-    }
 
     final Map<String, String> param = {
       'uid': uid,
@@ -482,7 +457,6 @@ class Http {
     };
     final Map<String, dynamic> data = {
       'data': req.toJson(),
-      "uptime": Time.nowTimestampString(),
     };
     final Map<String, String> headers = {
       "Content-Type": "application/json",
@@ -514,7 +488,7 @@ class Http {
     const String path = "/group";
 
     if (tid == null) {
-      throw ArgumentError('缺少tid');
+      log.e('缺少tid');
     }
 
     final Map<String, String> param = {
@@ -547,7 +521,7 @@ class Http {
     const String path = "/group";
 
     if (tid == null) {
-      throw ArgumentError('缺少tid');
+      log.e('缺少tid');
     }
 
     final Map<String, String> param = {
@@ -556,7 +530,6 @@ class Http {
     };
     final Map<String, dynamic> data = {
       'data': req.toJson(),
-      "crtime": Time.nowTimestampString(),
     };
     final Map<String, String> headers = {
       "Content-Type": "application/json",
@@ -574,7 +547,7 @@ class Http {
 
   Future<ResponsePutGroup> putGroup(RequestPutGroup req) async {
     if (tid == null) {
-      throw ArgumentError('缺少tid');
+      log.e('缺少tid');
     }
     const String path = "/group";
 
@@ -603,7 +576,7 @@ class Http {
     print("获取分组的日志列表");
 
     if (gid == null) {
-      throw ArgumentError('缺少gid');
+      log.e('缺少gid');
     }
 
     final Map<String, String> param = {
@@ -613,7 +586,7 @@ class Http {
 
     final url = Uri.http(serverAddress, "/docs", param);
 
-    final  res = await  _handleRequest<ResponseGetDoc>(
+    final res = await _handleRequest<ResponseGetDoc>(
       Method.get,
       url,
       (json) => ResponseGetDoc.fromJson(json),
@@ -621,7 +594,7 @@ class Http {
 
     if (res.isOK()) {
       for (Doc line in res.data) {
-        line.crtime = Time.datetime(line.crtimeStr);
+        line.crtime = line.crtime;
       }
     }
 
@@ -631,7 +604,7 @@ class Http {
   Future<ResponsePostDoc> postDoc(RequestPostDoc req) async {
     print("创建印迹");
     if (gid == null) {
-      throw ArgumentError('缺少gid');
+      log.e('缺少gid');
     }
     const String path = "/doc";
     final Map<String, String> param = {
@@ -640,7 +613,6 @@ class Http {
     };
     final Map<String, dynamic> data = {
       'data': req.toJson(),
-      "crtime": Time.nowTimestampString(),
     };
     final Map<String, String> headers = {
       "Content-Type": "application/json",
@@ -658,8 +630,8 @@ class Http {
 
   Future<ResponsePutDoc> putDoc(RequestPutDoc req) async {
     print("更新文档");
-    if (tid == null) {
-      throw ArgumentError('缺少tid');
+    if (gid == null) {
+      log.e('缺少gid');
     }
     const String path = "/doc";
 

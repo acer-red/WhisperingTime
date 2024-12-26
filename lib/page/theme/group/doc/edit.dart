@@ -14,8 +14,8 @@ class LastPageDoc extends Doc {
       required super.title,
       required super.content,
       required super.level,
-      required super.crtimeStr,
-      required super.uptimeStr,
+      required super.crtime,
+      required super.uptime,
       required super.id});
 }
 
@@ -28,8 +28,8 @@ class DocEditPage extends StatefulWidget {
   final int level;
   final String? id;
 
-  final String crtimeStr;
-  final String uptimeStr;
+  final DateTime crtime;
+  final DateTime uptime;
   final bool freeze;
   DocEditPage(
       {this.id,
@@ -38,8 +38,8 @@ class DocEditPage extends StatefulWidget {
       required this.title,
       required this.content,
       required this.level,
-      required this.crtimeStr,
-      required this.uptimeStr,
+      required this.crtime,
+      required this.uptime,
       required this.freeze});
   @override
   State<DocEditPage> createState() => _DocEditPage();
@@ -62,7 +62,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
         ? titleEdit.text = defaultTitle
         : titleEdit.text = widget.title;
     currentLevel = widget.level;
-    crtime = Time.datetime(widget.crtimeStr);
+    crtime = widget.crtime;
   }
 
   @override
@@ -188,7 +188,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
         (titleEdit.text == defaultTitle ||
             titleEdit.text == widget.title) && // 控件中的文字是默认标题或原始标题
         widget.level == currentLevel &&
-        widget.crtimeStr == Time.toTimestampString(crtime)) {
+        widget.crtime == crtime) {
       print("无变化");
 
       if (mounted) {
@@ -197,21 +197,37 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
             title: titleEdit.text,
             content: widget.content,
             level: widget.level,
-            crtimeStr: widget.crtimeStr,
-            uptimeStr: widget.uptimeStr,
+            crtime: widget.crtime,
+            uptime: widget.uptime,
             id: widget.id!));
       }
       return;
     }
-    if (widget.id == "") {
-      if (mounted) {
-        Navigator.of(context)
-            .pop(edit.text.isEmpty ? nocreateDoc() : createDoc());
-      }
-    } else {
+
+    // 有变化，更新文档
+    if (widget.id != "") {
       if (mounted) {
         Navigator.of(context).pop(updateDoc());
       }
+      return;
+    }
+
+    // 没有创建文档
+    if (edit.text.isEmpty && titleEdit.text.isEmpty) {
+      Navigator.of(context).pop(nocreateDoc(failed: false));
+    }
+
+    // 有变化，创建文档
+    final ret = await createDoc();
+    if (ret.state == LastPage.err) {
+      if (mounted) {
+        Msg.diy(context, "创建失败");
+      }
+      return;
+    }
+
+    if (mounted) {
+      Navigator.of(context).pop(ret);
     }
   }
 
@@ -220,9 +236,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
         context,
         MaterialPageRoute(
             builder: (context) => DocSetting(
-                gid: widget.gid,
-                did: widget.id!,
-                crtimeStr: widget.crtimeStr)));
+                gid: widget.gid, did: widget.id!, crtime: widget.crtime)));
     switch (ret.state) {
       case LastPage.change:
         if (ret.crtime != null) {
@@ -239,56 +253,57 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
             content: "",
             level: 0,
             id: "",
-            crtimeStr: "",
-            uptimeStr: ""));
+            crtime: DateTime.now(),
+            uptime: DateTime.now()));
         break;
       default:
         break;
     }
   }
 
-  LastPageDoc nocreateDoc() {
+  LastPageDoc nocreateDoc({bool failed = false}) {
     return LastPageDoc(
-      state: LastPage.nocreate,
+      state: failed ? LastPage.err : LastPage.nocreate,
       content: "",
       level: 0,
       title: "",
-      crtimeStr: "",
-      uptimeStr: "",
+      crtime: DateTime.now(),
+      uptime: DateTime.now(),
       id: "",
     );
   }
 
   Future<LastPageDoc> createDoc() async {
-    final newCRTime = Time.toTimestampString(crtime);
-
     final realTitle = titleEdit.text == defaultTitle ? "" : titleEdit.text;
     final req = RequestPostDoc(
         content: edit.text,
         title: realTitle,
         level: currentLevel,
-        crtime: newCRTime);
+        crtime: crtime);
     final ret = await Http(gid: widget.gid).postDoc(req);
+    if (ret.isNotOK()) {
+      return nocreateDoc(failed: true);
+    }
     return LastPageDoc(
       state: LastPage.create,
       content: edit.text,
       id: ret.id,
       title: realTitle,
       level: currentLevel,
-      crtimeStr: req.crtime,
-      uptimeStr: "",
+      crtime: req.crtime,
+      uptime: crtime,
     );
   }
 
   Future<LastPageDoc> updateDoc() async {
-    final newCRTime = Time.toTimestampString(crtime);
+    // final newCRTime = Time.toTimestampString(crtime);
 
     final realTitle = titleEdit.text == defaultTitle ? "" : titleEdit.text;
     final req = RequestPutDoc(
         content: edit.text,
         id: widget.id!,
         title: titleEdit.text,
-        crtime: newCRTime);
+        crtime: crtime);
     final res = await Http(gid: widget.gid).putDoc(req);
     return LastPageDoc(
       state: LastPage.change,
@@ -296,8 +311,8 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
       id: res.id,
       title: realTitle,
       level: currentLevel,
-      crtimeStr: newCRTime,
-      uptimeStr: req.uptime,
+      crtime: crtime,
+      uptime: req.uptime,
     );
   }
 

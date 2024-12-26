@@ -4,8 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
+import 'package:logger/logger.dart';
 
-enum LastPage { ok, delete, nochange, change, create, nocreate }
+enum LastPage { ok, err, delete, nochange, change, create, nocreate }
+
+var log = Logger(
+  printer: PrettyPrinter(
+    methodCount: 1, // 设置调用堆栈层级为1
+  ),
+);
 
 class Level {
   static const List<String> l = ['未分类', '平淡的', '触动的', '重要的', '深刻的'];
@@ -89,7 +96,7 @@ class Settings {
 
   Future<bool> setVisualNoneTitle(bool b) async {
     print("更新配置 隐藏空白标题 $b");
-    return setBool("devlop_mode", b);
+    return setBool("VisualNoneTitle", b);
   }
 
   Future<bool> setString(String key, String value) {
@@ -128,13 +135,23 @@ class Time {
     return DateTime.now().add(const Duration(days: 9999999));
   }
 
-  // 默认为一天
+  // 定格时间设置
   static Duration getOverTime() {
-    return const Duration(days: 1);
+    return const Duration(days: 7);
   }
 
-  static DateTime getNextDay() {
+  static DateTime getOverDay() {
     return DateTime.now().add(Time.getOverTime());
+  }
+
+  static Future<DateTime?> datePacker(BuildContext context) {
+    return showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+      locale: const Locale('zh'),
+    );
   }
 }
 
@@ -192,14 +209,14 @@ Divider divider() {
 }
 
 class Msg {
-  static diy(BuildContext context, String content, {String? title}) {
+  static diy(BuildContext context, String desc, {String? title}) {
     showDialog(
       barrierDismissible: true,
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: title == null ? null : Text(title),
-          content: Text(content),
+          content: Text(desc),
           actions: <Widget>[
             TextButton(
               child: Text("确定"),
@@ -213,5 +230,4 @@ class Msg {
       },
     );
   }
-
 }
