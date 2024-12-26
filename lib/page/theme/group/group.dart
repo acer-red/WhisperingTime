@@ -386,7 +386,7 @@ class _GroupPage extends State<GroupPage> {
                     SwitchListTile(
                       title: const Text('定格'),
                       subtitle:
-                          Text("定格后，本篇分组将无法编辑印迹，无法取消操作，只能回顾。定格后有1天缓冲期，用以取消。"),
+                          Text("定格后，本篇分组将无法编辑印迹，无法取消操作，只能回顾。定格后有7天缓冲期，用以取消。"),
                       value: isFreezed,
                       onChanged: (bool value) async {
                         bool ok = await setFreezeOverTime(gidx);
@@ -464,7 +464,7 @@ class _GroupPage extends State<GroupPage> {
   clickNewEdit() async {
     Group item = _gitems[gidx];
     if (item.isFreezedOrBuf()) {
-      Msg.diy(context, "已定格，无法编辑");
+      Msg.diy(context, "已定格或已进入定格缓冲期，无法编辑");
       return;
     }
     final LastPageDoc ret = await Navigator.push(

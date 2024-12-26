@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 
 enum LastPage { ok, err, delete, nochange, change, create, nocreate }
-
+const String defaultGroupName = "默认分组";
 var log = Logger(
   printer: PrettyPrinter(
     methodCount: 1, // 设置调用堆栈层级为1

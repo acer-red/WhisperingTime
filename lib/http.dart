@@ -63,6 +63,15 @@ class ResponsePutTheme extends Basic {
   }
 }
 
+class RequestPostThemeDefaultGroup{
+  String name;
+  RequestPostThemeDefaultGroup({required this.name});
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'crtime': Time.nowTimestampString(),
+        'overtime': Time.toTimestampString(Time.getForver())
+      };
+}
 class RequestPostTheme {
   String name;
   RequestPostTheme({required this.name});
@@ -70,6 +79,7 @@ class RequestPostTheme {
   Map<String, dynamic> toJson() => {
         'name': name,
         'crtime': Time.nowTimestampString(),
+        'default_group': RequestPostThemeDefaultGroup(name: defaultGroupName).toJson()
       };
 }
 

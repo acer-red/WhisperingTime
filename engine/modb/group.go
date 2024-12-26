@@ -161,7 +161,7 @@ func GroupPut(tid string, req *RequestGroupPut) error {
 	)
 	return err
 }
-func CreateGroupDefault(tid string, crtime string) (string, error) {
+func CreateGroupDefault(tid string, gd RequestThemePostDefaultGroup) (string, error) {
 
 	toid, err := GetThemeObjIDFromTID(tid)
 	if err != nil {
@@ -170,9 +170,10 @@ func CreateGroupDefault(tid string, crtime string) (string, error) {
 	gid := sys.CreateUUID()
 	data := bson.D{
 		{Key: "_toid", Value: toid},
-		{Key: "name", Value: "默认分组"},
+		{Key: "name", Value: gd.Name},
 		{Key: "gid", Value: gid},
-		{Key: "crtime", Value: crtime},
+		{Key: "crtime", Value: gd.CRTime},
+		{Key: "overtime", Value: gd.Overtime},
 		{Key: "default", Value: true},
 	}
 

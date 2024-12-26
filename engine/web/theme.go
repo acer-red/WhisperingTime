@@ -42,7 +42,7 @@ func ThemePost(g *gin.Context) {
 		return
 	}
 
-	if _, err := modb.CreateGroupDefault(tid, req.Data.CRTime); err != nil {
+	if _, err := modb.CreateGroupDefault(tid, req.Data.DefaultGroup); err != nil {
 		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
 		return
 	}

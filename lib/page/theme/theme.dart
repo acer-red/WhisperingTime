@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:whispering_time/env.dart';
 import 'group/group.dart';
@@ -76,9 +79,10 @@ class _ThemePageState extends State<ThemePage> {
                       value: 'event_add_theme',
                       child: Text('添加主题'),
                     ),
-                    const PopupMenuItem<String>(
+                    PopupMenuItem<String>(
                       value: 'event_export',
-                      child: Text(
+                      enabled: _items.isNotEmpty,
+                      child: const Text(
                         '导出',
                       ),
                     ),
@@ -149,7 +153,10 @@ class _ThemePageState extends State<ThemePage> {
               PopupMenuItem(value: 2, child: Text('导出')),
               PopupMenuItem(
                 value: 3,
-                child: Text('删除',style: TextStyle(color: Colors.red.shade400),),
+                child: Text(
+                  '删除',
+                  style: TextStyle(color: Colors.red.shade400),
+                ),
               ),
             ],
           ).then((value) {
@@ -165,7 +172,7 @@ class _ThemePageState extends State<ThemePage> {
                 delete(_items[index]);
                 break;
               default:
-                throw ArgumentError("shwoMenu");
+                break;
             }
             // 处理菜单项选择事件
           });
@@ -276,8 +283,8 @@ class _ThemePageState extends State<ThemePage> {
       return;
     }
 
-    final res = await Http().puttheme(RequestPutTheme(
-        name: result!, id: _items[index].id));
+    final res = await Http()
+        .puttheme(RequestPutTheme(name: result!, id: _items[index].id));
 
     if (res.isNotOK()) {
       return;
@@ -303,5 +310,84 @@ class _ThemePageState extends State<ThemePage> {
         _items.remove(item);
       });
     });
+  }
+
+  clickExportTheme() async {
+    int ret = await showExportOption();
+    switch (ret) {
+      case 0:
+        // exportDesktopTXT();
+        break;
+      default:
+        break;
+    }
+  }
+//   exportDesktopTXT() async {
+//     String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
+
+//     // 用户取消了操作
+//     if (selectedDirectory == null) {
+//       return;
+//     }
+
+//     Directory directory = Directory(selectedDirectory);
+//     print('选择的文件夹路径：${directory.path}');
+
+// final themes = await Http().gettheme();
+//     if (themes.isNotOK()) {
+//       return;
+//     }
+//     if (themes.data.isEmpty) {
+//       return;
+//     }
+
+
+//     // 遍历文件列表并写入
+//     for (ThemeListData theme in themes.data) {
+
+//           final ret = await Http(gid: _gitems[gidx].id).getDocs();
+
+//     if (ret.isNotOK()) {
+//       print(ret);
+//       return;
+//     }
+
+//       final String fileName = item.title.isEmpty
+//           ? item.crtime.toString()
+//           : "${item.title} - ${Time.string(item.crtime)}" ".txt";
+//       final String filePath = '$selectedDirectory/$fileName';
+
+//       // 创建并写入文件
+//       File file = File(filePath);
+//       await file.writeAsString(item.content);
+//       print('文件已写入: $filePath');
+//     }
+  
+//   }
+  Future<int> showExportOption() async {
+    int? ret = await showDialog<int>(
+      context: context,
+      barrierDismissible: true, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("导出"),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text("导出到本地"),
+                ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(0);
+                    },
+                    child: Text("仅文本")),
+                divider(),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    return ret ?? -1; // 如果用户没有点击按钮，则默认为 false
   }
 }

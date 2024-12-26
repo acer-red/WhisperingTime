@@ -8,10 +8,17 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type RequestThemePostDefaultGroup struct {
+	Name     string `json:"name"`
+	CRTime   string `json:"crtime"`
+	Overtime string `json:"overtime"`
+}
+
 type RequestThemePost struct {
 	Data struct {
-		Name   string `json:"name"`
-		CRTime string `json:"crtime"`
+		Name         string                       `json:"name"`
+		CRTime       string                       `json:"crtime"`
+		DefaultGroup RequestThemePostDefaultGroup `json:"default_group"`
 	} `json:"data" `
 }
 type Theme struct {
