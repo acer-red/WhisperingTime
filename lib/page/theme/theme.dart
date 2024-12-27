@@ -24,7 +24,7 @@ class _ThemePageState extends State<ThemePage> {
   void initState() {
     super.initState();
 
-    final list = Http().gettheme();
+    final list = Http().getthemes();
     list.then((list) {
       if (list.data.isEmpty) {
         return;
@@ -254,6 +254,7 @@ class _ThemePageState extends State<ThemePage> {
       builder: (context) {
         return AlertDialog(
           content: TextField(
+            enabled: true,
             onChanged: (value) {
               result = value;
             },
@@ -283,8 +284,8 @@ class _ThemePageState extends State<ThemePage> {
       return;
     }
 
-    final res = await Http()
-        .puttheme(RequestPutTheme(name: result!, id: _items[index].id));
+    final res = await Http(tid: _items[index].id)
+        .puttheme(RequestPutTheme(name: result!));
 
     if (res.isNotOK()) {
       return;
@@ -301,14 +302,13 @@ class _ThemePageState extends State<ThemePage> {
       return;
     }
 
-    final res = Http(content: item.id).deletetheme();
-    res.then((res) {
-      if (res.isNotOK()) {
-        return;
-      }
-      setState(() {
-        _items.remove(item);
-      });
+    final res = await Http(tid: item.id).deletetheme();
+
+    if (res.isNotOK()) {
+      return;
+    }
+    setState(() {
+      _items.remove(item);
     });
   }
 
@@ -341,7 +341,6 @@ class _ThemePageState extends State<ThemePage> {
 //       return;
 //     }
 
-
 //     // 遍历文件列表并写入
 //     for (ThemeListData theme in themes.data) {
 
@@ -362,7 +361,7 @@ class _ThemePageState extends State<ThemePage> {
 //       await file.writeAsString(item.content);
 //       print('文件已写入: $filePath');
 //     }
-  
+
 //   }
   Future<int> showExportOption() async {
     int? ret = await showDialog<int>(

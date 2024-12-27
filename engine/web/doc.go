@@ -5,12 +5,34 @@ import (
 
 	"github.com/gin-gonic/gin"
 	log "github.com/tengfei-xy/go-log"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func DocsGet(g *gin.Context) {
-	gid := g.Query("gid")
+func DocRoute(g *gin.Engine) {
+	a := g.Group("/docs/:gid")
+	{
+		a.Use(getGid())
+		a.GET("", DocsGet)
+	}
 
-	ret, err := modb.DocsGet(gid)
+	b := g.Group("/doc/:gid")
+	{
+		b.Use(getGid())
+		b.POST("", DocPost)
+	}
+
+	c := g.Group("/doc/:gid/:did")
+	{
+		c.Use(getGidAndDid())
+		c.PUT("", DocIDPut)
+		c.DELETE("", DocIDDelete)
+	}
+}
+
+func DocsGet(g *gin.Context) {
+	goid := g.MustGet("goid").(primitive.ObjectID)
+
+	ret, err := modb.DocsGet(goid)
 	if err != nil {
 		internalServerError(g)
 		return
@@ -22,8 +44,9 @@ func DocPost(g *gin.Context) {
 	type response struct {
 		ID string `json:"id"`
 	}
+	log.Info("创建文档")
 
-	gid := g.Query("gid")
+	goid := g.MustGet("goid").(primitive.ObjectID)
 
 	var req modb.RequestDocPost
 
@@ -32,44 +55,40 @@ func DocPost(g *gin.Context) {
 		return
 	}
 
-	did, err := modb.DocPost(gid, &req)
+	did, err := modb.DocPost(goid, &req)
 	if err != nil {
 		log.Error(err)
 		internalServerError(g)
 		return
 	}
-	log.Infof("创建文档的 ID: %s", did)
 	okData(g, response{ID: did})
 }
-func DocPut(g *gin.Context) {
-	type response struct {
-		ID string `json:"id"`
-	}
-
-	gid := g.Query("gid")
+func DocIDPut(g *gin.Context) {
+	log.Info("更新文档")
+	goid := g.MustGet("goid").(primitive.ObjectID)
+	doid := g.MustGet("doid").(primitive.ObjectID)
 
 	var req modb.RequestDocPut
-	var res response
 	if err := g.ShouldBindBodyWithJSON(&req); err != nil {
 		log.Error(err)
 		badRequest(g)
 		return
 	}
 
-	if err := modb.DocPut(gid, &req); err != nil {
+	if err := modb.DocPut(goid, doid, &req); err != nil {
 		log.Error(err)
 		internalServerError(g)
 		return
 	}
-	res.ID = req.Doc.ID
-	okData(g, res)
+	ok(g)
 }
-func DocDelete(g *gin.Context) {
+func DocIDDelete(g *gin.Context) {
 
-	gid := g.Query("gid")
-	did := g.Query("did")
+	log.Info("删除文档")
+	goid := g.MustGet("goid").(primitive.ObjectID)
+	doid := g.MustGet("doid").(primitive.ObjectID)
 
-	if err := modb.DocDelete(gid, did); err != nil {
+	if err := modb.DocDelete(goid, doid); err != nil {
 		log.Error(err)
 		internalServerError(g)
 		return

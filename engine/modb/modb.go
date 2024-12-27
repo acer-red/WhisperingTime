@@ -36,7 +36,3 @@ func Init() error {
 func Disconnect() error {
 	return mongosh.Disconnect(context.TODO())
 }
-
-//	func isNil(id primitive.ObjectID) bool {
-//		return primitive.NilObjectID == id
-//	}

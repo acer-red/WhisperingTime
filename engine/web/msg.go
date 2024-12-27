@@ -26,7 +26,6 @@ const mstrOK string = "ok"
 const mstrInternalServer string = "内部系统错误"
 
 // const mstrNoParam string = "缺少参数"
-const mstrNoThemeID string = "缺少ThemeID参数"
 const mstrBadRequest string = "错误参数"
 
 // const mstrNoUID string = "缺少uid参数"

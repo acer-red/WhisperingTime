@@ -2,16 +2,54 @@ package web
 
 import (
 	"modb"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/tengfei-xy/go-log"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func GroupGet(g *gin.Context) {
-	tid := g.Query("tid")
-	log.Infof("获取分组 tid=%s", tid)
+func GroupRoute(g *gin.Engine) {
+	a := g.Group("/groups/:tid")
+	{
+		a.Use(getTid())
+		a.GET("", GroupsGet)
+	}
 
-	response, err := modb.GroupGet(tid)
+	b := g.Group("/group/:tid")
+	{
+		b.Use(getTid())
+		b.POST("", GroupPost)
+	}
+
+	c := g.Group("/group/:tid/:gid")
+	{
+		c.Use(getTidAndGid())
+		c.GET("", GroupIDGet)
+		c.PUT("", GroupIDPut)
+		c.DELETE("", GroupIDDelete)
+	}
+}
+func GroupsGet(g *gin.Context) {
+	log.Info("获取所有分组")
+
+	toid := g.MustGet("toid").(primitive.ObjectID)
+
+	response, err := modb.GroupsGet(toid)
+	if err != nil {
+		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
+		return
+	}
+
+	g.JSON(http.StatusOK, msgOK().setData(response))
+}
+
+func GroupIDGet(g *gin.Context) {
+	log.Infof("获取分组")
+	toid := g.MustGet("toid").(primitive.ObjectID)
+	goid := g.MustGet("goid").(primitive.ObjectID)
+
+	response, err := modb.GroupGet(toid, goid)
 	if err != nil {
 		log.Error(err)
 		internalServerError(g)
@@ -21,9 +59,11 @@ func GroupGet(g *gin.Context) {
 	okData(g, response)
 }
 func GroupPost(g *gin.Context) {
-	tid := g.Query("tid")
-	log.Infof("获取主题 tid=%s", tid)
+	log.Infof("获取主题")
 
+	toid := g.MustGet("toid").(primitive.ObjectID)
+
+	// 响应必须返回ID
 	type response struct {
 		ID string `json:"id"`
 	}
@@ -35,7 +75,7 @@ func GroupPost(g *gin.Context) {
 		return
 	}
 
-	id, err := modb.GroupPost(tid, &req)
+	id, err := modb.GroupPost(toid, &req)
 	if err != nil {
 		log.Error(err)
 		internalServerError(g)
@@ -43,36 +83,35 @@ func GroupPost(g *gin.Context) {
 	}
 	okData(g, response{ID: id})
 }
-func GroupPut(g *gin.Context) {
-	tid := g.Query("tid")
-	log.Infof("获取主题 tid=%s", tid)
+func GroupIDPut(g *gin.Context) {
+	log.Infof("修改分组")
 
-	type response struct {
-		ID string `json:"id"`
-	}
+	toid := g.MustGet("toid").(primitive.ObjectID)
+	goid := g.MustGet("goid").(primitive.ObjectID)
 
 	var req modb.RequestGroupPut
-	var res response
+
 	if err := g.ShouldBindBodyWithJSON(&req); err != nil {
 		log.Error(err)
 		badRequest(g)
 		return
 	}
 
-	if err := modb.GroupPut(tid, &req); err != nil {
+	if err := modb.GroupPut(toid, goid, &req); err != nil {
 		log.Error(err)
 		internalServerError(g)
 		return
 	}
 
-	res.ID = tid
-	okData(g, res)
+	ok(g)
 }
-func GroupDelete(g *gin.Context) {
-	gid := g.Query("gid")
-	log.Infof("获取分组 gid=%s", gid)
+func GroupIDDelete(g *gin.Context) {
+	log.Infof("删除分组")
 
-	err := modb.GroupDeleteFromGID(gid)
+	toid := g.MustGet("toid").(primitive.ObjectID)
+	goid := g.MustGet("goid").(primitive.ObjectID)
+
+	err := modb.GroupDeleteOne(toid, goid)
 	if err != nil {
 		log.Error(err)
 		internalServerError(g)

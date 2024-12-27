@@ -8,6 +8,18 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type Theme struct {
+	Name string `json:"name" bson:"name"`
+	ID   string `json:"id" bson:"tid"`
+}
+
+type RequestThemePut struct {
+	Data struct {
+		Name   string `json:"name"`
+		UPTime string `json:"uptime"`
+	} `json:"data" `
+}
+
 type RequestThemePostDefaultGroup struct {
 	Name     string `json:"name"`
 	CRTime   string `json:"crtime"`
@@ -21,60 +33,11 @@ type RequestThemePost struct {
 		DefaultGroup RequestThemePostDefaultGroup `json:"default_group"`
 	} `json:"data" `
 }
-type Theme struct {
-	Name string `json:"name" bson:"name"`
-	ID   string `json:"id" bson:"tid"`
-}
 
-// 输入uid，返回uoid和toid
-func GetThemeObjID(uid string) (primitive.ObjectID, primitive.ObjectID, error) {
-	uoid, err := UserGetObjectUID(uid)
-	if err != nil {
-		return primitive.NilObjectID, primitive.NilObjectID, err
-	}
-
-	coll := db.Collection("theme")
-	ctx := context.TODO()
-
-	identified := bson.D{{Key: "_uid", Value: uoid}}
-	var result bson.M
-
-	if err := coll.FindOne(ctx, identified).Decode(&result); err != nil {
-		return primitive.NilObjectID, primitive.NilObjectID, err
-	}
-
-	toid, ok := result["_id"].(primitive.ObjectID)
-	if !ok {
-		return primitive.NilObjectID, primitive.NilObjectID, nil
-	}
-
-	return uoid, toid, nil
-}
-
-// 输入tid，返回toid
-func GetThemeObjIDFromTID(tid string) (primitive.ObjectID, error) {
-
-	identified := bson.D{{Key: "tid", Value: tid}}
-	var result bson.M
-
-	if err := db.Collection("theme").FindOne(context.TODO(), identified).Decode(&result); err != nil {
-		return primitive.NilObjectID, err
-	}
-
-	id, ok := result["_id"].(primitive.ObjectID)
-	if !ok {
-		return primitive.NilObjectID, nil
-	}
-
-	return id, nil
-}
-func GetTheme(uid string) ([]Theme, error) {
+// 根据UOID找到所有的主题
+func GetTheme(uoid primitive.ObjectID) ([]Theme, error) {
 
 	var results []Theme
-	uoid, err := UserGetObjectUID(uid)
-	if err != nil {
-		return nil, err
-	}
 
 	filter := bson.D{
 		{Key: "_uid", Value: uoid},
@@ -100,11 +63,7 @@ func GetTheme(uid string) ([]Theme, error) {
 
 	return results, nil
 }
-func CreateTheme(uid string, req *RequestThemePost) (string, error) {
-	uoid, err := UserGetObjectUID(uid)
-	if err != nil {
-		return "", err
-	}
+func CreateTheme(uoid primitive.ObjectID, req *RequestThemePost) (primitive.ObjectID, string, error) {
 
 	tid := sys.CreateUUID()
 	theme := bson.D{
@@ -113,27 +72,22 @@ func CreateTheme(uid string, req *RequestThemePost) (string, error) {
 		{Key: "crtime", Value: req.Data.CRTime},
 		{Key: "tid", Value: tid},
 	}
-	_, err = db.Collection("theme").InsertOne(context.TODO(), theme)
-	return tid, err
-}
-func UpdateTheme(uid string, name string, tid string) error {
+	ret, err := db.Collection("theme").InsertOne(context.TODO(), theme)
 
-	_, toid, err := GetThemeObjID(uid)
-	if err != nil {
-		return err
-	}
+	return ret.InsertedID.(primitive.ObjectID), tid, err
+}
+func UpdateTheme(toid primitive.ObjectID, req *RequestThemePut) error {
 
 	filter := bson.M{
 		"_id": toid,
-		"tid": tid,
 	}
 	update := bson.M{
 		"$set": bson.M{
-			"name": name,
+			"name": req.Data.Name,
 		},
 	}
 
-	_, err = db.Collection("theme").UpdateOne(
+	_, err := db.Collection("theme").UpdateOne(
 		context.TODO(),
 		filter,
 		update,
@@ -141,13 +95,7 @@ func UpdateTheme(uid string, name string, tid string) error {
 	)
 	return err
 }
-func DeleteTheme(uid, tid string) error {
-
-	// 根据uid返回toid
-	_, toid, err := GetThemeObjID(uid)
-	if err != nil {
-		return err
-	}
+func DeleteTheme(toid primitive.ObjectID) error {
 
 	// 根据toid返回所有goids
 	goids, err := GetGOIDsFromTOID(toid)
@@ -157,12 +105,10 @@ func DeleteTheme(uid, tid string) error {
 
 	for _, goid := range goids {
 
-		// 根据goid删除所有文档
 		if err := DocDeleteFromGOID(goid); err != nil {
 			return err
 		}
 
-		// 根据goid删除分组
 		if err := GroupDeleteFromGOID(goid); err != nil {
 			return err
 		}

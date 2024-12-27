@@ -6,14 +6,31 @@ import (
 
 	"github.com/gin-gonic/gin"
 	log "github.com/tengfei-xy/go-log"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func ThemeGet(g *gin.Context) {
+func ThemeRoute(g *gin.Engine) {
+	a := g.Group("/themes")
+	{
+		a.GET("", ThemesGet)
+	}
+	b := g.Group("/theme")
+	{
+		b.POST("", ThemePost)
+	}
+	c := g.Group("/theme/:tid")
+	{
+		c.Use(getTid())
+		c.PUT("", ThemeIDPut)
+		c.DELETE("", ThemeIDDelete)
+	}
+}
 
-	uid := g.Query("uid")
-	log.Infof("获取主题 uid=%s", uid)
+func ThemesGet(g *gin.Context) {
+	log.Info("获取所有主题")
+	uoid := g.MustGet("uoid").(primitive.ObjectID)
 
-	response, err := modb.GetTheme(uid)
+	response, err := modb.GetTheme(uoid)
 	if err != nil {
 		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
 		return
@@ -21,79 +38,59 @@ func ThemeGet(g *gin.Context) {
 
 	g.JSON(http.StatusOK, msgOK().setData(response))
 }
-func ThemePost(g *gin.Context) {
 
+func ThemePost(g *gin.Context) {
+	log.Info("插入主题")
 	type response struct {
-		Name string `json:"name"`
-		ID   string `json:"id"`
+		ID string `json:"id"`
 	}
+	uoid := g.MustGet("uoid").(primitive.ObjectID)
 
 	var req modb.RequestThemePost
 	if err := g.ShouldBindBodyWithJSON(&req); err != nil {
 		g.AbortWithStatusJSON(http.StatusBadRequest, msgBadRequest())
 		return
 	}
-	uid := g.Query("uid")
 
-	tid, err := modb.CreateTheme(uid, &req)
+	toid, tid, err := modb.CreateTheme(uoid, &req)
 	if err != nil {
 		log.Error(err)
 		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
 		return
 	}
 
-	if _, err := modb.CreateGroupDefault(tid, req.Data.DefaultGroup); err != nil {
+	if _, err := modb.GroupCreateDefault(toid, req.Data.DefaultGroup); err != nil {
 		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
 		return
 	}
-	log.Infof("插入主题 %s data:%s crtime:%s", uid, req.Data.Name, req.Data.CRTime)
-	g.JSON(http.StatusOK, msgOK().setData(response{Name: req.Data.Name, ID: tid}))
+	okData(g, response{ID: tid})
 }
-func ThemePut(g *gin.Context) {
-	type request struct {
-		Data struct {
-			Name string `json:"name"`
-			ID   string `json:"id"`
-		} `json:"data" `
-		UPTime string `json:"uptime"`
-	}
-	type response struct {
-		Name string `json:"name"`
-		ID   string `json:"id"`
-	}
-	var req request
+func ThemeIDPut(g *gin.Context) {
+	log.Info("主题更新")
+
+	toid := g.MustGet("toid").(primitive.ObjectID)
+
+	var req modb.RequestThemePut
 	if err := g.ShouldBindBodyWithJSON(&req); err != nil {
 		g.AbortWithStatusJSON(http.StatusBadRequest, msgBadRequest())
 		return
 	}
-	uid := g.Query("uid")
-	if err := modb.UpdateTheme(uid, req.Data.Name, req.Data.ID); err != nil {
+	if err := modb.UpdateTheme(toid, &req); err != nil {
 		log.Error(err)
 		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
 		return
 	}
-	log.Debug3f("主题更新 uid=%s 更新值=%s", uid, req.Data.Name)
-
-	g.JSON(http.StatusOK, msgOK().setData(response{Name: req.Data.Name, ID: req.Data.ID}))
+	ok(g)
 }
-func ThemeDelete(g *gin.Context) {
-	tid := g.Query("tid")
+func ThemeIDDelete(g *gin.Context) {
+	log.Info("主题删除")
+	toid := g.MustGet("toid").(primitive.ObjectID)
 
-	if tid == "" {
-		log.Errorf(mstrNoThemeID)
-		badRequest(g)
-		return
-	}
-
-	uid := g.Query("uid")
-
-	err := modb.DeleteTheme(uid, tid)
+	err := modb.DeleteTheme(toid)
 	if err != nil {
 		log.Error(err)
 		internalServerError(g)
 		return
 	}
-	log.Infof("删除主题 uid:%s tid:%s", uid, tid)
-
 	ok(g)
 }

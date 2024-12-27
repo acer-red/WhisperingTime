@@ -126,8 +126,8 @@ class _DocSetting extends State<DocSetting> {
       return;
     }
 
-    final ret = await Http()
-        .deleteDoc(RequestDeleteDoc(gid: widget.gid, did: widget.did));
+    final ret = await Http(gid: widget.gid, did: widget.did)
+        .deleteDoc();
     if (ret.isNotOK()) {
       return;
     }

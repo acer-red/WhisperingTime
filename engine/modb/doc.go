@@ -8,6 +8,15 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type Doc struct {
+	Title   string `json:"title" bson:"title"`
+	Content string `json:"content" bson:"content"`
+	Level   int    `json:"level" bson:"level"`
+	CRTime  string `json:"crtime"`
+	UPTime  string `json:"uptime"`
+	ID      string `json:"id" bson:"did"`
+}
+
 type RequestDocPost struct {
 	Data struct {
 		Content string `json:"content"`
@@ -20,21 +29,10 @@ type RequestDocPost struct {
 type RequestDocPut struct {
 	Doc Doc `json:"data"`
 }
-type Doc struct {
-	Title   string `json:"title" bson:"title"`
-	Content string `json:"content" bson:"content"`
-	Level   int    `json:"level" bson:"level"`
-	CRTime  string `json:"crtime"`
-	UPTime  string `json:"uptime"`
-	ID      string `json:"id" bson:"did"`
-}
 
-func DocsGet(gid string) ([]Doc, error) {
+func DocsGet(goid primitive.ObjectID) ([]Doc, error) {
 	var results []Doc
-	goid, err := GetGOIDFromGID(gid)
-	if err != nil {
-		return nil, err
-	}
+
 	filter := bson.D{
 		{Key: "_goid", Value: goid},
 	}
@@ -59,12 +57,7 @@ func DocsGet(gid string) ([]Doc, error) {
 
 	return results, nil
 }
-func DocPost(gid string, req *RequestDocPost) (string, error) {
-
-	goid, err := GetGOIDFromGID(gid)
-	if err != nil {
-		return "", err
-	}
+func DocPost(goid primitive.ObjectID, req *RequestDocPost) (string, error) {
 
 	did := sys.CreateUUID()
 	data := bson.D{
@@ -76,22 +69,18 @@ func DocPost(gid string, req *RequestDocPost) (string, error) {
 		{Key: "crtime", Value: (*req).Data.CRTime},
 	}
 
-	_, err = db.Collection("doc").InsertOne(context.TODO(), data)
+	_, err := db.Collection("doc").InsertOne(context.TODO(), data)
 	if err != nil {
 		return "", err
 	}
 
 	return did, err
 }
-func DocPut(gid string, req *RequestDocPut) error {
+func DocPut(goid primitive.ObjectID, doid primitive.ObjectID, req *RequestDocPut) error {
 
-	goid, err := GetGOIDFromGID(gid)
-	if err != nil {
-		return err
-	}
 	filter := bson.M{
 		"_goid": goid,
-		"did":   (*req).Doc.ID,
+		"_id":   doid,
 	}
 
 	data := bson.M{}
@@ -124,7 +113,7 @@ func DocPut(gid string, req *RequestDocPut) error {
 		data["level"] = (*req).Doc.Level
 	}
 
-	_, err = db.Collection("doc").UpdateOne(
+	_, err := db.Collection("doc").UpdateOne(
 		context.TODO(),
 		filter,
 		bson.M{
@@ -134,21 +123,19 @@ func DocPut(gid string, req *RequestDocPut) error {
 	)
 	return err
 }
-func DocDelete(gid, did string) error {
-	goid, err := GetGOIDFromGID(gid)
-	if err != nil {
-		return err
-	}
+func DocDelete(goid primitive.ObjectID, doid primitive.ObjectID) error {
 	filter := bson.M{
 		"_goid": goid,
-		"did":   did,
+		"_id":   doid,
 	}
-	_, err = db.Collection("doc").DeleteOne(context.TODO(),
+	_, err := db.Collection("doc").DeleteOne(context.TODO(),
 		filter,
 		nil,
 	)
 	return err
 }
+
+// 根据goid删除所有文档
 func DocDeleteFromGOID(goid primitive.ObjectID) error {
 	data := bson.D{
 		{Key: "_goid", Value: goid},

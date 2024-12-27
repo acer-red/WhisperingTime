@@ -2,19 +2,21 @@ package modb
 
 import (
 	"context"
-	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/tengfei-xy/go-log"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func ExistUser() gin.HandlerFunc {
 
 	return func(g *gin.Context) {
-		uid := g.Query("uid")
+		uid, _, ok := g.Request.BasicAuth()
+		if !ok {
+			g.AbortWithStatusJSON(http.StatusBadRequest, "缺少uid")
+			return
+		}
 		if uid == "" {
 			g.AbortWithStatusJSON(http.StatusBadRequest, "缺少uid")
 			return
@@ -30,6 +32,13 @@ func ExistUser() gin.HandlerFunc {
 		}
 		// 存在用户
 		if count > 0 {
+			uoid, err := GetUOIDFromUID(uid)
+			if err != nil {
+				log.Error(err)
+				g.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+			g.Set("uoid", uoid)
 			return
 		}
 
@@ -39,19 +48,13 @@ func ExistUser() gin.HandlerFunc {
 			g.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
+		uoid, err := GetUOIDFromUID(uid)
+		if err != nil {
+			log.Error(err)
+			g.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+		g.Set("uoid", uoid)
 		log.Infof("新用户 uid=%s", uid)
 	}
-}
-func UserGetObjectUID(uid string) (primitive.ObjectID, error) {
-	var result bson.M
-
-	if err := db.Collection("user").FindOne(context.TODO(), bson.D{{Key: "uid", Value: uid}}).Decode(&result); err != nil {
-		return primitive.NilObjectID, err
-	}
-
-	id, ok := result["_id"].(primitive.ObjectID)
-	if !ok {
-		return primitive.NilObjectID, errors.New("无法获取_id")
-	}
-	return id, nil
 }

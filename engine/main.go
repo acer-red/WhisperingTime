@@ -16,11 +16,11 @@ import (
 	log "github.com/tengfei-xy/go-log"
 )
 
-type appS struct {
+type App struct {
 	loglevel int
 }
 
-var app appS
+var app App
 
 func init_mongo() {
 	log.Infof("mongo连接中...")
@@ -42,9 +42,9 @@ func init_flag() {
 func main() {
 	init_flag()
 	init_log()
-	init_mongo()
-	go quit()
+
 	port := "21523"
+	log.Infof("监听端口:%s", port)
 
 	gin.SetMode(gin.ReleaseMode)
 	g := gin.Default()
@@ -58,37 +58,13 @@ func main() {
 		// User.PUT("", web.UserPut)
 		// User.DELETE("", web.UserDelete)
 	}
+	web.ThemeRoute(g)
+	web.GroupRoute(g)
+	web.DocRoute(g)
 
-	Theme := g.Group("/theme")
-	{
-		Theme.GET("", web.ThemeGet)
-		Theme.POST("", web.ThemePost)
-		Theme.PUT("", web.ThemePut)
-		Theme.DELETE("", web.ThemeDelete)
-	}
-	Group := g.Group("/group")
-	{
-		Group.GET("", web.GroupGet)
-		Group.POST("", web.GroupPost)
-		Group.PUT("", web.GroupPut)
-		Group.DELETE("", web.GroupDelete)
-	}
-	Doc := g.Group("/doc")
-	{
-		// Doc.GET("", web.DocGet)
-		Doc.POST("", web.DocPost)
-		Doc.PUT("", web.DocPut)
-		Doc.DELETE("", web.DocDelete)
-	}
-	Docs := g.Group("/docs")
-	{
-		Docs.GET("", web.DocsGet)
-		// Docs.POST("", web.DocsPost)
-		// Docs.PUT("", web.DocsPut)
-		// Docs.DELETE("", web.DocsDelete)
-	}
-	log.Infof("监听端口:%s", port)
-
+	init_mongo()
+	go quit()
+	log.Info("启动成功")
 	err := g.Run(":" + port)
 	if err != nil {
 		log.Fatal(err)

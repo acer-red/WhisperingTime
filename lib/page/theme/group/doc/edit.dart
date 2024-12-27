@@ -163,8 +163,8 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   }
 
   clickNewLevel(int index) async {
-    final res = await Http(gid: widget.gid)
-        .putDoc(RequestPutDoc(id: widget.id!, level: index));
+    final res = await Http(gid: widget.gid, did: widget.id!)
+        .putDoc(RequestPutDoc(level: index));
     if (res.isNotOK()) {
       return;
     }
@@ -175,8 +175,8 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   }
 
   clickNewTitle(String newTitle) async {
-    final res = await Http(gid: widget.gid)
-        .putDoc(RequestPutDoc(id: widget.id!, title: newTitle));
+    final res = await Http(gid: widget.gid, did: widget.id!)
+        .putDoc(RequestPutDoc(title: newTitle));
     if (res.isNotOK()) {
       return;
     }
@@ -300,15 +300,22 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
 
     final realTitle = titleEdit.text == defaultTitle ? "" : titleEdit.text;
     final req = RequestPutDoc(
-        content: edit.text,
-        id: widget.id!,
-        title: titleEdit.text,
-        crtime: crtime);
-    final res = await Http(gid: widget.gid).putDoc(req);
+        content: edit.text, title: titleEdit.text, crtime: crtime);
+    final res = await Http(gid: widget.gid, did: widget.id!).putDoc(req);
+    if (res.isNotOK()) {
+      return LastPageDoc(
+          state: LastPage.nochange,
+          content: widget.content,
+          id: widget.id!,
+          title: widget.title,
+          level: widget.level,
+          crtime: widget.crtime,
+          uptime: widget.uptime);
+    }
     return LastPageDoc(
       state: LastPage.change,
       content: edit.text,
-      id: res.id,
+      id: widget.id!,
       title: realTitle,
       level: currentLevel,
       crtime: crtime,

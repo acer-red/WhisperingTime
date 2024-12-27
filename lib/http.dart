@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:whispering_time/env.dart';
 
+enum Method { get, post, put, delete }
+
 class Basic {
   int err;
   String msg;
@@ -10,7 +12,6 @@ class Basic {
     if (isOK()) {
       return false;
     }
-    print(msg);
     return true;
   }
 
@@ -44,26 +45,23 @@ class ResponseGetTheme extends Basic {
 
 class RequestPutTheme {
   String name;
-  String id;
-  RequestPutTheme({required this.name, required this.id});
+  RequestPutTheme({required this.name});
   Map<String, dynamic> toJson() =>
-      {'name': name, 'id': id, 'uptime': Time.nowTimestampString()};
+      {'name': name, 'uptime': Time.nowTimestampString()};
 }
 
 class ResponsePutTheme extends Basic {
-  String id;
 
-  ResponsePutTheme({required super.err, required super.msg, required this.id});
+  ResponsePutTheme({required super.err, required super.msg});
   factory ResponsePutTheme.fromJson(Map<String, dynamic> json) {
     return ResponsePutTheme(
       err: json['err'] as int,
       msg: json['msg'] as String,
-      id: json['data']['id'] == null ? "" : json['data']['id'] as String,
     );
   }
 }
 
-class RequestPostThemeDefaultGroup{
+class RequestPostThemeDefaultGroup {
   String name;
   RequestPostThemeDefaultGroup({required this.name});
   Map<String, dynamic> toJson() => {
@@ -72,6 +70,7 @@ class RequestPostThemeDefaultGroup{
         'overtime': Time.toTimestampString(Time.getForver())
       };
 }
+
 class RequestPostTheme {
   String name;
   RequestPostTheme({required this.name});
@@ -79,7 +78,8 @@ class RequestPostTheme {
   Map<String, dynamic> toJson() => {
         'name': name,
         'crtime': Time.nowTimestampString(),
-        'default_group': RequestPostThemeDefaultGroup(name: defaultGroupName).toJson()
+        'default_group':
+            RequestPostThemeDefaultGroup(name: defaultGroupName).toJson()
       };
 }
 
@@ -149,26 +149,21 @@ class ResponsePostGroup extends Basic {
 }
 
 class ResponsePutGroup extends Basic {
-  String id;
-
-  ResponsePutGroup({required super.err, required super.msg, required this.id});
+  ResponsePutGroup({required super.err, required super.msg});
   factory ResponsePutGroup.fromJson(Map<String, dynamic> json) {
     return ResponsePutGroup(
       err: json['err'] as int,
       msg: json['msg'] as String,
-      id: json['data']['id'] == null ? "" : json['data']['id'] as String,
     );
   }
 }
 
 class RequestPutGroup {
-  String id;
-
   String? name;
   DateTime? overtime;
-  RequestPutGroup({this.name, required this.id, this.overtime});
+  RequestPutGroup({this.name, this.overtime});
   Map<String, dynamic> toJson() {
-    Map<String, dynamic> data = {'id': id, 'uptime': Time.nowTimestampString()};
+    Map<String, dynamic> data = {'uptime': Time.nowTimestampString()};
 
     if (name != null) {
       print("更新分组名,$name");
@@ -306,18 +301,16 @@ class ResponsePostDoc extends Basic {
 }
 
 class RequestPutDoc {
-  String id;
   String? content;
   String? title;
   int? level;
   DateTime? crtime;
   DateTime get uptime => DateTime.now();
   RequestPutDoc(
-      {required this.id, this.title, this.content, this.level, this.crtime});
+      { this.title, this.content, this.level, this.crtime});
 
   Map<String, dynamic> toJson() {
     Map<String, dynamic> data = {
-      'id': id,
       'uptime': Time.toTimestampString(uptime)
     };
 
@@ -345,22 +338,15 @@ class RequestPutDoc {
 }
 
 class ResponsePutDoc extends Basic {
-  String id;
-  ResponsePutDoc({required super.err, required super.msg, required this.id});
+  ResponsePutDoc({required super.err, required super.msg});
   factory ResponsePutDoc.fromJson(Map<String, dynamic> json) {
     return ResponsePutDoc(
       err: json['err'] as int,
       msg: json['msg'] as String,
-      id: json['data']['id'] == null ? "" : json['data']['id'] as String,
     );
   }
 }
 
-class RequestDeleteDoc {
-  String did;
-  String gid;
-  RequestDeleteDoc({required this.gid, required this.did});
-}
 
 class ResponseDeleteDoc extends Basic {
   ResponseDeleteDoc({required super.err, required super.msg});
@@ -372,17 +358,19 @@ class ResponseDeleteDoc extends Basic {
   }
 }
 
-enum Method { get, post, put, delete }
-
 class Http {
   final String? content;
   final String? tid;
   final String? gid;
-  final String? docid;
+  final String? did;
   static final String uid = Settings().getuid();
   static final String serverAddress = Settings().getServerAddress();
 
-  Http({this.content, this.tid, this.gid, this.docid});
+  Http({this.content, this.tid, this.gid, this.did});
+  String getAuthorization() {
+    final credentials = '$uid:';
+    return 'Basic ${base64Encode(utf8.encode(credentials))}';
+  }
 
   Future<T> _handleRequest<T>(
       Method method, Uri u, Function(Map<String, dynamic>) fromJson,
@@ -390,11 +378,14 @@ class Http {
     if (data != null) {
       log.d(data);
     }
+    if (data != null) {
+      log.d(data);
+    }
     try {
       final http.Response response;
       switch (method) {
         case Method.get:
-          response = await http.get(u);
+          response = await http.get(u, headers: headers);
           break;
         case Method.post:
           response =
@@ -405,50 +396,48 @@ class Http {
               await http.put(u, body: jsonEncode(data), headers: headers);
           break;
         case Method.delete:
-          response = await http.delete(u);
+          response =
+              await http.delete(u, body: jsonEncode(data), headers: headers);
           break;
       }
       if (response.body.isEmpty) {
-        print("服务器返回空");
+        log.e("服务器返回空");
         return fromJson({'err': 1, 'msg': ''});
       }
-      print(response.body);
+
       final Map<String, dynamic> json = jsonDecode(response.body);
       return fromJson(json);
     } catch (e) {
       log.e(e.toString());
-      // Msg.diy(context, "服务器连接错误");
       return fromJson({'err': 1, 'msg': ''});
     }
   }
 
-  Future<ResponseGetTheme> gettheme() async {
+  // theme
+  Future<ResponseGetTheme> getthemes() async {
+    String path = "/themes";
 
-    final Map<String, String> param = {
-      'uid': uid,
+    final Map<String, String> headers = {
+      'Authorization': getAuthorization(),
     };
-
-    final url = Uri.http(serverAddress, "/theme", param);
+    final url = Uri.http(serverAddress, path);
 
     return _handleRequest<ResponseGetTheme>(
-      Method.get,
-      url,
-      (json) => ResponseGetTheme.fromJson(json),
-    );
+        Method.get, url, (json) => ResponseGetTheme.fromJson(json),
+        headers: headers);
   }
 
   Future<ResponsePostTheme> posttheme(RequestPostTheme req) async {
-    const String path = "/theme";
-    final Map<String, String> param = {
-      'uid': uid,
-    };
+    String path = "/theme";
+
     final Map<String, dynamic> data = {
       'data': req.toJson(),
     };
     final Map<String, String> headers = {
       "Content-Type": "application/json",
+      'Authorization': getAuthorization(),
     };
-    final url = Uri.http(serverAddress, path, param);
+    final url = Uri.http(serverAddress, path);
 
     return _handleRequest<ResponsePostTheme>(
       Method.post,
@@ -460,18 +449,16 @@ class Http {
   }
 
   Future<ResponsePutTheme> puttheme(RequestPutTheme req) async {
-    const String path = "/theme";
+    String path = "/theme/${tid!}";
 
-    final Map<String, String> param = {
-      'uid': uid,
-    };
     final Map<String, dynamic> data = {
       'data': req.toJson(),
     };
     final Map<String, String> headers = {
       "Content-Type": "application/json",
+      'Authorization': getAuthorization(),
     };
-    final url = Uri.http(serverAddress, path, param);
+    final url = Uri.http(serverAddress, path);
 
     return _handleRequest<ResponsePutTheme>(
       Method.put,
@@ -483,68 +470,53 @@ class Http {
   }
 
   Future<ResponseDeleteTheme> deletetheme() async {
-    const String path = "/theme";
+    String path = "/theme/${tid!}";
 
-    final Map<String, String> param = {
-      'uid': uid,
-      'tid': content!,
+    final Map<String, String> headers = {
+      "Content-Type": "application/json",
+      'Authorization': getAuthorization(),
     };
-    final url = Uri.http(serverAddress, path, param);
+    final url = Uri.http(serverAddress, path);
     return _handleRequest<ResponseDeleteTheme>(
-        Method.delete, url, (json) => ResponseDeleteTheme.fromJson(json));
+        Method.delete, url, (json) => ResponseDeleteTheme.fromJson(json),
+        headers: headers);
   }
 
-  Future<ResponseGetGroup> getGroup() async {
-    const String path = "/group";
+  // group
+  Future<ResponseGetGroup> getGroups() async {
+    String path = "/groups/${tid!}";
 
     if (tid == null) {
       log.e('缺少tid');
     }
 
-    final Map<String, String> param = {
-      'uid': uid,
-      'tid': tid!,
+    final Map<String, String> headers = {
+      "Content-Type": "application/json",
+      'Authorization': getAuthorization(),
     };
 
-    final url = Uri.http(serverAddress, path, param);
+    final url = Uri.http(serverAddress, path);
 
     return _handleRequest<ResponseGetGroup>(
-      Method.get,
-      url,
-      (json) => ResponseGetGroup.fromJson(json),
-    );
-  }
-
-  Future<ResponseDeleteGroup> deleteGroup() async {
-    const String path = "/group";
-
-    final Map<String, String> param = {'uid': uid, 'gid': gid!};
-    final url = Uri.http(serverAddress, path, param);
-    return _handleRequest<ResponseDeleteGroup>(
-      Method.delete,
-      url,
-      (json) => ResponseDeleteGroup.fromJson(json),
-    );
+        Method.get, url, (json) => ResponseGetGroup.fromJson(json),
+        headers: headers);
   }
 
   Future<ResponsePostGroup> postGroup(RequestPostGroup req) async {
-    const String path = "/group";
+    String path = "/group/${tid!}";
 
     if (tid == null) {
       log.e('缺少tid');
     }
 
-    final Map<String, String> param = {
-      'uid': uid,
-      'tid': tid!,
-    };
     final Map<String, dynamic> data = {
       'data': req.toJson(),
     };
     final Map<String, String> headers = {
       "Content-Type": "application/json",
+      "Authorization": getAuthorization(),
     };
-    final url = Uri.http(serverAddress, path, param);
+    final url = Uri.http(serverAddress, path);
 
     return _handleRequest<ResponsePostGroup>(
       Method.post,
@@ -556,22 +528,20 @@ class Http {
   }
 
   Future<ResponsePutGroup> putGroup(RequestPutGroup req) async {
-    if (tid == null) {
-      log.e('缺少tid');
+    if (tid == null || gid == null) {
+      log.e('缺少参数');
     }
-    const String path = "/group";
 
-    final Map<String, String> param = {
-      'uid': uid,
-      'tid': tid!,
-    };
+    String path = "/group/${tid!}/${gid!}";
+
     final Map<String, dynamic> data = {
       'data': req.toJson(),
     };
     final Map<String, String> headers = {
       "Content-Type": "application/json",
+      "Authorization": getAuthorization(),
     };
-    final url = Uri.http(serverAddress, path, param);
+    final url = Uri.http(serverAddress, path);
 
     return _handleRequest<ResponsePutGroup>(
       Method.put,
@@ -582,24 +552,40 @@ class Http {
     );
   }
 
+  Future<ResponseDeleteGroup> deleteGroup() async {
+    if (tid == null || gid == null) {
+      log.e('缺少参数');
+    }
+
+    String path = "/group/${tid!}/${gid!}";
+
+    final Map<String, String> headers = {
+      "Authorization": getAuthorization(),
+    };
+
+    final url = Uri.http(serverAddress, path);
+    return _handleRequest<ResponseDeleteGroup>(
+        Method.delete, url, (json) => ResponseDeleteGroup.fromJson(json),
+        headers: headers);
+  }
+
+  // doc
   Future<ResponseGetDoc> getDocs() async {
     print("获取分组的日志列表");
 
-    if (gid == null) {
-      log.e('缺少gid');
-    }
+    String path = "/docs/${gid!}";
 
-    final Map<String, String> param = {
-      'uid': uid,
-      'gid': gid!,
+    final url = Uri.http(serverAddress, path);
+    final Map<String, String> headers = {
+      "Content-Type": "application/json",
+      'Authorization': getAuthorization(),
     };
-
-    final url = Uri.http(serverAddress, "/docs", param);
 
     final res = await _handleRequest<ResponseGetDoc>(
       Method.get,
       url,
       (json) => ResponseGetDoc.fromJson(json),
+      headers: headers,
     );
 
     if (res.isOK()) {
@@ -613,22 +599,17 @@ class Http {
 
   Future<ResponsePostDoc> postDoc(RequestPostDoc req) async {
     print("创建印迹");
-    if (gid == null) {
-      log.e('缺少gid');
-    }
-    const String path = "/doc";
-    final Map<String, String> param = {
-      'uid': uid,
-      'gid': gid!,
-    };
+
+    String path = "/doc/${gid!}";
+
     final Map<String, dynamic> data = {
       'data': req.toJson(),
     };
     final Map<String, String> headers = {
       "Content-Type": "application/json",
+      'Authorization': getAuthorization(),
     };
-
-    final url = Uri.http(serverAddress, path, param);
+    final url = Uri.http(serverAddress, path);
     return _handleRequest<ResponsePostDoc>(
       Method.post,
       url,
@@ -640,22 +621,17 @@ class Http {
 
   Future<ResponsePutDoc> putDoc(RequestPutDoc req) async {
     print("更新文档");
-    if (gid == null) {
-      log.e('缺少gid');
-    }
-    const String path = "/doc";
 
-    final Map<String, String> param = {
-      'uid': uid,
-      'gid': gid!,
-    };
+    String path = "/doc/${gid!}/${did!}";
+
     final Map<String, dynamic> data = {
       'data': req.toJson(),
     };
     final Map<String, String> headers = {
       "Content-Type": "application/json",
+      'Authorization': getAuthorization(),
     };
-    final url = Uri.http(serverAddress, path, param);
+    final url = Uri.http(serverAddress, path);
     return _handleRequest<ResponsePutDoc>(
       Method.put,
       url,
@@ -665,20 +641,18 @@ class Http {
     );
   }
 
-  Future<ResponseDeleteDoc> deleteDoc(RequestDeleteDoc req) async {
+  Future<ResponseDeleteDoc> deleteDoc() async {
     print("删除文档");
-    const String path = "/doc";
-
-    final Map<String, String> param = {
-      'uid': uid,
-      'gid': req.gid,
-      'did': req.did
+    String path = "/doc/${gid!}/${did!}";
+    final Map<String, String> headers = {
+      'Authorization': getAuthorization(),
     };
-    final url = Uri.http(serverAddress, path, param);
+   final url = Uri.http(serverAddress, path, );
     return _handleRequest<ResponseDeleteDoc>(
       Method.delete,
       url,
       (json) => ResponseDeleteDoc.fromJson(json),
+      headers: headers,
     );
   }
 }

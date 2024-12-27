@@ -8,6 +8,14 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type Group struct {
+	Name     string `json:"name" bson:"name"`
+	ID       string `json:"id" bson:"gid"`
+	CRTime   string `json:"crtime" bson:"crtime"`
+	UPTime   string `json:"uptime" bson:"uptime"`
+	OverTime string `json:"overtime" bson:"overtime"`
+}
+
 type RequestGroupPost struct {
 	Data struct {
 		Name     string `json:"name"`
@@ -19,62 +27,14 @@ type RequestGroupPost struct {
 type RequestGroupPut struct {
 	Data struct {
 		Name     string `json:"name"`
-		ID       string `json:"id"`
 		UPTime   string `json:"uptime"`
 		OverTime string `json:"overtime"`
 	} `json:"data"`
 }
-type Group struct {
-	Name     string `json:"name" bson:"name"`
-	ID       string `json:"id" bson:"gid"`
-	CRTime   string `json:"crtime" bson:"crtime"`
-	UPTime   string `json:"uptime" bson:"uptime"`
-	OverTime string `json:"overtime" bson:"overtime"`
-}
 
-func GetGOIDFromGID(gid string) (primitive.ObjectID, error) {
-
-	identified := bson.D{{Key: "gid", Value: gid}}
-	var result bson.M
-
-	if err := db.Collection("group").FindOne(context.TODO(), identified).Decode(&result); err != nil {
-		return primitive.NilObjectID, err
-	}
-
-	oid, ok := result["_id"].(primitive.ObjectID)
-	if !ok {
-		return primitive.NilObjectID, nil
-	}
-
-	return oid, nil
-}
-func GetGOIDsFromTOID(toid primitive.ObjectID) ([]primitive.ObjectID, error) {
-
-	ctx := context.TODO()
-	filter := bson.D{{Key: "_toid", Value: toid}}
-
-	cursor, err := db.Collection("group").Find(ctx, filter)
-	if err != nil {
-		return nil, err
-	}
-	var results []primitive.ObjectID
-	for cursor.Next(ctx) {
-		var b bson.M
-		if err := cursor.Decode(&b); err != nil {
-			return nil, err
-		}
-		result, _ := b["_id"].(primitive.ObjectID)
-		results = append(results, result)
-	}
-
-	return results, nil
-}
-func GroupGet(tid string) ([]Group, error) {
+func GroupsGet(toid primitive.ObjectID) ([]Group, error) {
 	var results []Group
-	toid, err := GetThemeObjIDFromTID(tid)
-	if err != nil {
-		return nil, err
-	}
+
 	filter := bson.D{
 		{Key: "_toid", Value: toid},
 	}
@@ -99,12 +59,30 @@ func GroupGet(tid string) ([]Group, error) {
 
 	return results, nil
 }
-func GroupPost(tid string, req *RequestGroupPost) (string, error) {
-	toid, err := GetThemeObjIDFromTID(tid)
-	if err != nil {
+func GroupGet(toid primitive.ObjectID, goid primitive.ObjectID) (Group, error) {
 
-		return "", err
+	var response Group
+	var results bson.M
+
+	filter := bson.D{
+		{Key: "_toid", Value: toid},
+		{Key: "_id", Value: goid},
 	}
+
+	err := db.Collection("group").FindOne(context.TODO(), filter).Decode(&results)
+	if err != nil {
+		return Group{}, err
+	}
+	response.ID = results["gid"].(string)
+	response.Name = results["name"].(string)
+	response.CRTime = results["crtime"].(string)
+	response.UPTime = results["uptime"].(string)
+	response.OverTime = results["overtime"].(string)
+
+	return response, nil
+}
+func GroupPost(toid primitive.ObjectID, req *RequestGroupPost) (string, error) {
+
 	gid := sys.CreateUUID()
 	data := bson.D{
 		{Key: "_toid", Value: toid},
@@ -115,26 +93,18 @@ func GroupPost(tid string, req *RequestGroupPost) (string, error) {
 		{Key: "gid", Value: gid},
 	}
 
-	_, err = db.Collection("group").InsertOne(context.TODO(), data)
-
+	_, err := db.Collection("group").InsertOne(context.TODO(), data)
 	if err != nil {
-
 		return "", err
 	}
+
 	return gid, nil
 }
-func GroupPut(tid string, req *RequestGroupPut) error {
-
-	var id string = (*req).Data.ID
-
-	toid, err := GetThemeObjIDFromTID(tid)
-	if err != nil {
-		return err
-	}
+func GroupPut(toid primitive.ObjectID, goid primitive.ObjectID, req *RequestGroupPut) error {
 
 	filter := bson.M{
 		"_toid": toid,
-		"gid":   id,
+		"_id":   goid,
 	}
 
 	data := bson.M{}
@@ -151,7 +121,7 @@ func GroupPut(tid string, req *RequestGroupPut) error {
 		data["overtime"] = (*req).Data.OverTime
 	}
 
-	_, err = db.Collection("group").UpdateOne(
+	_, err := db.Collection("group").UpdateOne(
 		context.TODO(),
 		filter,
 		bson.M{
@@ -161,12 +131,8 @@ func GroupPut(tid string, req *RequestGroupPut) error {
 	)
 	return err
 }
-func CreateGroupDefault(tid string, gd RequestThemePostDefaultGroup) (string, error) {
+func GroupCreateDefault(toid primitive.ObjectID, gd RequestThemePostDefaultGroup) (string, error) {
 
-	toid, err := GetThemeObjIDFromTID(tid)
-	if err != nil {
-		return "", err
-	}
 	gid := sys.CreateUUID()
 	data := bson.D{
 		{Key: "_toid", Value: toid},
@@ -177,7 +143,7 @@ func CreateGroupDefault(tid string, gd RequestThemePostDefaultGroup) (string, er
 		{Key: "default", Value: true},
 	}
 
-	_, err = db.Collection("group").InsertOne(context.TODO(), data)
+	_, err := db.Collection("group").InsertOne(context.TODO(), data)
 
 	if err != nil {
 		return "", err
@@ -185,47 +151,23 @@ func CreateGroupDefault(tid string, gd RequestThemePostDefaultGroup) (string, er
 	return gid, nil
 }
 
-// 说明 根据gid删除分组
-// 注意 这将删除一个分组和所有日志
-func GroupDeleteFromGID(gid string) error {
-	goid, err := GetGOIDFromGID(gid)
-	if err != nil {
-		return err
+// 说明 删除一个分组和所有日志
+func GroupDeleteOne(toid primitive.ObjectID, goid primitive.ObjectID) error {
+	filter := bson.D{
+		{Key: "_toid", Value: toid},
+		{Key: "_id", Value: goid},
 	}
 
-	if err := DocDeleteFromGOID(goid); err != nil {
-		return err
-	}
-
-	filter := bson.M{
-		"_id": goid,
-	}
-
-	_, err = db.Collection("group").DeleteOne(context.TODO(), filter, nil)
+	_, err := db.Collection("group").DeleteOne(context.TODO(), filter, nil)
 
 	return err
 }
 
-// 说明 根据goid删除分组
-// 注意 这只会删除一个分组
+// 说明 根据goid删除一个分组
 func GroupDeleteFromGOID(goid primitive.ObjectID) error {
 	filter := bson.M{
 		"_id": goid,
 	}
 	_, err := db.Collection("group").DeleteOne(context.TODO(), filter, nil)
 	return err
-}
-
-// 说明 根据theme的objid 删除group
-// 注意 这将删除所有group
-func GroupDeleteFromTOID(toid primitive.ObjectID) error {
-	data := bson.D{
-		{Key: "_toid", Value: toid},
-	}
-
-	if _, err := db.Collection("group").DeleteMany(context.TODO(), data); err != nil {
-		return err
-	}
-
-	return nil
 }

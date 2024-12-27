@@ -309,6 +309,7 @@ class _GroupPage extends State<GroupPage> {
       builder: (context) {
         return AlertDialog(
           content: TextField(
+            enabled: true,
             onChanged: (value) {
               result = value;
             },
@@ -337,9 +338,9 @@ class _GroupPage extends State<GroupPage> {
     if (result!.isEmpty) {
       return;
     }
-    
-    final res = await Http(tid:widget.tid, gid: _gitems[gidx].id).putGroup(
-        RequestPutGroup(name: result!, id: _gitems[gidx].id));
+
+    final res = await Http(tid: widget.tid, gid: _gitems[gidx].id)
+        .putGroup(RequestPutGroup(name: result!));
 
     if (res.isNotOK()) {
       return;
@@ -573,14 +574,20 @@ class _GroupPage extends State<GroupPage> {
       return;
     }
 
-    final ret = await Http(gid: _gitems[index].id).deleteGroup();
+    final ret =
+        await Http(tid: widget.tid, gid: _gitems[index].id).deleteGroup();
     if (ret.isNotOK()) {
       return;
     }
-    setState(() {
-      _gitems.removeAt(index);
-    });
-    // Navigator.of(context).pop();
+
+    if (mounted) {
+      setState(() {
+        _gitems.removeAt(index);
+        gidx = 0;
+        getGroupList();
+      });
+      Navigator.of(context).pop();
+    }
   }
 
   clickAddGroup() async {
@@ -614,6 +621,11 @@ class _GroupPage extends State<GroupPage> {
       },
     );
     if (result == null) {
+      if (_gitems.isEmpty) {
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+      }
       return;
     }
     if (result!.isEmpty) {
@@ -695,33 +707,34 @@ class _GroupPage extends State<GroupPage> {
   }
 
   Future<bool> setFreezeOverTime(int index) async {
-    Group item = _gitems[index];
-    final req = RequestPutGroup(id: item.id, overtime: Time.getOverDay());
-    final res = await Http(tid: widget.tid).putGroup(req);
+    final time = Time.getOverDay();
+    final res = await Http(tid: widget.tid, gid: _gitems[gidx].id)
+        .putGroup(RequestPutGroup(overtime: time));
 
     if (res.isNotOK()) {
       return false;
     }
-    _gitems[index].overtime = req.overtime!;
+    _gitems[index].overtime = time;
     return true;
   }
 
   Future<bool> setForverOverTime(int index) async {
-    Group item = _gitems[index];
-    final req = RequestPutGroup(id: item.id, overtime: Time.getForver());
-    final res = await Http(tid: widget.tid).putGroup(req);
+    final time = Time.getForver();
+
+    final res = await Http(tid: widget.tid, gid: _gitems[gidx].id)
+        .putGroup(RequestPutGroup(overtime: time));
 
     if (res.isNotOK()) {
       return false;
     }
-    _gitems[index].overtime = req.overtime!;
+    _gitems[index].overtime = time;
     return true;
   }
 
   getGroupList() async {
-    print("获取分组列表");
+    print("获取分组");
 
-    final res = await Http(tid: widget.tid).getGroup();
+    final res = await Http(tid: widget.tid).getGroups();
     if (res.data.isEmpty) {
       clickAddGroup();
       return;
@@ -892,7 +905,6 @@ class _CalendarScreen extends State<CalendarScreen> {
       ),
       itemCount: totalRows * 7, // 总的单元格数量
       itemBuilder: (context, index) {
-
         // 构建 星期
         if (index < 7) {
           return _buildWeek(index);
