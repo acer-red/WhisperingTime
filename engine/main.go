@@ -18,13 +18,18 @@ import (
 
 type App struct {
 	loglevel int
+	database string
 }
 
 var app App
 
 func init_mongo() {
 	log.Infof("mongo连接中...")
-	err := modb.Init()
+	str := os.Getenv("WTE_DATABASE")
+	if str == "" {
+		str = "mongodb://localhost:27017/"
+	}
+	err := modb.Init(str)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -2,7 +2,7 @@ package modb
 
 import (
 	"context"
-	"fmt"
+	"strings"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -11,14 +11,7 @@ import (
 var mongosh *mongo.Client
 var db *mongo.Database
 
-func Init() error {
-	username := "wt"
-	password := "SR7Yqb959q9k38qBFDKE"
-	port := "28018"
-	host := "124.223.15.220"
-	database := "whisperingtime"
-	uri := fmt.Sprintf("mongodb://%s:%s@%s:%s/%s", username, password, host, port, database)
-
+func Init(uri string) error {
 	clientOptions := options.Client().ApplyURI(uri)
 
 	var err error
@@ -26,7 +19,8 @@ func Init() error {
 	if err != nil {
 		return err
 	}
-	db = mongosh.Database(database)
+	s := strings.Split(uri, "/")
+	db = mongosh.Database(s[len(s)-1])
 	err = mongosh.Ping(context.TODO(), nil)
 	if err != nil {
 		return err

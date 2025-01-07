@@ -8,7 +8,7 @@ class Show extends StatefulWidget {
 
 class _ShowState extends State<Show> {
  bool visualNoneTitle = Settings().getVisualNoneTitle();
-
+  bool defaultShowTool = Settings().getDefaultShowTool();
   @override
   void initState() {
     super.initState();
@@ -24,16 +24,32 @@ class _ShowState extends State<Show> {
         ),
         title: Text("显示设置"),
       ),
-      body: SwitchListTile(
-        title: const Text('隐藏空白标题'),
-        value: visualNoneTitle,
-        onChanged: (bool value) {
-          setState(() {
-            visualNoneTitle = value;
-            Settings().setVisualNoneTitle(value);
-          });
-        },
+      body: Column(
+        children: [
+
+          SwitchListTile(
+            title: const Text('隐藏空白标题'),
+            value: visualNoneTitle,
+            onChanged: (bool value) {
+              setState(() {
+                visualNoneTitle = value;
+                Settings().setVisualNoneTitle(value);
+              });
+            },
+          ),
+          SwitchListTile(
+            title: const Text('默认显示工具栏'),
+            value: defaultShowTool,
+            onChanged: (bool value) {
+              setState(() {
+                defaultShowTool = value;
+                Settings().setDefaultShowTool(value);
+              });
+            },
+          ),
+        ],
       ),
+      
     );
   }
 

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:whispering_time/env.dart';
+import 'package:whispering_time/page/theme/group/doc/setting.dart';
 
 enum Method { get, post, put, delete }
 
@@ -51,7 +52,6 @@ class RequestPutTheme {
 }
 
 class ResponsePutTheme extends Basic {
-
   ResponsePutTheme({required super.err, required super.msg});
   factory ResponsePutTheme.fromJson(Map<String, dynamic> json) {
     return ResponsePutTheme(
@@ -228,16 +228,20 @@ class GroupListData {
 class Doc {
   String title;
   String content;
+  String plainText;
   int level;
   DateTime crtime;
   DateTime uptime;
+  DocConfigration config;
   String id;
   Doc({
     required this.title,
     required this.content,
+    required this.plainText,
     required this.level,
     required this.crtime,
     required this.uptime,
+    required this.config,
     required this.id,
   });
 
@@ -245,9 +249,12 @@ class Doc {
     return Doc(
       title: json['title'] as String,
       content: json['content'] as String,
+      plainText: json['plain_text'] as String,
       level: json['level'] as int,
       crtime: Time.datetime(json['crtime'] as String),
       uptime: Time.datetime(json['uptime'] as String),
+      config:
+          DocConfigration(isShowTool: json['config']['is_show_tool'] as bool),
       id: json['id'] as String,
     );
   }
@@ -272,19 +279,25 @@ class ResponseGetDoc extends Basic {
 class RequestPostDoc {
   String title;
   String content;
+  String plainText;
   DateTime crtime;
   int level;
+  DocConfigration config;
   RequestPostDoc(
       {required this.content,
       required this.title,
+      required this.plainText,
+      required this.crtime,
       required this.level,
-      required this.crtime});
+      required this.config});
 
   Map<String, dynamic> toJson() => {
-        'content': content,
         'title': title,
+        'content': content,
+        'plain_text': plainText,
         'level': level,
-        'crtime': Time.toTimestampString(crtime)
+        'crtime': Time.toTimestampString(crtime),
+        'config': config.toJson(),
       };
 }
 
@@ -303,20 +316,21 @@ class ResponsePostDoc extends Basic {
 class RequestPutDoc {
   String? content;
   String? title;
+  String? plainText;
   int? level;
   DateTime? crtime;
+  DocConfigration? config;
   DateTime get uptime => DateTime.now();
   RequestPutDoc(
-      { this.title, this.content, this.level, this.crtime});
+      {this.title, this.content, this.plainText, this.level, this.crtime,this.config});
 
   Map<String, dynamic> toJson() {
-    Map<String, dynamic> data = {
-      'uptime': Time.toTimestampString(uptime)
-    };
+    Map<String, dynamic> data = {'uptime': Time.toTimestampString(uptime)};
 
     if (content != null) {
       print("更新文档内容");
       data['content'] = content;
+      data['plain_text'] = plainText;
     }
 
     if (title != null) {
@@ -333,6 +347,10 @@ class RequestPutDoc {
       print("更新文档等级");
       data['level'] = level;
     }
+    if (config!=null){
+      print("更新文档配置");
+      data['config'] = config!.toJson();
+    }
     return data;
   }
 }
@@ -346,7 +364,6 @@ class ResponsePutDoc extends Basic {
     );
   }
 }
-
 
 class ResponseDeleteDoc extends Basic {
   ResponseDeleteDoc({required super.err, required super.msg});
@@ -375,9 +392,6 @@ class Http {
   Future<T> _handleRequest<T>(
       Method method, Uri u, Function(Map<String, dynamic>) fromJson,
       {Map<String, dynamic>? data, Map<String, String>? headers}) async {
-    if (data != null) {
-      log.d(data);
-    }
     if (data != null) {
       log.d(data);
     }
@@ -647,7 +661,10 @@ class Http {
     final Map<String, String> headers = {
       'Authorization': getAuthorization(),
     };
-   final url = Uri.http(serverAddress, path, );
+    final url = Uri.http(
+      serverAddress,
+      path,
+    );
     return _handleRequest<ResponseDeleteDoc>(
       Method.delete,
       url,

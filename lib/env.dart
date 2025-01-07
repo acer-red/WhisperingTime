@@ -6,7 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 
-enum LastPage { ok, err, delete, nochange, change, create, nocreate }
+enum LastPage { ok, err, delete, nochange, change,changeConfig, create, nocreate }
+
 const String defaultGroupName = "默认分组";
 var log = Logger(
   printer: PrettyPrinter(
@@ -71,12 +72,13 @@ class Settings {
 
   bool getDevlopMode() {
     bool? b = _prefs?.getBool("devlop_mode");
-    if (b == null) {
-      b = false;
-      setBool("devlop_mode", b);
+    
+    if (b != null) {
       return b;
     }
-    return b;
+
+    setBool("devlop_mode", false);
+    return false;
   }
 
   Future<bool> setDevlopMode(bool b) async {
@@ -86,17 +88,34 @@ class Settings {
 
   bool getVisualNoneTitle() {
     bool? b = _prefs?.getBool("VisualNoneTitle");
-    if (b == null) {
-      b = false;
-      setBool("VisualNoneTitle", b);
+
+    if (b != null) {
       return b;
     }
-    return b;
+
+    setBool("VisualNoneTitle", false);
+    return false;
   }
 
   Future<bool> setVisualNoneTitle(bool b) async {
     print("更新配置 隐藏空白标题 $b");
     return setBool("VisualNoneTitle", b);
+  }
+
+  bool getDefaultShowTool() {
+    bool? b = _prefs?.getBool("DefaultShowTool");
+
+    if (b != null) {
+      return b;
+    }
+
+    setBool("DefaultShowTool", true);
+    return true;
+  }
+
+  Future<bool> setDefaultShowTool(bool b) async {
+    print("更新配置 默认显示工具栏 $b");
+    return setBool("DefaultShowTool", b);
   }
 
   Future<bool> setString(String key, String value) {

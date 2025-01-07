@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:whispering_time/env.dart';
+import 'package:whispering_time/page/theme/group/doc/setting.dart';
 import 'doc/edit.dart';
 import 'package:intl/intl.dart';
 import 'package:whispering_time/http.dart';
@@ -190,6 +191,12 @@ class _GroupPage extends State<GroupPage> {
         ]),
       ),
 
+      // 悬浮按钮 - 添加印迹
+      floatingActionButton: FloatingActionButton(
+        onPressed: clickNewEdit,
+        child: Icon(Icons.add),
+      ),
+
       // 主体内容
       body: SafeArea(
         child: Center(
@@ -220,7 +227,6 @@ class _GroupPage extends State<GroupPage> {
                       itemBuilder: (context, index) {
                         final item = _ditems[index];
                         return InkWell(
-                          // 点击 卡片
                           onTap: () => clickCard(index),
                           child: Card(
                             // 阴影大小
@@ -232,6 +238,7 @@ class _GroupPage extends State<GroupPage> {
                             // 外边距
                             margin: EdgeInsets.symmetric(
                                 horizontal: 25, vertical: 10),
+                            // 内容
                             child: Padding(
                               padding: EdgeInsets.all(16.0), // 内边距
                               child: Column(
@@ -265,10 +272,12 @@ class _GroupPage extends State<GroupPage> {
                                   Padding(
                                     padding: const EdgeInsets.all(16.0),
                                     child: Text(
-                                      item.content,
+                                      item.plainText,
                                       style: TextStyle(color: Colors.grey[700]),
                                     ),
                                   ),
+
+                                  // 创建时间
                                   Center(
                                     child: Text(
                                       Time.string(item.crtime),
@@ -285,6 +294,7 @@ class _GroupPage extends State<GroupPage> {
                         );
                       }),
 
+                  // 日历模式
                   CalendarScreen(
                     items: _ditems,
                   )
@@ -293,11 +303,6 @@ class _GroupPage extends State<GroupPage> {
             ],
           ),
         ),
-      ),
-
-      floatingActionButton: FloatingActionButton(
-        onPressed: clickNewEdit,
-        child: Icon(Icons.add),
       ),
     );
   }
@@ -477,6 +482,7 @@ class _GroupPage extends State<GroupPage> {
           title: "",
           content: "",
           level: getSelectLevel(),
+          config: DocConfigration(isShowTool: Settings().getDefaultShowTool()),
           crtime: DateTime.now(),
           uptime: DateTime.now(),
           freeze: false,
@@ -490,9 +496,11 @@ class _GroupPage extends State<GroupPage> {
           _ditems.add(Doc(
               title: ret.title,
               content: ret.content,
+              plainText: ret.plainText,
               level: ret.level,
               crtime: ret.crtime,
               uptime: ret.uptime,
+              config: ret.config,
               id: ret.id));
         });
         break;
@@ -516,6 +524,7 @@ class _GroupPage extends State<GroupPage> {
             content: doc.content,
             id: doc.id,
             level: doc.level,
+            config: doc.config,
             uptime: doc.uptime,
             crtime: doc.crtime,
             freeze: _gitems[gidx].isFreezedOrBuf(),
@@ -533,6 +542,7 @@ class _GroupPage extends State<GroupPage> {
           }
           if (doc.content != ret.content) {
             doc.content = ret.content;
+            doc.plainText = ret.plainText;
           }
           if (doc.title != ret.title) {
             doc.title = ret.title;
@@ -541,6 +551,20 @@ class _GroupPage extends State<GroupPage> {
             _ditems[index].crtime = ret.crtime;
             _ditems[index].crtime = ret.crtime;
             _ditems.sort(compareDocs);
+          }
+          if (ret.config.isShowTool != doc.config.isShowTool) {
+            _ditems[index].config.isShowTool = ret.config.isShowTool;
+          }
+          break;
+        case LastPage.changeConfig:
+          if (doc.crtime != ret.crtime) {
+            _ditems[index].crtime = ret.crtime;
+            _ditems[index].crtime = ret.crtime;
+            _ditems.sort(compareDocs);
+          }
+          log.i(ret.config.isShowTool);
+          if (ret.config.isShowTool != doc.config.isShowTool) {
+            _ditems[index].config.isShowTool = ret.config.isShowTool;
           }
           break;
         default:

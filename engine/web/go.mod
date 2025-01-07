@@ -5,7 +5,7 @@ go 1.22.5
 require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/tengfei-xy/go-log v0.2.7
-	go.mongodb.org/mongo-driver v1.17.1 // indirect
+	go.mongodb.org/mongo-driver v1.17.1
 	modb v0.0.0-00010101000000-000000000000
 )
 

@@ -316,53 +316,54 @@ class _ThemePageState extends State<ThemePage> {
     int ret = await showExportOption();
     switch (ret) {
       case 0:
-        // exportDesktopTXT();
+        exportDesktopTXT();
         break;
       default:
         break;
     }
   }
-//   exportDesktopTXT() async {
-//     String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
 
-//     // 用户取消了操作
-//     if (selectedDirectory == null) {
-//       return;
-//     }
+  exportDesktopTXT() async {
+    String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
 
-//     Directory directory = Directory(selectedDirectory);
-//     print('选择的文件夹路径：${directory.path}');
+    // 用户取消了操作
+    if (selectedDirectory == null) {
+      return;
+    }
 
-// final themes = await Http().gettheme();
-//     if (themes.isNotOK()) {
-//       return;
-//     }
-//     if (themes.data.isEmpty) {
-//       return;
-//     }
+    Directory directory = Directory(selectedDirectory);
+    print('选择的文件夹路径：${directory.path}');
 
-//     // 遍历文件列表并写入
-//     for (ThemeListData theme in themes.data) {
+    final themes = await Http().getthemes();
+    if (themes.isNotOK()) {
+      return;
+    }
+    if (themes.data.isEmpty) {
+      return;
+    }
 
-//           final ret = await Http(gid: _gitems[gidx].id).getDocs();
 
-//     if (ret.isNotOK()) {
-//       print(ret);
-//       return;
-//     }
+    // // 遍历文件列表并写入
+    // for (ThemeListData theme in themes.data) {
+    //   final ret = await Http(gid: _gitems[gidx].id).getDocs();
 
-//       final String fileName = item.title.isEmpty
-//           ? item.crtime.toString()
-//           : "${item.title} - ${Time.string(item.crtime)}" ".txt";
-//       final String filePath = '$selectedDirectory/$fileName';
+    //   if (ret.isNotOK()) {
+    //     print(ret);
+    //     return;
+    //   }
 
-//       // 创建并写入文件
-//       File file = File(filePath);
-//       await file.writeAsString(item.content);
-//       print('文件已写入: $filePath');
-//     }
+    //   final String fileName = item.title.isEmpty
+    //       ? item.crtime.toString()
+    //       : "${item.title} - ${Time.string(item.crtime)}" ".txt";
+    //   final String filePath = '$selectedDirectory/$fileName';
 
-//   }
+    //   // 创建并写入文件
+    //   File file = File(filePath);
+    //   await file.writeAsString(item.content);
+    //   print('文件已写入: $filePath');
+    // }
+  }
+
   Future<int> showExportOption() async {
     int? ret = await showDialog<int>(
       context: context,

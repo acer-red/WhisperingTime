@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:whispering_time/http.dart';
 import 'package:whispering_time/env.dart';
 import './setting.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
+import 'package:flutter_quill/flutter_quill.dart' as quill;
+import 'dart:convert';
 
 const String defaultTitle = "未命名的标题";
 
@@ -13,9 +16,11 @@ class LastPageDoc extends Doc {
       {required this.state,
       required super.title,
       required super.content,
+      required super.plainText,
       required super.level,
       required super.crtime,
       required super.uptime,
+      required super.config,
       required super.id});
 }
 
@@ -26,11 +31,13 @@ class DocEditPage extends StatefulWidget {
   final String title;
   final String content;
   final int level;
+  final DocConfigration config;
   final String? id;
 
   final DateTime crtime;
   final DateTime uptime;
   final bool freeze;
+
   DocEditPage(
       {this.id,
       this.gname,
@@ -38,6 +45,7 @@ class DocEditPage extends StatefulWidget {
       required this.title,
       required this.content,
       required this.level,
+      required this.config,
       required this.crtime,
       required this.uptime,
       required this.freeze});
@@ -46,8 +54,10 @@ class DocEditPage extends StatefulWidget {
 }
 
 class _DocEditPage extends State<DocEditPage> with RouteAware {
-  TextEditingController edit = TextEditingController();
   TextEditingController titleEdit = TextEditingController();
+  quill.QuillController edit = quill.QuillController.basic();
+
+  DocConfigration config = DocConfigration();
   bool chooseLeveled = false;
   bool _isSelected = true;
   bool isTitleSubmited = true;
@@ -57,12 +67,14 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   @override
   void initState() {
     super.initState();
-    edit = TextEditingController(text: widget.content);
-    widget.title.isEmpty
-        ? titleEdit.text = defaultTitle
-        : titleEdit.text = widget.title;
+
+    edit = quill.QuillController(
+        document: quill.Document.fromJson(jsonDecode(widget.content)),
+        selection: const TextSelection.collapsed(offset: 0));
     currentLevel = widget.level;
     crtime = widget.crtime;
+    config = widget.config;
+    titleEdit.text = widget.title;
   }
 
   @override
@@ -90,10 +102,12 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
               textAlign: TextAlign.center, // 添加这行
               controller: titleEdit,
               maxLines: 1,
-              autofocus: true,
+              autofocus: false,
               keyboardType: TextInputType.text,
               decoration: InputDecoration(
                 border: InputBorder.none,
+                hintText: widget.title.isEmpty ? defaultTitle : widget.title,
+                hintStyle: TextStyle(color: Colors.grey),
               ),
               onSubmitted: (text) => clickNewTitle(text),
               enabled: !widget.freeze,
@@ -139,20 +153,32 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
                     children: List.generate(
                         Level.l.length, (index) => Level.levelWidget(index)),
                   ),
-            ConstrainedBox(
-              constraints: BoxConstraints.expand(height: 300),
-              child: SizedBox.expand(
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 10.0, right: 10.0),
-                  child: TextField(
-                    controller: edit,
-                    autofocus: true,
-                    keyboardType: TextInputType.multiline,
-                    maxLines: null,
-                    enabled: !widget.freeze,
-                    decoration: InputDecoration(
-                      hintText: '或简单，或详尽～',
-                      border: InputBorder.none,
+            //           hintText: '或简单，或详尽～',
+
+            // 富文本的工具栏
+            if (config.isShowTool!) quill.QuillToolbar.simple(controller: edit),
+
+            // 富文本
+            Expanded(
+              child: Container(
+                padding:
+                    const EdgeInsets.only(top: 8.0, left: 30.0, right: 30.0),
+                child: quill.QuillEditor(
+                  controller: edit,
+                  focusNode: FocusNode(),
+                  scrollController: ScrollController(),
+                  configurations: quill.QuillEditorConfigurations(
+                    scrollable: true,
+                    expands: false,
+                    customStyles: quill.DefaultStyles(
+                      paragraph: quill.DefaultTextBlockStyle(
+                          TextStyle(
+                              fontSize: 16, height: 1.4, color: Colors.black),
+                          HorizontalSpacing(0, 0),
+                          // 10像素底部间距，0像素顶部间距
+                          VerticalSpacing(10, 0),
+                          VerticalSpacing(0, 0),
+                          null),
                     ),
                   ),
                 ),
@@ -184,36 +210,55 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   }
 
   void backPage() async {
-    if (widget.content == edit.text &&
-        (titleEdit.text == defaultTitle ||
-            titleEdit.text == widget.title) && // 控件中的文字是默认标题或原始标题
-        widget.level == currentLevel &&
-        widget.crtime == crtime) {
-      print("无变化");
-
+    if (widget.content == getEditOrigin() &&
+        (titleEdit.text == widget.title) && // 控件中的文字是默认标题或原始标题
+        widget.level == currentLevel) {
+      if (widget.crtime != crtime || widget.config != config) {
+        print("文档内容无变化,配置有变化");
+        if (mounted) {
+          return Navigator.of(context).pop(LastPageDoc(
+              state: LastPage.changeConfig,
+              title: titleEdit.text,
+              content: widget.content,
+              plainText: getEditPlainText(),
+              level: widget.level,
+              crtime: crtime,
+              uptime: widget.uptime,
+              config: config,
+              id: widget.id!));
+        }
+      }
+      print("文档内容无变化");
       if (mounted) {
-        Navigator.of(context).pop(LastPageDoc(
+        return Navigator.of(context).pop(LastPageDoc(
             state: LastPage.nochange,
             title: titleEdit.text,
             content: widget.content,
+            plainText: getEditPlainText(),
             level: widget.level,
-            crtime: widget.crtime,
+            crtime: crtime,
             uptime: widget.uptime,
+            config: config,
             id: widget.id!));
       }
-      return;
     }
 
     // 有变化，更新文档
     if (widget.id != "") {
+      final req = RequestPutDoc(
+        plainText: getEditPlainText(),
+        content: getEditOrigin(),
+        title: titleEdit.text,
+      );
+
       if (mounted) {
-        Navigator.of(context).pop(updateDoc());
+        Navigator.of(context).pop(updateDoc(req));
       }
       return;
     }
 
     // 没有创建文档
-    if (edit.text.isEmpty && titleEdit.text.isEmpty) {
+    if (getEditOrigin().isEmpty && titleEdit.text.isEmpty) {
       Navigator.of(context).pop(nocreateDoc(failed: false));
     }
 
@@ -236,25 +281,33 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
         context,
         MaterialPageRoute(
             builder: (context) => DocSetting(
-                gid: widget.gid, did: widget.id!, crtime: widget.crtime)));
+                gid: widget.gid,
+                did: widget.id!,
+                crtime: widget.crtime,
+                config: config)));
     switch (ret.state) {
       case LastPage.change:
-        if (ret.crtime != null) {
-          setState(() {
+        setState(() {
+          if (ret.crtime != null) {
             crtime = ret.crtime!;
-          });
-        }
+          }
+          if (ret.config != null) {
+            config = ret.config!;
+          }
+        });
         break;
       case LastPage.delete:
         print("返回并删除文档");
         Navigator.of(context).pop(LastPageDoc(
             state: ret.state,
             title: "",
+            plainText: "",
             content: "",
             level: 0,
             id: "",
             crtime: DateTime.now(),
-            uptime: DateTime.now()));
+            uptime: DateTime.now(),
+            config: config));
         break;
       default:
         break;
@@ -265,61 +318,67 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     return LastPageDoc(
       state: failed ? LastPage.err : LastPage.nocreate,
       content: "",
+      plainText: "",
       level: 0,
       title: "",
       crtime: DateTime.now(),
       uptime: DateTime.now(),
+      config: config,
       id: "",
     );
   }
 
   Future<LastPageDoc> createDoc() async {
-    final realTitle = titleEdit.text == defaultTitle ? "" : titleEdit.text;
     final req = RequestPostDoc(
-        content: edit.text,
-        title: realTitle,
-        level: currentLevel,
-        crtime: crtime);
+      content: getEditOrigin(),
+      plainText: getEditPlainText(),
+      title: titleEdit.text,
+      level: currentLevel,
+      crtime: crtime,
+      config: config,
+    );
     final ret = await Http(gid: widget.gid).postDoc(req);
     if (ret.isNotOK()) {
       return nocreateDoc(failed: true);
     }
     return LastPageDoc(
       state: LastPage.create,
-      content: edit.text,
+      content: getEditOrigin(),
+      plainText: getEditPlainText(),
       id: ret.id,
-      title: realTitle,
+      title: titleEdit.text,
       level: currentLevel,
       crtime: req.crtime,
       uptime: crtime,
+      config: config,
     );
   }
 
-  Future<LastPageDoc> updateDoc() async {
-    // final newCRTime = Time.toTimestampString(crtime);
-
-    final realTitle = titleEdit.text == defaultTitle ? "" : titleEdit.text;
-    final req = RequestPutDoc(
-        content: edit.text, title: titleEdit.text, crtime: crtime);
+  Future<LastPageDoc> updateDoc(RequestPutDoc req) async {
     final res = await Http(gid: widget.gid, did: widget.id!).putDoc(req);
     if (res.isNotOK()) {
       return LastPageDoc(
-          state: LastPage.nochange,
-          content: widget.content,
-          id: widget.id!,
-          title: widget.title,
-          level: widget.level,
-          crtime: widget.crtime,
-          uptime: widget.uptime);
+        state: LastPage.nochange,
+        content: widget.content,
+        plainText: getEditPlainText(),
+        id: widget.id!,
+        title: widget.title,
+        level: widget.level,
+        crtime: widget.crtime,
+        uptime: widget.uptime,
+        config: config,
+      );
     }
     return LastPageDoc(
       state: LastPage.change,
-      content: edit.text,
+      content: getEditOrigin(),
+      plainText: getEditPlainText(),
       id: widget.id!,
-      title: realTitle,
+      title: titleEdit.text,
       level: currentLevel,
       crtime: crtime,
       uptime: req.uptime,
+      config: config,
     );
   }
 
@@ -348,7 +407,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     }
 
     File file = File(outputFile);
-    await file.writeAsString(edit.text);
+    await file.writeAsString(getEditOrigin());
     print("文件已保存：${file.path}");
   }
 
@@ -377,5 +436,13 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     );
 
     return ret ?? -1; // 如果用户没有点击按钮，则默认为 false
+  }
+
+  String getEditOrigin() {
+    return jsonEncode(edit.document.toDelta().toJson());
+  }
+
+  String getEditPlainText() {
+    return edit.document.toPlainText();
   }
 }

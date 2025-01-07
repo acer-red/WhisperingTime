@@ -8,21 +8,28 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type config struct {
+	IsShowTool bool `json:"is_show_tool" bson:"is_show_tool"`
+}
 type Doc struct {
-	Title   string `json:"title" bson:"title"`
-	Content string `json:"content" bson:"content"`
-	Level   int    `json:"level" bson:"level"`
-	CRTime  string `json:"crtime"`
-	UPTime  string `json:"uptime"`
-	ID      string `json:"id" bson:"did"`
+	Title     string  `json:"title" bson:"title"`
+	Content   string  `json:"content" bson:"content"`
+	PlainText string  `json:"plain_text" bson:"plain_text"`
+	Level     int     `json:"level" bson:"level"`
+	CRTime    string  `json:"crtime"`
+	UPTime    string  `json:"uptime"`
+	Config    *config `json:"config,omitempty" bson:"config"`
+	ID        string  `json:"id" bson:"did"`
 }
 
 type RequestDocPost struct {
 	Data struct {
-		Content string `json:"content"`
-		Title   string `json:"title"`
-		Level   int    `json:"level"`
-		CRTime  string `json:"crtime"`
+		Content   string  `json:"content"`
+		Title     string  `json:"title"`
+		PlainText string  `json:"plain_text"`
+		Level     int     `json:"level"`
+		CRTime    string  `json:"crtime"`
+		Config    *config `json:"config"`
 	} `json:"data"`
 }
 
@@ -63,10 +70,12 @@ func DocPost(goid primitive.ObjectID, req *RequestDocPost) (string, error) {
 	data := bson.D{
 		{Key: "_goid", Value: goid},
 		{Key: "did", Value: did},
-		{Key: "content", Value: (*req).Data.Content},
 		{Key: "title", Value: (*req).Data.Title},
+		{Key: "content", Value: (*req).Data.Content},
+		{Key: "plain_text", Value: (*req).Data.PlainText},
 		{Key: "level", Value: (*req).Data.Level},
 		{Key: "crtime", Value: (*req).Data.CRTime},
+		{Key: "config", Value: (*req).Data.Config},
 	}
 
 	_, err := db.Collection("doc").InsertOne(context.TODO(), data)
@@ -88,6 +97,7 @@ func DocPut(goid primitive.ObjectID, doid primitive.ObjectID, req *RequestDocPut
 
 	if (*req).Doc.Content != "" {
 		data["content"] = (*req).Doc.Content
+		data["plain_text"] = (*req).Doc.PlainText
 		onlyLevel = false
 	}
 
@@ -106,6 +116,13 @@ func DocPut(goid primitive.ObjectID, doid primitive.ObjectID, req *RequestDocPut
 
 	if (*req).Doc.Title != "" {
 		data["title"] = (*req).Doc.Title
+		onlyLevel = false
+	}
+
+	if (*req).Doc.Config != nil {
+		data["config"] = bson.M{
+			"is_show_tool": (*req).Doc.Config.IsShowTool,
+		}
 		onlyLevel = false
 	}
 
