@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
@@ -6,7 +7,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 
-enum LastPage { ok, err, delete, nochange, change,changeConfig, create, nocreate }
+enum LastPage {
+  ok,
+  err,
+  delete,
+  nochange,
+  change,
+  changeConfig,
+  create,
+  nocreate
+}
+
+extension LastPageMethods on LastPage {
+  bool get isErr  => this == LastPage.err;
+}
 
 const String defaultGroupName = "默认分组";
 var log = Logger(
@@ -72,7 +86,7 @@ class Settings {
 
   bool getDevlopMode() {
     bool? b = _prefs?.getBool("devlop_mode");
-    
+
     if (b != null) {
       return b;
     }

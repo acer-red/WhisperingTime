@@ -101,7 +101,7 @@ class _DocSetting extends State<DocSetting> {
     isChange = true;
     final res = await Http(gid: widget.gid, did: widget.did)
         .putDoc(RequestPutDoc(config: DocConfigration(isShowTool: value)));
-    if (res.isNotOK()) {
+    if (res.isNotOK) {
       return;
     }
     setState(() {
@@ -144,7 +144,7 @@ class _DocSetting extends State<DocSetting> {
     }
 
     final ret = await Http(gid: widget.gid, did: widget.did).deleteDoc();
-    if (ret.isNotOK()) {
+    if (ret.isNotOK) {
       return;
     }
     if (mounted) {
@@ -179,7 +179,7 @@ class _DocSetting extends State<DocSetting> {
         isChange = true;
         final res = await Http(gid: widget.gid, did: widget.did)
             .putDoc(RequestPutDoc(crtime: crtime));
-        if (res.isNotOK()) {
+        if (res.isNotOK) {
           return;
         }
       }

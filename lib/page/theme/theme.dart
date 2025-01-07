@@ -238,7 +238,7 @@ class _ThemePageState extends State<ThemePage> {
 
     final res = await Http().posttheme(RequestPostTheme(name: result!));
 
-    if (res.isNotOK()) {
+    if (res.isNotOK) {
       return;
     }
 
@@ -287,7 +287,7 @@ class _ThemePageState extends State<ThemePage> {
     final res = await Http(tid: _items[index].id)
         .puttheme(RequestPutTheme(name: result!));
 
-    if (res.isNotOK()) {
+    if (res.isNotOK) {
       return;
     }
 
@@ -304,7 +304,7 @@ class _ThemePageState extends State<ThemePage> {
 
     final res = await Http(tid: item.id).deletetheme();
 
-    if (res.isNotOK()) {
+    if (res.isNotOK) {
       return;
     }
     setState(() {
@@ -335,7 +335,7 @@ class _ThemePageState extends State<ThemePage> {
     print('选择的文件夹路径：${directory.path}');
 
     final themes = await Http().getthemes();
-    if (themes.isNotOK()) {
+    if (themes.isNotOK) {
       return;
     }
     if (themes.data.isEmpty) {
@@ -347,7 +347,7 @@ class _ThemePageState extends State<ThemePage> {
     // for (ThemeListData theme in themes.data) {
     //   final ret = await Http(gid: _gitems[gidx].id).getDocs();
 
-    //   if (ret.isNotOK()) {
+    //   if (ret.isNotOK) {
     //     print(ret);
     //     return;
     //   }

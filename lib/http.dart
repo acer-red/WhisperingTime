@@ -9,16 +9,10 @@ class Basic {
   int err;
   String msg;
   Basic({required this.err, required this.msg});
-  bool isNotOK() {
-    if (isOK()) {
-      return false;
-    }
-    return true;
-  }
 
-  bool isOK() {
-    return err == 0;
-  }
+  bool get isNotOK => err != 0;
+
+  bool get isOK => err == 0;
 
   void getmsg() {
     print(msg);
@@ -602,7 +596,7 @@ class Http {
       headers: headers,
     );
 
-    if (res.isOK()) {
+    if (res.isOK) {
       for (Doc line in res.data) {
         line.crtime = line.crtime;
       }

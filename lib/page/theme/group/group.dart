@@ -347,7 +347,7 @@ class _GroupPage extends State<GroupPage> {
     final res = await Http(tid: widget.tid, gid: _gitems[gidx].id)
         .putGroup(RequestPutGroup(name: result!));
 
-    if (res.isNotOK()) {
+    if (res.isNotOK) {
       return;
     }
 
@@ -600,7 +600,7 @@ class _GroupPage extends State<GroupPage> {
 
     final ret =
         await Http(tid: widget.tid, gid: _gitems[index].id).deleteGroup();
-    if (ret.isNotOK()) {
+    if (ret.isNotOK) {
       return;
     }
 
@@ -658,7 +658,7 @@ class _GroupPage extends State<GroupPage> {
     final req = RequestPostGroup(name: result!);
     final res = await Http(tid: widget.tid).postGroup(req);
 
-    if (res.isNotOK()) {
+    if (res.isNotOK) {
       return;
     }
 
@@ -735,7 +735,7 @@ class _GroupPage extends State<GroupPage> {
     final res = await Http(tid: widget.tid, gid: _gitems[gidx].id)
         .putGroup(RequestPutGroup(overtime: time));
 
-    if (res.isNotOK()) {
+    if (res.isNotOK) {
       return false;
     }
     _gitems[index].overtime = time;
@@ -748,7 +748,7 @@ class _GroupPage extends State<GroupPage> {
     final res = await Http(tid: widget.tid, gid: _gitems[gidx].id)
         .putGroup(RequestPutGroup(overtime: time));
 
-    if (res.isNotOK()) {
+    if (res.isNotOK) {
       return false;
     }
     _gitems[index].overtime = time;
@@ -791,7 +791,7 @@ class _GroupPage extends State<GroupPage> {
 
     final ret = await Http(gid: _gitems[gidx].id).getDocs();
 
-    if (ret.isNotOK()) {
+    if (ret.isNotOK) {
       print(ret);
       return;
     }

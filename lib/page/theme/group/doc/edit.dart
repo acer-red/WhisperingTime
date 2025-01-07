@@ -24,7 +24,6 @@ class LastPageDoc extends Doc {
       required super.id});
 }
 
-// 事件编辑页面
 class DocEditPage extends StatefulWidget {
   final String gid;
   final String? gname;
@@ -140,7 +139,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
           children: [
             !widget.freeze && _isSelected
                 ? TextButton(
-                    child: Text(Level().string(widget.level)),
+                    child: Text(Level().string(currentLevel)),
                     onPressed: () => {
                       setState(() {
                         _isSelected = false;
@@ -191,7 +190,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   clickNewLevel(int index) async {
     final res = await Http(gid: widget.gid, did: widget.id!)
         .putDoc(RequestPutDoc(level: index));
-    if (res.isNotOK()) {
+    if (res.isNotOK) {
       return;
     }
     setState(() {
@@ -203,18 +202,33 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   clickNewTitle(String newTitle) async {
     final res = await Http(gid: widget.gid, did: widget.id!)
         .putDoc(RequestPutDoc(title: newTitle));
-    if (res.isNotOK()) {
+    if (res.isNotOK) {
       return;
     }
     setState(() => isTitleSubmited = !isTitleSubmited);
   }
 
   void backPage() async {
-    if (widget.content == getEditOrigin() &&
-        (titleEdit.text == widget.title) && // 控件中的文字是默认标题或原始标题
-        widget.level == currentLevel) {
-      if (widget.crtime != crtime || widget.config != config) {
+    if (keepEditText() &&
+        (keepTitleText()) && // 控件中的文字是默认标题或原始标题
+        keepLevel()) {
+      if (keepCRTime() && keepConfig()) {
+        print("文档内容无变化");
+
+        if (mounted) {
+          return Navigator.of(context).pop(LastPageDoc(
+              state: LastPage.nochange,
+              title: titleEdit.text,
+              content: widget.content,
+              plainText: getEditPlainText(),
+              level: widget.level,
+              crtime: crtime,
+              uptime: widget.uptime,
+              config: config,
+              id: widget.id!));
+        }
         print("文档内容无变化,配置有变化");
+
         if (mounted) {
           return Navigator.of(context).pop(LastPageDoc(
               state: LastPage.changeConfig,
@@ -228,23 +242,10 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
               id: widget.id!));
         }
       }
-      print("文档内容无变化");
-      if (mounted) {
-        return Navigator.of(context).pop(LastPageDoc(
-            state: LastPage.nochange,
-            title: titleEdit.text,
-            content: widget.content,
-            plainText: getEditPlainText(),
-            level: widget.level,
-            crtime: crtime,
-            uptime: widget.uptime,
-            config: config,
-            id: widget.id!));
-      }
     }
 
     // 有变化，更新文档
-    if (widget.id != "") {
+    if (widget.id!.isNotEmpty) {
       final req = RequestPutDoc(
         plainText: getEditPlainText(),
         content: getEditOrigin(),
@@ -258,13 +259,13 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     }
 
     // 没有创建文档
-    if (getEditOrigin().isEmpty && titleEdit.text.isEmpty) {
+    if (noCreateDoc()) {
       Navigator.of(context).pop(nocreateDoc(failed: false));
     }
 
     // 有变化，创建文档
     final ret = await createDoc();
-    if (ret.state == LastPage.err) {
+    if (ret.state.isErr) {
       if (mounted) {
         Msg.diy(context, "创建失败");
       }
@@ -338,7 +339,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
       config: config,
     );
     final ret = await Http(gid: widget.gid).postDoc(req);
-    if (ret.isNotOK()) {
+    if (ret.isNotOK) {
       return nocreateDoc(failed: true);
     }
     return LastPageDoc(
@@ -356,7 +357,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
 
   Future<LastPageDoc> updateDoc(RequestPutDoc req) async {
     final res = await Http(gid: widget.gid, did: widget.id!).putDoc(req);
-    if (res.isNotOK()) {
+    if (res.isNotOK) {
       return LastPageDoc(
         state: LastPage.nochange,
         content: widget.content,
@@ -444,5 +445,25 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
 
   String getEditPlainText() {
     return edit.document.toPlainText();
+  }
+
+  // if
+  bool keepEditText() {
+    return widget.content == getEditOrigin();
+  }
+  bool keepTitleText() {
+    return titleEdit.text == widget.title;
+  }
+  bool keepLevel() {
+    return widget.level == currentLevel;
+  }
+  bool keepCRTime() {
+    return widget.crtime == crtime;
+  }
+  bool keepConfig() {
+    return widget.config == config;
+  }
+  bool noCreateDoc(){
+    return getEditOrigin().isEmpty && titleEdit.text.isEmpty;
   }
 }
