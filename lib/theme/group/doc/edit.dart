@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:whispering_time/http.dart';
 import 'package:whispering_time/env.dart';
-import './setting.dart';
+import 'setting.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
@@ -53,6 +53,8 @@ class DocEditPage extends StatefulWidget {
 }
 
 class _DocEditPage extends State<DocEditPage> with RouteAware {
+
+  // controller
   TextEditingController titleEdit = TextEditingController();
   quill.QuillController edit = quill.QuillController.basic();
 
@@ -60,17 +62,28 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   bool chooseLeveled = false;
   bool _isSelected = true;
   bool isTitleSubmited = true;
-  int currentLevel = 0;
+  int level = 0;
   late DateTime crtime;
+
+  // if
+  bool get keepEditText => widget.content == getEditOrigin();
+  bool get keepTitleText => titleEdit.text == widget.title;
+  bool get keepLevel => widget.level == level;
+  bool get keepCRTime => widget.crtime == crtime;
+  bool get keepConfig => widget.config == config;
+  bool get noCreateDoc =>
+      getEditOrigin().isEmpty && titleEdit.text.isEmpty || widget.id!.isEmpty;
 
   @override
   void initState() {
     super.initState();
+    if (widget.content.isNotEmpty) {
+      edit = quill.QuillController(
+          document: quill.Document.fromJson(jsonDecode(widget.content)),
+          selection: const TextSelection.collapsed(offset: 0));
+    }
 
-    edit = quill.QuillController(
-        document: quill.Document.fromJson(jsonDecode(widget.content)),
-        selection: const TextSelection.collapsed(offset: 0));
-    currentLevel = widget.level;
+    level = widget.level;
     crtime = widget.crtime;
     config = widget.config;
     titleEdit.text = widget.title;
@@ -139,7 +152,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
           children: [
             !widget.freeze && _isSelected
                 ? TextButton(
-                    child: Text(Level().string(currentLevel)),
+                    child: Text(Level().string(level)),
                     onPressed: () => {
                       setState(() {
                         _isSelected = false;
@@ -188,13 +201,16 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   }
 
   clickNewLevel(int index) async {
-    final res = await Http(gid: widget.gid, did: widget.id!)
-        .putDoc(RequestPutDoc(level: index));
-    if (res.isNotOK) {
-      return;
+    if (!noCreateDoc) {
+      final res = await Http(gid: widget.gid, did: widget.id!)
+          .putDoc(RequestPutDoc(level: index));
+      if (res.isNotOK) {
+        return;
+      }
     }
+
     setState(() {
-      currentLevel = index;
+      level = index;
       _isSelected = true;
     });
   }
@@ -209,10 +225,10 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   }
 
   void backPage() async {
-    if (keepEditText() &&
-        (keepTitleText()) && // 控件中的文字是默认标题或原始标题
-        keepLevel()) {
-      if (keepCRTime() && keepConfig()) {
+    if (keepEditText &&
+        (keepTitleText) && // 控件中的文字是默认标题或原始标题
+        keepLevel) {
+      if (keepCRTime && keepConfig) {
         print("文档内容无变化");
 
         if (mounted) {
@@ -259,7 +275,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     }
 
     // 没有创建文档
-    if (noCreateDoc()) {
+    if (noCreateDoc) {
       Navigator.of(context).pop(nocreateDoc(failed: false));
     }
 
@@ -334,7 +350,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
       content: getEditOrigin(),
       plainText: getEditPlainText(),
       title: titleEdit.text,
-      level: currentLevel,
+      level: level,
       crtime: crtime,
       config: config,
     );
@@ -348,7 +364,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
       plainText: getEditPlainText(),
       id: ret.id,
       title: titleEdit.text,
-      level: currentLevel,
+      level: level,
       crtime: req.crtime,
       uptime: crtime,
       config: config,
@@ -376,7 +392,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
       plainText: getEditPlainText(),
       id: widget.id!,
       title: titleEdit.text,
-      level: currentLevel,
+      level: level,
       crtime: crtime,
       uptime: req.uptime,
       config: config,
@@ -445,25 +461,5 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
 
   String getEditPlainText() {
     return edit.document.toPlainText();
-  }
-
-  // if
-  bool keepEditText() {
-    return widget.content == getEditOrigin();
-  }
-  bool keepTitleText() {
-    return titleEdit.text == widget.title;
-  }
-  bool keepLevel() {
-    return widget.level == currentLevel;
-  }
-  bool keepCRTime() {
-    return widget.crtime == crtime;
-  }
-  bool keepConfig() {
-    return widget.config == config;
-  }
-  bool noCreateDoc(){
-    return getEditOrigin().isEmpty && titleEdit.text.isEmpty;
   }
 }

@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:whispering_time/env.dart';
-import 'package:whispering_time/page/theme/group/doc/setting.dart';
+import 'package:whispering_time/theme/group/doc/setting.dart';
 
 enum Method { get, post, put, delete }
 

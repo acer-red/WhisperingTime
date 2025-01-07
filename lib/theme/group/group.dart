@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:whispering_time/env.dart';
-import 'package:whispering_time/page/theme/group/doc/setting.dart';
+import 'package:whispering_time/theme/group/doc/setting.dart';
 import 'doc/edit.dart';
 import 'package:intl/intl.dart';
 import 'package:whispering_time/http.dart';
