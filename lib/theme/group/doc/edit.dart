@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:whispering_time/http.dart';
 import 'package:whispering_time/env.dart';
 import 'setting.dart';
@@ -53,7 +55,6 @@ class DocEditPage extends StatefulWidget {
 }
 
 class _DocEditPage extends State<DocEditPage> with RouteAware {
-
   // controller
   TextEditingController titleEdit = TextEditingController();
   quill.QuillController edit = quill.QuillController.basic();
@@ -167,8 +168,15 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
                   ),
             //           hintText: '或简单，或详尽～',
 
-            // 富文本的工具栏
-            if (config.isShowTool!) quill.QuillToolbar.simple(controller: edit),
+            // 富文本工具栏（含图片）
+            if (config.isShowTool!)
+              quill.QuillToolbar.simple(
+                controller: edit,
+                configurations: QuillSimpleToolbarConfigurations(
+                  embedButtons: FlutterQuillEmbeds.toolbarButtons(
+                      imageButtonOptions: QuillToolbarImageButtonOptions()),
+                ),
+              ),
 
             // 富文本
             Expanded(
@@ -180,8 +188,20 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
                   focusNode: FocusNode(),
                   scrollController: ScrollController(),
                   configurations: quill.QuillEditorConfigurations(
+                    sharedConfigurations: QuillSharedConfigurations(
+                      extraConfigurations: {
+                        QuillSharedExtensionsConfigurations.key:
+                            QuillSharedExtensionsConfigurations(
+                          assetsPrefix:
+                              '666', // Defaults to `assets`
+                        ),
+                      },
+                    ),
                     scrollable: true,
                     expands: false,
+                    embedBuilders: kIsWeb
+                        ? FlutterQuillEmbeds.editorWebBuilders()
+                        : FlutterQuillEmbeds.editorBuilders(),
                     customStyles: quill.DefaultStyles(
                       paragraph: quill.DefaultTextBlockStyle(
                           TextStyle(

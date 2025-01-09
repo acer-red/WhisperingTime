@@ -1,35 +1,73 @@
 PODS:
+  - device_info_plus (0.0.1):
+    - FlutterMacOS
+  - file_selector_macos (0.0.1):
+    - FlutterMacOS
   - FlutterMacOS (1.0.0)
+  - gal (1.0.0):
+    - Flutter
+    - FlutterMacOS
+  - irondash_engine_context (0.0.1):
+    - FlutterMacOS
   - quill_native_bridge_macos (0.0.1):
     - FlutterMacOS
   - shared_preferences_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
+  - super_native_extensions (0.0.1):
+    - FlutterMacOS
   - url_launcher_macos (0.0.1):
+    - FlutterMacOS
+  - video_player_avfoundation (0.0.1):
+    - Flutter
     - FlutterMacOS
 
 DEPENDENCIES:
+  - device_info_plus (from `Flutter/ephemeral/.symlinks/plugins/device_info_plus/macos`)
+  - file_selector_macos (from `Flutter/ephemeral/.symlinks/plugins/file_selector_macos/macos`)
   - FlutterMacOS (from `Flutter/ephemeral`)
+  - gal (from `Flutter/ephemeral/.symlinks/plugins/gal/darwin`)
+  - irondash_engine_context (from `Flutter/ephemeral/.symlinks/plugins/irondash_engine_context/macos`)
   - quill_native_bridge_macos (from `Flutter/ephemeral/.symlinks/plugins/quill_native_bridge_macos/macos`)
   - shared_preferences_foundation (from `Flutter/ephemeral/.symlinks/plugins/shared_preferences_foundation/darwin`)
+  - super_native_extensions (from `Flutter/ephemeral/.symlinks/plugins/super_native_extensions/macos`)
   - url_launcher_macos (from `Flutter/ephemeral/.symlinks/plugins/url_launcher_macos/macos`)
+  - video_player_avfoundation (from `Flutter/ephemeral/.symlinks/plugins/video_player_avfoundation/darwin`)
 
 EXTERNAL SOURCES:
+  device_info_plus:
+    :path: Flutter/ephemeral/.symlinks/plugins/device_info_plus/macos
+  file_selector_macos:
+    :path: Flutter/ephemeral/.symlinks/plugins/file_selector_macos/macos
   FlutterMacOS:
     :path: Flutter/ephemeral
+  gal:
+    :path: Flutter/ephemeral/.symlinks/plugins/gal/darwin
+  irondash_engine_context:
+    :path: Flutter/ephemeral/.symlinks/plugins/irondash_engine_context/macos
   quill_native_bridge_macos:
     :path: Flutter/ephemeral/.symlinks/plugins/quill_native_bridge_macos/macos
   shared_preferences_foundation:
     :path: Flutter/ephemeral/.symlinks/plugins/shared_preferences_foundation/darwin
+  super_native_extensions:
+    :path: Flutter/ephemeral/.symlinks/plugins/super_native_extensions/macos
   url_launcher_macos:
     :path: Flutter/ephemeral/.symlinks/plugins/url_launcher_macos/macos
+  video_player_avfoundation:
+    :path: Flutter/ephemeral/.symlinks/plugins/video_player_avfoundation/darwin
 
 SPEC CHECKSUMS:
+  device_info_plus: a56e6e74dbbd2bb92f2da12c64ddd4f67a749041
+  file_selector_macos: 6280b52b459ae6c590af5d78fc35c7267a3c4b31
   FlutterMacOS: 8f6f14fa908a6fb3fba0cd85dbd81ec4b251fb24
-  quill_native_bridge_macos: 3a5f378bc757eb92825193853020b759b56cbb2c
-  shared_preferences_foundation: fcdcbc04712aee1108ac7fda236f363274528f78
-  url_launcher_macos: c82c93949963e55b228a30115bd219499a6fe404
+  gal: baecd024ebfd13c441269ca7404792a7152fde89
+  irondash_engine_context: 893c7d96d20ce361d7e996f39d360c4c2f9869ba
+  quill_native_bridge_macos: 2b005cb56902bb740e0cd9620aa399dfac6b4882
+  shared_preferences_foundation: 9e1978ff2562383bd5676f64ec4e9aa8fa06a6f7
+  super_native_extensions: c2795d6d9aedf4a79fae25cb6160b71b50549189
+  url_launcher_macos: 0fba8ddabfc33ce0a9afe7c5fef5aab3d8d2d673
+  video_player_avfoundation: 2cef49524dd1f16c5300b9cd6efd9611ce03639b
 
-PODFILE CHECKSUM: 236401fc2c932af29a9fcf0e97baeeb2d750d367
+PODFILE CHECKSUM: c2e95c8c0fe03c5c57e438583cae4cc732296009
 
 COCOAPODS: 1.16.2

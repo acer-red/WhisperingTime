@@ -4,8 +4,6 @@ import 'package:whispering_time/theme/group/doc/setting.dart';
 import 'doc/edit.dart';
 import 'package:intl/intl.dart';
 import 'package:whispering_time/http.dart';
-import 'package:file_picker/file_picker.dart';
-import 'dart:io';
 
 class Group {
   String name;
@@ -659,9 +657,14 @@ class _GroupPage extends State<GroupPage> {
     setState(() {
       _gitems.add(Group(name: result!, id: res.id, overtime: req.overtime));
       gidx = _gitems.length - 1;
+      _ditems.clear();
+      for (int i = 0; i < _isSelected.length; i++) {
+        if (_isSelected[i]) {
+          _isSelected[i] = false;
+        }
+      }
     });
   }
-
 
   setDocs() async {
     if (_gitems.isEmpty) {
@@ -743,6 +746,12 @@ class _GroupPage extends State<GroupPage> {
     print("获取分组");
 
     final res = await Http(tid: widget.tid).getGroups();
+    if (res.isNotOK) {
+      if (mounted) {
+        Msg.diy(context, "获取分组失败");
+      }
+      return;
+    }
     if (res.data.isEmpty) {
       clickAddGroup();
       return;

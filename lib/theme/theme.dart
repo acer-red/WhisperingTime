@@ -47,54 +47,56 @@ class _ThemePageState extends State<ThemePage> {
 
     double initialDragPosition = 0;
     return Scaffold(
-      body: Padding(
-        padding:
-            const EdgeInsets.only(bottom: 10, top: 10.0, left: 50, right: 50),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Text(
-                  "印迹主题",
-                  style: TextStyle(fontWeight: FontWeight.w500, fontSize: 17),
-                ),
-                PopupMenuButton(
-                  icon: Icon(Icons.more_horiz),
-
-                  itemBuilder: (BuildContext context) =>
-                      <PopupMenuEntry>[
-                    PopupMenuItem(
-                      value: 'event_add_theme',
-                      child: Text('添加主题'),
-                      onTap: ()=> add(),
-                    ),
-                  ],
-                )
-              ],
-            ),
-            SizedBox(
-              height: 70,
-              child: GestureDetector(
-                onHorizontalDragStart: (details) {
-                  initialDragPosition = details.localPosition.dx;
-                },
-                onHorizontalDragUpdate: (details) {
-                  final currentPosition = details.localPosition.dx;
-                  final delta = currentPosition - initialDragPosition;
-                  scrollController.jumpTo(scrollController.offset - delta);
-                  initialDragPosition = currentPosition;
-                },
-                child: ListView.builder(
-                  controller: scrollController,
-                  itemCount: _items.length,
-                  scrollDirection: Axis.horizontal, // 设置滚动方向为水平
-                  itemBuilder: (context, index) {
-                    return _buildItem(index);
-                  },
-                ),
+      body: SafeArea(
+        child: Padding(
+          padding:
+              const EdgeInsets.only(bottom: 10, top: 10.0, left: 50, right: 50),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Text(
+                    "印迹主题",
+                    style: TextStyle(fontWeight: FontWeight.w500, fontSize: 17),
+                  ),
+                  PopupMenuButton(
+                    icon: Icon(Icons.more_horiz),
+        
+                    itemBuilder: (BuildContext context) =>
+                        <PopupMenuEntry>[
+                      PopupMenuItem(
+                        value: 'event_add_theme',
+                        child: Text('添加主题'),
+                        onTap: ()=> add(),
+                      ),
+                    ],
+                  )
+                ],
               ),
-            )
-          ],
+              SizedBox(
+                height: 70,
+                child: GestureDetector(
+                  onHorizontalDragStart: (details) {
+                    initialDragPosition = details.localPosition.dx;
+                  },
+                  onHorizontalDragUpdate: (details) {
+                    final currentPosition = details.localPosition.dx;
+                    final delta = currentPosition - initialDragPosition;
+                    scrollController.jumpTo(scrollController.offset - delta);
+                    initialDragPosition = currentPosition;
+                  },
+                  child: ListView.builder(
+                    controller: scrollController,
+                    itemCount: _items.length,
+                    scrollDirection: Axis.horizontal, // 设置滚动方向为水平
+                    itemBuilder: (context, index) {
+                      return _buildItem(index);
+                    },
+                  ),
+                ),
+              )
+            ],
+          ),
         ),
       ),
     );
