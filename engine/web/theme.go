@@ -26,19 +26,42 @@ func ThemeRoute(g *gin.Engine) {
 	}
 }
 
+//  获取所有主题
+//  GET /themes
+//  参数说明
+//  : 无参数，返回所有主题的数据
+//  ?doc=1: 返回所有主题的数据以及主题对应的文档
+//  ?doc=1&id=1: 返回所有主题以及主题对应的文档和ID
+
 func ThemesGet(g *gin.Context) {
-	log.Info("获取所有主题")
 	uoid := g.MustGet("uoid").(primitive.ObjectID)
 
-	response, err := modb.GetTheme(uoid)
-	if err != nil {
-		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
+	has_doc := g.Query("doc") != ""
+	has_id := g.Query("id") != ""
+
+	// 仅有在has_id存在时，has_doc才有意义
+	has_doc = has_doc && !has_id
+
+	if len(g.Request.URL.Query()) == 0 || (has_doc && has_id) {
+		log.Info("获取所有主题")
+
+		response, err := modb.ThemesGet(uoid)
+		if err != nil {
+			internalServerError(g)
+			return
+		}
+		okData(g, response)
 		return
 	}
+	log.Info("获取所有主题及数据")
 
-	g.JSON(http.StatusOK, msgOK().setData(response))
+	response, err := modb.ThemesGetAndDocs(uoid, has_id)
+	if err != nil {
+		internalServerError(g)
+		return
+	}
+	okData(g, response)
 }
-
 func ThemePost(g *gin.Context) {
 	log.Info("插入主题")
 	type response struct {
@@ -52,7 +75,7 @@ func ThemePost(g *gin.Context) {
 		return
 	}
 
-	toid, tid, err := modb.CreateTheme(uoid, &req)
+	toid, tid, err := modb.ThemeCreate(uoid, &req)
 	if err != nil {
 		log.Error(err)
 		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
@@ -75,7 +98,7 @@ func ThemeIDPut(g *gin.Context) {
 		g.AbortWithStatusJSON(http.StatusBadRequest, msgBadRequest())
 		return
 	}
-	if err := modb.UpdateTheme(toid, &req); err != nil {
+	if err := modb.ThemeUpdate(toid, &req); err != nil {
 		log.Error(err)
 		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
 		return
@@ -86,7 +109,7 @@ func ThemeIDDelete(g *gin.Context) {
 	log.Info("主题删除")
 	toid := g.MustGet("toid").(primitive.ObjectID)
 
-	err := modb.DeleteTheme(toid)
+	err := modb.ThemeDelete(toid)
 	if err != nil {
 		log.Error(err)
 		internalServerError(g)

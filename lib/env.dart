@@ -185,6 +185,11 @@ class Time {
       locale: const Locale('zh'),
     );
   }
+  static String getCurrentTime() {
+
+  return DateFormat('yyyy年MM月dd日HH时mm分ss秒').format(DateTime.now());
+}
+
 }
 
 class MyDialog {

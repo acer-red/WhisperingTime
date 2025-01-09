@@ -20,12 +20,12 @@ class Basic {
 }
 
 // theme
-class ResponseGetTheme extends Basic {
+class ResponseGetThemes extends Basic {
   List<ThemeListData> data;
-  ResponseGetTheme(
+  ResponseGetThemes(
       {required super.err, required super.msg, required this.data});
-  factory ResponseGetTheme.fromJson(Map<String, dynamic> json) {
-    return ResponseGetTheme(
+  factory ResponseGetThemes.fromJson(Map<String, dynamic> json) {
+    return ResponseGetThemes(
       err: json['err'] as int,
       msg: json['msg'] as String,
       data: json['data'] != null
@@ -34,6 +34,90 @@ class ResponseGetTheme extends Basic {
                   ThemeListData.fromJson(item as Map<String, dynamic>))
               .toList()
           : List.empty(),
+    );
+  }
+}
+
+class ResponseGetThemesAndDataX extends Basic   {
+  List<XTheme> data;
+
+  ResponseGetThemesAndDataX({
+    required super.err,
+    required super.msg,
+    required this.data,
+  });
+
+  factory ResponseGetThemesAndDataX.fromJson(Map<String, dynamic> json) {
+    return ResponseGetThemesAndDataX(
+      err: json['err'] as int,
+      msg: json['msg'] as String,
+      data: (json['data'] as List<dynamic>)
+          .map((e) => XTheme.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}
+
+class XTheme {
+  final String tid;
+  final String name;
+  final List<XGroup> groups;
+
+  XTheme({
+    required this.tid,
+    required this.name,
+    required this.groups,
+  });
+
+  factory XTheme.fromJson(Map<String, dynamic> json) {
+    return XTheme(
+      tid: json['tid'] as String,
+      name: json['theme_name'] as String,
+      groups: (json['groups'] as List<dynamic>)
+          .map((e) => XGroup.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}
+
+class XGroup {
+  final String gid;
+  final String name;
+  final List<XDoc> docs;
+
+  XGroup({
+    required this.gid,
+    required this.name,
+    required this.docs,
+  });
+
+  factory XGroup.fromJson(Map<String, dynamic> json) {
+    return XGroup(
+      gid: json['gid'] as String,
+      name: json['name'] as String,
+      docs: (json['docs'] as List<dynamic>)
+          .map((e) => XDoc.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}
+
+class XDoc {
+  final String did;
+  final String plainText;
+  final String title;
+
+  XDoc({
+    required this.did,
+    required this.plainText,
+    required this.title,
+  });
+
+  factory XDoc.fromJson(Map<String, dynamic> json) {
+    return XDoc(
+      did: json['did'] as String,
+      plainText: json['plain_text'] as String,
+      title: json['title'] as String,
     );
   }
 }
@@ -316,7 +400,12 @@ class RequestPutDoc {
   DocConfigration? config;
   DateTime get uptime => DateTime.now();
   RequestPutDoc(
-      {this.title, this.content, this.plainText, this.level, this.crtime,this.config});
+      {this.title,
+      this.content,
+      this.plainText,
+      this.level,
+      this.crtime,
+      this.config});
 
   Map<String, dynamic> toJson() {
     Map<String, dynamic> data = {'uptime': Time.toTimestampString(uptime)};
@@ -341,7 +430,7 @@ class RequestPutDoc {
       print("更新文档等级");
       data['level'] = level;
     }
-    if (config!=null){
+    if (config != null) {
       print("更新文档配置");
       data['config'] = config!.toJson();
     }
@@ -422,18 +511,37 @@ class Http {
   }
 
   // theme
-  Future<ResponseGetTheme> getthemes() async {
-    String path = "/themes";
+  Future<ResponseGetThemes> getthemes() async {
+    log.i("获取主题列表");
+    const String path = "/themes";
+
 
     final Map<String, String> headers = {
       'Authorization': getAuthorization(),
     };
     final url = Uri.http(serverAddress, path);
 
-    return _handleRequest<ResponseGetTheme>(
-        Method.get, url, (json) => ResponseGetTheme.fromJson(json),
+    return _handleRequest<ResponseGetThemes>(
+        Method.get, url, (json) => ResponseGetThemes.fromJson(json),
         headers: headers);
   }
+  Future<ResponseGetThemesAndDataX> getThemesAndDoc() async {
+    log.i("获取主题列表和印迹");
+
+    const String path = "/themes";
+    const Map<String,String> param = {
+      "doc" : "1",
+    };
+    final Map<String, String> headers = {
+      'Authorization': getAuthorization(),
+    };
+    final url = Uri.http(serverAddress, path,param);
+
+    return _handleRequest<ResponseGetThemesAndDataX>(
+        Method.get, url, (json) => ResponseGetThemesAndDataX.fromJson(json),
+        headers: headers);
+  }
+
 
   Future<ResponsePostTheme> posttheme(RequestPostTheme req) async {
     String path = "/theme";
@@ -455,7 +563,6 @@ class Http {
       headers: headers,
     );
   }
-
   Future<ResponsePutTheme> puttheme(RequestPutTheme req) async {
     String path = "/theme/${tid!}";
 
