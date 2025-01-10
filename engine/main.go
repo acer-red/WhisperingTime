@@ -54,6 +54,8 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	g := gin.Default()
 
+	web.ImageRoute(g)
+
 	g.Use(modb.ExistUser())
 
 	User := g.Group("/user")

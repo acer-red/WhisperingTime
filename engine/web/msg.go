@@ -93,6 +93,14 @@ func okData(g *gin.Context, obj any) {
 	g.JSON(http.StatusOK, d)
 
 }
+func okPNG(g *gin.Context, data []byte) {
+	// d := msgOK().setData(obj)
+	// body, _ := json.MarshalIndent(d, "", "  ")
+	// fmt.Println("->")
+	// fmt.Println(string(body))
+	g.Data(http.StatusOK, "image/png", data)
+
+}
 func badRequest(g *gin.Context) {
 	g.AbortWithStatusJSON(http.StatusBadRequest, msgBadRequest())
 }

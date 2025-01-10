@@ -139,7 +139,9 @@ class Settings {
     return _prefs?.setBool(key, value) ?? Future.value(false);
   }
 }
-
+class UUID{
+  static String get  create => Uuid().v7().replaceAll("-", "");
+}
 class Time {
   static DateTime datetime(String t) {
     if (t.isEmpty) {

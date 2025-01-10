@@ -7,8 +7,11 @@ import 'package:whispering_time/env.dart';
 import 'setting.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
-import 'package:flutter_quill/flutter_quill.dart' as quill;
+// ignore: depend_on_referenced_packages
+import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
+// ignore: depend_on_referenced_packages
+import 'package:path/path.dart' as p;
 
 const String defaultTitle = "未命名的标题";
 
@@ -57,7 +60,7 @@ class DocEditPage extends StatefulWidget {
 class _DocEditPage extends State<DocEditPage> with RouteAware {
   // controller
   TextEditingController titleEdit = TextEditingController();
-  quill.QuillController edit = quill.QuillController.basic();
+  QuillController edit = QuillController.basic();
 
   DocConfigration config = DocConfigration();
   bool chooseLeveled = false;
@@ -65,8 +68,6 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   bool isTitleSubmited = true;
   int level = 0;
   late DateTime crtime;
-
-  // if
   bool get keepEditText => widget.content == getEditOrigin();
   bool get keepTitleText => titleEdit.text == widget.title;
   bool get keepLevel => widget.level == level;
@@ -79,8 +80,8 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   void initState() {
     super.initState();
     if (widget.content.isNotEmpty) {
-      edit = quill.QuillController(
-          document: quill.Document.fromJson(jsonDecode(widget.content)),
+      edit = QuillController(
+          document: Document.fromJson(jsonDecode(widget.content)),
           selection: const TextSelection.collapsed(offset: 0));
     }
 
@@ -149,7 +150,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
 
         // 主体
         body: Column(
-          crossAxisAlignment: CrossAxisAlignment.center, // 使 Text 组件左右居中
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             !widget.freeze && _isSelected
                 ? TextButton(
@@ -170,11 +171,16 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
 
             // 富文本工具栏（含图片）
             if (config.isShowTool!)
-              quill.QuillToolbar.simple(
+              QuillToolbar.simple(
                 controller: edit,
                 configurations: QuillSimpleToolbarConfigurations(
-                  embedButtons: FlutterQuillEmbeds.toolbarButtons(
-                      imageButtonOptions: QuillToolbarImageButtonOptions()),
+                  customButtons: [
+                    QuillToolbarCustomButtonOptions(
+                      icon: Icon(Icons.image),
+                      onPressed: () => dialogSelectImage(context, edit),
+                    )
+                  ],
+                  // embedButtons: FlutterQuillEmbeds.toolbarButtons(),
                 ),
               ),
 
@@ -183,27 +189,28 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
               child: Container(
                 padding:
                     const EdgeInsets.only(top: 8.0, left: 30.0, right: 30.0),
-                child: quill.QuillEditor(
+                child: QuillEditor(
                   controller: edit,
                   focusNode: FocusNode(),
                   scrollController: ScrollController(),
-                  configurations: quill.QuillEditorConfigurations(
-                    sharedConfigurations: QuillSharedConfigurations(
-                      extraConfigurations: {
-                        QuillSharedExtensionsConfigurations.key:
-                            QuillSharedExtensionsConfigurations(
-                          assetsPrefix:
-                              '666', // Defaults to `assets`
-                        ),
-                      },
-                    ),
+                  configurations: QuillEditorConfigurations(
+                    // sharedConfigurations: QuillSharedConfigurations(
+                    //   extraConfigurations: {
+                    //     QuillSharedExtensionsConfigurations.key:
+                    //         QuillSharedExtensionsConfigurations(
+                    //       assetsPrefix: '666', // Defaults to `assets`
+                    //     ),
+                    //   },
+                    // ),
                     scrollable: true,
                     expands: false,
+
+                    // 添加图片后，能够显示图片的构建
                     embedBuilders: kIsWeb
                         ? FlutterQuillEmbeds.editorWebBuilders()
                         : FlutterQuillEmbeds.editorBuilders(),
-                    customStyles: quill.DefaultStyles(
-                      paragraph: quill.DefaultTextBlockStyle(
+                    customStyles: DefaultStyles(
+                      paragraph: DefaultTextBlockStyle(
                           TextStyle(
                               fontSize: 16, height: 1.4, color: Colors.black),
                           HorizontalSpacing(0, 0),
@@ -477,6 +484,115 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
 
   String getEditOrigin() {
     return jsonEncode(edit.document.toDelta().toJson());
+  }
+
+  // void updateImage() {
+  //   List<Operation> ops = edit.document.toDelta().toList();
+
+  //   for (Operation op in ops) {
+  //     if (!(op.isInsert && op.value is Embed && op.value.type == 'image')) {
+  //       continue;
+  //     }
+  //     String base64Image = op.value.data;
+  //     Uint8List imageBytes = base64Decode(base64Image);
+  //     // 现在你可以使用 imageBytes 了
+  //   }
+  // }
+
+  Future<void> dialogSelectImage(
+      BuildContext context, QuillController edit) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return AlertDialog(
+            content: SingleChildScrollView(
+          child: ListBody(children: <Widget>[
+            Column(
+              children: [
+                TextButton.icon(
+                  onPressed: () {
+                    selectImage(edit);
+                    Navigator.of(context).pop();
+                  },
+                  icon: Icon(Icons.folder_open),
+                  label: Text("本地文件"),
+                ),
+                TextButton.icon(
+                  onPressed: () {},
+                  icon: Icon(Icons.photo_camera),
+                  label: Text("相机"),
+                ),
+                TextButton.icon(
+                  onPressed: () {},
+                  icon: Icon(Icons.language),
+                  label: Text("网络"),
+                )
+              ],
+            ),
+          ]),
+        ));
+      },
+    );
+  }
+
+  selectImage(QuillController edit) async {
+    final ImagePicker picker = ImagePicker();
+// Pick an image.
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    if (image == null) {
+      return;
+    }
+    final File imageFile = File(image.path);
+    // ... 使用 imageFile 显示图片
+    final String extension = p.extension(imageFile.path);
+    String name = UUID.create;
+    final bytes = await imageFile.readAsBytes();
+
+    if (extension == '.jpg' ||
+        extension == '.jpeg' ||
+        extension == '.JPG' ||
+        extension == '.JPEG') {
+      name += ".jpg";
+      print("图片类型jpg");
+    } else if (extension == '.png' || extension == '.PNG') {
+      name += ".png";
+      print("图片类型png");
+    } else {
+      print('其他文件类型');
+      return;
+    }
+    ResponsePostImage res =
+        await Http().postImage(RequestPostImage(name: name, data: bytes));
+    if (!res.ok) {
+      log.e('创建图片失败');
+      return;
+    }
+
+    // 地址使用
+    // [{"insert":{"image":"dataUrl"}}]",
+    edit.insertImageBlock(
+        imageSource: "http://${Settings().getServerAddress()}/image/$name");
+
+// Capture a photo.
+    // final XFile? photo = await picker.pickImage(source: ImageSource.camera);
+
+// Pick a video.
+    // final XFile? galleryVideo =
+    //     await picker.pickVideo(source: ImageSource.gallery);
+
+// Capture a video.
+    // final XFile? cameraVideo =
+    //     await picker.pickVideo(source: ImageSource.camera);
+
+// Pick multiple images.
+    // final List<XFile> images = await picker.pickMultiImage();
+
+// Pick singe image or video.
+    // final XFile? media = await picker.pickMedia();
+
+// Pick multiple images and videos.
+    // final List<XFile> medias = await picker.pickMultipleMedia();
   }
 
   String getEditPlainText() {

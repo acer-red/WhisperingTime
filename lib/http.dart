@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
+import 'package:http/http.dart';
 import 'package:whispering_time/env.dart';
 import 'package:whispering_time/theme/group/doc/setting.dart';
 
@@ -38,7 +40,7 @@ class ResponseGetThemes extends Basic {
   }
 }
 
-class ResponseGetThemesAndDataX extends Basic   {
+class ResponseGetThemesAndDataX extends Basic {
   List<XTheme> data;
 
   ResponseGetThemesAndDataX({
@@ -458,6 +460,19 @@ class ResponseDeleteDoc extends Basic {
   }
 }
 
+// image
+class RequestPostImage {
+  String name;
+  Uint8List data;
+  RequestPostImage({required this.name, required this.data});
+}
+
+class ResponsePostImage {
+  bool ok;
+  String data;
+  ResponsePostImage({required this.ok, required this.data});
+}
+
 class Http {
   final String? content;
   final String? tid;
@@ -515,7 +530,6 @@ class Http {
     log.i("获取主题列表");
     const String path = "/themes";
 
-
     final Map<String, String> headers = {
       'Authorization': getAuthorization(),
     };
@@ -525,23 +539,23 @@ class Http {
         Method.get, url, (json) => ResponseGetThemes.fromJson(json),
         headers: headers);
   }
+
   Future<ResponseGetThemesAndDataX> getThemesAndDoc() async {
     log.i("获取主题列表和印迹");
 
     const String path = "/themes";
-    const Map<String,String> param = {
-      "doc" : "1",
+    const Map<String, String> param = {
+      "doc": "1",
     };
     final Map<String, String> headers = {
       'Authorization': getAuthorization(),
     };
-    final url = Uri.http(serverAddress, path,param);
+    final url = Uri.http(serverAddress, path, param);
 
     return _handleRequest<ResponseGetThemesAndDataX>(
         Method.get, url, (json) => ResponseGetThemesAndDataX.fromJson(json),
         headers: headers);
   }
-
 
   Future<ResponsePostTheme> posttheme(RequestPostTheme req) async {
     String path = "/theme";
@@ -563,6 +577,7 @@ class Http {
       headers: headers,
     );
   }
+
   Future<ResponsePutTheme> puttheme(RequestPutTheme req) async {
     String path = "/theme/${tid!}";
 
@@ -772,5 +787,24 @@ class Http {
       (json) => ResponseDeleteDoc.fromJson(json),
       headers: headers,
     );
+  }
+
+  // image
+  Future<ResponsePostImage> postImage(RequestPostImage req) async {
+    print("上传图片");
+
+    String path = "/image/${req.name}";
+
+    final url = Uri.http(serverAddress, path);
+    final Map<String, String> headers = {
+      'Authorization': getAuthorization(),
+    };
+
+    Response response = await http.post(url, headers: headers,body: req.data);
+    int status = response.statusCode;
+    ResponsePostImage ret = ResponsePostImage(
+        ok: status == 200, data: status == 200 ? response.body : "");
+
+    return ret;
   }
 }
