@@ -234,7 +234,7 @@ Future<bool> showConfirmationDialog(
     },
   );
 
-  return isConfirmed ?? false; // 如果用户没有点击按钮，则默认为 false
+  return isConfirmed ?? false;
 }
 
 Divider divider() {
@@ -260,8 +260,7 @@ class Msg {
             TextButton(
               child: Text("确定"),
               onPressed: () {
-                // 处理确定按钮的逻辑
-                Navigator.of(context).pop(); // 关闭对话框
+                Navigator.of(context).pop();
               },
             ),
           ],

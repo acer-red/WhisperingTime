@@ -70,6 +70,10 @@ class _GroupPage extends State<GroupPage> {
   String mon = DateFormat('MMMM yyyy').format(DateTime.now());
   TextEditingController groupTitleEdit = TextEditingController();
 
+  /// 分级选项
+  /// true: 单选
+  /// false: 多选
+  bool isSingleMultiChoose = false;
   @override
   void initState() {
     super.initState();
@@ -198,15 +202,20 @@ class _GroupPage extends State<GroupPage> {
               Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: ToggleButtons(
-                  onPressed: (int index) {
-                    setState(() {
-                      _isSelected[index] = !_isSelected[index];
-                    });
-                    setDocs();
-                  },
                   isSelected: _isSelected,
                   children: List.generate(
                       Level.l.length, (index) => Level.levelWidget(index)),
+                  onPressed: (int index) {
+                    setState(() {
+                      if (isSingleMultiChoose) {
+                        _isSelected[index] = !_isSelected[index];
+                      } else {
+                        _isSelected = List.generate(
+                            _isSelected.length, (i) => i == index);
+                      }
+                    });
+                    clickLevel();
+                  },
                 ),
               ),
 
@@ -264,7 +273,7 @@ class _GroupPage extends State<GroupPage> {
                                   Padding(
                                     padding: const EdgeInsets.all(16.0),
                                     child: Text(
-                                      item.plainText,
+                                      item.plainText.trimRight(),
                                       style: TextStyle(color: Colors.grey[700]),
                                     ),
                                   ),
@@ -299,55 +308,7 @@ class _GroupPage extends State<GroupPage> {
     );
   }
 
-  clickRename() async {
-    String? result;
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          content: TextField(
-            enabled: true,
-            onChanged: (value) {
-              result = value;
-            },
-            decoration: InputDecoration(hintText: _gitems[gidx].name),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('取消'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: const Text('确定'),
-              onPressed: () {
-                Navigator.of(context).pop(result);
-              },
-            ),
-          ],
-        );
-      },
-    );
-    if (result == null) {
-      return;
-    }
-    if (result!.isEmpty) {
-      return;
-    }
-
-    final res = await Http(tid: widget.tid, gid: _gitems[gidx].id)
-        .putGroup(RequestPutGroup(name: result!));
-
-    if (res.isNotOK) {
-      return;
-    }
-
-    setState(() {
-      _gitems[gidx].name = result!;
-    });
-  }
-
+  /// 点击设置按钮，进入设置页面
   clickSetting() async {
     if (_gitems.isEmpty) {
       return;
@@ -364,6 +325,7 @@ class _GroupPage extends State<GroupPage> {
           content: SingleChildScrollView(
             child: ListBody(
               children: <Widget>[
+                // 样式选择 - 卡片、日历
                 Row(
                   children: [
                     Expanded(child: Text("样式")),
@@ -374,6 +336,26 @@ class _GroupPage extends State<GroupPage> {
                           viewType = value;
                         });
                       },
+                    ),
+                  ],
+                ),
+                // 分级选择
+                Row(
+                  children: [
+                    Expanded(
+                      child: SwitchListTile(
+                        title: Text('单选多选'),
+                        subtitle: Text(!isSingleMultiChoose
+                            ? '当前单选，分级选项只能选择一个'
+                            : '当前多选，分级选项能够选择多个'),
+                        value: isSingleMultiChoose,
+                        onChanged: (bool value) async {
+                          setState(() {
+                            isSingleMultiChoose = value;
+                            (context as Element).markNeedsBuild();
+                          });
+                        },
+                      ),
                     ),
                   ],
                 ),
@@ -459,8 +441,10 @@ class _GroupPage extends State<GroupPage> {
     );
   }
 
+  /// 点击新增按钮，进入文档编辑页面
   clickNewEdit() async {
     Group item = _gitems[gidx];
+
     if (item.isFreezedOrBuf()) {
       Msg.diy(context, "已定格或已进入定格缓冲期，无法编辑");
       return;
@@ -470,7 +454,6 @@ class _GroupPage extends State<GroupPage> {
       MaterialPageRoute(
         builder: (context) => DocEditPage(
           gid: item.id,
-          id: "",
           title: "",
           content: "",
           level: getSelectLevel(),
@@ -484,6 +467,9 @@ class _GroupPage extends State<GroupPage> {
 
     switch (ret.state) {
       case LastPage.create:
+        if (!isContainSelectLevel(ret.level)) {
+          break;
+        }
         setState(() {
           _ditems.add(Doc(
               title: ret.title,
@@ -503,6 +489,7 @@ class _GroupPage extends State<GroupPage> {
     }
   }
 
+  /// 点击卡片按钮，进入文档编辑页面
   clickCard(int index) async {
     Group group = _gitems[gidx];
     Doc doc = _ditems[index];
@@ -528,6 +515,7 @@ class _GroupPage extends State<GroupPage> {
           _ditems.removeAt(index);
           break;
         case LastPage.change:
+          // print("${ret.level }${_ditems[index].level}");
           if (!isContainSelectLevel(ret.level)) {
             _ditems.removeAt(index);
             break;
@@ -569,6 +557,57 @@ class _GroupPage extends State<GroupPage> {
     });
   }
 
+  /// 点击重命名按钮
+  clickRename() async {
+    String? result;
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          content: TextField(
+            enabled: true,
+            onChanged: (value) {
+              result = value;
+            },
+            decoration: InputDecoration(hintText: _gitems[gidx].name),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('取消'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('确定'),
+              onPressed: () {
+                Navigator.of(context).pop(result);
+              },
+            ),
+          ],
+        );
+      },
+    );
+    if (result == null) {
+      return;
+    }
+    if (result!.isEmpty) {
+      return;
+    }
+
+    final res = await Http(tid: widget.tid, gid: _gitems[gidx].id)
+        .putGroup(RequestPutGroup(name: result!));
+
+    if (res.isNotOK) {
+      return;
+    }
+
+    setState(() {
+      _gitems[gidx].name = result!;
+    });
+  }
+
+  /// 点击分组按钮（在分组列表中），切换分组显示
   clickGroupTitle(int index) {
     setState(() {
       gidx = index;
@@ -579,6 +618,7 @@ class _GroupPage extends State<GroupPage> {
     setDocs();
   }
 
+  /// 点击删除分组
   clickDeleteGroup(int index) async {
     if (_gitems.length == 1) {
       Msg.diy(context, "无法删除，请保留至少一个项目。");
@@ -606,6 +646,7 @@ class _GroupPage extends State<GroupPage> {
     }
   }
 
+  /// 点击添加分组
   clickAddGroup() async {
     String? result;
     await showDialog(
@@ -666,6 +707,12 @@ class _GroupPage extends State<GroupPage> {
     });
   }
 
+  /// 点击分级按钮
+  clickLevel() {
+    setDocs();
+  }
+
+  /// 更新当前分组下的文档列表
   setDocs() async {
     if (_gitems.isEmpty) {
       return;

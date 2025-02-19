@@ -1,16 +1,15 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill/quill_delta.dart';
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:whispering_time/http.dart';
 import 'package:whispering_time/env.dart';
 import 'setting.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
-// ignore: depend_on_referenced_packages
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
-// ignore: depend_on_referenced_packages
 import 'package:path/path.dart' as p;
 
 const String defaultTitle = "未命名的标题";
@@ -33,7 +32,10 @@ class DocEditPage extends StatefulWidget {
   final String gid;
   final String? gname;
   final String title;
+
+  // 富文本的原始数据
   final String content;
+
   final int level;
   final DocConfigration config;
   final String? id;
@@ -58,7 +60,6 @@ class DocEditPage extends StatefulWidget {
 }
 
 class _DocEditPage extends State<DocEditPage> with RouteAware {
-  // controller
   TextEditingController titleEdit = TextEditingController();
   QuillController edit = QuillController.basic();
 
@@ -68,12 +69,15 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   bool isTitleSubmited = true;
   int level = 0;
   late DateTime crtime;
+  String id = "";
   bool get keepEditText => widget.content == getEditOrigin();
   bool get keepTitleText => titleEdit.text == widget.title;
   bool get keepLevel => widget.level == level;
   bool get keepCRTime => widget.crtime == crtime;
   bool get keepConfig => widget.config == config;
-  bool get noCreateDoc =>
+  bool get hasDocID => widget.id != null;
+  bool get hasContent => !(isEditorEmpty() && titleEdit.text.isEmpty);
+  bool get isNoCreateDoc =>
       getEditOrigin().isEmpty && titleEdit.text.isEmpty || widget.id!.isEmpty;
 
   @override
@@ -89,6 +93,9 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     crtime = widget.crtime;
     config = widget.config;
     titleEdit.text = widget.title;
+    if (hasDocID) {
+      id = widget.id!;
+    }
   }
 
   @override
@@ -184,24 +191,24 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
                 ),
               ),
 
-            // 富文本
+            // 富文本编辑框
             Expanded(
               child: Container(
                 padding:
                     const EdgeInsets.only(top: 8.0, left: 30.0, right: 30.0),
                 child: QuillEditor(
                   controller: edit,
-                  focusNode: FocusNode(),
+                  focusNode: FocusScopeNode(),
                   scrollController: ScrollController(),
                   configurations: QuillEditorConfigurations(
-                    // sharedConfigurations: QuillSharedConfigurations(
-                    //   extraConfigurations: {
-                    //     QuillSharedExtensionsConfigurations.key:
-                    //         QuillSharedExtensionsConfigurations(
-                    //       assetsPrefix: '666', // Defaults to `assets`
-                    //     ),
-                    //   },
-                    // ),
+                    sharedConfigurations: QuillSharedConfigurations(
+                      extraConfigurations: {
+                        QuillSharedExtensionsConfigurations.key:
+                            QuillSharedExtensionsConfigurations(
+                          assetsPrefix: '666', // Defaults to `assets`
+                        ),
+                      },
+                    ),
                     scrollable: true,
                     expands: false,
 
@@ -228,7 +235,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   }
 
   clickNewLevel(int index) async {
-    if (!noCreateDoc) {
+    if (hasDocID) {
       final res = await Http(gid: widget.gid, did: widget.id!)
           .putDoc(RequestPutDoc(level: index));
       if (res.isNotOK) {
@@ -251,13 +258,59 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     setState(() => isTitleSubmited = !isTitleSubmited);
   }
 
-  void backPage() async {
-    if (keepEditText &&
-        (keepTitleText) && // 控件中的文字是默认标题或原始标题
-        keepLevel) {
-      if (keepCRTime && keepConfig) {
-        print("文档内容无变化");
+  // 保存文档
+  Future<bool> saveDoc() async {
+    updateImage();
 
+    // 创建新文档
+    if (widget.id == null) {
+      final ret = await createDoc();
+      if (ret.isNotOK) {
+        print("创建文档失败");
+        return false;
+      }
+      setState(() {
+        id = ret.id;
+      });
+      return true;
+    }
+
+    // 更新现有文档
+    final ret = await updateDoc();
+    if (ret.isNotOK) {
+      print("更新文档失败");
+      return false;
+    }
+
+    return true;
+  }
+
+// 返回上一级页面
+  void backPage() async {
+    // 返回时既没有ID，也没有内容
+    if (!hasDocID && !hasContent) {
+      return Navigator.of(context).pop(nocreateDoc(failed: false));
+    }
+
+    // 文档内容有变化
+    if (!(keepEditText && keepTitleText && keepLevel)) {
+      bool ok = await saveDoc();
+      if (ok) {
+        log.i("保存成功");
+        if (mounted) {
+          return Navigator.of(context).pop(LastPageDoc(
+              state: widget.id == null ?LastPage.create:LastPage.change,
+              title: titleEdit.text,
+              content: getEditOrigin(),
+              plainText: getEditPlainText(),
+              level: level,
+              crtime: crtime,
+              uptime: widget.uptime,
+              config: config,
+              id: id));
+        }
+      } else {
+        log.e("保存失败");
         if (mounted) {
           return Navigator.of(context).pop(LastPageDoc(
               state: LastPage.nochange,
@@ -268,55 +321,39 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
               crtime: crtime,
               uptime: widget.uptime,
               config: config,
-              id: widget.id!));
-        }
-        print("文档内容无变化,配置有变化");
-
-        if (mounted) {
-          return Navigator.of(context).pop(LastPageDoc(
-              state: LastPage.changeConfig,
-              title: titleEdit.text,
-              content: widget.content,
-              plainText: getEditPlainText(),
-              level: widget.level,
-              crtime: crtime,
-              uptime: widget.uptime,
-              config: config,
-              id: widget.id!));
+              id: ""));
         }
       }
     }
 
-    // 有变化，更新文档
-    if (widget.id!.isNotEmpty) {
-      final req = RequestPutDoc(
-        plainText: getEditPlainText(),
-        content: getEditOrigin(),
-        title: titleEdit.text,
-      );
-
+    // 文档内容无变化
+    if (keepCRTime && keepConfig) {
       if (mounted) {
-        Navigator.of(context).pop(updateDoc(req));
+        return Navigator.of(context).pop(LastPageDoc(
+            state: LastPage.nochange,
+            title: titleEdit.text,
+            content: widget.content,
+            plainText: getEditPlainText(),
+            level: widget.level,
+            crtime: crtime,
+            uptime: widget.uptime,
+            config: config,
+            id: id));
       }
-      return;
-    }
-
-    // 没有创建文档
-    if (noCreateDoc) {
-      Navigator.of(context).pop(nocreateDoc(failed: false));
-    }
-
-    // 有变化，创建文档
-    final ret = await createDoc();
-    if (ret.state.isErr) {
+      // 文档内容无变化，配置有变化
+    } else {
       if (mounted) {
-        Msg.diy(context, "创建失败");
+        return Navigator.of(context).pop(LastPageDoc(
+            state: LastPage.changeConfig,
+            title: titleEdit.text,
+            content: widget.content,
+            plainText: getEditPlainText(),
+            level: widget.level,
+            crtime: crtime,
+            uptime: widget.uptime,
+            config: config,
+            id: id));
       }
-      return;
-    }
-
-    if (mounted) {
-      Navigator.of(context).pop(ret);
     }
   }
 
@@ -326,11 +363,23 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
         MaterialPageRoute(
             builder: (context) => DocSetting(
                 gid: widget.gid,
-                did: widget.id!,
+                did: widget.id,
                 crtime: widget.crtime,
                 config: config)));
     switch (ret.state) {
       case LastPage.change:
+        if (widget.id != null) {
+          final req = RequestPutDoc(
+              crtime: ret.crtime,
+              config: DocConfigration(isShowTool: config.isShowTool));
+          final res = await Http(gid: widget.gid, did: widget.id!).putDoc(req);
+          if (res.isOK) {
+            // Navigator.of(context).pop()
+            print("更新配置错误");
+            break;
+          }
+        }
+
         setState(() {
           if (ret.crtime != null) {
             crtime = ret.crtime!;
@@ -372,7 +421,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     );
   }
 
-  Future<LastPageDoc> createDoc() async {
+  Future<ResponsePostDoc> createDoc() async {
     final req = RequestPostDoc(
       content: getEditOrigin(),
       plainText: getEditPlainText(),
@@ -382,48 +431,43 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
       config: config,
     );
     final ret = await Http(gid: widget.gid).postDoc(req);
-    if (ret.isNotOK) {
-      return nocreateDoc(failed: true);
-    }
-    return LastPageDoc(
-      state: LastPage.create,
-      content: getEditOrigin(),
-      plainText: getEditPlainText(),
-      id: ret.id,
-      title: titleEdit.text,
-      level: level,
-      crtime: req.crtime,
-      uptime: crtime,
-      config: config,
-    );
+    return ret;
   }
 
-  Future<LastPageDoc> updateDoc(RequestPutDoc req) async {
-    final res = await Http(gid: widget.gid, did: widget.id!).putDoc(req);
-    if (res.isNotOK) {
-      return LastPageDoc(
-        state: LastPage.nochange,
-        content: widget.content,
-        plainText: getEditPlainText(),
-        id: widget.id!,
-        title: widget.title,
-        level: widget.level,
-        crtime: widget.crtime,
-        uptime: widget.uptime,
-        config: config,
-      );
-    }
-    return LastPageDoc(
-      state: LastPage.change,
-      content: getEditOrigin(),
+  Future<ResponsePutDoc> updateDoc() async {
+    final req = RequestPutDoc(
       plainText: getEditPlainText(),
-      id: widget.id!,
+      content: getEditOrigin(),
       title: titleEdit.text,
       level: level,
-      crtime: crtime,
-      uptime: req.uptime,
-      config: config,
     );
+
+    final res = await Http(gid: widget.gid, did: widget.id!).putDoc(req);
+    return res;
+    // if (res.isNotOK) {
+    //   return LastPageDoc(
+    //     state: LastPage.nochange,
+    //     content: widget.content,
+    //     plainText: getEditPlainText(),
+    //     id: widget.id!,
+    //     title: widget.title,
+    //     level: widget.level,
+    //     crtime: widget.crtime,
+    //     uptime: widget.uptime,
+    //     config: config,
+    //   );
+    // }
+    // return LastPageDoc(
+    //   state: LastPage.change,
+    //   content: getEditOrigin(),
+    //   plainText: getEditPlainText(),
+    //   id: widget.id!,
+    //   title: titleEdit.text,
+    //   level: level,
+    //   crtime: crtime,
+    //   uptime: req.uptime,
+    //   config: config,
+    // );
   }
 
   void exportDoc() async {
@@ -451,7 +495,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     }
 
     File file = File(outputFile);
-    await file.writeAsString(getEditOrigin());
+    await file.writeAsString(getEditPlainText());
     print("文件已保存：${file.path}");
   }
 
@@ -482,22 +526,39 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     return ret ?? -1; // 如果用户没有点击按钮，则默认为 false
   }
 
-  String getEditOrigin() {
-    return jsonEncode(edit.document.toDelta().toJson());
+  void updateImage() async {
+    List<Operation> ops = edit.document.toDelta().toList();
+
+    for (Operation op in ops) {
+      if (!(op.isInsert && op.value is Embed && op.value.type == 'image')) {
+        continue;
+      }
+      String base64Image = op.value.data;
+      String name = UUID.create;
+      print("发现需要更替的图片");
+
+      if (base64Image.startsWith("data:image/png;base64,")) {
+        base64Image.replaceFirst("data:image/png;base64,", "");
+        name += ".png";
+      } else if (base64Image.startsWith("data:image/jpg;base64,")) {
+        base64Image.replaceFirst("data:image/jpg;base64,", "");
+        name += ".jpg";
+      } else {
+        continue;
+      }
+      print("图片更替");
+      Uint8List bytes = base64Decode(base64Image);
+
+      ResponsePostImage res =
+          await Http().postImage(RequestPostImage(name: name, data: bytes));
+      if (!res.ok) {
+        log.e('创建图片失败');
+        return;
+      }
+      op.value.data = "http://${Settings().getServerAddress()}/image/$name";
+      // 现在你可以使用 imageBytes 了
+    }
   }
-
-  // void updateImage() {
-  //   List<Operation> ops = edit.document.toDelta().toList();
-
-  //   for (Operation op in ops) {
-  //     if (!(op.isInsert && op.value is Embed && op.value.type == 'image')) {
-  //       continue;
-  //     }
-  //     String base64Image = op.value.data;
-  //     Uint8List imageBytes = base64Decode(base64Image);
-  //     // 现在你可以使用 imageBytes 了
-  //   }
-  // }
 
   Future<void> dialogSelectImage(
       BuildContext context, QuillController edit) async {
@@ -544,35 +605,24 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
       return;
     }
     final File imageFile = File(image.path);
-    // ... 使用 imageFile 显示图片
     final String extension = p.extension(imageFile.path);
-    String name = UUID.create;
     final bytes = await imageFile.readAsBytes();
-
+    final String data;
     if (extension == '.jpg' ||
         extension == '.jpeg' ||
         extension == '.JPG' ||
         extension == '.JPEG') {
-      name += ".jpg";
-      print("图片类型jpg");
+      data = "data:image/png;base64,${base64Encode(bytes)}";
     } else if (extension == '.png' || extension == '.PNG') {
-      name += ".png";
-      print("图片类型png");
+      data = "data:image/png;base64,${base64Encode(bytes)}";
     } else {
       print('其他文件类型');
       return;
     }
-    ResponsePostImage res =
-        await Http().postImage(RequestPostImage(name: name, data: bytes));
-    if (!res.ok) {
-      log.e('创建图片失败');
-      return;
-    }
 
-    // 地址使用
-    // [{"insert":{"image":"dataUrl"}}]",
-    edit.insertImageBlock(
-        imageSource: "http://${Settings().getServerAddress()}/image/$name");
+    // 优化点
+    // 先插入为base64，保存文档时，修改为url
+    edit.insertImageBlock(imageSource: data);
 
 // Capture a photo.
     // final XFile? photo = await picker.pickImage(source: ImageSource.camera);
@@ -593,6 +643,18 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
 
 // Pick multiple images and videos.
     // final List<XFile> medias = await picker.pickMultipleMedia();
+  }
+
+  String getEditOrigin() {
+    return jsonEncode(edit.document.toDelta().toJson());
+  }
+
+  bool isEditorEmpty() {
+    String g = jsonEncode(edit.document.toDelta().toJson());
+    if (g.isEmpty) {
+      return true;
+    }
+    return g != "[{\"insert\":\"\n\"}]";
   }
 
   String getEditPlainText() {

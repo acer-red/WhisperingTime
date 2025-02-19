@@ -3,8 +3,8 @@ import 'package:whispering_time/http.dart';
 import 'package:whispering_time/env.dart';
 
 class DocConfigration {
-  bool ? isShowTool;
-  DocConfigration({ this.isShowTool});
+  bool? isShowTool;
+  DocConfigration({this.isShowTool});
   //to json
   Map<String, dynamic> toJson() {
     return {
@@ -15,7 +15,7 @@ class DocConfigration {
 
 class DocSetting extends StatefulWidget {
   final String gid;
-  final String did;
+  final String? did;
   final DocConfigration config;
   final DateTime crtime;
   DocSetting(
@@ -75,7 +75,8 @@ class _DocSetting extends State<DocSetting> {
               ),
             ),
             SwitchListTile(
-                title: const Text('隐藏工具栏'),
+                title: const Text('显示工具栏'),
+                subtitle: const Text('含图片上传'),
                 value: isShowTool,
                 onChanged: (bool value) => setTool(value)),
             ElevatedButton(
@@ -99,11 +100,14 @@ class _DocSetting extends State<DocSetting> {
 
   setTool(bool value) async {
     isChange = true;
-    final res = await Http(gid: widget.gid, did: widget.did)
-        .putDoc(RequestPutDoc(config: DocConfigration(isShowTool: value)));
-    if (res.isNotOK) {
-      return;
+    if (widget.did != null) {
+      final res = await Http(gid: widget.gid, did: widget.did)
+          .putDoc(RequestPutDoc(config: DocConfigration(isShowTool: value)));
+      if (res.isNotOK) {
+        return;
+      }
     }
+
     setState(() {
       isShowTool = value;
     });
@@ -177,6 +181,11 @@ class _DocSetting extends State<DocSetting> {
       print(crtime.toString());
       if (widget.crtime != crtime) {
         isChange = true;
+        // 如果这个设置页面并没有id（发生在未上传到服务器时打开设置页面）
+        // 则退出
+        if (widget.did == null) {
+          return;
+        }
         final res = await Http(gid: widget.gid, did: widget.did)
             .putDoc(RequestPutDoc(crtime: crtime));
         if (res.isNotOK) {
