@@ -67,8 +67,8 @@ class _GroupPage extends State<GroupPage> {
   int gidx = 0;
   int viewType = 0;
   bool isGrouTitleSubmitted = true;
-  String mon = DateFormat('MMMM yyyy').format(DateTime.now());
   TextEditingController groupTitleEdit = TextEditingController();
+  DateTime pickedDate = DateTime.now();
 
   /// 分级选项
   /// true: 单选
@@ -85,7 +85,7 @@ class _GroupPage extends State<GroupPage> {
     return Scaffold(
       key: _scaffoldKey,
 
-      // 页面标题栏
+      // 顶部 页面标题栏
       appBar: AppBar(
           // 标题左侧的按钮
           leading: IconButton(
@@ -107,17 +107,6 @@ class _GroupPage extends State<GroupPage> {
                   icon: Icon(Icons.arrow_drop_down)),
             ],
           ),
-          bottom: viewType != 1
-              ? null
-              : PreferredSize(
-                  preferredSize: Size.fromHeight(40),
-                  child: Container(
-                    alignment: Alignment.center,
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: TextButton(
-                        onPressed: () => chooseDate(), child: Text(mon)),
-                  ),
-                ),
 
           // 标题右侧的按钮
           actions: <Widget>[
@@ -138,20 +127,18 @@ class _GroupPage extends State<GroupPage> {
                 PopupMenuItem(
                   child: Text('设置'),
                   onTap: () {
-                    clickSetting();
+                    enterSetting();
                   },
                 ),
                 PopupMenuItem(
                   child: Text('测试'),
-                  onTap: () {
-                    print(viewType);
-                  },
+                  onTap: () {},
                 ),
               ],
             ),
           ]),
 
-      // 左侧抽屉 分组列表
+      // 左侧 分组列表
       drawer: Drawer(
         child: Column(children: [
           // 分组列表内容
@@ -174,12 +161,9 @@ class _GroupPage extends State<GroupPage> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               IconButton(
-                icon: const Icon(Icons.add), // 使用 const
+                icon: const Icon(Icons.add),
                 onPressed: () {
-                  setState(() {
-                    _gitems.add(
-                        Group(name: "", id: "", overtime: Time.getOverDay()));
-                  });
+                  clickAddGroup();
                 },
               ),
             ],
@@ -187,13 +171,13 @@ class _GroupPage extends State<GroupPage> {
         ]),
       ),
 
-      // 悬浮按钮 - 添加印迹
+      // 右下 悬浮按钮 - 添加印迹
       floatingActionButton: FloatingActionButton(
-        onPressed: clickNewEdit,
+        onPressed: enterDocBlank,
         child: Icon(Icons.add),
       ),
 
-      // 主体内容
+      // 中间 主体内容
       body: SafeArea(
         child: Center(
           child: Column(
@@ -222,83 +206,8 @@ class _GroupPage extends State<GroupPage> {
               // 印迹主体
               Expanded(
                 child: IndexedStack(index: viewType, children: [
-                  // 卡片模式
-                  ListView.builder(
-                      itemCount: _ditems.length,
-                      itemBuilder: (context, index) {
-                        final item = _ditems[index];
-                        return InkWell(
-                          onTap: () => clickCard(index),
-                          child: Card(
-                            // 阴影大小
-                            elevation: 5,
-                            // 圆角
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15.0),
-                            ),
-                            // 外边距
-                            margin: EdgeInsets.symmetric(
-                                horizontal: 25, vertical: 10),
-                            // 内容
-                            child: Padding(
-                              padding: EdgeInsets.all(16.0), // 内边距
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min, // 确保Card包裹内容
-                                // 内容左对齐
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  Center(
-                                    child: Text(
-                                      Level.l[item.level],
-                                      style: TextStyle(
-                                          fontSize: 12,
-                                          color: Color(
-                                              Colors.grey.shade600.value)),
-                                    ),
-                                  ),
-
-                                  // 印迹标题
-                                  Visibility(
-                                    visible: item.title.isNotEmpty ||
-                                        (item.title.isEmpty &&
-                                            !Settings().getVisualNoneTitle()),
-                                    child: ListTile(
-                                      title: Text(item.title,
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold)),
-                                    ),
-                                  ),
-
-                                  // 印迹具体内容
-                                  Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: Text(
-                                      item.plainText.trimRight(),
-                                      style: TextStyle(color: Colors.grey[700]),
-                                    ),
-                                  ),
-
-                                  // 创建时间
-                                  Center(
-                                    child: Text(
-                                      Time.string(item.crtime),
-                                      style: TextStyle(
-                                          fontSize: 12,
-                                          color: Color(
-                                              Colors.grey.shade600.value)),
-                                    ),
-                                  )
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
-
-                  // 日历模式
-                  CalendarScreen(
-                    items: _ditems,
-                  )
+                  screenCard(),
+                  screenCalendar(),
                 ]),
               ),
             ],
@@ -308,8 +217,248 @@ class _GroupPage extends State<GroupPage> {
     );
   }
 
+  // 卡片模式
+  Widget screenCard() {
+    return ListView.builder(
+        itemCount: _ditems.length,
+        itemBuilder: (context, index) {
+          final item = _ditems[index];
+          return InkWell(
+            onTap: () => enterDoc(index),
+            child: Card(
+              // 阴影大小
+              elevation: 5,
+              // 圆角
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+              // 外边距
+              margin: EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+              // 内容
+              child: Padding(
+                padding: EdgeInsets.all(16.0), // 内边距
+                child: Column(
+                  mainAxisSize: MainAxisSize.min, // 确保Card包裹内容
+                  // 内容左对齐
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Center(
+                      child: Text(
+                        Level.l[item.level],
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: Color(Colors.grey.shade600.value)),
+                      ),
+                    ),
+
+                    // 印迹标题
+                    Visibility(
+                      visible: item.title.isNotEmpty ||
+                          (item.title.isEmpty &&
+                              !Settings().getVisualNoneTitle()),
+                      child: ListTile(
+                        title: Text(item.title,
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+
+                    // 印迹具体内容
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        item.plainText.trimRight(),
+                        style: TextStyle(color: Colors.grey[700]),
+                      ),
+                    ),
+
+                    // 创建时间
+                    Center(
+                      child: Text(
+                        Time.string(item.crtime),
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: Color(Colors.grey.shade600.value)),
+                      ),
+                    )
+                  ],
+                ),
+              ),
+            ),
+          );
+        });
+  }
+
+  // 日历模式
+  Widget screenCalendar() {
+    DateTime currentDate = DateTime.now();
+
+    // 获取当月的天数
+    int daysInMonth = DateTime(currentDate.year, currentDate.month + 1, 0).day;
+
+    // 获取当月的第一天是星期几 (星期一为1，星期天为7)
+    int firstWeekdayOfMonth =
+        DateTime(currentDate.year, currentDate.month, 1).weekday;
+
+    // 计算需要多少行来显示整个月的日历
+    // +1 表示新增一行，用来放星期
+    int totalRows = ((daysInMonth + firstWeekdayOfMonth - 1) / 7).ceil();
+    int totalitems = totalRows * 7;
+
+    String getWeekString(int index) {
+      switch (index) {
+        case 0:
+          return "周一";
+        case 1:
+          return "周二";
+        case 2:
+          return "周三";
+        case 3:
+          return "周四";
+        case 4:
+          return "周五";
+        case 5:
+          return "周六";
+        default:
+          return "周日";
+      }
+    }
+
+    chooseDate() async {
+      DateTime? d = await Time.datePacker(context);
+      if (d == null) {
+        return;
+      }
+
+      setState(() {
+        pickedDate = d;
+      });
+      setDocs(year: pickedDate.year, month: pickedDate.month);
+    }
+
+    Widget dateTitle() {
+      return TextButton(
+          onPressed: () => chooseDate(),
+          child: Text(DateFormat('yyyy MMMM').format(pickedDate)));
+    }
+
+    Widget grid(bool istoday, int dayNumber, Function onTap) {
+      return GestureDetector(
+        onTap: () => onTap,
+        child: Align(
+          alignment: Alignment.center,
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min, // 让 Column 垂直方向大小包裹内容
+              crossAxisAlignment: CrossAxisAlignment.center, // 水平方向居中对齐
+              children: <Widget>[
+                Text(
+                  "$dayNumber",
+                  style: TextStyle(
+                      fontSize: 18,
+                      color: istoday ? Colors.blue : Colors.black,
+                      fontWeight: istoday ? FontWeight.w700 : FontWeight.w400),
+                ),
+                Icon(
+                  Icons.star_rounded,
+                  size: 10,
+                  color: Colors.blue,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    Widget gridNoFlag(bool istoday, int dayNumber) {
+      return GestureDetector(
+        child: Align(
+          alignment: Alignment.center,
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min, // 让 Column 垂直方向大小包裹内容
+              crossAxisAlignment: CrossAxisAlignment.center, // 水平方向居中对齐
+              children: <Widget>[
+                Text(
+                  "$dayNumber",
+                  style: TextStyle(
+                      fontSize: 18,
+                      color: istoday ? Colors.blue : Colors.black,
+                      fontWeight: istoday ? FontWeight.w700 : FontWeight.w400),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Center(
+      child: SizedBox(
+        width: MediaQuery.of(context).size.width * 0.8,
+        child: Column(
+          children: [
+            // 当前日期
+            dateTitle(),
+            // 星期
+            SizedBox(
+              height: 60,
+              child: GridView.builder(
+                  physics: NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 7, // 7列，代表一周的7天
+                    childAspectRatio: 2.0, // 单元格宽高比
+                  ),
+                  // 总的单元格数量
+                  itemCount: 7,
+                  itemBuilder: (context, index) {
+                    // 构建 星期
+                    return Align(
+                        alignment: Alignment.center,
+                        child: Text(getWeekString(index)));
+                  }),
+            ),
+            // 数字日期
+            Expanded(
+              child: GridView.builder(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 7, // 7列，代表一周的7天
+                  childAspectRatio: 1.0, // 单元格宽高比
+                ),
+                // 总的单元格数量
+                itemCount: totalitems,
+                itemBuilder: (context, index) {
+                  // 计算当前单元格对应的日期
+                  int dayNumber = index - firstWeekdayOfMonth + 2;
+
+                  // 如果dayNumber在有效日期范围内，显示日期；否则显示空单元格
+                  if (!(dayNumber > 0 && dayNumber <= daysInMonth)) {
+                    return Container(); // 空单元格
+                  }
+                  bool istoday = dayNumber == DateTime.now().day &&
+                      pickedDate.month == DateTime.now().month &&
+                      pickedDate.year == DateTime.now().year;
+
+                  // print("${pickedDate.year} ${pickedDate.month} ${dayNumber}");
+
+                  for (int i = 0; i < _ditems.length; i++) {
+                    if (index - firstWeekdayOfMonth + 2 ==
+                        _ditems[i].crtime.day) {
+                      return grid(istoday, dayNumber, () => enterDoc(i));
+                    }
+                  }
+                  return gridNoFlag(istoday, dayNumber);
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   /// 点击设置按钮，进入设置页面
-  clickSetting() async {
+  enterSetting() async {
     if (_gitems.isEmpty) {
       return;
     }
@@ -325,13 +474,20 @@ class _GroupPage extends State<GroupPage> {
           content: SingleChildScrollView(
             child: ListBody(
               children: <Widget>[
-                // 样式选择 - 卡片、日历
                 Row(
                   children: [
                     Expanded(child: Text("样式")),
                     Dropdown(
                       value: viewType,
                       onValueChanged: (int value) {
+                        DateTime currentDate = DateTime.now();
+                        if (value == 1) {
+                          setDocs(
+                              year: currentDate.year, month: currentDate.month);
+                        } else {
+                          setDocs();
+                        }
+
                         setState(() {
                           viewType = value;
                         });
@@ -441,8 +597,8 @@ class _GroupPage extends State<GroupPage> {
     );
   }
 
-  /// 点击新增按钮，进入文档编辑页面
-  clickNewEdit() async {
+  /// 点击新增按钮，进入空白文档的编辑页面
+  enterDocBlank() async {
     Group item = _gitems[gidx];
 
     if (item.isFreezedOrBuf()) {
@@ -490,7 +646,7 @@ class _GroupPage extends State<GroupPage> {
   }
 
   /// 点击卡片按钮，进入文档编辑页面
-  clickCard(int index) async {
+  enterDoc(int index) async {
     Group group = _gitems[gidx];
     Doc doc = _ditems[index];
     final LastPageDoc ret = await Navigator.push(
@@ -515,7 +671,6 @@ class _GroupPage extends State<GroupPage> {
           _ditems.removeAt(index);
           break;
         case LastPage.change:
-          // print("${ret.level }${_ditems[index].level}");
           if (!isContainSelectLevel(ret.level)) {
             _ditems.removeAt(index);
             break;
@@ -713,11 +868,11 @@ class _GroupPage extends State<GroupPage> {
   }
 
   /// 更新当前分组下的文档列表
-  setDocs() async {
+  setDocs({int? year, int? month}) async {
     if (_gitems.isEmpty) {
       return;
     }
-    final ret = await Http(gid: _gitems[gidx].id).getDocs();
+    final ret = await Http(gid: _gitems[gidx].id).getDocs(year, month);
     setState(() {
       if (_ditems.isNotEmpty) {
         _ditems.clear();
@@ -790,8 +945,6 @@ class _GroupPage extends State<GroupPage> {
   }
 
   getGroupList() async {
-    print("获取分组");
-
     final res = await Http(tid: widget.tid).getGroups();
     if (res.isNotOK) {
       if (mounted) {
@@ -816,17 +969,6 @@ class _GroupPage extends State<GroupPage> {
       groupTitleEdit.text = res.data[gidx].name;
     });
     setDocs();
-  }
-
-  chooseDate() async {
-    DateTime? pickedDate = await Time.datePacker(context);
-    if (pickedDate == null) {
-      return;
-    }
-    String ret = DateFormat('yyyy MMMM').format(pickedDate);
-    setState(() {
-      mon = ret;
-    });
   }
 }
 
@@ -868,159 +1010,6 @@ class _Dropdown extends State<Dropdown> {
           child: Text(value),
         );
       }).toList(),
-    );
-  }
-}
-
-// 日历
-class CalendarScreen extends StatefulWidget {
-  final List<Doc> items;
-
-  CalendarScreen({Key? key, required this.items}) : super(key: key);
-
-  @override
-  State<CalendarScreen> createState() => _CalendarScreen();
-}
-
-class _CalendarScreen extends State<CalendarScreen> {
-  DateTime _currentDate = DateTime.now();
-
-  @override
-  Widget build(BuildContext context) {
-    return _buildCalendarGrid();
-  }
-
-  Widget _buildCalendarGrid() {
-    // 获取当月的天数
-    int daysInMonth =
-        DateTime(_currentDate.year, _currentDate.month + 1, 0).day;
-
-    // 获取当月的第一天是星期几 (星期一为1，星期天为7)
-    int firstWeekdayOfMonth =
-        DateTime(_currentDate.year, _currentDate.month, 1).weekday;
-
-    // 计算需要多少行来显示整个月的日历
-    // +1 表示新增一行，用来放星期
-    int totalRows = ((daysInMonth + firstWeekdayOfMonth - 1) / 7).ceil() + 1;
-
-    // 构建一个7列的网格
-    return GridView.builder(
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 7, // 7列，代表一周的7天
-        childAspectRatio: 1.0, // 单元格宽高比
-      ),
-      itemCount: totalRows * 7, // 总的单元格数量
-      itemBuilder: (context, index) {
-        // 构建 星期
-        if (index < 7) {
-          return _buildWeek(index);
-        }
-
-        index -= 7;
-
-        // 计算当前单元格对应的日期
-        int dayNumber = index - firstWeekdayOfMonth + 2;
-
-        // 如果dayNumber在有效日期范围内，显示日期；否则显示空单元格
-        if (!(dayNumber > 0 && dayNumber <= daysInMonth)) {
-          return Container(); // 空单元格
-        }
-        DateTime currentDate =
-            DateTime(_currentDate.year, _currentDate.month, dayNumber);
-
-        return _buildDate(currentDate);
-      },
-    );
-  }
-
-  Widget _buildWeek(int index) {
-    String week;
-    switch (index) {
-      case 0:
-        week = "周一";
-        break;
-      case 1:
-        week = "周二";
-        break;
-      case 2:
-        week = "周三";
-        break;
-      case 3:
-        week = "周四";
-        break;
-      case 4:
-        week = "周五";
-        break;
-      case 5:
-        week = "周六";
-        break;
-      default:
-        week = "周日";
-        break;
-    }
-    return Container(
-      margin: EdgeInsets.all(1.0),
-      decoration: BoxDecoration(
-        border: null,
-        borderRadius: BorderRadius.circular(8.0),
-        color: null,
-      ),
-      alignment: Alignment.center,
-      child: Text(week),
-    );
-  }
-
-  Widget _buildDate(DateTime date) {
-    bool isToday = date.day == DateTime.now().day &&
-        date.month == DateTime.now().month &&
-        date.year == DateTime.now().year;
-
-    return GestureDetector(
-      onTap: () {
-        _showDateDetailsDialog(date);
-      },
-      child: Container(
-        margin: EdgeInsets.all(1.0),
-        decoration: BoxDecoration(
-          border: null,
-          borderRadius: BorderRadius.circular(8.0),
-          color: null,
-        ),
-        alignment: Alignment.center,
-        child: isToday
-            ? Text(
-                "${date.day}",
-                style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.blue,
-                    fontWeight: FontWeight.w700),
-              )
-            : Text(
-                "${date.day}",
-                style: TextStyle(fontSize: 18),
-              ),
-      ),
-    );
-  }
-
-  void _showDateDetailsDialog(DateTime date) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(DateFormat('yyyy-MM-dd').format(date)),
-          content:
-              Text('这里可以添加 ${DateFormat('yyyy-MM-dd').format(date)} 的详细信息。'),
-          actions: [
-            TextButton(
-              child: Text('关闭'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
     );
   }
 }

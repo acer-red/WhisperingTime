@@ -5,7 +5,6 @@ import 'package:whispering_time/env.dart';
 class DocConfigration {
   bool? isShowTool;
   DocConfigration({this.isShowTool});
-  //to json
   Map<String, dynamic> toJson() {
     return {
       'is_show_tool': isShowTool,
@@ -43,6 +42,7 @@ class _DocSetting extends State<DocSetting> {
   void initState() {
     super.initState();
     isShowTool = widget.config.isShowTool!;
+    crtime = widget.crtime;
   }
 
   @override
@@ -68,7 +68,7 @@ class _DocSetting extends State<DocSetting> {
                     style: TextStyle(fontSize: 16),
                   ),
                   TextButton(
-                    onPressed: () => setUpdateTime(),
+                    onPressed: () => setCRTime(),
                     child: Text(Time.string(crtime)),
                   ),
                 ],
@@ -116,14 +116,14 @@ class _DocSetting extends State<DocSetting> {
   Future<TimeOfDay?> timePicker(BuildContext context) {
     return showTimePicker(
       context: context,
-      initialTime: TimeOfDay.fromDateTime(crtime), // 如果没有选择过时间，则使用当前时间
+      initialTime: TimeOfDay.fromDateTime(widget.crtime), // 如果没有选择过时间，则使用当前时间
     );
   }
 
   Future<DateTime?> datePicker(BuildContext context) {
     return showDatePicker(
       context: context,
-      initialDate: crtime,
+      initialDate: widget.crtime,
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
       locale: const Locale('zh'),
@@ -134,7 +134,6 @@ class _DocSetting extends State<DocSetting> {
     if (!isChange) {
       return Navigator.of(context).pop(LastPageDocSetting(state: LastPage.ok));
     }
-
     return Navigator.of(context).pop(LastPageDocSetting(
         state: LastPage.change,
         crtime: crtime,
@@ -156,41 +155,45 @@ class _DocSetting extends State<DocSetting> {
     }
   }
 
-  setUpdateTime() async {
+  setCRTime() async {
     DateTime? pickedDate = await datePicker(context);
+    pickedDate ??= crtime;
 
     if (mounted) {
-      TimeOfDay? pickedtime = await timePicker(context);
+      TimeOfDay? pickedTime = await timePicker(context);
 
-      pickedDate ??= crtime;
-      if (pickedtime == null) {
-        crtime = pickedDate;
+      if (pickedTime == null) {
+        pickedDate = DateTime(crtime.year, crtime.month, crtime.day,
+            crtime.hour, crtime.minute, 0);
       } else {
-        crtime = DateTime(
+        pickedDate = DateTime(
           pickedDate.year,
           pickedDate.month,
           pickedDate.day,
-          pickedtime.hour,
-          pickedtime.minute,
+          pickedTime.hour,
+          pickedTime.minute,
           0, // 秒
         );
       }
 
-      setState(() {});
+      if (crtime == pickedDate) {
+        return;
+      }
+      isChange = true;
 
-      print(crtime.toString());
-      if (widget.crtime != crtime) {
-        isChange = true;
-        // 如果这个设置页面并没有id（发生在未上传到服务器时打开设置页面）
-        // 则退出
-        if (widget.did == null) {
-          return;
-        }
-        final res = await Http(gid: widget.gid, did: widget.did)
-            .putDoc(RequestPutDoc(crtime: crtime));
-        if (res.isNotOK) {
-          return;
-        }
+      setState(() {
+        crtime = pickedDate!;
+      });
+
+      // 如果这个设置页面并没有id（发生在未上传到服务器时打开设置页面）
+      // 则退出
+      if (widget.did == null) {
+        return;
+      }
+      final res = await Http(gid: widget.gid, did: widget.did)
+          .putDoc(RequestPutDoc(crtime: pickedDate));
+      if (res.isNotOK) {
+        return;
       }
     }
   }

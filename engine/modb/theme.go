@@ -26,7 +26,7 @@ type RequestThemePut struct {
 type RequestThemePostDefaultGroup struct {
 	Name     string `json:"name"`
 	CRTime   string `json:"crtime"`
-	Overtime string `json:"overtime"`
+	OverTime string `json:"overtime"`
 }
 
 type RequestThemePost struct {
@@ -211,7 +211,7 @@ func ThemeCreate(uoid primitive.ObjectID, req *RequestThemePost) (primitive.Obje
 	theme := bson.D{
 		{Key: "_uid", Value: uoid},
 		{Key: "name", Value: req.Data.Name},
-		{Key: "crtime", Value: req.Data.CRTime},
+		{Key: "crtime", Value: sys.StringtoTime(req.Data.CRTime)},
 		{Key: "tid", Value: tid},
 	}
 	ret, err := db.Collection("theme").InsertOne(context.TODO(), theme)

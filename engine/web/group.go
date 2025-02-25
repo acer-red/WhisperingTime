@@ -40,8 +40,7 @@ func GroupsGet(g *gin.Context) {
 		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
 		return
 	}
-
-	g.JSON(http.StatusOK, msgOK().setData(response))
+	okData(g, response)
 }
 
 func GroupIDGet(g *gin.Context) {
@@ -51,7 +50,6 @@ func GroupIDGet(g *gin.Context) {
 
 	response, err := modb.GroupGet(toid, goid)
 	if err != nil {
-		log.Error(err)
 		internalServerError(g)
 		return
 	}
@@ -70,14 +68,12 @@ func GroupPost(g *gin.Context) {
 
 	var req modb.RequestGroupPost
 	if err := g.ShouldBindBodyWithJSON(&req); err != nil {
-		log.Error(err)
 		badRequest(g)
 		return
 	}
 
 	id, err := modb.GroupPost(toid, &req)
 	if err != nil {
-		log.Error(err)
 		internalServerError(g)
 		return
 	}
@@ -92,13 +88,11 @@ func GroupIDPut(g *gin.Context) {
 	var req modb.RequestGroupPut
 
 	if err := g.ShouldBindBodyWithJSON(&req); err != nil {
-		log.Error(err)
 		badRequest(g)
 		return
 	}
 
 	if err := modb.GroupPut(toid, goid, &req); err != nil {
-		log.Error(err)
 		internalServerError(g)
 		return
 	}
@@ -113,7 +107,6 @@ func GroupIDDelete(g *gin.Context) {
 
 	err := modb.GroupDeleteOne(toid, goid)
 	if err != nil {
-		log.Error(err)
 		internalServerError(g)
 		return
 	}

@@ -18,7 +18,7 @@ enum LastPage {
 }
 
 extension LastPageMethods on LastPage {
-  bool get isErr  => this == LastPage.err;
+  bool get isErr => this == LastPage.err;
 }
 
 const String defaultGroupName = "默认分组";
@@ -139,9 +139,11 @@ class Settings {
     return _prefs?.setBool(key, value) ?? Future.value(false);
   }
 }
-class UUID{
-  static String get  create => Uuid().v7().replaceAll("-", "");
+
+class UUID {
+  static String get create => Uuid().v7().replaceAll("-", "");
 }
+
 class Time {
   static DateTime datetime(String t) {
     if (t.isEmpty) {
@@ -157,6 +159,15 @@ class Time {
     return formatter.format(t);
   }
 
+  static DateTime stringToTime(String t) {
+    DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
+    // 获取北京时区
+    // tz.Location beijing = tz.getLocation('Asia/Shanghai');
+    // 将 UTC 时间转换为北京时间
+    // DateTime beijingTime = tz.TZDateTime.from(utcTime, beijing);
+    return formatter.parse(t, false);
+  }
+
   static String nowTimestampString() {
     return (DateTime.now().millisecondsSinceEpoch / 1000).round().toString();
   }
@@ -166,7 +177,7 @@ class Time {
   }
 
   static DateTime getForver() {
-    return DateTime.now().add(const Duration(days: 9999999));
+    return DateTime.now().add(const Duration(days: 36500));
   }
 
   // 定格时间设置
@@ -187,11 +198,10 @@ class Time {
       locale: const Locale('zh'),
     );
   }
+
   static String getCurrentTime() {
-
-  return DateFormat('yyyy年MM月dd日HH时mm分ss秒').format(DateTime.now());
-}
-
+    return DateFormat('yyyy年MM月dd日HH时mm分ss秒').format(DateTime.now());
+  }
 }
 
 class MyDialog {

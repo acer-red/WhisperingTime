@@ -3,7 +3,9 @@ package modb
 import (
 	"context"
 	"sys"
+	"time"
 
+	"github.com/tengfei-xy/go-log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -38,6 +40,7 @@ type RequestDocPut struct {
 }
 
 func DocsGet(goid primitive.ObjectID) ([]Doc, error) {
+	log.Infof("获取全部文档")
 	var results []Doc
 
 	filter := bson.D{
@@ -46,19 +49,80 @@ func DocsGet(goid primitive.ObjectID) ([]Doc, error) {
 
 	cursor, err := db.Collection("doc").Find(context.TODO(), filter)
 	if err != nil {
+		log.Error(err)
 		return nil, err
 	}
 
 	for cursor.Next(context.TODO()) {
-		var result Doc
-		err := cursor.Decode(&result)
+		var m bson.M
+		err := cursor.Decode(&m)
 		if err != nil {
+			log.Error(err)
 			return nil, err
 		}
-		results = append(results, result)
+		results = append(results, Doc{
+			Title:     m["title"].(string),
+			Content:   m["content"].(string),
+			PlainText: m["plain_text"].(string),
+			Level:     int(m["level"].(int32)),
+			CRTime:    m["crtime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
+			UPTime:    m["uptime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
+			Config: &config{
+				IsShowTool: m["config"].(bson.M)["is_show_tool"].(bool),
+			},
+			ID: m["did"].(string),
+		})
 	}
 
 	if err := cursor.Err(); err != nil {
+		log.Error(err)
+		return nil, err
+	}
+
+	return results, nil
+}
+func DocsGetWithDate(goid primitive.ObjectID, yyyy int, mm int) ([]Doc, error) {
+	log.Infof("获取全部文档含日期")
+
+	var results []Doc
+
+	filter := bson.D{
+		{Key: "_goid", Value: goid},
+		{Key: "crtime", Value: bson.M{
+			"$gte": time.Date(yyyy, time.Month(mm), 1, 0, 0, 0, 0, time.Local),
+			"$lt":  time.Date(yyyy, time.Month(mm+1), 1, 0, 0, 0, 0, time.Local),
+		}},
+	}
+
+	cursor, err := db.Collection("doc").Find(context.TODO(), filter)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+
+	for cursor.Next(context.TODO()) {
+		var m bson.M
+		err := cursor.Decode(&m)
+		if err != nil {
+			log.Error(err)
+			return nil, err
+		}
+		results = append(results, Doc{
+			Title:     m["title"].(string),
+			Content:   m["content"].(string),
+			PlainText: m["plain_text"].(string),
+			Level:     int(m["level"].(int32)),
+			CRTime:    m["crtime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
+			UPTime:    m["uptime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
+			Config: &config{
+				IsShowTool: m["config"].(bson.M)["is_show_tool"].(bool),
+			},
+			ID: m["did"].(string),
+		})
+	}
+
+	if err := cursor.Err(); err != nil {
+		log.Error(err)
 		return nil, err
 	}
 
@@ -74,7 +138,8 @@ func DocPost(goid primitive.ObjectID, req *RequestDocPost) (string, error) {
 		{Key: "content", Value: (*req).Data.Content},
 		{Key: "plain_text", Value: (*req).Data.PlainText},
 		{Key: "level", Value: (*req).Data.Level},
-		{Key: "crtime", Value: (*req).Data.CRTime},
+		{Key: "crtime", Value: sys.StringtoTime((*req).Data.CRTime)},
+		{Key: "uptime", Value: sys.StringtoTime((*req).Data.CRTime)},
 		{Key: "config", Value: (*req).Data.Config},
 	}
 
@@ -92,49 +157,49 @@ func DocPut(goid primitive.ObjectID, doid primitive.ObjectID, req *RequestDocPut
 		"_id":   doid,
 	}
 
-	data := bson.M{}
+	m := bson.M{}
 	var onlyLevel bool = true
 
 	if (*req).Doc.Content != "" {
-		data["content"] = (*req).Doc.Content
-		data["plain_text"] = (*req).Doc.PlainText
+		m["content"] = (*req).Doc.Content
+		m["plain_text"] = (*req).Doc.PlainText
 		onlyLevel = false
 	}
 
 	if (*req).Doc.Title != "" {
-		data["title"] = (*req).Doc.Title
+		m["title"] = (*req).Doc.Title
 		onlyLevel = false
 	}
 
 	if (*req).Doc.CRTime != "" {
-		data["crtime"] = (*req).Doc.CRTime
+		m["crtime"] = sys.StringtoTime((*req).Doc.CRTime)
 	}
 
 	if (*req).Doc.UPTime != "" {
-		data["uptime"] = (*req).Doc.UPTime
+		m["uptime"] = sys.StringtoTime((*req).Doc.UPTime)
 	}
 
 	if (*req).Doc.Title != "" {
-		data["title"] = (*req).Doc.Title
+		m["title"] = (*req).Doc.Title
 		onlyLevel = false
 	}
 
 	if (*req).Doc.Config != nil {
-		data["config"] = bson.M{
+		m["config"] = bson.M{
 			"is_show_tool": (*req).Doc.Config.IsShowTool,
 		}
 		onlyLevel = false
 	}
 
 	if onlyLevel {
-		data["level"] = (*req).Doc.Level
+		m["level"] = (*req).Doc.Level
 	}
 
 	_, err := db.Collection("doc").UpdateOne(
 		context.TODO(),
 		filter,
 		bson.M{
-			"$set": data,
+			"$set": m,
 		},
 		nil,
 	)

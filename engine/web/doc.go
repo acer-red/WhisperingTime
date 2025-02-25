@@ -2,6 +2,7 @@ package web
 
 import (
 	"modb"
+	"sys"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/tengfei-xy/go-log"
@@ -32,7 +33,21 @@ func DocRoute(g *gin.Engine) {
 func DocsGet(g *gin.Context) {
 	goid := g.MustGet("goid").(primitive.ObjectID)
 
-	ret, err := modb.DocsGet(goid)
+	year_str := query(g, "year")
+	month_str := query(g, "month")
+
+	if year_str == "" && month_str == "" {
+		ret, err := modb.DocsGet(goid)
+		if err != nil {
+			internalServerError(g)
+			return
+		}
+		okData(g, ret)
+		return
+	}
+	yyyy := sys.YYYYToInt(year_str)
+	mm := sys.MMToInt(month_str)
+	ret, err := modb.DocsGetWithDate(goid, yyyy, mm)
 	if err != nil {
 		internalServerError(g)
 		return

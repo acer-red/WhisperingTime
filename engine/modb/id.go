@@ -66,11 +66,11 @@ func GetGOIDsFromTOID(toid primitive.ObjectID) ([]primitive.ObjectID, error) {
 	}
 	var results []primitive.ObjectID
 	for cursor.Next(ctx) {
-		var b bson.M
-		if err := cursor.Decode(&b); err != nil {
+		var m bson.M
+		if err := cursor.Decode(&m); err != nil {
 			return nil, err
 		}
-		result, _ := b["_id"].(primitive.ObjectID)
+		result, _ := m["_id"].(primitive.ObjectID)
 		results = append(results, result)
 	}
 

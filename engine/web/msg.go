@@ -1,11 +1,12 @@
 package web
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 
+	sys "sys"
+
 	"github.com/gin-gonic/gin"
+	log "github.com/tengfei-xy/go-log"
 )
 
 type msgErr int
@@ -35,10 +36,6 @@ func (msg message) setData(data interface{}) message {
 	return msg
 }
 
-//	func (msg message) setMSG(message string) message {
-//		msg.Msg = message
-//		return msg
-//	}
 func msgOK(msg ...string) message {
 	m := message{Err: mseqOK}
 	if len(msg) > 0 {
@@ -78,26 +75,19 @@ func msgBadRequest(msg ...string) message {
 }
 func ok(g *gin.Context) {
 	d := msgOK()
-	body, _ := json.MarshalIndent(d, "", "  ")
-	fmt.Println("->")
-	fmt.Println(string(body))
+	log.Debug3f("\n%s", sys.JsonPrettyPrint(d))
 	g.JSON(http.StatusOK, d)
-
 }
 
 func okData(g *gin.Context, obj any) {
 	d := msgOK().setData(obj)
-	body, _ := json.MarshalIndent(d, "", "  ")
-	fmt.Println("->")
-	fmt.Println(string(body))
+	log.Debug3f("\n%s", sys.JsonPrettyPrint(d))
 	g.JSON(http.StatusOK, d)
-
 }
 func okPNG(g *gin.Context, data []byte) {
 	// d := msgOK().setData(obj)
-	// body, _ := json.MarshalIndent(d, "", "  ")
-	// fmt.Println("->")
-	// fmt.Println(string(body))
+	// log.Debug3f("\n%s", string(body))
+
 	g.Data(http.StatusOK, "image/png", data)
 
 }

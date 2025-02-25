@@ -246,7 +246,7 @@ class RequestPutGroup {
     Map<String, dynamic> data = {'uptime': Time.nowTimestampString()};
 
     if (name != null) {
-      print("更新分组名,$name");
+      print("更新分组名:$name");
       data['name'] = name!;
     }
     if (overtime != null) {
@@ -297,9 +297,9 @@ class GroupListData {
     return GroupListData(
       name: json['name'] as String,
       id: json['id'] as String,
-      crtime: Time.datetime(json['crtime'] as String),
-      uptime: Time.datetime(json['uptime'] as String),
-      overtime: Time.datetime(json['overtime'] as String),
+      crtime: Time.stringToTime(json['crtime'] as String),
+      uptime: Time.stringToTime(json['uptime'] as String),
+      overtime: Time.stringToTime(json['overtime'] as String),
     );
   }
 }
@@ -314,6 +314,8 @@ class Doc {
   DateTime uptime;
   DocConfigration config;
   String id;
+  int get  day => crtime.day;
+  late bool isSearch;
   Doc({
     required this.title,
     required this.content,
@@ -331,8 +333,8 @@ class Doc {
       content: json['content'] as String,
       plainText: json['plain_text'] as String,
       level: json['level'] as int,
-      crtime: Time.datetime(json['crtime'] as String),
-      uptime: Time.datetime(json['uptime'] as String),
+      crtime: Time.stringToTime(json['crtime'] as String),
+      uptime: Time.stringToTime(json['uptime'] as String),
       config:
           DocConfigration(isShowTool: json['config']['is_show_tool'] as bool),
       id: json['id'] as String,
@@ -614,6 +616,8 @@ class Http {
 
   // group
   Future<ResponseGetGroup> getGroups() async {
+    print("获取所有分组");
+
     String path = "/groups/${tid!}";
 
     if (tid == null) {
@@ -700,10 +704,17 @@ class Http {
   }
 
   // doc
-  Future<ResponseGetDoc> getDocs() async {
+  Future<ResponseGetDoc> getDocs(int? year, int? month) async {
     print("获取分组的日志列表");
 
     String path = "/docs/${gid!}";
+    if (year != null) {
+      if (month != null) {
+        path += "?year=$year&month=$month";
+      } else {
+        path += "?year=$year";
+      }
+    }
 
     final url = Uri.http(serverAddress, path);
     final Map<String, String> headers = {
@@ -718,11 +729,11 @@ class Http {
       headers: headers,
     );
 
-    if (res.isOK) {
-      for (Doc line in res.data) {
-        line.crtime = line.crtime;
-      }
-    }
+    // if (res.isOK) {
+    //   for (Doc line in res.data) {
+    //     line.crtime = line.crtime;
+    //   }
+    // }
 
     return res;
   }
@@ -800,7 +811,7 @@ class Http {
       'Authorization': getAuthorization(),
     };
 
-    Response response = await http.post(url, headers: headers,body: req.data);
+    Response response = await http.post(url, headers: headers, body: req.data);
     int status = response.statusCode;
     ResponsePostImage ret = ResponsePostImage(
         ok: status == 200, data: status == 200 ? response.body : "");

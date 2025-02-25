@@ -4,6 +4,7 @@ import (
 	"context"
 	"sys"
 
+	"github.com/tengfei-xy/go-log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -41,19 +42,29 @@ func GroupsGet(toid primitive.ObjectID) ([]Group, error) {
 
 	cursor, err := db.Collection("group").Find(context.TODO(), filter)
 	if err != nil {
+		log.Error(err)
 		return nil, err
 	}
 
 	for cursor.Next(context.TODO()) {
-		var result Group
-		err := cursor.Decode(&result)
+		var m bson.M
+		err := cursor.Decode(&m)
 		if err != nil {
+			log.Error(err)
 			return nil, err
 		}
-		results = append(results, result)
+		results = append(results, Group{
+			ID:       m["gid"].(string),
+			Name:     m["name"].(string),
+			CRTime:   m["crtime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
+			UPTime:   m["uptime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
+			OverTime: m["overtime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
+		})
 	}
 
 	if err := cursor.Err(); err != nil {
+		log.Error(err)
+
 		return nil, err
 	}
 
@@ -62,22 +73,22 @@ func GroupsGet(toid primitive.ObjectID) ([]Group, error) {
 func GroupGet(toid primitive.ObjectID, goid primitive.ObjectID) (Group, error) {
 
 	var response Group
-	var results bson.M
+	var m bson.M
 
 	filter := bson.D{
 		{Key: "_toid", Value: toid},
 		{Key: "_id", Value: goid},
 	}
 
-	err := db.Collection("group").FindOne(context.TODO(), filter).Decode(&results)
+	err := db.Collection("group").FindOne(context.TODO(), filter).Decode(&m)
 	if err != nil {
 		return Group{}, err
 	}
-	response.ID = results["gid"].(string)
-	response.Name = results["name"].(string)
-	response.CRTime = results["crtime"].(string)
-	response.UPTime = results["uptime"].(string)
-	response.OverTime = results["overtime"].(string)
+	response.ID = m["gid"].(string)
+	response.Name = m["name"].(string)
+	response.CRTime = m["crtime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05")
+	response.UPTime = m["uptime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05")
+	response.OverTime = m["overtime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05")
 
 	return response, nil
 }
@@ -87,9 +98,9 @@ func GroupPost(toid primitive.ObjectID, req *RequestGroupPost) (string, error) {
 	data := bson.D{
 		{Key: "_toid", Value: toid},
 		{Key: "name", Value: req.Data.Name},
-		{Key: "crtime", Value: req.Data.CRTime},
-		{Key: "uptime", Value: req.Data.UPTime},
-		{Key: "overtime", Value: req.Data.OverTime},
+		{Key: "crtime", Value: sys.StringtoTime(req.Data.CRTime)},
+		{Key: "uptime", Value: sys.StringtoTime(req.Data.UPTime)},
+		{Key: "overtime", Value: sys.StringtoTime(req.Data.OverTime)},
 		{Key: "gid", Value: gid},
 	}
 
@@ -107,25 +118,25 @@ func GroupPut(toid primitive.ObjectID, goid primitive.ObjectID, req *RequestGrou
 		"_id":   goid,
 	}
 
-	data := bson.M{}
+	m := bson.M{}
 
 	if (*req).Data.Name != "" {
-		data["name"] = (*req).Data.Name
+		m["name"] = (*req).Data.Name
 	}
 
 	if (*req).Data.UPTime != "" {
-		data["uptime"] = (*req).Data.UPTime
+		m["uptime"] = sys.StringtoTime((*req).Data.UPTime)
 	}
 
 	if (*req).Data.OverTime != "" {
-		data["overtime"] = (*req).Data.OverTime
+		m["overtime"] = sys.StringtoTime((*req).Data.OverTime)
 	}
 
 	_, err := db.Collection("group").UpdateOne(
 		context.TODO(),
 		filter,
 		bson.M{
-			"$set": data,
+			"$set": m,
 		},
 		nil,
 	)
@@ -138,8 +149,9 @@ func GroupCreateDefault(toid primitive.ObjectID, gd RequestThemePostDefaultGroup
 		{Key: "_toid", Value: toid},
 		{Key: "name", Value: gd.Name},
 		{Key: "gid", Value: gid},
-		{Key: "crtime", Value: gd.CRTime},
-		{Key: "overtime", Value: gd.Overtime},
+		{Key: "crtime", Value: sys.StringtoTime(gd.CRTime)},
+		{Key: "uptime", Value: sys.StringtoTime(gd.CRTime)},
+		{Key: "overtime", Value: sys.StringtoTime(gd.OverTime)},
 		{Key: "default", Value: true},
 	}
 

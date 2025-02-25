@@ -68,7 +68,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   bool _isSelected = true;
   bool isTitleSubmited = true;
   int level = 0;
-  late DateTime crtime;
+  DateTime crtime= DateTime.now();
   String id = "";
   bool get keepEditText => widget.content == getEditOrigin();
   bool get keepTitleText => titleEdit.text == widget.title;
@@ -145,7 +145,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
             IconButton(onPressed: () => exportDoc(), icon: Icon(Icons.share)),
             widget.freeze
                 ? IconButton(
-                    icon: Icon(Icons.settings, color: Colors.grey), // 灰色图标
+                    icon: Icon(Icons.settings, color: Colors.grey),
                     onPressed: null,
                   )
                 : IconButton(
@@ -205,7 +205,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
                       extraConfigurations: {
                         QuillSharedExtensionsConfigurations.key:
                             QuillSharedExtensionsConfigurations(
-                          assetsPrefix: '666', // Defaults to `assets`
+                          assetsPrefix: 'assets',
                         ),
                       },
                     ),
@@ -373,13 +373,13 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
               crtime: ret.crtime,
               config: DocConfigration(isShowTool: config.isShowTool));
           final res = await Http(gid: widget.gid, did: widget.id!).putDoc(req);
-          if (res.isOK) {
+          if (res.isNotOK) {
             // Navigator.of(context).pop()
             print("更新配置错误");
             break;
           }
         }
-
+        print("crtime ${ret.crtime}");
         setState(() {
           if (ret.crtime != null) {
             crtime = ret.crtime!;
@@ -444,30 +444,6 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
 
     final res = await Http(gid: widget.gid, did: widget.id!).putDoc(req);
     return res;
-    // if (res.isNotOK) {
-    //   return LastPageDoc(
-    //     state: LastPage.nochange,
-    //     content: widget.content,
-    //     plainText: getEditPlainText(),
-    //     id: widget.id!,
-    //     title: widget.title,
-    //     level: widget.level,
-    //     crtime: widget.crtime,
-    //     uptime: widget.uptime,
-    //     config: config,
-    //   );
-    // }
-    // return LastPageDoc(
-    //   state: LastPage.change,
-    //   content: getEditOrigin(),
-    //   plainText: getEditPlainText(),
-    //   id: widget.id!,
-    //   title: titleEdit.text,
-    //   level: level,
-    //   crtime: crtime,
-    //   uptime: req.uptime,
-    //   config: config,
-    // );
   }
 
   void exportDoc() async {
@@ -624,24 +600,24 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     // 先插入为base64，保存文档时，修改为url
     edit.insertImageBlock(imageSource: data);
 
-// Capture a photo.
+    // Capture a photo.
     // final XFile? photo = await picker.pickImage(source: ImageSource.camera);
 
-// Pick a video.
+    // Pick a video.
     // final XFile? galleryVideo =
     //     await picker.pickVideo(source: ImageSource.gallery);
 
-// Capture a video.
+    // Capture a video.
     // final XFile? cameraVideo =
     //     await picker.pickVideo(source: ImageSource.camera);
 
-// Pick multiple images.
+    // Pick multiple images.
     // final List<XFile> images = await picker.pickMultiImage();
 
-// Pick singe image or video.
+    // Pick singe image or video.
     // final XFile? media = await picker.pickMedia();
 
-// Pick multiple images and videos.
+    // Pick multiple images and videos.
     // final List<XFile> medias = await picker.pickMultipleMedia();
   }
 

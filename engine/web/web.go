@@ -3,6 +3,7 @@ package web
 import (
 	"modb"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/tengfei-xy/go-log"
@@ -21,6 +22,7 @@ func getTid() gin.HandlerFunc {
 		g.Next()
 	}
 }
+
 func getGid() gin.HandlerFunc {
 	return func(g *gin.Context) {
 
@@ -29,6 +31,9 @@ func getGid() gin.HandlerFunc {
 			log.Error("gid is empty")
 			g.AbortWithStatusJSON(http.StatusBadRequest, msgBadRequest())
 			return
+		}
+		if strings.Contains(gid, "?") {
+			gid = strings.Split(gid, "?")[0]
 		}
 		goid, err := modb.GetGOIDFromGID(gid)
 		if err != nil {
@@ -111,4 +116,18 @@ func getGidAndDid() gin.HandlerFunc {
 
 		g.Next()
 	}
+}
+
+func query(g *gin.Context, s string) string {
+	path := g.Request.URL.Path[1:]
+	if !strings.Contains(path, "&") {
+		return ""
+	}
+
+	for _, str := range strings.Split(path, "&") {
+		if strings.Contains(str, s) {
+			return strings.Split(str, "=")[1]
+		}
+	}
+	return s
 }
