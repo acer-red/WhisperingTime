@@ -535,7 +535,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
               if (op.isInsert && op.value is String) {
                 String value = op.value.toString();
                 if (value.contains('\n')) {
-                  print("发现多行文字");
+                  // print("发现多行文字");
                   List<String> paragraphs = value.split('\n');
                   return pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -543,7 +543,6 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
                         if (paragraph.isEmpty || paragraph == " ") {
                           return pw.SizedBox(height: 10);
                         }
-                        print("${paragraph} 结束");
 
                         return pw.Column(children: [
                           pw.Text(paragraph,
@@ -555,7 +554,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
                         ]);
                       }).toList());
                 } else {
-                  print("发现单行文字");
+                  // print("发现单行文字");
 
                   return pw.Paragraph(
                       text: op.value.toString(),

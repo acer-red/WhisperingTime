@@ -2,7 +2,6 @@ package web
 
 import (
 	"modb"
-	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -15,7 +14,7 @@ func getTid() gin.HandlerFunc {
 		toid, err := modb.GetTOIDFromTID(tid)
 		if err != nil {
 			log.Error(err)
-			g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
+			internalServerError(g)
 			return
 		}
 		g.Set("toid", toid)
@@ -29,7 +28,7 @@ func getGid() gin.HandlerFunc {
 		gid := g.Param("gid")
 		if gid == "" {
 			log.Error("gid is empty")
-			g.AbortWithStatusJSON(http.StatusBadRequest, msgBadRequest())
+			badRequest(g)
 			return
 		}
 		if strings.Contains(gid, "?") {
@@ -38,7 +37,7 @@ func getGid() gin.HandlerFunc {
 		goid, err := modb.GetGOIDFromGID(gid)
 		if err != nil {
 			log.Error(err)
-			g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
+			internalServerError(g)
 			return
 		}
 
@@ -53,13 +52,13 @@ func getTidAndGid() gin.HandlerFunc {
 		tid := g.Param("tid")
 		if tid == "" {
 			log.Error("tid is empty")
-			g.AbortWithStatusJSON(http.StatusBadRequest, msgBadRequest())
+			badRequest(g)
 			return
 		}
 		toid, err := modb.GetTOIDFromTID(tid)
 		if err != nil {
 			log.Error(err)
-			g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
+			internalServerError(g)
 			return
 		}
 		g.Set("toid", toid)
@@ -67,13 +66,13 @@ func getTidAndGid() gin.HandlerFunc {
 		gid := g.Param("gid")
 		if gid == "" {
 			log.Error("gid is empty")
-			g.AbortWithStatusJSON(http.StatusBadRequest, msgBadRequest())
+			badRequest(g)
 			return
 		}
 		goid, err := modb.GetGOIDFromGID(gid)
 		if err != nil {
 			log.Error(err)
-			g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
+			internalServerError(g)
 			return
 		}
 
@@ -88,13 +87,13 @@ func getGidAndDid() gin.HandlerFunc {
 		gid := g.Param("gid")
 		if gid == "" {
 			log.Error("gid is empty")
-			g.AbortWithStatusJSON(http.StatusBadRequest, msgBadRequest())
+			badRequest(g)
 			return
 		}
 		goid, err := modb.GetGOIDFromGID(gid)
 		if err != nil {
 			log.Error(err)
-			g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
+			internalServerError(g)
 			return
 		}
 
@@ -103,13 +102,13 @@ func getGidAndDid() gin.HandlerFunc {
 		did := g.Param("did")
 		if did == "" {
 			log.Error("did is empty")
-			g.AbortWithStatusJSON(http.StatusBadRequest, msgBadRequest())
+			badRequest(g)
 			return
 		}
 		doid, err := modb.GetDOIDFromGOIDAndDID(goid, did)
 		if err != nil {
 			log.Error(err)
-			g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
+			internalServerError(g)
 			return
 		}
 		g.Set("doid", doid)

@@ -2,7 +2,6 @@ package web
 
 import (
 	"modb"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/tengfei-xy/go-log"
@@ -71,19 +70,18 @@ func ThemePost(g *gin.Context) {
 
 	var req modb.RequestThemePost
 	if err := g.ShouldBindBodyWithJSON(&req); err != nil {
-		g.AbortWithStatusJSON(http.StatusBadRequest, msgBadRequest())
+		badRequest(g)
 		return
 	}
 
 	toid, tid, err := modb.ThemeCreate(uoid, &req)
 	if err != nil {
-		log.Error(err)
-		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
+		internalServerError(g)
 		return
 	}
 
 	if _, err := modb.GroupCreateDefault(toid, req.Data.DefaultGroup); err != nil {
-		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
+		internalServerError(g)
 		return
 	}
 	okData(g, response{ID: tid})
@@ -95,12 +93,11 @@ func ThemeIDPut(g *gin.Context) {
 
 	var req modb.RequestThemePut
 	if err := g.ShouldBindBodyWithJSON(&req); err != nil {
-		g.AbortWithStatusJSON(http.StatusBadRequest, msgBadRequest())
+		badRequest(g)
 		return
 	}
 	if err := modb.ThemeUpdate(toid, &req); err != nil {
-		log.Error(err)
-		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
+		internalServerError(g)
 		return
 	}
 	ok(g)
@@ -111,7 +108,6 @@ func ThemeIDDelete(g *gin.Context) {
 
 	err := modb.ThemeDelete(toid)
 	if err != nil {
-		log.Error(err)
 		internalServerError(g)
 		return
 	}

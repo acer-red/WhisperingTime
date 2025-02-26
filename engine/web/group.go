@@ -2,7 +2,6 @@ package web
 
 import (
 	"modb"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/tengfei-xy/go-log"
@@ -37,7 +36,7 @@ func GroupsGet(g *gin.Context) {
 
 	response, err := modb.GroupsGet(toid)
 	if err != nil {
-		g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
+		internalServerError(g)
 		return
 	}
 	okData(g, response)
