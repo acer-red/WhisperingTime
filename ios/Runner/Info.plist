@@ -59,5 +59,8 @@
 	</array>
 		<key>NSPhotoLibraryAddUsageDescription</key>
 	<key>NSPhotoLibraryUsageDescription</key>
+	<string>需要访问您的照片库以选择文件</string>
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>需要访问您的文档以选择文件</string>
 </dict>
 </plist>

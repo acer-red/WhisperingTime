@@ -27,6 +27,7 @@ dependencies:
   image_picker: ^1.1.2
   gal: ^2.3.1
   path: ^1.9.0
+  pdf: ^3.11.3
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -34,4 +35,6 @@ dev_dependencies:
   flutter_lints: ^2.0.0
 
 flutter:
+  assets:
+    - assets/
   uses-material-design: true

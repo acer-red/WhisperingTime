@@ -341,9 +341,9 @@ class _GroupPage extends State<GroupPage> {
           child: Text(DateFormat('yyyy MMMM').format(pickedDate)));
     }
 
-    Widget grid(bool istoday, int dayNumber, Function onTap) {
+    Widget grid(bool istoday, int dayNumber, int i) {
       return GestureDetector(
-        onTap: () => onTap,
+        onTap: () => enterDoc(i),
         child: Align(
           alignment: Alignment.center,
           child: Center(
@@ -444,7 +444,7 @@ class _GroupPage extends State<GroupPage> {
                   for (int i = 0; i < _ditems.length; i++) {
                     if (index - firstWeekdayOfMonth + 2 ==
                         _ditems[i].crtime.day) {
-                      return grid(istoday, dayNumber, () => enterDoc(i));
+                      return grid(istoday, dayNumber, i);
                     }
                   }
                   return gridNoFlag(istoday, dayNumber);
@@ -477,20 +477,13 @@ class _GroupPage extends State<GroupPage> {
                 Row(
                   children: [
                     Expanded(child: Text("样式")),
-                    Dropdown(
+                    ViewTypeDropDown(
                       value: viewType,
                       onValueChanged: (int value) {
-                        DateTime currentDate = DateTime.now();
-                        if (value == 1) {
-                          setDocs(
-                              year: currentDate.year, month: currentDate.month);
-                        } else {
-                          setDocs();
-                        }
-
                         setState(() {
                           viewType = value;
                         });
+                        clickLevel();
                       },
                     ),
                   ],
@@ -864,7 +857,14 @@ class _GroupPage extends State<GroupPage> {
 
   /// 点击分级按钮
   clickLevel() {
-    setDocs();
+    switch (viewType) {
+      case 0:
+        setDocs();
+        break;
+      case 1:
+        setDocs(year: pickedDate.year, month: pickedDate.month);
+        break;
+    }
   }
 
   /// 更新当前分组下的文档列表
@@ -972,18 +972,18 @@ class _GroupPage extends State<GroupPage> {
   }
 }
 
-class Dropdown extends StatefulWidget {
+class ViewTypeDropDown extends StatefulWidget {
   final int value;
   final ValueChanged<int> onValueChanged; // 添加回调函数
 
-  const Dropdown({Key? key, required this.value, required this.onValueChanged})
+  const ViewTypeDropDown({Key? key, required this.value, required this.onValueChanged})
       : super(key: key);
 
   @override
-  State<StatefulWidget> createState() => _Dropdown();
+  State<StatefulWidget> createState() => _ViewTypeDropDown();
 }
 
-class _Dropdown extends State<Dropdown> {
+class _ViewTypeDropDown extends State<ViewTypeDropDown> {
   late String _selectedValue;
   List<String> viewExplain = ["卡片", "日历"];
 

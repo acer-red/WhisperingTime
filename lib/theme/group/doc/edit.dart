@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
@@ -11,6 +12,8 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import 'package:path/path.dart' as p;
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 const String defaultTitle = "未命名的标题";
 
@@ -68,7 +71,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   bool _isSelected = true;
   bool isTitleSubmited = true;
   int level = 0;
-  DateTime crtime= DateTime.now();
+  DateTime crtime = DateTime.now();
   String id = "";
   bool get keepEditText => widget.content == getEditOrigin();
   bool get keepTitleText => titleEdit.text == widget.title;
@@ -142,7 +145,8 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
 
           // 标题右侧按钮
           actions: <Widget>[
-            IconButton(onPressed: () => exportDoc(), icon: Icon(Icons.share)),
+            IconButton(
+                onPressed: () => dialogExport(), icon: Icon(Icons.share)),
             widget.freeze
                 ? IconButton(
                     icon: Icon(Icons.settings, color: Colors.grey),
@@ -299,7 +303,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
         log.i("保存成功");
         if (mounted) {
           return Navigator.of(context).pop(LastPageDoc(
-              state: widget.id == null ?LastPage.create:LastPage.change,
+              state: widget.id == null ? LastPage.create : LastPage.change,
               title: titleEdit.text,
               content: getEditOrigin(),
               plainText: getEditPlainText(),
@@ -446,18 +450,109 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     return res;
   }
 
-  void exportDoc() async {
-    int ret = await showExportOption();
-    switch (ret) {
-      case 0:
-        exportDesktop();
-        break;
-      default:
-        break;
-    }
+  // 打开对话框，导出窗口
+  void dialogExport() async {
+    await showDialog<int>(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("导出印迹"),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text("导出到本地"),
+                ElevatedButton(
+                  onPressed: () {
+                    exportPDF();
+                    Navigator.of(context).pop(0);
+                  },
+                  child: Text("PDF"),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    exportTXT();
+                    Navigator.of(context).pop(0);
+                  },
+                  child: Text("文本"),
+                ),
+                divider(),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
-  Future<void> exportDesktop() async {
+  Future<void> exportPDF() async {
+    final pdf = pw.Document();
+    pw.Font font = pw.Font.ttf(
+        (await rootBundle.load("assets/NotoSansSC-VariableFont_wght.ttf")));
+
+    pdf.addPage(pw.Page(
+      build: (pw.Context context) {
+        return pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Header(
+                level: 0,
+                child: pw.Text(titleEdit.text,
+                    style: pw.TextStyle(
+                        fontSize: 20,
+                        font: font,
+                        fontWeight: pw.FontWeight.bold))),
+            ...edit.document.toDelta().toList().map((op) {
+              if (op.isInsert && op.value is String) {
+                return pw.Paragraph(
+                    text: op.value.toString(),
+                    style: pw.TextStyle(
+                        fontSize: 16,
+                        font: font,
+                        fontWeight: pw.FontWeight.normal));
+              } else if (op.isInsert && op.value is Map) {
+                final insertMap = op.value as Map;
+                if (insertMap.containsKey('image')) {
+                  return pw.Image(
+                      pw.MemoryImage(base64Decode(
+                          insertMap['image'].toString().split(',').last)),
+                        width: double.tryParse(insertMap['width'].toString()),
+                        height: double.tryParse(insertMap['height'].toString()),
+                      );
+                }
+              }
+              log.e("发现未知类型");
+              return pw.Paragraph(
+                  text: op.value.toString(),
+                  style: pw.TextStyle(
+                      fontSize: 16,
+                      font: font,
+                      fontWeight: pw.FontWeight.normal));
+            }).toList(),
+          ],
+        );
+      },
+    ));
+
+    String? outputFile = await FilePicker.platform.saveFile(
+      dialogTitle: '选择保存路径',
+      fileName: '${titleEdit.text}.pdf',
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+
+    // 用户取消了操作
+    if (outputFile == null) {
+      return;
+    }
+
+    File file = File(outputFile);
+    await file.writeAsBytes(await pdf.save());
+
+    print('PDF文件已生成：${file.path}');
+  }
+
+  Future<void> exportTXT() async {
     String? outputFile = await FilePicker.platform.saveFile(
       dialogTitle: '选择保存路径',
       fileName: titleEdit.text,
@@ -473,33 +568,6 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     File file = File(outputFile);
     await file.writeAsString(getEditPlainText());
     print("文件已保存：${file.path}");
-  }
-
-  Future<int> showExportOption() async {
-    int? ret = await showDialog<int>(
-      context: context,
-      barrierDismissible: true, // user must tap button!
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("导出印迹"),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                Text("导出到本地"),
-                ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pop(0);
-                    },
-                    child: Text("仅文本")),
-                divider(),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-
-    return ret ?? -1; // 如果用户没有点击按钮，则默认为 false
   }
 
   void updateImage() async {
