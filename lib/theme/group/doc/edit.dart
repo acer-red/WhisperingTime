@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
+import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart';
 import 'package:whispering_time/http.dart';
 import 'package:whispering_time/env.dart';
 import 'setting.dart';
@@ -12,7 +14,6 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import 'package:path/path.dart' as p;
-import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 const String defaultTitle = "未命名的标题";
@@ -165,7 +166,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
           children: [
             !widget.freeze && _isSelected
                 ? TextButton(
-                    child: Text(Level().string(level)),
+                    child: Text(Level.string(level)),
                     onPressed: () => {
                       setState(() {
                         _isSelected = false;
@@ -383,7 +384,6 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
             break;
           }
         }
-        print("crtime ${ret.crtime}");
         setState(() {
           if (ret.crtime != null) {
             crtime = ret.crtime!;
@@ -489,7 +489,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     final pdf = pw.Document();
     pw.Font font = pw.Font.ttf(
         (await rootBundle.load("assets/NotoSansSC-VariableFont_wght.ttf")));
-
+    double fontsize = 10;
     pdf.addPage(pw.Page(
       build: (pw.Context context) {
         return pw.Column(
@@ -499,33 +499,89 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
                 level: 0,
                 child: pw.Text(titleEdit.text,
                     style: pw.TextStyle(
-                        fontSize: 20,
+                        fontSize: 30,
                         font: font,
                         fontWeight: pw.FontWeight.bold))),
+            // 添加 创建时间, 修改时间
+            pw.Column(
+              mainAxisAlignment: pw.MainAxisAlignment.start,
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text("印迹分级: ${Level.string(level)}",
+                    style: pw.TextStyle(
+                        fontSize: fontsize,
+                        font: font,
+                        color: PdfColor.fromInt(Colors.grey.value),
+                        fontWeight: pw.FontWeight.normal)),
+                pw.Text(
+                    "创建时间: ${DateFormat('yyyy-MM-dd HH:mm').format(crtime)}",
+                    style: pw.TextStyle(
+                        fontSize: fontsize,
+                        font: font,
+                        color: PdfColor.fromInt(Colors.grey.value),
+                        fontWeight: pw.FontWeight.normal)),
+              ],
+            ),
+            pw.SizedBox(height: 20),
+
+            // pw.Paragraph(
+            //     text: "修改时间: ${DateTime.now().toString()}",
+            //     style: pw.TextStyle(
+            //         fontSize: fontsize,
+            //         font: font,
+            //         fontWeight: pw.FontWeight.normal)),
+
             ...edit.document.toDelta().toList().map((op) {
               if (op.isInsert && op.value is String) {
-                return pw.Paragraph(
-                    text: op.value.toString(),
-                    style: pw.TextStyle(
-                        fontSize: 16,
-                        font: font,
-                        fontWeight: pw.FontWeight.normal));
+                String value = op.value.toString();
+                if (value.contains('\n')) {
+                  print("发现多行文字");
+                  List<String> paragraphs = value.split('\n');
+                  return pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: paragraphs.map((paragraph) {
+                        if (paragraph.isEmpty || paragraph == " ") {
+                          return pw.SizedBox(height: 10);
+                        }
+                        print("${paragraph} 结束");
+
+                        return pw.Column(children: [
+                          pw.Text(paragraph,
+                              style: pw.TextStyle(
+                                  fontSize: fontsize,
+                                  font: font,
+                                  fontWeight: pw.FontWeight.normal)),
+                          pw.SizedBox(height: 10)
+                        ]);
+                      }).toList());
+                } else {
+                  print("发现单行文字");
+
+                  return pw.Paragraph(
+                      text: op.value.toString(),
+                      style: pw.TextStyle(
+                          fontSize: fontsize,
+                          font: font,
+                          fontWeight: pw.FontWeight.normal));
+                }
               } else if (op.isInsert && op.value is Map) {
                 final insertMap = op.value as Map;
                 if (insertMap.containsKey('image')) {
                   return pw.Image(
-                      pw.MemoryImage(base64Decode(
-                          insertMap['image'].toString().split(',').last)),
-                        width: double.tryParse(insertMap['width'].toString()),
-                        height: double.tryParse(insertMap['height'].toString()),
-                      );
+                    pw.MemoryImage(base64Decode(
+                        insertMap['image'].toString().split(',').last)),
+                    width: double.tryParse(insertMap['width'].toString()),
+                    height: double.tryParse(insertMap['height'].toString()),
+                  );
+                } else {
+                  log.e("发现未知map类型");
                 }
               }
               log.e("发现未知类型");
               return pw.Paragraph(
                   text: op.value.toString(),
                   style: pw.TextStyle(
-                      fontSize: 16,
+                      fontSize: fontsize,
                       font: font,
                       fontWeight: pw.FontWeight.normal));
             }).toList(),

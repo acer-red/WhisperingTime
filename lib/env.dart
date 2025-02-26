@@ -31,7 +31,7 @@ var log = Logger(
 class Level {
   static const List<String> l = ['未分类', '平淡的', '触动的', '重要的', '深刻的'];
 
-  String string(int index) {
+  static String string(int index) {
     return l[index];
   }
 
