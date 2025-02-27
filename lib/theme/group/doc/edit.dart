@@ -490,104 +490,109 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     pw.Font font = pw.Font.ttf(
         (await rootBundle.load("assets/NotoSansSC-VariableFont_wght.ttf")));
     double fontsize = 10;
-    pdf.addPage(pw.Page(
-      build: (pw.Context context) {
-        return pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Header(
-                level: 0,
-                child: pw.Text(titleEdit.text,
-                    style: pw.TextStyle(
-                        fontSize: 30,
-                        font: font,
-                        fontWeight: pw.FontWeight.bold))),
-            // 添加 创建时间, 修改时间
-            pw.Column(
-              mainAxisAlignment: pw.MainAxisAlignment.start,
+    pdf.addPage(
+      pw.MultiPage(
+        header: (pw.Context context) {
+          if (context.pageNumber == 1) {
+            return pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                pw.Text("印迹分级: ${Level.string(level)}",
-                    style: pw.TextStyle(
-                        fontSize: fontsize,
-                        font: font,
-                        color: PdfColor.fromInt(Colors.grey.value),
-                        fontWeight: pw.FontWeight.normal)),
-                pw.Text(
-                    "创建时间: ${DateFormat('yyyy-MM-dd HH:mm').format(crtime)}",
-                    style: pw.TextStyle(
-                        fontSize: fontsize,
-                        font: font,
-                        color: PdfColor.fromInt(Colors.grey.value),
-                        fontWeight: pw.FontWeight.normal)),
+          pw.Header(
+              level: 0,
+              child: pw.Text(titleEdit.text,
+            style: pw.TextStyle(
+                fontSize: 30,
+                font: font,
+                fontWeight: pw.FontWeight.bold))),
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text("印迹分级: ${Level.string(level)}",
+            style: pw.TextStyle(
+                fontSize: fontsize,
+                font: font,
+                color: PdfColor.fromInt(Colors.grey.value),
+                fontWeight: pw.FontWeight.normal)),
+              pw.Text(
+            "创建时间: ${DateFormat('yyyy-MM-dd HH:mm').format(crtime)}",
+            style: pw.TextStyle(
+                fontSize: fontsize,
+                font: font,
+                color: PdfColor.fromInt(Colors.grey.value),
+                fontWeight: pw.FontWeight.normal)),
+            ],
+          ),
+          pw.SizedBox(height: 20),
               ],
-            ),
-            pw.SizedBox(height: 20),
-
-            // pw.Paragraph(
-            //     text: "修改时间: ${DateTime.now().toString()}",
-            //     style: pw.TextStyle(
-            //         fontSize: fontsize,
-            //         font: font,
-            //         fontWeight: pw.FontWeight.normal)),
-
-            ...edit.document.toDelta().toList().map((op) {
-              if (op.isInsert && op.value is String) {
-                String value = op.value.toString();
-                if (value.contains('\n')) {
-                  // print("发现多行文字");
-                  List<String> paragraphs = value.split('\n');
-                  return pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.start,
-                      children: paragraphs.map((paragraph) {
-                        if (paragraph.isEmpty || paragraph == " ") {
-                          return pw.SizedBox(height: 10);
-                        }
-
-                        return pw.Column(children: [
+            );
+          }
+          return pw.SizedBox();
+        },
+        
+        build: (pw.Context context) {
+          return edit.document.toDelta().toList().map((op) {
+            if (op.isInsert && op.value is String) {
+              String value = op.value.toString();
+              if (value.contains('\n')) {
+                List<String> paragraphs = value.split('\n');
+                return pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: paragraphs.map((paragraph) {
+                      if (paragraph.trim().isEmpty) {
+                        return pw.SizedBox(height: 10);
+                      }
+                      return pw.Column(
+                        children: [
                           pw.Text(paragraph,
                               style: pw.TextStyle(
                                   fontSize: fontsize,
                                   font: font,
                                   fontWeight: pw.FontWeight.normal)),
                           pw.SizedBox(height: 10)
-                        ]);
-                      }).toList());
-                } else {
-                  // print("发现单行文字");
-
-                  return pw.Paragraph(
-                      text: op.value.toString(),
-                      style: pw.TextStyle(
-                          fontSize: fontsize,
-                          font: font,
-                          fontWeight: pw.FontWeight.normal));
-                }
-              } else if (op.isInsert && op.value is Map) {
-                final insertMap = op.value as Map;
-                if (insertMap.containsKey('image')) {
-                  return pw.Image(
-                    pw.MemoryImage(base64Decode(
-                        insertMap['image'].toString().split(',').last)),
-                    width: double.tryParse(insertMap['width'].toString()),
-                    height: double.tryParse(insertMap['height'].toString()),
-                  );
-                } else {
-                  log.e("发现未知map类型");
-                }
+                        ],
+                      );
+                    }).toList());
+              } else {
+                return pw.Paragraph(
+                    text: value,
+                    style: pw.TextStyle(
+                        fontSize: fontsize,
+                        font: font,
+                        fontWeight: pw.FontWeight.normal));
               }
-              log.e("发现未知类型");
-              return pw.Paragraph(
-                  text: op.value.toString(),
-                  style: pw.TextStyle(
-                      fontSize: fontsize,
-                      font: font,
-                      fontWeight: pw.FontWeight.normal));
-            }).toList(),
-          ],
-        );
-      },
-    ));
+            } else if (op.isInsert && op.value is Map) {
+              final insertMap = op.value as Map;
+              if (insertMap.containsKey('image')) {
+                return pw.Image(
+                  pw.MemoryImage(
+                    base64Decode(
+                      insertMap['image'].toString().split(',').last,
+                    ),
+                  ),
+                  width: double.tryParse(insertMap['width'].toString()),
+                  height: double.tryParse(insertMap['height'].toString()),
+                );
+              } else {
+                log.e("发现未知map类型");
+                return pw.Paragraph(
+                    text: op.value.toString(),
+                    style: pw.TextStyle(
+                        fontSize: fontsize,
+                        font: font,
+                        fontWeight: pw.FontWeight.normal));
+              }
+            }
+            log.e("发现未知类型");
+            return pw.Paragraph(
+                text: op.value.toString(),
+                style: pw.TextStyle(
+                    fontSize: fontsize,
+                    font: font,
+                    fontWeight: pw.FontWeight.normal));
+          }).toList();
+        },
+      ),
+    );
 
     String? outputFile = await FilePicker.platform.saveFile(
       dialogTitle: '选择保存路径',
