@@ -4,17 +4,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
-import 'package:intl/intl.dart';
-import 'package:pdf/pdf.dart';
 import 'package:whispering_time/http.dart';
+import 'package:whispering_time/export.dart';
 import 'package:whispering_time/env.dart';
 import 'setting.dart';
-import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import 'package:path/path.dart' as p;
-import 'package:pdf/widgets.dart' as pw;
 
 const String defaultTitle = "未命名的标题";
 
@@ -379,7 +376,6 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
               config: DocConfigration(isShowTool: config.isShowTool));
           final res = await Http(gid: widget.gid, did: widget.id!).putDoc(req);
           if (res.isNotOK) {
-            // Navigator.of(context).pop()
             print("更新配置错误");
             break;
           }
@@ -464,14 +460,14 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
                 Text("导出到本地"),
                 ElevatedButton(
                   onPressed: () {
-                    exportPDF();
+                    Export.pdf(getLatestDoc());
                     Navigator.of(context).pop(0);
                   },
                   child: Text("PDF"),
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    exportTXT();
+                    Export.txt(getLatestDoc());
                     Navigator.of(context).pop(0);
                   },
                   child: Text("文本"),
@@ -485,149 +481,18 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     );
   }
 
-  Future<void> exportPDF() async {
-    final pdf = pw.Document();
-    pw.Font font = pw.Font.ttf(
-        (await rootBundle.load("assets/NotoSansSC-VariableFont_wght.ttf")));
-    double fontsize = 10;
-    pdf.addPage(
-      pw.MultiPage(
-        header: (pw.Context context) {
-          if (context.pageNumber == 1) {
-            return pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-          pw.Header(
-              level: 0,
-              child: pw.Text(titleEdit.text,
-            style: pw.TextStyle(
-                fontSize: 30,
-                font: font,
-                fontWeight: pw.FontWeight.bold))),
-          pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Text("印迹分级: ${Level.string(level)}",
-            style: pw.TextStyle(
-                fontSize: fontsize,
-                font: font,
-                color: PdfColor.fromInt(Colors.grey.value),
-                fontWeight: pw.FontWeight.normal)),
-              pw.Text(
-            "创建时间: ${DateFormat('yyyy-MM-dd HH:mm').format(crtime)}",
-            style: pw.TextStyle(
-                fontSize: fontsize,
-                font: font,
-                color: PdfColor.fromInt(Colors.grey.value),
-                fontWeight: pw.FontWeight.normal)),
-            ],
-          ),
-          pw.SizedBox(height: 20),
-              ],
-            );
-          }
-          return pw.SizedBox();
-        },
-        
-        build: (pw.Context context) {
-          return edit.document.toDelta().toList().map((op) {
-            if (op.isInsert && op.value is String) {
-              String value = op.value.toString();
-              if (value.contains('\n')) {
-                List<String> paragraphs = value.split('\n');
-                return pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: paragraphs.map((paragraph) {
-                      if (paragraph.trim().isEmpty) {
-                        return pw.SizedBox(height: 10);
-                      }
-                      return pw.Column(
-                        children: [
-                          pw.Text(paragraph,
-                              style: pw.TextStyle(
-                                  fontSize: fontsize,
-                                  font: font,
-                                  fontWeight: pw.FontWeight.normal)),
-                          pw.SizedBox(height: 10)
-                        ],
-                      );
-                    }).toList());
-              } else {
-                return pw.Paragraph(
-                    text: value,
-                    style: pw.TextStyle(
-                        fontSize: fontsize,
-                        font: font,
-                        fontWeight: pw.FontWeight.normal));
-              }
-            } else if (op.isInsert && op.value is Map) {
-              final insertMap = op.value as Map;
-              if (insertMap.containsKey('image')) {
-                return pw.Image(
-                  pw.MemoryImage(
-                    base64Decode(
-                      insertMap['image'].toString().split(',').last,
-                    ),
-                  ),
-                  width: double.tryParse(insertMap['width'].toString()),
-                  height: double.tryParse(insertMap['height'].toString()),
-                );
-              } else {
-                log.e("发现未知map类型");
-                return pw.Paragraph(
-                    text: op.value.toString(),
-                    style: pw.TextStyle(
-                        fontSize: fontsize,
-                        font: font,
-                        fontWeight: pw.FontWeight.normal));
-              }
-            }
-            log.e("发现未知类型");
-            return pw.Paragraph(
-                text: op.value.toString(),
-                style: pw.TextStyle(
-                    fontSize: fontsize,
-                    font: font,
-                    fontWeight: pw.FontWeight.normal));
-          }).toList();
-        },
-      ),
+
+  Doc getLatestDoc() {
+    return Doc(
+      title: titleEdit.text,
+      content: getEditOrigin(),
+      plainText: getEditPlainText(),
+      level: level,
+      crtime: crtime,
+      uptime: widget.uptime,
+      config: config,
+      id: id,
     );
-
-    String? outputFile = await FilePicker.platform.saveFile(
-      dialogTitle: '选择保存路径',
-      fileName: '${titleEdit.text}.pdf',
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
-    );
-
-    // 用户取消了操作
-    if (outputFile == null) {
-      return;
-    }
-
-    File file = File(outputFile);
-    await file.writeAsBytes(await pdf.save());
-
-    print('PDF文件已生成：${file.path}');
-  }
-
-  Future<void> exportTXT() async {
-    String? outputFile = await FilePicker.platform.saveFile(
-      dialogTitle: '选择保存路径',
-      fileName: titleEdit.text,
-      type: FileType.custom,
-      allowedExtensions: ['txt'],
-    );
-
-    // 用户取消了操作
-    if (outputFile == null) {
-      return;
-    }
-
-    File file = File(outputFile);
-    await file.writeAsString(getEditPlainText());
-    print("文件已保存：${file.path}");
   }
 
   void updateImage() async {

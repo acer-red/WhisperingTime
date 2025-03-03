@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
+import 'package:intl/intl.dart';
 import 'package:whispering_time/env.dart';
 import 'package:whispering_time/theme/group/doc/setting.dart';
 
@@ -314,7 +315,10 @@ class Doc {
   DateTime uptime;
   DocConfigration config;
   String id;
-  int get  day => crtime.day;
+  int get day => crtime.day;
+  String get levelString => Level.string(level);
+  String get crtimeString =>DateFormat('yyyy-MM-dd HH:mm').format(crtime);
+  String get uptimeString =>DateFormat('yyyy-MM-dd HH:mm').format(uptime);
   late bool isSearch;
   Doc({
     required this.title,
