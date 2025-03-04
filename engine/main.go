@@ -71,7 +71,7 @@ func main() {
 
 	init_mongo()
 	go quit()
-	log.Info("启动成功")
+	log.Info("已启动")
 	err := g.Run(":" + port)
 	if err != nil {
 		log.Fatal(err)

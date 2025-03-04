@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:whispering_time/env.dart';
-import 'package:whispering_time/theme/group/doc/setting.dart';
+import 'package:whispering_time/utils/env.dart';
+import 'package:whispering_time/pages/theme/group/doc/setting.dart';
 import 'doc/edit.dart';
 import 'package:intl/intl.dart';
-import 'package:whispering_time/http.dart';
+import 'package:whispering_time/services/http.dart';
 
 class Group {
   String name;
@@ -115,24 +115,26 @@ class _GroupPage extends State<GroupPage> {
                 PopupMenuItem(
                   child: Text('添加分组'),
                   onTap: () {
-                    clickAddGroup();
+                    dialogAddGroup();
                   },
                 ),
                 PopupMenuItem(
                   child: Text('重命名'),
                   onTap: () {
-                    clickRename();
+                    dialogRename();
                   },
                 ),
                 PopupMenuItem(
                   child: Text('设置'),
                   onTap: () {
-                    enterSetting();
+                    dialogSetting();
                   },
                 ),
                 PopupMenuItem(
-                  child: Text('测试'),
-                  onTap: () {},
+                  child: Text('导出'),
+                  onTap: () {
+                    dialogExport();
+                  },
                 ),
               ],
             ),
@@ -163,7 +165,7 @@ class _GroupPage extends State<GroupPage> {
               IconButton(
                 icon: const Icon(Icons.add),
                 onPressed: () {
-                  clickAddGroup();
+                  dialogAddGroup();
                 },
               ),
             ],
@@ -457,8 +459,8 @@ class _GroupPage extends State<GroupPage> {
     );
   }
 
-  /// 点击设置按钮，进入设置页面
-  enterSetting() async {
+  /// 弹窗设置窗口
+  dialogSetting() async {
     if (_gitems.isEmpty) {
       return;
     }
@@ -590,6 +592,59 @@ class _GroupPage extends State<GroupPage> {
     );
   }
 
+  /// 弹窗导出窗口
+  dialogExport() {}
+
+  /// 弹窗重命名窗口
+  dialogRename() async {
+    String? result;
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          content: TextField(
+            enabled: true,
+            onChanged: (value) {
+              result = value;
+            },
+            decoration: InputDecoration(hintText: _gitems[gidx].name),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('取消'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('确定'),
+              onPressed: () {
+                Navigator.of(context).pop(result);
+              },
+            ),
+          ],
+        );
+      },
+    );
+    if (result == null) {
+      return;
+    }
+    if (result!.isEmpty) {
+      return;
+    }
+
+    final res = await Http(tid: widget.tid, gid: _gitems[gidx].id)
+        .putGroup(RequestPutGroup(name: result!));
+
+    if (res.isNotOK) {
+      return;
+    }
+
+    setState(() {
+      _gitems[gidx].name = result!;
+    });
+  }
+
   /// 点击新增按钮，进入空白文档的编辑页面
   enterDocBlank() async {
     Group item = _gitems[gidx];
@@ -705,56 +760,6 @@ class _GroupPage extends State<GroupPage> {
     });
   }
 
-  /// 点击重命名按钮
-  clickRename() async {
-    String? result;
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          content: TextField(
-            enabled: true,
-            onChanged: (value) {
-              result = value;
-            },
-            decoration: InputDecoration(hintText: _gitems[gidx].name),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('取消'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: const Text('确定'),
-              onPressed: () {
-                Navigator.of(context).pop(result);
-              },
-            ),
-          ],
-        );
-      },
-    );
-    if (result == null) {
-      return;
-    }
-    if (result!.isEmpty) {
-      return;
-    }
-
-    final res = await Http(tid: widget.tid, gid: _gitems[gidx].id)
-        .putGroup(RequestPutGroup(name: result!));
-
-    if (res.isNotOK) {
-      return;
-    }
-
-    setState(() {
-      _gitems[gidx].name = result!;
-    });
-  }
-
   /// 点击分组按钮（在分组列表中），切换分组显示
   clickGroupTitle(int index) {
     setState(() {
@@ -795,7 +800,7 @@ class _GroupPage extends State<GroupPage> {
   }
 
   /// 点击添加分组
-  clickAddGroup() async {
+  dialogAddGroup() async {
     String? result;
     await showDialog(
       context: context,
@@ -953,7 +958,7 @@ class _GroupPage extends State<GroupPage> {
       return;
     }
     if (res.data.isEmpty) {
-      clickAddGroup();
+      dialogAddGroup();
       return;
     }
     setState(() {
@@ -976,7 +981,8 @@ class ViewTypeDropDown extends StatefulWidget {
   final int value;
   final ValueChanged<int> onValueChanged; // 添加回调函数
 
-  const ViewTypeDropDown({Key? key, required this.value, required this.onValueChanged})
+  const ViewTypeDropDown(
+      {Key? key, required this.value, required this.onValueChanged})
       : super(key: key);
 
   @override

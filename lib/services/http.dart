@@ -3,8 +3,8 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
 import 'package:intl/intl.dart';
-import 'package:whispering_time/env.dart';
-import 'package:whispering_time/theme/group/doc/setting.dart';
+import 'package:whispering_time/utils/env.dart';
+import 'package:whispering_time/pages/theme/group/doc/setting.dart';
 
 enum Method { get, post, put, delete }
 
@@ -57,6 +57,102 @@ class ResponseGetThemesAndDataX extends Basic {
       data: (json['data'] as List<dynamic>)
           .map((e) => XTheme.fromJson(e as Map<String, dynamic>))
           .toList(),
+    );
+  }
+}
+class ResponseGetThemesAndDataD extends Basic {
+  List<DTheme> data;
+
+  ResponseGetThemesAndDataD({
+    required super.err,
+    required super.msg,
+    required this.data,
+  });
+
+  factory ResponseGetThemesAndDataD.fromJson(Map<String, dynamic> json) {
+    return ResponseGetThemesAndDataD(
+      err: json['err'] as int,
+      msg: json['msg'] as String,
+      data: (json['data'] as List<dynamic>)
+          .map((e) => DTheme.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}
+class DTheme {
+  final String tid;
+  final String name;
+  final List<DGroup> groups;
+
+  DTheme({
+    required this.tid,
+    required this.name,
+    required this.groups,
+  });
+
+  factory DTheme.fromJson(Map<String, dynamic> json) {
+    return DTheme(
+      tid: json['tid'] as String,
+      name: json['theme_name'] as String,
+      groups: (json['groups'] as List<dynamic>)
+          .map((e) => DGroup.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}
+
+class DGroup {
+  final String gid;
+  final String name;
+  final List<DDoc> docs;
+
+  DGroup({
+    required this.gid,
+    required this.name,
+    required this.docs,
+  });
+
+  factory DGroup.fromJson(Map<String, dynamic> json) {
+    return DGroup(
+      gid: json['gid'] as String,
+      name: json['name'] as String,
+      docs: (json['docs'] as List<dynamic>)
+          .map((e) => DDoc.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}
+
+class DDoc {
+  final String did;
+  final String plainText;
+  final String title;
+  final String content;
+  final int level;
+  final DateTime crtime;
+  final DateTime uptime;
+
+  DDoc({
+    required this.did,
+    required this.plainText,
+    required this.title,
+    required this.content,
+    required this.level,
+    required this.crtime,
+    required this.uptime,
+
+  });
+
+  factory DDoc.fromJson(Map<String, dynamic> json) {
+    return DDoc(
+      did: json['did'] as String,
+      plainText: json['plain_text'] as String,
+      title: json['title'] as String,
+      content: json['content'] as String,
+      level: json['level'] as int,
+      crtime: Time.stringToTimeHasT(json['crtime'] as String),
+      uptime: Time.stringToTimeHasT(json['uptime'] as String),
+
     );
   }
 }
@@ -560,6 +656,24 @@ class Http {
 
     return _handleRequest<ResponseGetThemesAndDataX>(
         Method.get, url, (json) => ResponseGetThemesAndDataX.fromJson(json),
+        headers: headers);
+  }
+
+  Future<ResponseGetThemesAndDataD> getThemesAndDocDetail() async {
+    log.i("获取主题列表和印迹（详细数据）");
+
+    const String path = "/themes";
+    const Map<String, String> param = {
+      "doc": "1",
+      "detail": "1",
+    };
+    final Map<String, String> headers = {
+      'Authorization': getAuthorization(),
+    };
+    final url = Uri.http(serverAddress, path, param);
+
+    return _handleRequest<ResponseGetThemesAndDataD>(
+        Method.get, url, (json) => ResponseGetThemesAndDataD.fromJson(json),
         headers: headers);
   }
 

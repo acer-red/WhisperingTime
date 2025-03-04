@@ -4,9 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
-import 'package:whispering_time/http.dart';
-import 'package:whispering_time/export.dart';
-import 'package:whispering_time/env.dart';
+import 'package:whispering_time/services/http.dart';
+import 'package:whispering_time/utils/export.dart';
+import 'package:whispering_time/utils/env.dart';
 import 'setting.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
@@ -447,40 +447,25 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   }
 
   // 打开对话框，导出窗口
-  void dialogExport() async {
-    await showDialog<int>(
-      context: context,
-      barrierDismissible: true,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("导出印迹"),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                Text("导出到本地"),
-                ElevatedButton(
-                  onPressed: () {
-                    Export.pdf(getLatestDoc());
-                    Navigator.of(context).pop(0);
-                  },
-                  child: Text("PDF"),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Export.txt(getLatestDoc());
-                    Navigator.of(context).pop(0);
-                  },
-                  child: Text("文本"),
-                ),
-                divider(),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+  void dialogExport() {
+    Export().dialog(context, "导出印迹", () {
+      Doc d = getLatestDoc();
+      return Export.pdf(ExportDoc(
+          content: d.content,
+          title: d.title,
+          plainText: d.plainText,
+          level: level,
+          crtime: d.crtime));
+    }, () {
+       Doc d = getLatestDoc();
+      return Export.txt(ExportDoc(
+          content: d.content,
+          title: d.title,
+          plainText: d.plainText,
+          level: level,
+          crtime: d.crtime));
+    });
   }
-
 
   Doc getLatestDoc() {
     return Doc(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:whispering_time/http.dart';
-import 'package:whispering_time/env.dart';
+import 'package:whispering_time/services/http.dart';
+import 'package:whispering_time/utils/env.dart';
 
 class DocConfigration {
   bool? isShowTool;

@@ -31,12 +31,14 @@ func ThemeRoute(g *gin.Engine) {
 //  : 无参数，返回所有主题的数据
 //  ?doc=1: 返回所有主题的数据以及主题对应的文档
 //  ?doc=1&id=1: 返回所有主题以及主题对应的文档和ID
+//  ?doc=1&detail=1: 返回所有主题以及主题、组、文档的具体属性数据
 
 func ThemesGet(g *gin.Context) {
 	uoid := g.MustGet("uoid").(primitive.ObjectID)
 
 	has_doc := g.Query("doc") != ""
 	has_id := g.Query("id") != ""
+	has_detail := g.Query("detail") == "1"
 
 	// 仅有在has_id存在时，has_doc才有意义
 	has_doc = has_doc && !has_id
@@ -52,8 +54,19 @@ func ThemesGet(g *gin.Context) {
 		okData(g, response)
 		return
 	}
-	log.Info("获取所有主题及数据")
 
+	if has_detail {
+		log.Info("获取所有主题（细节）")
+		response, err := modb.ThemesGetAndDocsDetail(uoid, has_id)
+		if err != nil {
+			internalServerError(g)
+			return
+		}
+		okData(g, response)
+		return
+	}
+
+	log.Info("获取所有主题（文档）")
 	response, err := modb.ThemesGetAndDocs(uoid, has_id)
 	if err != nil {
 		internalServerError(g)

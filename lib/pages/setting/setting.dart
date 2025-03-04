@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:whispering_time/env.dart';
+import 'package:whispering_time/utils/env.dart';
 import 'show.dart';
 import 'develop_mode.dart';
-import 'package:whispering_time/export.dart';
+import 'package:whispering_time/utils/export.dart';
 
 class SettingsPage extends StatefulWidget {
   @override
@@ -44,7 +44,7 @@ class _SettingsPage extends State<SettingsPage> {
                     child: Text("开发者"))),
             divider(),
             TextButton(
-                onPressed: () => dialogExportOption(),
+                onPressed: () => dialogExport(),
                 child: Container(
                     padding: EdgeInsets.only(bottom: 15, top: 15, left: 15),
                     alignment: Alignment.centerLeft,
@@ -72,29 +72,11 @@ class _SettingsPage extends State<SettingsPage> {
         ));
   }
 
-  Future<void> dialogExportOption() async {
-    await showDialog<int>(
-      context: context,
-      barrierDismissible: true, // user must tap button!
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: null,
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                Text("导出到本地"),
-                ElevatedButton(
-                    onPressed: () {
-                      Export.themeTXT();
-                      Navigator.of(context).pop(0);
-                    },
-                    child: Text("纯文本")),
-                divider(),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+  Future<void> dialogExport() async {
+    Export().dialog(context, "导出所有数据", () {
+      return  Export.themePDF();
+    }, () {
+      return Export.themeTXT();
+    });
   }
 }

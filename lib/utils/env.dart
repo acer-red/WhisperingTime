@@ -168,7 +168,9 @@ class Time {
     // DateTime beijingTime = tz.TZDateTime.from(utcTime, beijing);
     return formatter.parse(t, false);
   }
-
+  static DateTime stringToTimeHasT(String t) {
+    return DateFormat('yyyy-MM-ddTHH:mm:ssZ').parse(t, false);
+  }
   static String nowTimestampString() {
     return (DateTime.now().millisecondsSinceEpoch / 1000).round().toString();
   }

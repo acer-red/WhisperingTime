@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'theme/theme.dart';
+import 'pages/theme/theme.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:whispering_time/env.dart';
-import 'setting/setting.dart';
+import 'package:whispering_time/utils/env.dart';
+import 'pages/setting/setting.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
