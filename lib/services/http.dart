@@ -60,6 +60,7 @@ class ResponseGetThemesAndDataX extends Basic {
     );
   }
 }
+
 class ResponseGetThemesAndDataD extends Basic {
   List<DTheme> data;
 
@@ -79,6 +80,7 @@ class ResponseGetThemesAndDataD extends Basic {
     );
   }
 }
+
 class DTheme {
   final String tid;
   final String name;
@@ -124,7 +126,7 @@ class DGroup {
 }
 
 class DDoc {
-  final String did;
+  final String id;
   final String plainText;
   final String title;
   final String content;
@@ -133,26 +135,24 @@ class DDoc {
   final DateTime uptime;
 
   DDoc({
-    required this.did,
+    required this.id,
     required this.plainText,
     required this.title,
     required this.content,
     required this.level,
     required this.crtime,
     required this.uptime,
-
   });
 
   factory DDoc.fromJson(Map<String, dynamic> json) {
     return DDoc(
-      did: json['did'] as String,
+      id: json['id'] as String,
       plainText: json['plain_text'] as String,
       title: json['title'] as String,
       content: json['content'] as String,
       level: json['level'] as int,
       crtime: Time.stringToTimeHasT(json['crtime'] as String),
       uptime: Time.stringToTimeHasT(json['uptime'] as String),
-
     );
   }
 }
@@ -296,6 +296,22 @@ class ThemeListData {
 }
 
 // group
+class ResponseGetGroupAndDocDetail extends Basic {
+  List<DGroup> data;
+  ResponseGetGroupAndDocDetail(
+      {required super.err, required super.msg, required this.data});
+  factory ResponseGetGroupAndDocDetail.fromJson(Map<String, dynamic> json) {
+    return ResponseGetGroupAndDocDetail(
+        err: json['err'] as int,
+        msg: json['msg'] as String,
+        data: json['data'] != null
+            ? (json['data'] as List<dynamic>)
+                .map((item) => DGroup.fromJson(item as Map<String, dynamic>))
+                .toList()
+            : List.empty());
+  }
+}
+
 class ResponseGetGroup extends Basic {
   List<GroupListData> data;
   ResponseGetGroup(
@@ -413,8 +429,8 @@ class Doc {
   String id;
   int get day => crtime.day;
   String get levelString => Level.string(level);
-  String get crtimeString =>DateFormat('yyyy-MM-dd HH:mm').format(crtime);
-  String get uptimeString =>DateFormat('yyyy-MM-dd HH:mm').format(uptime);
+  String get crtimeString => DateFormat('yyyy-MM-dd HH:mm').format(crtime);
+  String get uptimeString => DateFormat('yyyy-MM-dd HH:mm').format(uptime);
   late bool isSearch;
   Doc({
     required this.title,
@@ -751,6 +767,30 @@ class Http {
 
     return _handleRequest<ResponseGetGroup>(
         Method.get, url, (json) => ResponseGetGroup.fromJson(json),
+        headers: headers);
+  }
+
+  Future<ResponseGetGroupAndDocDetail> getGroupAndDocDetail() async {
+    print("获取所有分组和印迹（详细数据）");
+
+    String path = "/group/${tid!}/${gid!}";
+
+    if (tid == null) {
+      log.e('缺少tid');
+    }
+
+    final Map<String, String> headers = {
+      "Content-Type": "application/json",
+      'Authorization': getAuthorization(),
+    };
+    final Map<String, String> param = {
+      "doc": "1",
+      "detail": "1",
+    };
+    final url = Uri.http(serverAddress, path, param);
+
+    return _handleRequest<ResponseGetGroupAndDocDetail>(
+        Method.get, url, (json) => ResponseGetGroupAndDocDetail.fromJson(json),
         headers: headers);
   }
 

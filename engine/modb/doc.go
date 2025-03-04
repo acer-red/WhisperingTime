@@ -40,7 +40,6 @@ type RequestDocPut struct {
 }
 
 func DocsGet(goid primitive.ObjectID) ([]Doc, error) {
-	log.Infof("获取全部文档")
 	var results []Doc
 
 	filter := bson.D{
@@ -82,7 +81,6 @@ func DocsGet(goid primitive.ObjectID) ([]Doc, error) {
 	return results, nil
 }
 func DocsGetWithDate(goid primitive.ObjectID, yyyy int, mm int) ([]Doc, error) {
-	log.Infof("获取全部文档含日期")
 
 	var results []Doc
 

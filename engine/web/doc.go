@@ -31,38 +31,24 @@ func DocRoute(g *gin.Engine) {
 }
 
 func DocsGet(g *gin.Context) {
-	goid := g.MustGet("goid").(primitive.ObjectID)
-
 	year_str := query(g, "year")
 	month_str := query(g, "month")
 
 	if year_str == "" && month_str == "" {
-		ret, err := modb.DocsGet(goid)
-		if err != nil {
-			internalServerError(g)
-			return
-		}
-		okData(g, ret)
+		docsGetNoDate(g)
 		return
 	}
-	yyyy := sys.YYYYToInt(year_str)
-	mm := sys.MMToInt(month_str)
-	ret, err := modb.DocsGetWithDate(goid, yyyy, mm)
-	if err != nil {
-		internalServerError(g)
-		return
-	}
-	okData(g, ret)
+	docsGetWithDate(g, year_str, month_str)
+
 }
 func DocPost(g *gin.Context) {
 
 	type response struct {
 		ID string `json:"id"`
 	}
-	log.Info("创建文档")
+	log.Info("创建印迹")
 
 	goid := g.MustGet("goid").(primitive.ObjectID)
-
 	var req modb.RequestDocPost
 
 	if err := g.ShouldBindBodyWithJSON(&req); err != nil {
@@ -79,7 +65,7 @@ func DocPost(g *gin.Context) {
 	okData(g, response{ID: did})
 }
 func DocIDPut(g *gin.Context) {
-	log.Info("更新文档")
+	log.Info("更新印迹")
 	goid := g.MustGet("goid").(primitive.ObjectID)
 	doid := g.MustGet("doid").(primitive.ObjectID)
 
@@ -99,7 +85,7 @@ func DocIDPut(g *gin.Context) {
 }
 func DocIDDelete(g *gin.Context) {
 
-	log.Info("删除文档")
+	log.Info("删除印迹")
 	goid := g.MustGet("goid").(primitive.ObjectID)
 	doid := g.MustGet("doid").(primitive.ObjectID)
 
@@ -109,4 +95,31 @@ func DocIDDelete(g *gin.Context) {
 		return
 	}
 	ok(g)
+}
+
+func docsGetNoDate(g *gin.Context) {
+	log.Info("获取所有印迹")
+	goid := g.MustGet("goid").(primitive.ObjectID)
+
+	ret, err := modb.DocsGet(goid)
+	if err != nil {
+		internalServerError(g)
+		return
+	}
+	okData(g, ret)
+}
+
+func docsGetWithDate(g *gin.Context, year, month string) {
+	log.Info("获取所有印迹(含时间)")
+
+	goid := g.MustGet("goid").(primitive.ObjectID)
+
+	yyyy := sys.YYYYToInt(year)
+	mm := sys.MMToInt(month)
+	ret, err := modb.DocsGetWithDate(goid, yyyy, mm)
+	if err != nil {
+		internalServerError(g)
+		return
+	}
+	okData(g, ret)
 }

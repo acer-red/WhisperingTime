@@ -24,11 +24,12 @@ func GroupRoute(g *gin.Engine) {
 	c := g.Group("/group/:tid/:gid")
 	{
 		c.Use(getTidAndGid())
-		c.GET("", GroupIDGet)
-		c.PUT("", GroupIDPut)
+		c.GET("", GroupGet)
+		c.PUT("", GroupPutID)
 		c.DELETE("", GroupIDDelete)
 	}
 }
+
 func GroupsGet(g *gin.Context) {
 	log.Info("获取所有分组")
 
@@ -41,19 +42,17 @@ func GroupsGet(g *gin.Context) {
 	}
 	okData(g, response)
 }
+func GroupGet(g *gin.Context) {
 
-func GroupIDGet(g *gin.Context) {
-	log.Infof("获取分组")
-	toid := g.MustGet("toid").(primitive.ObjectID)
-	goid := g.MustGet("goid").(primitive.ObjectID)
+	has_doc := query(g, "doc")
+	has_detail := query(g, "detail")
 
-	response, err := modb.GroupGet(toid, goid)
-	if err != nil {
-		internalServerError(g)
+	if has_doc == "1" && has_detail == "1" {
+		groupGetAndDocDetail(g)
 		return
 	}
+	groupGetNoDetail(g)
 
-	okData(g, response)
 }
 func GroupPost(g *gin.Context) {
 	log.Infof("获取主题")
@@ -78,7 +77,7 @@ func GroupPost(g *gin.Context) {
 	}
 	okData(g, response{ID: id})
 }
-func GroupIDPut(g *gin.Context) {
+func GroupPutID(g *gin.Context) {
 	log.Infof("修改分组")
 
 	toid := g.MustGet("toid").(primitive.ObjectID)
@@ -111,4 +110,31 @@ func GroupIDDelete(g *gin.Context) {
 	}
 
 	ok(g)
+}
+func groupGetAndDocDetail(g *gin.Context) {
+	log.Infof("获取分组包含数据")
+	toid := g.MustGet("toid").(primitive.ObjectID)
+	goid := g.MustGet("goid").(primitive.ObjectID)
+
+	response, err := modb.GroupGetAndDocDetail(toid, goid)
+	if err != nil {
+		internalServerError(g)
+		return
+	}
+
+	okData(g, response)
+}
+func groupGetNoDetail(g *gin.Context) {
+
+	log.Infof("获取分组")
+	toid := g.MustGet("toid").(primitive.ObjectID)
+	goid := g.MustGet("goid").(primitive.ObjectID)
+
+	response, err := modb.GroupGet(toid, goid)
+	if err != nil {
+		internalServerError(g)
+		return
+	}
+
+	okData(g, response)
 }

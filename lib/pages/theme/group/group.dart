@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:whispering_time/utils/env.dart';
+import 'package:whispering_time/utils/export.dart';
 import 'package:whispering_time/pages/theme/group/doc/setting.dart';
 import 'doc/edit.dart';
 import 'package:intl/intl.dart';
@@ -593,7 +594,27 @@ class _GroupPage extends State<GroupPage> {
   }
 
   /// 弹窗导出窗口
-  dialogExport() {}
+  dialogExport() {
+    Export().dialog(context, "导出当前分组", () async {
+      final groups = await Http(tid: widget.tid,gid: _gitems[gidx].id).getGroupAndDocDetail();
+      if (groups.isNotOK) {
+        return;
+      }
+      if (groups.data.isEmpty) {
+        return;
+      }
+      return Export.groupPDF(groups.data);
+    }, () async {
+      final groups = await Http().getGroupAndDocDetail();
+      if (groups.isNotOK) {
+        return;
+      }
+      if (groups.data.isEmpty) {
+        return;
+      }
+      return Export.groupPDF(groups.data);
+    });
+  }
 
   /// 弹窗重命名窗口
   dialogRename() async {

@@ -122,12 +122,11 @@ func ThemesGetAndDocs(uoid primitive.ObjectID, has_id bool) (any, error) {
 	// 		  }
 	// 		}
 	// 	  }
-
 	// 	}
-	//   ])
+	// ])
 
 	type doc struct {
-		Did       string `json:"did" bson:"did"`
+		Did       string `json:"id" bson:"did"`
 		PlainText string `json:"plain_text" bson:"plain_text"`
 		Title     string `json:"title" bson:"title"`
 	}
@@ -278,7 +277,7 @@ func ThemesGetAndDocsDetail(uoid primitive.ObjectID, has_id bool) (any, error) {
 	// ])
 
 	type doc struct {
-		Did       string             `json:"did" bson:"did"`
+		Did       string             `json:"id" bson:"did"`
 		PlainText string             `json:"plain_text" bson:"plain_text"`
 		Content   string             `json:"content" bson:"content"`
 		Level     int                `json:"level" bson:"level"`

@@ -278,8 +278,7 @@ class Export {
           }
         }
       }
-    log.i("保存结束");
-
+      log.i("保存结束");
     }
   }
 
@@ -325,6 +324,45 @@ class Export {
             log.e('写入PDF失败失败: $e');
             return;
           }
+        }
+      }
+    }
+    log.i("保存结束");
+  }
+
+  static Future<void> groupPDF(List<DGroup> groups) async {
+    String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
+
+    if (selectedDirectory == null) {
+      return;
+    }
+
+    String currentDate = Time.getCurrentTime();
+    for (DGroup group in groups) {
+      for (DDoc doc in group.docs) {
+        // 文件名: DGroup.name/DDoc.title
+        // 文件内容: DGroup.name/DDoc.content
+        final String savePath =
+            '$selectedDirectory/枫迹/$currentDate/${group.name}';
+        print("目录:$savePath,title:${doc.title}");
+        try {
+          await Directory(savePath).create(recursive: true);
+        } catch (e) {
+          log.e('创建文件夹失败: $e');
+          return;
+        }
+        try {
+          await Export.pdf(
+              ExportDoc(
+                  title: doc.title,
+                  content: doc.content,
+                  plainText: "",
+                  level: doc.level,
+                  crtime: doc.crtime),
+              savePath: savePath);
+        } catch (e) {
+          log.e('写入PDF失败失败: $e');
+          return;
         }
       }
     }

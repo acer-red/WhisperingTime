@@ -18,7 +18,6 @@ import (
 
 type App struct {
 	loglevel int
-	database string
 }
 
 var app App

@@ -118,12 +118,22 @@ func getGidAndDid() gin.HandlerFunc {
 }
 
 func query(g *gin.Context, s string) string {
-	path := g.Request.URL.Path[1:]
-	if !strings.Contains(path, "&") {
-		return ""
+	query := g.Request.URL.RawQuery
+	if !strings.Contains(query, "&") {
+		if !strings.Contains(query, "=") {
+			return ""
+
+		}
+		if !strings.Contains(query, s) {
+			return ""
+		}
+		if strings.Split(query, "=")[0] != s {
+			return ""
+		}
+		return strings.Split(query, "=")[1]
 	}
 
-	for _, str := range strings.Split(path, "&") {
+	for _, str := range strings.Split(query, "&") {
 		if strings.Contains(str, s) {
 			return strings.Split(str, "=")[1]
 		}
