@@ -36,7 +36,16 @@ type RequestDocPost struct {
 }
 
 type RequestDocPut struct {
-	Doc Doc `json:"data"`
+	Doc struct {
+		Title     *string `json:"title,omitempty" bson:"title"`
+		Content   *string `json:"content,omitempty" bson:"content"`
+		PlainText *string `json:"plain_text,omitempty" bson:"plain_text"`
+		Level     *int    `json:"level,omitempty" bson:"level"`
+		CRTime    *string `json:"crtime,omitempty"`
+		UPTime    *string `json:"uptime,omitempty"`
+		Config    *config `json:"config,omitempty" bson:"config"`
+		ID        *string `json:"id" bson:"did"`
+	} `json:"data"`
 }
 
 func DocsGet(goid primitive.ObjectID) ([]Doc, error) {
@@ -156,40 +165,35 @@ func DocPut(goid primitive.ObjectID, doid primitive.ObjectID, req *RequestDocPut
 	}
 
 	m := bson.M{}
-	var onlyLevel bool = true
 
-	if (*req).Doc.Content != "" {
+	if (*req).Doc.Content != nil {
 		m["content"] = (*req).Doc.Content
 		m["plain_text"] = (*req).Doc.PlainText
-		onlyLevel = false
 	}
 
-	if (*req).Doc.Title != "" {
+	if (*req).Doc.Title != nil {
 		m["title"] = (*req).Doc.Title
-		onlyLevel = false
 	}
 
-	if (*req).Doc.CRTime != "" {
-		m["crtime"] = sys.StringtoTime((*req).Doc.CRTime)
+	if (*req).Doc.CRTime != nil {
+		m["crtime"] = sys.StringtoTime(*(*req).Doc.CRTime)
 	}
 
-	if (*req).Doc.UPTime != "" {
-		m["uptime"] = sys.StringtoTime((*req).Doc.UPTime)
+	if (*req).Doc.UPTime != nil {
+		m["uptime"] = sys.StringtoTime(*(*req).Doc.UPTime)
 	}
 
-	if (*req).Doc.Title != "" {
+	if (*req).Doc.Title != nil {
 		m["title"] = (*req).Doc.Title
-		onlyLevel = false
 	}
 
 	if (*req).Doc.Config != nil {
 		m["config"] = bson.M{
 			"is_show_tool": (*req).Doc.Config.IsShowTool,
 		}
-		onlyLevel = false
 	}
 
-	if onlyLevel {
+	if (*req).Doc.Level != nil {
 		m["level"] = (*req).Doc.Level
 	}
 

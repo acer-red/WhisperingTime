@@ -103,7 +103,7 @@ func GroupGetAndDocDetail(toid primitive.ObjectID, goid primitive.ObjectID) (any
 		CRTime    primitive.DateTime `json:"crtime"`
 		UPTime    primitive.DateTime `json:"uptime"`
 		Config    *config            `json:"config,omitempty" bson:"config"`
-		ID        string             `json:"id" bson:"did"`
+		ID        string             `json:"did" bson:"did"`
 	}
 
 	type groups struct {
@@ -148,7 +148,7 @@ func GroupGetAndDocDetail(toid primitive.ObjectID, goid primitive.ObjectID) (any
 		log.Error(err)
 		return nil, err
 	}
-	return results, nil
+	return results[0], nil
 
 }
 func GroupPost(toid primitive.ObjectID, req *RequestGroupPost) (string, error) {

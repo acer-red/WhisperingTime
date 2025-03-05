@@ -73,10 +73,6 @@ class _SettingsPage extends State<SettingsPage> {
   }
 
   Future<void> dialogExport() async {
-    Export().dialog(context, "导出所有数据", () {
-      return  Export.themePDF();
-    }, () {
-      return Export.themeTXT();
-    });
+    Export(Export.resourceTheme).dialog(context,"导出所有数据");
   }
 }

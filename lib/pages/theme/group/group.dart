@@ -595,25 +595,10 @@ class _GroupPage extends State<GroupPage> {
 
   /// 弹窗导出窗口
   dialogExport() {
-    Export().dialog(context, "导出当前分组", () async {
-      final groups = await Http(tid: widget.tid,gid: _gitems[gidx].id).getGroupAndDocDetail();
-      if (groups.isNotOK) {
-        return;
-      }
-      if (groups.data.isEmpty) {
-        return;
-      }
-      return Export.groupPDF(groups.data);
-    }, () async {
-      final groups = await Http().getGroupAndDocDetail();
-      if (groups.isNotOK) {
-        return;
-      }
-      if (groups.data.isEmpty) {
-        return;
-      }
-      return Export.groupPDF(groups.data);
-    });
+    Export(Export.resourceGroup, tid: widget.tid, gid: _gitems[gidx].id).dialog(
+      context,
+      "导出当前分组",
+    );
   }
 
   /// 弹窗重命名窗口

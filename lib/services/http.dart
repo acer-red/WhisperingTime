@@ -133,7 +133,8 @@ class DDoc {
   final int level;
   final DateTime crtime;
   final DateTime uptime;
-
+  String get crtimeString => DateFormat('yyyy-MM-dd HH:mm').format(crtime);
+  String get levelString => Level.string(level);
   DDoc({
     required this.id,
     required this.plainText,
@@ -146,7 +147,7 @@ class DDoc {
 
   factory DDoc.fromJson(Map<String, dynamic> json) {
     return DDoc(
-      id: json['id'] as String,
+      id: json['did'] as String,
       plainText: json['plain_text'] as String,
       title: json['title'] as String,
       content: json['content'] as String,
@@ -205,11 +206,18 @@ class XDoc {
   final String did;
   final String plainText;
   final String title;
-
+  final int level;
+  final DateTime crtime;
+  final DateTime uptime;
+  String get crtimeString => DateFormat('yyyy-MM-dd HH:mm').format(crtime);
+  String get levelString => Level.string(level);
   XDoc({
     required this.did,
     required this.plainText,
     required this.title,
+    required this.level,
+    required this.crtime,
+    required this.uptime,
   });
 
   factory XDoc.fromJson(Map<String, dynamic> json) {
@@ -217,6 +225,9 @@ class XDoc {
       did: json['did'] as String,
       plainText: json['plain_text'] as String,
       title: json['title'] as String,
+      level: json['level'] as int,
+      crtime: Time.stringToTimeHasT(json['crtime'] as String),
+      uptime: Time.stringToTimeHasT(json['uptime'] as String),
     );
   }
 }
@@ -297,18 +308,17 @@ class ThemeListData {
 
 // group
 class ResponseGetGroupAndDocDetail extends Basic {
-  List<DGroup> data;
+  DGroup data;
   ResponseGetGroupAndDocDetail(
       {required super.err, required super.msg, required this.data});
   factory ResponseGetGroupAndDocDetail.fromJson(Map<String, dynamic> json) {
+
     return ResponseGetGroupAndDocDetail(
         err: json['err'] as int,
         msg: json['msg'] as String,
         data: json['data'] != null
-            ? (json['data'] as List<dynamic>)
-                .map((item) => DGroup.fromJson(item as Map<String, dynamic>))
-                .toList()
-            : List.empty());
+            ? DGroup.fromJson(json['data'] as Map<String, dynamic>)
+            : DGroup(gid: "", name: "", docs: List.empty()));
   }
 }
 
@@ -531,27 +541,22 @@ class RequestPutDoc {
     Map<String, dynamic> data = {'uptime': Time.toTimestampString(uptime)};
 
     if (content != null) {
-      print("更新文档内容");
       data['content'] = content;
       data['plain_text'] = plainText;
     }
 
     if (title != null) {
-      print("更新文档标题");
       data['title'] = title;
     }
 
     if (crtime != null) {
-      print("更新文档创建时间");
       data['crtime'] = Time.toTimestampString(crtime!);
     }
 
     if (level != null) {
-      print("更新文档等级");
       data['level'] = level;
     }
     if (config != null) {
-      print("更新文档配置");
       data['config'] = config!.toJson();
     }
     return data;
@@ -645,7 +650,7 @@ class Http {
 
   // theme
   Future<ResponseGetThemes> getthemes() async {
-    log.i("获取主题列表");
+    log.i("发送请求 获取主题列表");
     const String path = "/themes";
 
     final Map<String, String> headers = {
@@ -659,7 +664,7 @@ class Http {
   }
 
   Future<ResponseGetThemesAndDataX> getThemesAndDoc() async {
-    log.i("获取主题列表和印迹");
+    log.i("发送请求 获取主题列表和印迹");
 
     const String path = "/themes";
     const Map<String, String> param = {
@@ -676,7 +681,7 @@ class Http {
   }
 
   Future<ResponseGetThemesAndDataD> getThemesAndDocDetail() async {
-    log.i("获取主题列表和印迹（详细数据）");
+    log.i("发送请求 获取主题列表和印迹（详细数据）");
 
     const String path = "/themes";
     const Map<String, String> param = {
@@ -694,6 +699,7 @@ class Http {
   }
 
   Future<ResponsePostTheme> posttheme(RequestPostTheme req) async {
+    log.i("发送请求 创建主题");
     String path = "/theme";
 
     final Map<String, dynamic> data = {
@@ -715,6 +721,7 @@ class Http {
   }
 
   Future<ResponsePutTheme> puttheme(RequestPutTheme req) async {
+    log.i("发送请求 更新主题");
     String path = "/theme/${tid!}";
 
     final Map<String, dynamic> data = {
@@ -736,6 +743,7 @@ class Http {
   }
 
   Future<ResponseDeleteTheme> deletetheme() async {
+    log.i("发送请求 删除主题");
     String path = "/theme/${tid!}";
 
     final Map<String, String> headers = {
@@ -750,7 +758,7 @@ class Http {
 
   // group
   Future<ResponseGetGroup> getGroups() async {
-    print("获取所有分组");
+    log.i("发送请求 获取所有分组");
 
     String path = "/groups/${tid!}";
 
@@ -771,7 +779,7 @@ class Http {
   }
 
   Future<ResponseGetGroupAndDocDetail> getGroupAndDocDetail() async {
-    print("获取所有分组和印迹（详细数据）");
+    log.i("发送请求 获取所有分组和印迹（详细数据）");
 
     String path = "/group/${tid!}/${gid!}";
 
@@ -795,6 +803,7 @@ class Http {
   }
 
   Future<ResponsePostGroup> postGroup(RequestPostGroup req) async {
+    log.i("发送请求 创建分组");
     String path = "/group/${tid!}";
 
     if (tid == null) {
@@ -820,6 +829,7 @@ class Http {
   }
 
   Future<ResponsePutGroup> putGroup(RequestPutGroup req) async {
+    log.i("发送请求 更新分组");
     if (tid == null || gid == null) {
       log.e('缺少参数');
     }
@@ -845,6 +855,7 @@ class Http {
   }
 
   Future<ResponseDeleteGroup> deleteGroup() async {
+    log.i("发送请求 删除分组");
     if (tid == null || gid == null) {
       log.e('缺少参数');
     }
@@ -863,7 +874,7 @@ class Http {
 
   // doc
   Future<ResponseGetDoc> getDocs(int? year, int? month) async {
-    print("获取分组的日志列表");
+    log.i("发送请求 获取分组的日志列表");
 
     String path = "/docs/${gid!}";
     if (year != null) {
@@ -897,7 +908,7 @@ class Http {
   }
 
   Future<ResponsePostDoc> postDoc(RequestPostDoc req) async {
-    print("创建印迹");
+    log.i("发送请求 创建印迹");
 
     String path = "/doc/${gid!}";
 
@@ -919,7 +930,7 @@ class Http {
   }
 
   Future<ResponsePutDoc> putDoc(RequestPutDoc req) async {
-    print("更新文档");
+    log.i("发送请求 更新文档");
 
     String path = "/doc/${gid!}/${did!}";
 
@@ -941,7 +952,7 @@ class Http {
   }
 
   Future<ResponseDeleteDoc> deleteDoc() async {
-    print("删除文档");
+    log.i("发送请求 删除文档");
     String path = "/doc/${gid!}/${did!}";
     final Map<String, String> headers = {
       'Authorization': getAuthorization(),
@@ -960,7 +971,7 @@ class Http {
 
   // image
   Future<ResponsePostImage> postImage(RequestPostImage req) async {
-    print("上传图片");
+    log.i("发送请求 上传图片");
 
     String path = "/image/${req.name}";
 

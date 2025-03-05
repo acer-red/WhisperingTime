@@ -126,9 +126,12 @@ func ThemesGetAndDocs(uoid primitive.ObjectID, has_id bool) (any, error) {
 	// ])
 
 	type doc struct {
-		Did       string `json:"id" bson:"did"`
-		PlainText string `json:"plain_text" bson:"plain_text"`
-		Title     string `json:"title" bson:"title"`
+		Did       string             `json:"did" bson:"did"`
+		PlainText string             `json:"plain_text" bson:"plain_text"`
+		Title     string             `json:"title" bson:"title"`
+		CRTime    primitive.DateTime `json:"crtime" bson:"crtime"`
+		UPTime    primitive.DateTime `json:"uptime" bson:"uptime"`
+		Level     int                `json:"level" bson:"level"`
 	}
 	type group struct {
 		Gid  string `json:"gid" bson:"gid"`
@@ -180,6 +183,9 @@ func ThemesGetAndDocs(uoid primitive.ObjectID, has_id bool) (any, error) {
 									{Key: "did", Value: "$$doc.did"},
 									{Key: "plain_text", Value: "$$doc.plain_text"},
 									{Key: "title", Value: "$$doc.title"},
+									{Key: "crtime", Value: "$$doc.crtime"},
+									{Key: "uptime", Value: "$$doc.uptime"},
+									{Key: "level", Value: "$$doc.level"},
 								}},
 							}},
 						}},
@@ -277,7 +283,7 @@ func ThemesGetAndDocsDetail(uoid primitive.ObjectID, has_id bool) (any, error) {
 	// ])
 
 	type doc struct {
-		Did       string             `json:"id" bson:"did"`
+		Did       string             `json:"did" bson:"did"`
 		PlainText string             `json:"plain_text" bson:"plain_text"`
 		Content   string             `json:"content" bson:"content"`
 		Level     int                `json:"level" bson:"level"`

@@ -435,36 +435,37 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   }
 
   Future<ResponsePutDoc> updateDoc() async {
-    final req = RequestPutDoc(
-      plainText: getEditPlainText(),
-      content: getEditOrigin(),
-      title: titleEdit.text,
-      level: level,
-    );
-
+    RequestPutDoc req = RequestPutDoc();
+    if (!keepEditText){
+      print("文档内容有变化");
+      req.plainText = getEditPlainText();
+      req.content = getEditOrigin();
+    }
+    if (!keepTitleText){
+      print("标题有变化");
+      req.title = titleEdit.text;
+    }
+    if (!keepLevel){
+      print("等级有变化");
+      req.level = level;
+    }
     final res = await Http(gid: widget.gid, did: widget.id!).putDoc(req);
     return res;
   }
 
   // 打开对话框，导出窗口
   void dialogExport() {
-    Export().dialog(context, "导出印迹", () {
-      Doc d = getLatestDoc();
-      return Export.pdf(ExportDoc(
-          content: d.content,
-          title: d.title,
-          plainText: d.plainText,
-          level: level,
-          crtime: d.crtime));
-    }, () {
-       Doc d = getLatestDoc();
-      return Export.txt(ExportDoc(
-          content: d.content,
-          title: d.title,
-          plainText: d.plainText,
-          level: level,
-          crtime: d.crtime));
-    });
+    Export(Export.resourceDoc,
+            doc: ExportData(
+                content: getEditOrigin(),
+                title: titleEdit.text,
+                plainText: getEditPlainText(),
+                level: level,
+                crtime: crtime))
+        .dialog(
+      context,
+      "导出印迹",
+    );
   }
 
   Doc getLatestDoc() {
