@@ -1,7 +1,9 @@
 package web
 
 import (
+	"bytes"
 	"net/http"
+	"strings"
 
 	sys "sys"
 
@@ -54,6 +56,15 @@ func msgInternalServer(msg ...string) message {
 	}
 	return m
 }
+func msgNoFound(msg ...string) message {
+	m := message{Err: mseqInternalServer}
+	if len(msg) > 0 {
+		m.Msg = msg[0]
+	} else {
+		m.Msg = mstrInternalServer
+	}
+	return m
+}
 
 //	func msgNoParam(msg ...string) message {
 //		m := message{Err: mseqNoParam}
@@ -84,16 +95,25 @@ func okData(g *gin.Context, obj any) {
 	log.Debug3f("\n%s", sys.JsonPrettyPrint(d))
 	g.JSON(http.StatusOK, d)
 }
-func okPNG(g *gin.Context, data []byte) {
-	// d := msgOK().setData(obj)
-	// log.Debug3f("\n%s", string(body))
+func okImage(g *gin.Context, data bytes.Buffer) {
+	name := g.Param("file")
 
-	g.Data(http.StatusOK, "image/png", data)
-
+	switch strings.Split(name, ".")[1] {
+	case "png":
+		g.Data(http.StatusOK, "image/png", data.Bytes())
+	case "jpg":
+		g.Data(http.StatusOK, "image/jpeg", data.Bytes())
+	default:
+		log.Warnf("未知图片类型,%s", name)
+	}
 }
+
 func badRequest(g *gin.Context) {
 	g.AbortWithStatusJSON(http.StatusBadRequest, msgBadRequest())
 }
 func internalServerError(g *gin.Context) {
 	g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())
+}
+func notFound(g *gin.Context) {
+	g.AbortWithStatusJSON(http.StatusNotFound, msgNoFound())
 }

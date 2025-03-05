@@ -95,7 +95,6 @@ class Export {
   }
 
   pdf() {
-    print("$integrateMode,$resourceType");
     switch (integrateMode) {
       // 拆分为多个文件
       case 0:

@@ -312,7 +312,6 @@ class ResponseGetGroupAndDocDetail extends Basic {
   ResponseGetGroupAndDocDetail(
       {required super.err, required super.msg, required this.data});
   factory ResponseGetGroupAndDocDetail.fromJson(Map<String, dynamic> json) {
-
     return ResponseGetGroupAndDocDetail(
         err: json['err'] as int,
         msg: json['msg'] as String,
@@ -583,17 +582,40 @@ class ResponseDeleteDoc extends Basic {
   }
 }
 
-// image
-class RequestPostImage {
-  String name;
-  Uint8List data;
-  RequestPostImage({required this.name, required this.data});
+enum IMGType {
+  jpg,
+  png,
 }
 
-class ResponsePostImage {
-  bool ok;
-  String data;
-  ResponsePostImage({required this.ok, required this.data});
+// image
+class ResponseDeleteImage extends Basic{
+  ResponseDeleteImage({required super.err, required super.msg});
+  factory ResponseDeleteImage.fromJson(Map<String, dynamic> json) {
+    return ResponseDeleteImage(
+      err: json['err'] as int,
+      msg: json['msg'] as String,
+    );
+  }
+
+}
+
+class RequestPostImage {
+  IMGType type;
+  Uint8List data;
+  RequestPostImage({required this.type, required this.data});
+}
+
+class ResponsePostImage extends Basic {
+  final String name;
+  ResponsePostImage(
+      {required super.err, required super.msg, required this.name});
+  factory ResponsePostImage.fromJson(Map<String, dynamic> json) {
+    return ResponsePostImage(
+      err: json['err'] as int,
+      msg: json['msg'] as String,
+      name: json['data']['name'] as String,
+    );
+  }
 }
 
 class Http {
@@ -973,18 +995,43 @@ class Http {
   Future<ResponsePostImage> postImage(RequestPostImage req) async {
     log.i("发送请求 上传图片");
 
-    String path = "/image/${req.name}";
-
+    String path = "/image";
+    final String mine;
+    switch (req.type) {
+      case IMGType.jpg:
+        mine = "image/jpeg";
+        break;
+      case IMGType.png:
+        mine = "image/png";
+        break;
+    }
     final url = Uri.http(serverAddress, path);
     final Map<String, String> headers = {
       'Authorization': getAuthorization(),
+      "Content-Type": mine,
     };
 
     Response response = await http.post(url, headers: headers, body: req.data);
-    int status = response.statusCode;
-    ResponsePostImage ret = ResponsePostImage(
-        ok: status == 200, data: status == 200 ? response.body : "");
 
-    return ret;
+    return ResponsePostImage.fromJson(jsonDecode(response.body));
+  }
+
+  // deleteImage
+  Future<ResponseDeleteImage> deleteImage(String name) async {
+    log.i("发送请求 删除图片");
+    String path = "/image/$name";
+    final Map<String, String> headers = {
+      'Authorization': getAuthorization(),
+    };
+    final url = Uri.http(
+      serverAddress,
+      path,
+    );
+    return _handleRequest<ResponseDeleteImage>(
+      Method.delete,
+      url,
+      (json) => ResponseDeleteImage.fromJson(json),
+      headers: headers,
+    );
   }
 }

@@ -8,7 +8,6 @@ import 'package:whispering_time/services/http.dart';
 import 'package:whispering_time/utils/export.dart';
 import 'package:whispering_time/utils/env.dart';
 import 'setting.dart';
-import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import 'package:path/path.dart' as p;
@@ -63,7 +62,6 @@ class DocEditPage extends StatefulWidget {
 class _DocEditPage extends State<DocEditPage> with RouteAware {
   TextEditingController titleEdit = TextEditingController();
   QuillController edit = QuillController.basic();
-
   DocConfigration config = DocConfigration();
   bool chooseLeveled = false;
   bool _isSelected = true;
@@ -71,6 +69,8 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   int level = 0;
   DateTime crtime = DateTime.now();
   String id = "";
+  Delta? _previousFullDelta; // 保存上一次的文档内容
+
   bool get keepEditText => widget.content == getEditOrigin();
   bool get keepTitleText => titleEdit.text == widget.title;
   bool get keepLevel => widget.level == level;
@@ -86,10 +86,14 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     super.initState();
     if (widget.content.isNotEmpty) {
       edit = QuillController(
-          document: Document.fromJson(jsonDecode(widget.content)),
-          selection: const TextSelection.collapsed(offset: 0));
+        document: Document.fromJson(jsonDecode(widget.content)),
+        selection: const TextSelection.collapsed(offset: 0),
+      );
+      edit.document.changes.listen((change) {
+        editChange();
+      });
     }
-
+    _previousFullDelta = edit.document.toDelta();
     level = widget.level;
     crtime = widget.crtime;
     config = widget.config;
@@ -176,7 +180,6 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
                     children: List.generate(
                         Level.l.length, (index) => Level.levelWidget(index)),
                   ),
-            //           hintText: '或简单，或详尽～',
 
             // 富文本工具栏（含图片）
             if (config.isShowTool!)
@@ -184,12 +187,19 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
                 controller: edit,
                 configurations: QuillSimpleToolbarConfigurations(
                   customButtons: [
+                    // 添加图片
                     QuillToolbarCustomButtonOptions(
                       icon: Icon(Icons.image),
                       onPressed: () => dialogSelectImage(context, edit),
+                    ),
+                    // 测试按钮
+                    QuillToolbarCustomButtonOptions(
+                      icon: Icon(Icons.radio_button_checked),
+                      onPressed: () {
+                        print(getEditOrigin());
+                      },
                     )
                   ],
-                  // embedButtons: FlutterQuillEmbeds.toolbarButtons(),
                 ),
               ),
 
@@ -260,10 +270,50 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     setState(() => isTitleSubmited = !isTitleSubmited);
   }
 
+  // 检测文档内容的变化
+  void editChange() {
+    Delta currentDelta = edit.document.toDelta();
+
+    List<String> preList = _previousFullDelta!.operations
+        .where((op) =>
+            op.isInsert &&
+            op.value is Map &&
+            (op.value as Map).containsKey('image'))
+        .map((op) => (op.value as Map)['image'] as String)
+        .toList();
+
+    List<String> currentList = currentDelta.operations
+        .where((op) =>
+            op.isInsert &&
+            op.value is Map &&
+            (op.value as Map).containsKey('image'))
+        .map((op) => (op.value as Map)['image'] as String)
+        .toList();
+
+    if (preList.length > currentList.length) {
+      for (String previousImageUrl in preList) {
+        if (!currentList.contains(previousImageUrl)) {
+          String deletedImageUrl = previousImageUrl;
+          _onImageDeleted(deletedImageUrl);
+        }
+      }
+    }
+    _previousFullDelta = currentDelta;
+
+    //  **在检测完成后，更新 _previousFullDelta 为当前的文档状态，以便下次变化时进行比较**
+  }
+
+  // 执行删除图片的逻辑
+  void _onImageDeleted(String imageUrl) {
+    Http().deleteImage(imageUrl.split('/').last);
+    // ScaffoldMessenger.of(context).showSnackBar(
+    //   SnackBar(content: Text('图片 $imageUrl 已被删除!')),
+    // );
+  }
+
   // 保存文档
   Future<bool> saveDoc() async {
-    updateImage();
-
+    checkImage();
     // 创建新文档
     if (widget.id == null) {
       final ret = await createDoc();
@@ -371,9 +421,8 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     switch (ret.state) {
       case LastPage.change:
         if (widget.id != null) {
-          final req = RequestPutDoc(
-              crtime: ret.crtime,
-              config: DocConfigration(isShowTool: config.isShowTool));
+          RequestPutDoc req = RequestPutDoc(crtime: ret.crtime);
+          req.config = ret.config;
           final res = await Http(gid: widget.gid, did: widget.id!).putDoc(req);
           if (res.isNotOK) {
             print("更新配置错误");
@@ -436,16 +485,16 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
 
   Future<ResponsePutDoc> updateDoc() async {
     RequestPutDoc req = RequestPutDoc();
-    if (!keepEditText){
+    if (!keepEditText) {
       print("文档内容有变化");
       req.plainText = getEditPlainText();
       req.content = getEditOrigin();
     }
-    if (!keepTitleText){
+    if (!keepTitleText) {
       print("标题有变化");
       req.title = titleEdit.text;
     }
-    if (!keepLevel){
+    if (!keepLevel) {
       print("等级有变化");
       req.level = level;
     }
@@ -481,37 +530,99 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     );
   }
 
-  void updateImage() async {
-    List<Operation> ops = edit.document.toDelta().toList();
+  void checkImage() {
+    uploadImage();
+    deleteImage();
+  }
 
-    for (Operation op in ops) {
-      if (!(op.isInsert && op.value is Embed && op.value.type == 'image')) {
+  void uploadImage() async {
+    final delta = edit.document.toDelta();
+    List<Operation> ops = delta.toList();
+
+    for (int i = 0; i < ops.length; i++) {
+      var op = ops[i];
+      if (!(op.isInsert && op.value is Map)) {
         continue;
       }
-      String base64Image = op.value.data;
-      String name = UUID.create;
-      print("发现需要更替的图片");
+      final map = op.value as Map;
+      if (!map.containsKey('image')) {
+        continue;
+      }
 
+      String base64Image = map['image'].toString();
+
+      IMGType type = IMGType.png;
       if (base64Image.startsWith("data:image/png;base64,")) {
-        base64Image.replaceFirst("data:image/png;base64,", "");
-        name += ".png";
+        base64Image = base64Image.replaceFirst("data:image/png;base64,", "");
       } else if (base64Image.startsWith("data:image/jpg;base64,")) {
-        base64Image.replaceFirst("data:image/jpg;base64,", "");
-        name += ".jpg";
+        base64Image = base64Image.replaceFirst("data:image/jpg;base64,", "");
+        type = IMGType.jpg;
       } else {
         continue;
       }
-      print("图片更替");
       Uint8List bytes = base64Decode(base64Image);
 
       ResponsePostImage res =
-          await Http().postImage(RequestPostImage(name: name, data: bytes));
-      if (!res.ok) {
+          await Http().postImage(RequestPostImage(type: type, data: bytes));
+      if (res.isNotOK) {
         log.e('创建图片失败');
         return;
       }
-      op.value.data = "http://${Settings().getServerAddress()}/image/$name";
-      // 现在你可以使用 imageBytes 了
+      final String newValue =
+          "http://${Settings().getServerAddress()}/image/${res.name}";
+
+      ops[i] = Operation.fromJson({
+        "insert": {"image": newValue}
+      });
+
+      edit.document = Document.fromDelta(
+          Delta.fromJson(ops.map((e) => e.toJson()).toList()));
+    }
+  }
+
+  void deleteImage() async {
+    List<String> links = [];
+    // 从widget.content中提取图片链接
+    final old = Delta.fromJson(jsonDecode(widget.content));
+    List<Operation> ops = old.toList();
+    for (int i = 0; i < ops.length; i++) {
+      var op = ops[i];
+      if (!(op.isInsert && op.value is Map)) {
+        continue;
+      }
+      final map = op.value as Map;
+      if (!map.containsKey('image')) {
+        continue;
+      }
+      final url = map['image'].toString();
+      if (url.startsWith("http")) {
+        links.add(url);
+      }
+    }
+
+    final delta = Delta.fromJson(edit.document.toDelta().toJson());
+    List<Operation> newops = delta.toList();
+    for (int i = 0; i < newops.length; i++) {
+      var op = newops[i];
+      if (!(op.isInsert && op.value is Map)) {
+        continue;
+      }
+      final map = op.value as Map;
+      if (!map.containsKey('image')) {
+        continue;
+      }
+      final newValue = map['image'].toString();
+      if (!newValue.startsWith("http")) {
+        continue;
+      }
+      if (links.contains(newValue)) {
+        continue;
+      }
+      final name = newValue.split('/').last;
+      final res = await Http().deleteImage(name);
+      if (res.isNotOK) {
+        log.e('删除图片失败');
+      }
     }
   }
 
@@ -525,10 +636,12 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
             content: SingleChildScrollView(
           child: ListBody(children: <Widget>[
             Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 TextButton.icon(
                   onPressed: () {
-                    selectImage(edit);
+                    pickerLocalImage();
                     Navigator.of(context).pop();
                   },
                   icon: Icon(Icons.folder_open),
@@ -540,7 +653,9 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
                   label: Text("相机"),
                 ),
                 TextButton.icon(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
                   icon: Icon(Icons.language),
                   label: Text("网络"),
                 )
@@ -552,32 +667,35 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     );
   }
 
-  selectImage(QuillController edit) async {
+  pickerLocalImage() async {
     final ImagePicker picker = ImagePicker();
-// Pick an image.
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
     if (image == null) {
       return;
     }
-    final File imageFile = File(image.path);
-    final String extension = p.extension(imageFile.path);
-    final bytes = await imageFile.readAsBytes();
-    final String data;
-    if (extension == '.jpg' ||
-        extension == '.jpeg' ||
-        extension == '.JPG' ||
-        extension == '.JPEG') {
-      data = "data:image/png;base64,${base64Encode(bytes)}";
-    } else if (extension == '.png' || extension == '.PNG') {
-      data = "data:image/png;base64,${base64Encode(bytes)}";
+    final String extension = p.extension(image.path).toLowerCase();
+    final bytes = await image.readAsBytes();
+    // final String data;
+    IMGType type = IMGType.png;
+    if (extension == '.jpg' || extension == '.jpeg') {
+      type = IMGType.jpg;
+      // data = "data:image/jpg;base64,${base64Encode(bytes)}";
+    } else if (extension == '.png') {
+      // data = "data:image/png;base64,${base64Encode(bytes)}";
     } else {
       print('其他文件类型');
       return;
     }
+    ResponsePostImage res =
+        await Http().postImage(RequestPostImage(type: type, data: bytes));
 
-    // 优化点
-    // 先插入为base64，保存文档时，修改为url
-    edit.insertImageBlock(imageSource: data);
+    // 插入在线链接
+    edit.insertImageBlock(
+        imageSource:
+            "http://${Settings().getServerAddress()}/image/${res.name}");
+
+    // 插入base64
+    // edit.insertImageBlock(imageSource:data);
 
     // Capture a photo.
     // final XFile? photo = await picker.pickImage(source: ImageSource.camera);

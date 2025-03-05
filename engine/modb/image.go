@@ -1,48 +1,148 @@
 package modb
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"io"
+	"sys"
 
 	"github.com/tengfei-xy/go-log"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/gridfs"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func ImageGet(name string) ([]byte, error) {
-	log.Infof("图片提取")
-	var result struct {
-		Image primitive.Binary `bson:"data"`
-	}
+func ImageGet(name string) (bytes.Buffer, error) {
 
-	filter := bson.D{{Key: "name", Value: name}}
-
-	err := db.Collection("image").FindOne(context.TODO(), filter).Decode(&result)
+	// 获取 GridFS Bucket 对象
+	bucket, err := gridfs.NewBucket(db)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	return result.Image.Data, nil
+
+	// 查询条件：根据 filename 查找
+	filter := bson.D{{Key: "filename", Value: name}}
+
+	// 投影：只返回 _id 字段
+	projection := bson.D{{Key: "_id", Value: 1}}
+
+	// FindOneOptions 用于设置投影
+	findOptions := options.FindOne().SetProjection(projection)
+
+	// 执行 FindOne 查询
+	var resultDoc bson.M // 用 bson.M 存储结果，也可以定义 struct
+	err = db.Collection("fs.files").FindOne(context.TODO(), filter, findOptions).Decode(&resultDoc)
+
+	if err != nil {
+		log.Error(err)
+		if err == mongo.ErrNoDocuments {
+			return bytes.Buffer{}, sys.ERR_NO_FOUND
+		} else {
+			return bytes.Buffer{}, sys.ERR_INTERNAL_SERVER_ERROR
+		}
+	}
+
+	// 从结果文档中获取 _id
+	objectID, ok := resultDoc["_id"].(interface{}) //  _id 可能是 interface{} 类型
+	if !ok {
+		return bytes.Buffer{}, sys.ERR_INTERNAL_SERVER_ERROR
+	}
+
+	var downloadBuffer bytes.Buffer
+
+	downloadStreamByID, err := bucket.OpenDownloadStream(objectID) // 使用文件 ID 下载
+	if err != nil {
+		panic(err)
+	}
+	defer downloadStreamByID.Close()
+
+	if _, err := io.Copy(&downloadBuffer, downloadStreamByID); err != nil {
+		panic(err)
+	}
+
+	return downloadBuffer, nil
 }
-func ImageCreate(name string, data []byte) (any, error) {
-	log.Infof("图片创建")
-	type response struct {
-		Name string `json:"name"`
-	}
-	identified := bson.D{{Key: "name", Value: name}, {Key: "data", Value: data}}
-	_, err := db.Collection("image").InsertOne(context.TODO(), identified)
+func ImageCreate(name string, data []byte) error {
+
+	// 获取 GridFS Bucket 对象
+	bucket, err := gridfs.NewBucket(db)
 	if err != nil {
-		return "", err
+		panic(err)
 	}
 
-	// 获取 GridFS
-	// db := session.DB("your_database_name")
-	// gridFS := db.GridFS("fs")
+	uploadStream, err := bucket.OpenUploadStream(
+		name, // 文件名
+		options.GridFSUpload().SetMetadata(map[string]string{"type": "image"}), // 可选的元数据
+	)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	defer uploadStream.Close()
 
-	// // 创建 GridFS 文件
-	// file, err := gridFS.Create(imageUpload.Filename)
-	// if err != nil {
-	//   c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create GridFS file"})
-	//   return
-	// }
+	fileSize, err := io.Copy(uploadStream, bytes.NewReader(data))
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	log.Infof("创建图片: %s(%s)", name, ByteCountSI(fileSize))
+	return nil
+}
 
-	return response{Name: name}, nil
+func ByteCountSI(b int64) string {
+	const unit = 1000
+	if b < unit {
+		return fmt.Sprintf("%d B", b)
+	}
+	div, exp := int64(unit), 0
+	for n := b / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", float64(b)/float64(div), "kMGTPE"[exp])
+}
+
+func ImageDelete(name string) error {
+
+	// 查询条件：根据 filename 查找
+	filter := bson.D{{Key: "filename", Value: name}}
+
+	// 投影：只返回 _id 字段
+	projection := bson.D{{Key: "_id", Value: 1}}
+
+	// FindOneOptions 用于设置投影
+	findOptions := options.FindOne().SetProjection(projection)
+
+	// 执行 FindOne 查询
+	var resultDoc bson.M // 用 bson.M 存储结果，也可以定义 struct
+	err := db.Collection("fs.files").FindOne(context.TODO(), filter, findOptions).Decode(&resultDoc)
+
+	if err != nil {
+		log.Error(err)
+		if err == mongo.ErrNoDocuments {
+			return sys.ERR_NO_FOUND
+		} else {
+			return sys.ERR_INTERNAL_SERVER_ERROR
+		}
+	}
+
+	// 从结果文档中获取 _id
+	objectID, ok := resultDoc["_id"].(interface{}) //  _id 可能是 interface{} 类型
+	if !ok {
+		return sys.ERR_INTERNAL_SERVER_ERROR
+	}
+	// 获取 GridFS Bucket 对象
+	bucket, err := gridfs.NewBucket(db)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	if err := bucket.Delete(objectID); err != nil {
+		log.Error(err)
+		return err
+	}
+	return nil
 }

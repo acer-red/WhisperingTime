@@ -186,7 +186,7 @@ func DocPut(goid primitive.ObjectID, doid primitive.ObjectID, req *RequestDocPut
 	if (*req).Doc.Title != nil {
 		m["title"] = (*req).Doc.Title
 	}
-
+	log.Infof("%v", (*req).Doc.Config.IsShowTool)
 	if (*req).Doc.Config != nil {
 		m["config"] = bson.M{
 			"is_show_tool": (*req).Doc.Config.IsShowTool,

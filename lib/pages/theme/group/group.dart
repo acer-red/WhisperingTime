@@ -442,8 +442,6 @@ class _GroupPage extends State<GroupPage> {
                       pickedDate.month == DateTime.now().month &&
                       pickedDate.year == DateTime.now().year;
 
-                  // print("${pickedDate.year} ${pickedDate.month} ${dayNumber}");
-
                   for (int i = 0; i < _ditems.length; i++) {
                     if (index - firstWeekdayOfMonth + 2 ==
                         _ditems[i].crtime.day) {
