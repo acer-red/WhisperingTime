@@ -69,7 +69,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   int level = 0;
   DateTime crtime = DateTime.now();
   String id = "";
-  Delta? _previousFullDelta; // 保存上一次的文档内容
+  Delta? _previousFullDelta; // 保存上一次的印迹内容
 
   bool get keepEditText => widget.content == getEditOrigin();
   bool get keepTitleText => titleEdit.text == widget.title;
@@ -270,7 +270,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     setState(() => isTitleSubmited = !isTitleSubmited);
   }
 
-  // 检测文档内容的变化
+  // 检测印迹内容的变化
   void editChange() {
     Delta currentDelta = edit.document.toDelta();
 
@@ -300,7 +300,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     }
     _previousFullDelta = currentDelta;
 
-    //  **在检测完成后，更新 _previousFullDelta 为当前的文档状态，以便下次变化时进行比较**
+    //  **在检测完成后，更新 _previousFullDelta 为当前的印迹状态，以便下次变化时进行比较**
   }
 
   // 执行删除图片的逻辑
@@ -311,14 +311,14 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     // );
   }
 
-  // 保存文档
+  // 保存印迹
   Future<bool> saveDoc() async {
     checkImage();
-    // 创建新文档
+    // 创建新印迹
     if (widget.id == null) {
       final ret = await createDoc();
       if (ret.isNotOK) {
-        print("创建文档失败");
+        print("创建印迹失败");
         return false;
       }
       setState(() {
@@ -327,10 +327,10 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
       return true;
     }
 
-    // 更新现有文档
+    // 更新现有印迹
     final ret = await updateDoc();
     if (ret.isNotOK) {
-      print("更新文档失败");
+      print("更新印迹失败");
       return false;
     }
 
@@ -344,7 +344,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
       return Navigator.of(context).pop(nocreateDoc(failed: false));
     }
 
-    // 文档内容有变化
+    // 印迹内容有变化
     if (!(keepEditText && keepTitleText && keepLevel)) {
       bool ok = await saveDoc();
       if (ok) {
@@ -378,7 +378,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
       }
     }
 
-    // 文档内容无变化
+    // 印迹内容无变化
     if (keepCRTime && keepConfig) {
       if (mounted) {
         return Navigator.of(context).pop(LastPageDoc(
@@ -392,7 +392,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
             config: config,
             id: id));
       }
-      // 文档内容无变化，配置有变化
+      // 印迹内容无变化，配置有变化
     } else {
       if (mounted) {
         return Navigator.of(context).pop(LastPageDoc(
@@ -439,7 +439,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
         });
         break;
       case LastPage.delete:
-        print("返回并删除文档");
+        print("返回并删除印迹");
         Navigator.of(context).pop(LastPageDoc(
             state: ret.state,
             title: "",
@@ -486,7 +486,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   Future<ResponsePutDoc> updateDoc() async {
     RequestPutDoc req = RequestPutDoc();
     if (!keepEditText) {
-      print("文档内容有变化");
+      print("印迹内容有变化");
       req.plainText = getEditPlainText();
       req.content = getEditOrigin();
     }

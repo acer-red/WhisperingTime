@@ -553,7 +553,7 @@ class PDF {
             'page': content.length + 2, // +2 是因为首页和大纲页
           });
 
-          // 创建文档内容
+          // 创建印迹内容
           QuillController edit = QuillController(
               document: Document.fromJson(jsonDecode(doc.content)),
               selection: const TextSelection.collapsed(offset: 0));
@@ -778,7 +778,7 @@ class PDF {
         'page': content.length + 2, // +2 是因为首页和大纲页
       });
 
-      // 创建文档内容
+      // 创建印迹内容
       QuillController edit = QuillController(
           document: Document.fromJson(jsonDecode(doc.content)),
           selection: const TextSelection.collapsed(offset: 0));

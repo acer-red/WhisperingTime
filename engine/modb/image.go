@@ -44,7 +44,7 @@ func ImageGet(name string) (bytes.Buffer, error) {
 		}
 	}
 
-	// 从结果文档中获取 _id
+	// 从结果印迹中获取 _id
 	objectID, ok := resultDoc["_id"].(interface{}) //  _id 可能是 interface{} 类型
 	if !ok {
 		return bytes.Buffer{}, sys.ERR_INTERNAL_SERVER_ERROR
@@ -128,7 +128,7 @@ func ImageDelete(name string) error {
 		}
 	}
 
-	// 从结果文档中获取 _id
+	// 从结果印迹中获取 _id
 	objectID, ok := resultDoc["_id"].(interface{}) //  _id 可能是 interface{} 类型
 	if !ok {
 		return sys.ERR_INTERNAL_SERVER_ERROR

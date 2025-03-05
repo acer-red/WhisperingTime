@@ -952,7 +952,7 @@ class Http {
   }
 
   Future<ResponsePutDoc> putDoc(RequestPutDoc req) async {
-    log.i("发送请求 更新文档");
+    log.i("发送请求 更新印迹");
 
     String path = "/doc/${gid!}/${did!}";
 
@@ -974,7 +974,7 @@ class Http {
   }
 
   Future<ResponseDeleteDoc> deleteDoc() async {
-    log.i("发送请求 删除文档");
+    log.i("发送请求 删除印迹");
     String path = "/doc/${gid!}/${did!}";
     final Map<String, String> headers = {
       'Authorization': getAuthorization(),

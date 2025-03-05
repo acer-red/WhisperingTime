@@ -649,7 +649,7 @@ class _GroupPage extends State<GroupPage> {
     });
   }
 
-  /// 点击新增按钮，进入空白文档的编辑页面
+  /// 点击新增按钮，进入空白印迹的编辑页面
   enterDocBlank() async {
     Group item = _gitems[gidx];
 
@@ -697,7 +697,7 @@ class _GroupPage extends State<GroupPage> {
     }
   }
 
-  /// 点击卡片按钮，进入文档编辑页面
+  /// 点击卡片按钮，进入印迹编辑页面
   enterDoc(int index) async {
     Group group = _gitems[gidx];
     Doc doc = _ditems[index];
@@ -876,7 +876,7 @@ class _GroupPage extends State<GroupPage> {
     }
   }
 
-  /// 更新当前分组下的文档列表
+  /// 更新当前分组下的印迹列表
   setDocs({int? year, int? month}) async {
     if (_gitems.isEmpty) {
       return;

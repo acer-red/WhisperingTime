@@ -219,7 +219,7 @@ func DocDelete(goid primitive.ObjectID, doid primitive.ObjectID) error {
 	return err
 }
 
-// 根据goid删除所有文档
+// 根据goid删除所有印迹
 func DocDeleteFromGOID(goid primitive.ObjectID) error {
 	data := bson.D{
 		{Key: "_goid", Value: goid},

@@ -109,12 +109,12 @@ func GroupGetAndDocDetail(toid primitive.ObjectID, goid primitive.ObjectID) (any
 	type groups struct {
 		GID  string `json:"gid" bson:"gid"`
 		Name string `json:"name" bson:"name,omitempty"` // 来自 A 集合的 name 字段
-		Docs []doc  `json:"docs" bson:"docs,omitempty"` // 关联查询到的 B 集合文档数组
+		Docs []doc  `json:"docs" bson:"docs,omitempty"` // 关联查询到的 B 集合印迹数组
 	}
 
 	// 构建聚合管道
 	pipeline := mongo.Pipeline{
-		bson.D{ // 阶段一：$match - 筛选 A 集合，找到指定 gid 的文档
+		bson.D{ // 阶段一：$match - 筛选 A 集合，找到指定 gid 的印迹
 			{Key: "$match", Value: bson.D{{Key: "_id", Value: goid}}},
 		},
 		bson.D{ // 阶段二：$lookup - 关联查询 B 集合
@@ -122,14 +122,14 @@ func GroupGetAndDocDetail(toid primitive.ObjectID, goid primitive.ObjectID) (any
 				{Key: "from", Value: "doc"},           // 要关联的集合是 'B'
 				{Key: "localField", Value: "_id"},     // A 集合的 _id 字段作为本地连接字段
 				{Key: "foreignField", Value: "_goid"}, // B 集合的 _goid 字段作为外地连接字段
-				{Key: "as", Value: "docs"},            // 将匹配到的 B 集合文档放入名为 'docs' 的数组字段
+				{Key: "as", Value: "docs"},            // 将匹配到的 B 集合印迹放入名为 'docs' 的数组字段
 			}},
 		},
-		bson.D{ // 阶段三：$project - 重塑输出文档结构
+		bson.D{ // 阶段三：$project - 重塑输出印迹结构
 			{Key: "$project", Value: bson.D{
 				{Key: "gid", Value: 1},  // 排除输出结果中的 _id 字段
 				{Key: "name", Value: 1}, // 从 A 集合中提取 name 字段，并重命名为 "name_from_A" (假设 A 集合有 name 字段)
-				{Key: "docs", Value: 1}, // 保留关联查询到的 B 集合文档数组，命名为 "docs"
+				{Key: "docs", Value: 1}, // 保留关联查询到的 B 集合印迹数组，命名为 "docs"
 			}},
 		},
 	}

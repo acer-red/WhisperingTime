@@ -29,9 +29,9 @@ func ThemeRoute(g *gin.Engine) {
 //  GET /themes
 //  参数说明
 //  : 无参数，返回所有主题的数据
-//  ?doc=1: 返回所有主题的数据以及主题对应的文档
-//  ?doc=1&id=1: 返回所有主题以及主题对应的文档和ID
-//  ?doc=1&detail=1: 返回所有主题以及主题、组、文档的具体属性数据
+//  ?doc=1: 返回所有主题的数据以及主题对应的印迹
+//  ?doc=1&id=1: 返回所有主题以及主题对应的印迹和ID
+//  ?doc=1&detail=1: 返回所有主题以及主题、组、印迹的具体属性数据
 
 func ThemesGet(g *gin.Context) {
 	uoid := g.MustGet("uoid").(primitive.ObjectID)
@@ -66,7 +66,7 @@ func ThemesGet(g *gin.Context) {
 		return
 	}
 
-	log.Info("获取所有主题（文档）")
+	log.Info("获取所有主题（印迹）")
 	response, err := modb.ThemesGetAndDocs(uoid, has_id)
 	if err != nil {
 		internalServerError(g)
