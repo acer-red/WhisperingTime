@@ -70,6 +70,7 @@ class _GroupPage extends State<GroupPage> {
   bool isGrouTitleSubmitted = true;
   TextEditingController groupTitleEdit = TextEditingController();
   DateTime pickedDate = DateTime.now();
+  int pageIndex = 0;
 
   /// 分级选项
   /// true: 单选
@@ -114,27 +115,51 @@ class _GroupPage extends State<GroupPage> {
             PopupMenuButton(
               itemBuilder: (BuildContext context) => <PopupMenuEntry>[
                 PopupMenuItem(
-                  child: Text('添加分组'),
-                  onTap: () {
-                    dialogAddGroup();
-                  },
-                ),
-                PopupMenuItem(
                   child: Text('重命名'),
                   onTap: () {
                     dialogRename();
                   },
                 ),
                 PopupMenuItem(
-                  child: Text('设置'),
-                  onTap: () {
-                    dialogSetting();
-                  },
-                ),
-                PopupMenuItem(
                   child: Text('导出'),
                   onTap: () {
                     dialogExport();
+                  },
+                ),
+                PopupMenuItem(
+                  onTap: () => dialogBottom(ViewSetting(
+                    mode: viewType,
+                    pageIndex: pageIndex,
+                    onPageChanged: (value) {
+                      setState(() {
+                        pageIndex = value;
+                      });
+                    },
+                    onViewModeChanged: (value) {
+                      setState(() {
+                        viewType = value;
+                      });
+                    },
+                    isSelected: _isSelected,
+                    isSingleMultiChoose: isSingleMultiChoose,
+                    onLevelChanged: (value) {
+                      setState(() {
+                        _isSelected = value;
+                        clickLevel();
+                      });
+                    },
+                    onModeChanged: (value) {
+                      setState(() {
+                        isSingleMultiChoose = value;
+                      });
+                    },
+                  )),
+                  child: const Text("显式设置"),
+                ),
+                PopupMenuItem(
+                  child: Text('其他设置'),
+                  onTap: () {
+                    dialogSetting();
                   },
                 ),
               ],
@@ -185,27 +210,6 @@ class _GroupPage extends State<GroupPage> {
         child: Center(
           child: Column(
             children: [
-              // 印迹 分级按钮
-              Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: ToggleButtons(
-                  isSelected: _isSelected,
-                  children: List.generate(
-                      Level.l.length, (index) => Level.levelWidget(index)),
-                  onPressed: (int index) {
-                    setState(() {
-                      if (isSingleMultiChoose) {
-                        _isSelected[index] = !_isSelected[index];
-                      } else {
-                        _isSelected = List.generate(
-                            _isSelected.length, (i) => i == index);
-                      }
-                    });
-                    clickLevel();
-                  },
-                ),
-              ),
-
               // 印迹主体
               Expanded(
                 child: IndexedStack(index: viewType, children: [
@@ -458,6 +462,15 @@ class _GroupPage extends State<GroupPage> {
     );
   }
 
+  dialogBottom(Widget widget) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return widget;
+      },
+    );
+  }
+
   /// 弹窗设置窗口
   dialogSetting() async {
     if (_gitems.isEmpty) {
@@ -475,40 +488,6 @@ class _GroupPage extends State<GroupPage> {
           content: SingleChildScrollView(
             child: ListBody(
               children: <Widget>[
-                Row(
-                  children: [
-                    Expanded(child: Text("样式")),
-                    ViewTypeDropDown(
-                      value: viewType,
-                      onValueChanged: (int value) {
-                        setState(() {
-                          viewType = value;
-                        });
-                        clickLevel();
-                      },
-                    ),
-                  ],
-                ),
-                // 分级选择
-                Row(
-                  children: [
-                    Expanded(
-                      child: SwitchListTile(
-                        title: Text('单选多选'),
-                        subtitle: Text(!isSingleMultiChoose
-                            ? '当前单选，分级选项只能选择一个'
-                            : '当前多选，分级选项能够选择多个'),
-                        value: isSingleMultiChoose,
-                        onChanged: (bool value) async {
-                          setState(() {
-                            isSingleMultiChoose = value;
-                            (context as Element).markNeedsBuild();
-                          });
-                        },
-                      ),
-                    ),
-                  ],
-                ),
                 IndexedStack(
                   index: status,
                   children: [
@@ -565,9 +544,9 @@ class _GroupPage extends State<GroupPage> {
                   onPressed: () => clickDeleteGroup(gidx),
                   style: ButtonStyle(
                     backgroundColor: WidgetStateProperty.all<Color>(
-                        Colors.red.shade900), // 设置红色背景
+                        Colors.red.shade900),
                     minimumSize: WidgetStateProperty.all(
-                        Size(200, 60)), // 设置按钮大小为 200x60
+                        Size(200, 60)), 
                   ),
                   child: Text(
                     "删除 ${_gitems[gidx].name}",
@@ -578,14 +557,6 @@ class _GroupPage extends State<GroupPage> {
               ],
             ),
           ),
-          actions: <Widget>[
-            TextButton(
-              child: Text('关闭'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
         );
       },
     );
@@ -1024,6 +995,173 @@ class _ViewTypeDropDown extends State<ViewTypeDropDown> {
           child: Text(value),
         );
       }).toList(),
+    );
+  }
+}
+
+class ViewSetting extends StatefulWidget {
+  final bool isSingleMultiChoose;
+  final List<bool> isSelected;
+  final ValueChanged<List<bool>> onLevelChanged;
+  final ValueChanged<bool> onModeChanged;
+  final ValueChanged<int> onViewModeChanged;
+  final ValueChanged<int> onPageChanged;
+  final int pageIndex;
+  final int mode;
+  const ViewSetting(
+      {super.key,
+      required this.isSingleMultiChoose,
+      required this.isSelected,
+      required this.onLevelChanged,
+      required this.onModeChanged,
+      required this.onViewModeChanged,
+      required this.onPageChanged,
+      required this.pageIndex,
+      required this.mode});
+
+  @override
+  State<ViewSetting> createState() => ViewSettingState();
+}
+
+class ViewSettingState extends State<ViewSetting> {
+  List<bool> _isSelected = [true, false, false, false, false];
+  bool isSingleMultiChoose = false;
+  late int mode;
+  late int pageIndex;
+  late final PageController _pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _isSelected = widget.isSelected;
+    isSingleMultiChoose = widget.isSingleMultiChoose;
+    mode = widget.mode;
+    pageIndex = widget.pageIndex;
+    _pageController = PageController(initialPage: widget.pageIndex);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onHorizontalDragUpdate: (details) {
+        // 根据鼠标拖动的 delta.dx 值来更新 PageView 的滚动位置
+        _pageController.position.moveTo(
+          _pageController.position.pixels - details.delta.dx,
+        );
+      },
+      child: PageView(
+        controller: _pageController,
+        onPageChanged: (index) {
+          setState(() {
+            pageIndex = index;
+          });
+          widget.onPageChanged(index);
+        },
+        children: [ui("视图选择"), level("分级选择")],
+      ),
+    );
+  }
+
+  Widget ui(String title) {
+    return Column(
+      children: [
+        // 标题
+        Padding(
+          padding: EdgeInsets.all(8.0),
+          child: Text(
+            title,
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+        ),
+        // 主体
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Expanded(
+              child: RadioListTile<int>(
+                title: const Text('卡片'),
+                value: 0,
+                groupValue: mode,
+                onChanged: (int? value) {
+                  setState(() {
+                    mode = value!;
+                    widget.onViewModeChanged(mode);
+                  });
+                },
+              ),
+            ),
+            Expanded(
+              child: RadioListTile<int>(
+                title: const Text('日历'),
+                value: 1,
+                groupValue: mode,
+                onChanged: (int? value) {
+                  setState(() {
+                    mode = value!;
+                    widget.onViewModeChanged(mode);
+                  });
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget level(String title) {
+    return Column(
+      children: [
+        // 标题
+        Padding(
+          padding: EdgeInsets.all(8.0),
+          child: Text(
+            title,
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+        ),
+        // 印迹 分级按钮
+        Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: ToggleButtons(
+            isSelected: _isSelected,
+            children: List.generate(
+                Level.l.length, (index) => Level.levelWidget(index)),
+            onPressed: (int index) {
+              setState(() {
+                if (isSingleMultiChoose) {
+                  _isSelected[index] = !_isSelected[index];
+                } else {
+                  _isSelected =
+                      List.generate(_isSelected.length, (i) => i == index);
+                }
+                widget.onLevelChanged(_isSelected);
+              });
+              // clickLevel();
+            },
+          ),
+        ),
+        // 分级选择
+        Row(
+          children: [
+            Expanded(
+              child: SwitchListTile(
+                title: Text('单选/多选'),
+                subtitle: Text(!isSingleMultiChoose
+                    ? '当前单选，分级选项只能选择一个'
+                    : '当前多选，分级选项能够选择多个'),
+                value: isSingleMultiChoose,
+                onChanged: (bool value) async {
+                  setState(() {
+                    isSingleMultiChoose = value;
+                  });
+                  widget.onModeChanged(isSingleMultiChoose);
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
