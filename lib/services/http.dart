@@ -307,6 +307,65 @@ class ThemeListData {
 }
 
 // group
+class GroupConfigNULL {
+  bool? isMulti;
+  bool? isAll;
+  List<bool>? levels = [];
+  int? viewType;
+  GroupConfigNULL({this.isMulti, this.isAll, this.levels, this.viewType});
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = {};
+    if (isMulti != null) {
+      data['is_multi'] = isMulti;
+    }
+    if (isAll != null) {
+      data['is_all'] = isAll;
+    }
+    if (levels != null) {
+      if (levels!.isNotEmpty) {
+        data['levels'] = levels;
+      }
+    }
+    if (viewType != null) {
+      data['view_type'] = viewType;
+    }
+
+    return data;
+  }
+}
+
+class GroupConfig {
+  bool isMulti;
+  bool isAll;
+  List<bool> levels = [];
+  int viewType;
+  GroupConfig(
+      {required this.isMulti,
+      required this.isAll,
+      required this.levels,
+      required this.viewType});
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = {};
+    data['is_multi'] = isMulti;
+    data['is_all'] = isAll;
+    if (levels.isNotEmpty) {
+      data['levels'] = levels;
+    }
+    data['view_type'] = viewType;
+    return data;
+  }
+
+  static GroupConfig getDefault() {
+    return GroupConfig(
+        isAll: false,
+        isMulti: false,
+        levels: [true, false, false, false, false],
+        viewType: 0);
+  }
+}
+
 class ResponseGetGroupAndDocDetail extends Basic {
   DGroup data;
   ResponseGetGroupAndDocDetail(
@@ -363,7 +422,8 @@ class ResponsePutGroup extends Basic {
 class RequestPutGroup {
   String? name;
   DateTime? overtime;
-  RequestPutGroup({this.name, this.overtime});
+  GroupConfigNULL? config;
+  RequestPutGroup({this.name, this.overtime, this.config});
   Map<String, dynamic> toJson() {
     Map<String, dynamic> data = {'uptime': Time.nowTimestampString()};
 
@@ -374,6 +434,10 @@ class RequestPutGroup {
     if (overtime != null) {
       print("更新定格时间,$overtime");
       data['overtime'] = Time.toTimestampString(overtime!);
+    }
+    if (config != null) {
+      print("更新分组配置选项");
+      data['config'] = config!.toJson();
     }
     return data;
   }
@@ -408,12 +472,15 @@ class GroupListData {
   DateTime crtime;
   DateTime uptime;
   DateTime overtime;
-  GroupListData(
-      {required this.name,
-      required this.id,
-      required this.crtime,
-      required this.overtime,
-      required this.uptime});
+  GroupConfig config;
+  GroupListData({
+    required this.name,
+    required this.id,
+    required this.crtime,
+    required this.overtime,
+    required this.uptime,
+    required this.config,
+  });
 
   factory GroupListData.fromJson(Map<String, dynamic> json) {
     return GroupListData(
@@ -422,6 +489,14 @@ class GroupListData {
       crtime: Time.stringToTime(json['crtime'] as String),
       uptime: Time.stringToTime(json['uptime'] as String),
       overtime: Time.stringToTime(json['overtime'] as String),
+      config: GroupConfig(
+        isMulti: json['config']['is_multi'] as bool,
+        isAll: json['config']['is_all'] as bool,
+        levels: (json['config']['levels'] as List<dynamic>)
+            .map((e) => e as bool)
+            .toList(),
+        viewType: json['config']['view_type'] as int,
+      ),
     );
   }
 }
@@ -588,7 +663,7 @@ enum IMGType {
 }
 
 // image
-class ResponseDeleteImage extends Basic{
+class ResponseDeleteImage extends Basic {
   ResponseDeleteImage({required super.err, required super.msg});
   factory ResponseDeleteImage.fromJson(Map<String, dynamic> json) {
     return ResponseDeleteImage(
@@ -596,7 +671,6 @@ class ResponseDeleteImage extends Basic{
       msg: json['msg'] as String,
     );
   }
-
 }
 
 class RequestPostImage {
@@ -720,7 +794,7 @@ class Http {
         headers: headers);
   }
 
-  Future<ResponsePostTheme> posttheme(RequestPostTheme req) async {
+  Future<ResponsePostTheme> postTheme(RequestPostTheme req) async {
     log.i("发送请求 创建主题");
     String path = "/theme";
 
@@ -742,7 +816,7 @@ class Http {
     );
   }
 
-  Future<ResponsePutTheme> puttheme(RequestPutTheme req) async {
+  Future<ResponsePutTheme> putTheme(RequestPutTheme req) async {
     log.i("发送请求 更新主题");
     String path = "/theme/${tid!}";
 
@@ -764,7 +838,7 @@ class Http {
     );
   }
 
-  Future<ResponseDeleteTheme> deletetheme() async {
+  Future<ResponseDeleteTheme> deleteTheme() async {
     log.i("发送请求 删除主题");
     String path = "/theme/${tid!}";
 

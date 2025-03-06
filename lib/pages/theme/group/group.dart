@@ -10,8 +10,13 @@ class Group {
   String name;
   String id;
   DateTime overtime;
+  GroupConfig config;
 
-  Group({required this.name, required this.id, required this.overtime});
+  Group(
+      {required this.name,
+      required this.id,
+      required this.overtime,
+      required this.config});
 
   // 判断当前时间是否在overtime的之内
   bool isBufTime() {
@@ -51,7 +56,6 @@ class GroupPage extends StatefulWidget {
   final String? id;
   final String tid;
   final String themename;
-
   GroupPage({required this.themename, required this.tid, this.id});
 
   @override
@@ -59,25 +63,29 @@ class GroupPage extends StatefulWidget {
 }
 
 class _GroupPage extends State<GroupPage> {
-  List<Group> _gitems = <Group>[];
+  List<Group> _gitems = [
+    Group(
+        name: "",
+        id: "",
+        overtime: DateTime.now(),
+        config: GroupConfig(
+            isAll: false,
+            isMulti: false,
+            levels: [true, false, false, false, false],
+            viewType: 0))
+  ];
   List<Doc> _ditems = <Doc>[];
-  List<bool> _isSelected = [true, false, false, false, false];
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  int view = 0;
   int gidx = 0;
-  int viewType = 0;
   bool isGrouTitleSubmitted = true;
-  TextEditingController groupTitleEdit = TextEditingController();
+  // TextEditingController groupTitleEdit = TextEditingController();
   DateTime pickedDate = DateTime.now();
   int pageIndex = 0;
 
   /// 分级选项
   /// true: 单选
   /// false: 多选
-  bool isSingleMultiChoose = false;
-
-  bool isAllChoose = false;
 
   @override
   void initState() {
@@ -130,14 +138,15 @@ class _GroupPage extends State<GroupPage> {
                   },
                 ),
                 PopupMenuItem(
-                  onTap: () => dialogBottom(ViewSetting(
+                  onTap: () => dialogWidget(ViewSetting(
+                    tid: widget.tid,
                     gid: _gitems[gidx].id,
-                    mode: viewType,
+                    viewType: _gitems[gidx].config.viewType,
                     pageIndex: pageIndex,
-                    isAllChoose: isAllChoose,
+                    isAll: _gitems[gidx].config.isAll,
                     onAllChooseChanged: (value) {
                       setState(() {
-                        isAllChoose = value;
+                        _gitems[gidx].config.isAll = value;
                       });
                     },
                     onPageChanged: (value) {
@@ -145,22 +154,22 @@ class _GroupPage extends State<GroupPage> {
                         pageIndex = value;
                       });
                     },
-                    onViewModeChanged: (value) {
+                    onViewTypeChanged: (value) {
                       setState(() {
-                        viewType = value;
+                        _gitems[gidx].config.viewType = value;
                       });
                     },
-                    isSelected: _isSelected,
-                    isSingleMultiChoose: isSingleMultiChoose,
+                    isSelected: _gitems[gidx].config.levels,
+                    isMulti: _gitems[gidx].config.isMulti,
                     onLevelChanged: (value) {
                       setState(() {
-                        _isSelected = value;
+                        _gitems[gidx].config.levels = value;
                         clickLevel();
                       });
                     },
                     onModeChanged: (value) {
                       setState(() {
-                        isSingleMultiChoose = value;
+                        _gitems[gidx].config.isMulti = value;
                       });
                     },
                   )),
@@ -222,10 +231,12 @@ class _GroupPage extends State<GroupPage> {
             children: [
               // 印迹主体
               Expanded(
-                child: IndexedStack(index: viewType, children: [
-                  screenCard(),
-                  screenCalendar(),
-                ]),
+                child: IndexedStack(
+                    index: _gitems[gidx].config.viewType,
+                    children: [
+                      screenCard(),
+                      screenCalendar(),
+                    ]),
               ),
             ],
           ),
@@ -472,7 +483,8 @@ class _GroupPage extends State<GroupPage> {
     );
   }
 
-  dialogBottom(Widget widget) {
+  /// 弹窗样式设置
+  dialogWidget(Widget widget) {
     showModalBottomSheet<void>(
       context: context,
       builder: (BuildContext context) {
@@ -752,7 +764,7 @@ class _GroupPage extends State<GroupPage> {
   clickGroupTitle(int index) {
     setState(() {
       gidx = index;
-      groupTitleEdit.text = _gitems[gidx].name;
+      // groupTitleEdit.text = _gitems[gidx].name;
     });
 
     Navigator.pop(context); // 关闭 drawer
@@ -837,12 +849,16 @@ class _GroupPage extends State<GroupPage> {
     }
 
     setState(() {
-      _gitems.add(Group(name: result!, id: res.id, overtime: req.overtime));
+      _gitems.add(Group(
+          name: result!,
+          id: res.id,
+          overtime: req.overtime,
+          config: GroupConfig.getDefault()));
       gidx = _gitems.length - 1;
       _ditems.clear();
-      for (int i = 0; i < _isSelected.length; i++) {
-        if (_isSelected[i]) {
-          _isSelected[i] = false;
+      for (int i = 0; i < _gitems[gidx].config.levels.length; i++) {
+        if (_gitems[gidx].config.levels[i]) {
+          _gitems[gidx].config.levels[i] = false;
         }
       }
     });
@@ -850,7 +866,7 @@ class _GroupPage extends State<GroupPage> {
 
   /// 点击分级按钮
   clickLevel() {
-    switch (viewType) {
+    switch (_gitems[gidx].config.viewType) {
       case 0:
         setDocs();
         break;
@@ -891,7 +907,7 @@ class _GroupPage extends State<GroupPage> {
   }
 
   bool isNoSelectLevel() {
-    for (bool one in _isSelected) {
+    for (bool one in _gitems[gidx].config.levels) {
       if (one) {
         return false;
       }
@@ -900,8 +916,10 @@ class _GroupPage extends State<GroupPage> {
   }
 
   int getSelectLevel() {
-    for (int buttonIndex = 0; buttonIndex < _isSelected.length; buttonIndex++) {
-      if (_isSelected[buttonIndex]) {
+    for (int buttonIndex = 0;
+        buttonIndex < _gitems[gidx].config.levels.length;
+        buttonIndex++) {
+      if (_gitems[gidx].config.levels[buttonIndex]) {
         return buttonIndex;
       }
     }
@@ -909,7 +927,7 @@ class _GroupPage extends State<GroupPage> {
   }
 
   bool isContainSelectLevel(int i) {
-    return _isSelected[i];
+    return _gitems[gidx].config.levels[i];
   }
 
   Future<bool> setFreezeOverTime(int index) async {
@@ -937,7 +955,7 @@ class _GroupPage extends State<GroupPage> {
     return true;
   }
 
-  getGroupList() async {
+  Future<void> getGroupList() async {
     final res = await Http(tid: widget.tid).getGroups();
     if (res.isNotOK) {
       if (mounted) {
@@ -951,17 +969,11 @@ class _GroupPage extends State<GroupPage> {
     }
     setState(() {
       _ditems.clear();
-
-      if (res.data.isEmpty) {
-        return;
-      }
       _gitems = res.data
-          .map((l) => Group(name: l.name, id: l.id, overtime: l.overtime))
+          .map((l) => Group(
+              name: l.name, id: l.id, overtime: l.overtime, config: l.config))
           .toList();
-
-      groupTitleEdit.text = res.data[gidx].name;
     });
-    setDocs();
   }
 }
 
@@ -1009,31 +1021,33 @@ class _ViewTypeDropDown extends State<ViewTypeDropDown> {
 }
 
 class ViewSetting extends StatefulWidget {
-  final bool isSingleMultiChoose;
-  final bool isAllChoose;
+  final bool isMulti;
+  final bool isAll;
   final List<bool> isSelected;
   final ValueChanged<List<bool>> onLevelChanged;
   final ValueChanged<bool> onModeChanged;
-  final ValueChanged<int> onViewModeChanged;
+  final ValueChanged<int> onViewTypeChanged;
   final ValueChanged<int> onPageChanged;
   final ValueChanged<bool> onAllChooseChanged;
   final int pageIndex;
-  final int mode;
+  final int viewType;
   final String gid;
-  const ViewSetting(
-      {super.key,
-      required this.isSingleMultiChoose,
-      required this.isAllChoose,
-      required this.isSelected,
-      required this.onLevelChanged,
-      required this.onModeChanged,
-      required this.onViewModeChanged,
-      required this.onAllChooseChanged,
-      required this.onPageChanged,
-      required this.pageIndex,
-      required this.mode,
-      required this.gid,
-      });
+  final String tid;
+  const ViewSetting({
+    super.key,
+    required this.isMulti,
+    required this.isAll,
+    required this.isSelected,
+    required this.onLevelChanged,
+    required this.onModeChanged,
+    required this.onViewTypeChanged,
+    required this.onAllChooseChanged,
+    required this.onPageChanged,
+    required this.pageIndex,
+    required this.viewType,
+    required this.gid,
+    required this.tid,
+  });
 
   @override
   State<ViewSetting> createState() => ViewSettingState();
@@ -1042,9 +1056,9 @@ class ViewSetting extends StatefulWidget {
 class ViewSettingState extends State<ViewSetting> {
   List<bool> _isSelected = [true, false, false, false, false];
   List<bool> _isOldSelected = [true, false, false, false, false];
-  bool isSingleMultiChoose = false;
-  late bool isAllChoose;
-  late int mode;
+  bool isMulti = false;
+  late bool isAll;
+  late int viewType;
   late int pageIndex;
   late final PageController _pageController;
 
@@ -1052,12 +1066,12 @@ class ViewSettingState extends State<ViewSetting> {
   void initState() {
     super.initState();
     _isSelected = widget.isSelected;
-    isSingleMultiChoose = widget.isSingleMultiChoose;
-    isAllChoose = widget.isAllChoose;
-    mode = widget.mode;
+    isMulti = widget.isMulti;
+    isAll = widget.isAll;
+    viewType = widget.viewType;
     pageIndex = widget.pageIndex;
     _pageController = PageController(initialPage: widget.pageIndex);
-    print(widget.isAllChoose);
+    print(widget.isAll);
   }
 
   @override
@@ -1101,12 +1115,15 @@ class ViewSettingState extends State<ViewSetting> {
               child: RadioListTile<int>(
                 title: const Text('卡片'),
                 value: 0,
-                groupValue: mode,
+                groupValue: viewType,
                 onChanged: (int? value) {
                   setState(() {
-                    mode = value!;
-                    widget.onViewModeChanged(mode);
+                    viewType = value!;
+                    widget.onViewTypeChanged(viewType);
                   });
+                  Http(tid: widget.tid, gid: widget.gid).putGroup(
+                      RequestPutGroup(
+                          config: GroupConfigNULL(viewType: value)));
                 },
               ),
             ),
@@ -1114,12 +1131,15 @@ class ViewSettingState extends State<ViewSetting> {
               child: RadioListTile<int>(
                 title: const Text('日历'),
                 value: 1,
-                groupValue: mode,
+                groupValue: viewType,
                 onChanged: (int? value) {
                   setState(() {
-                    mode = value!;
-                    widget.onViewModeChanged(mode);
+                    viewType = value!;
+                    widget.onViewTypeChanged(viewType);
                   });
+                  Http(tid: widget.tid, gid: widget.gid).putGroup(
+                      RequestPutGroup(
+                          config: GroupConfigNULL(viewType: value)));
                 },
               ),
             ),
@@ -1149,7 +1169,7 @@ class ViewSettingState extends State<ViewSetting> {
                 Level.l.length, (index) => Level.levelWidget(index)),
             onPressed: (int index) {
               setState(() {
-                if (isSingleMultiChoose) {
+                if (isMulti) {
                   _isSelected[index] = !_isSelected[index];
                 } else {
                   _isSelected =
@@ -1172,22 +1192,28 @@ class ViewSettingState extends State<ViewSetting> {
                   Expanded(
                     child: SwitchListTile(
                       title: Text('默认/全选'),
-                      subtitle: Text(!isAllChoose ? '当前默认' : '当前全选'),
-                      value: isAllChoose,
+                      subtitle: Text(!isAll ? '当前默认' : '当前全选'),
+                      value: isAll,
                       onChanged: (bool value) async {
                         setState(() {
-                          isAllChoose = value;
-                          if (isAllChoose) {
-                            isSingleMultiChoose = true;
-                            widget.onModeChanged(isSingleMultiChoose);
+                          isAll = value;
+                          if (isAll) {
+                            isMulti = true;
+                            widget.onModeChanged(isMulti);
                             _isSelected =
                                 List.generate(_isSelected.length, (i) => true);
                           } else {
                             _isSelected = _isOldSelected;
                           }
                         });
-                        widget.onAllChooseChanged(isAllChoose);
+                        widget.onAllChooseChanged(isAll);
                         widget.onLevelChanged(_isSelected);
+                        RequestPutGroup req = RequestPutGroup(
+                            config: GroupConfigNULL(
+                                levels: _isSelected,
+                                isMulti: isMulti,
+                                isAll: isAll));
+                        Http(tid: widget.tid, gid: widget.gid).putGroup(req);
                       },
                     ),
                   ),
@@ -1198,15 +1224,17 @@ class ViewSettingState extends State<ViewSetting> {
                   Expanded(
                     child: SwitchListTile(
                       title: Text('单选/多选'),
-                      subtitle: Text(!isSingleMultiChoose
-                          ? '当前单选，分级选项只能选择一个'
-                          : '当前多选，分级选项能够选择多个'),
-                      value: isSingleMultiChoose,
+                      subtitle: Text(
+                          !isMulti ? '当前单选，分级选项只能选择一个' : '当前多选，分级选项能够选择多个'),
+                      value: isMulti,
                       onChanged: (bool value) async {
                         setState(() {
-                          isSingleMultiChoose = value;
+                          isMulti = value;
                         });
-                        widget.onModeChanged(isSingleMultiChoose);
+                        RequestPutGroup req = RequestPutGroup(
+                            config: GroupConfigNULL(isMulti: isMulti));
+                        Http(tid: widget.tid, gid: widget.gid).putGroup(req);
+                        widget.onModeChanged(isMulti);
                       },
                     ),
                   ),

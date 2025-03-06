@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:whispering_time/utils/env.dart';
 import 'group/group.dart';
@@ -16,7 +15,7 @@ class ThemePage extends StatefulWidget {
 }
 
 class _ThemePageState extends State<ThemePage> {
-  List<Theme> _items = [];
+  List<Theme> _titems = [];
 
   @override
   void initState() {
@@ -32,7 +31,7 @@ class _ThemePageState extends State<ThemePage> {
           continue;
         }
         setState(() {
-          _items.add(Theme(
+          _titems.add(Theme(
             id: list.data[i].id,
             name: list.data[i].name,
           ));
@@ -61,13 +60,11 @@ class _ThemePageState extends State<ThemePage> {
                   ),
                   PopupMenuButton(
                     icon: Icon(Icons.more_horiz),
-        
-                    itemBuilder: (BuildContext context) =>
-                        <PopupMenuEntry>[
+                    itemBuilder: (BuildContext context) => <PopupMenuEntry>[
                       PopupMenuItem(
                         value: 'event_add_theme',
                         child: Text('添加主题'),
-                        onTap: ()=> add(),
+                        onTap: () => add(),
                       ),
                     ],
                   )
@@ -87,7 +84,7 @@ class _ThemePageState extends State<ThemePage> {
                   },
                   child: ListView.builder(
                     controller: scrollController,
-                    itemCount: _items.length,
+                    itemCount: _titems.length,
                     scrollDirection: Axis.horizontal, // 设置滚动方向为水平
                     itemBuilder: (context, index) {
                       return _buildItem(index);
@@ -109,7 +106,7 @@ class _ThemePageState extends State<ThemePage> {
       child: ElevatedButton(
         key: buttonKey,
         onPressed: () {
-          clickTheme(index);
+          enterGroupPage(index);
         },
         onLongPress: () {
           final RenderBox button =
@@ -135,14 +132,13 @@ class _ThemePageState extends State<ThemePage> {
                 child: Text('重命名'),
                 onTap: () => rename(index),
               ),
-       
               PopupMenuItem(
                 value: 3,
                 child: Text(
                   '删除',
                   style: TextStyle(color: Colors.red.shade400),
                 ),
-                onTap: () => delete(_items[index]),
+                onTap: () => delete(_titems[index]),
               ),
             ],
           );
@@ -154,7 +150,7 @@ class _ThemePageState extends State<ThemePage> {
             ),
             padding: EdgeInsets.only(left: 25, right: 25)),
         child: Text(
-          _items[index].name,
+          _titems[index].name,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -162,12 +158,29 @@ class _ThemePageState extends State<ThemePage> {
     );
   }
 
-  void clickTheme(int index) {
-    Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) => GroupPage(
-                themename: _items[index].name, tid: _items[index].id)));
+  void enterGroupPage(int index) async {
+    // final res = await Http(tid: _titems[index].id).getGroups();
+    // if (res.isNotOK) {
+    //   if (mounted) {
+    //     Msg.diy(context, "获取分组失败");
+    //   }
+    //   return;
+    // }
+
+    // if (res.data.isEmpty) {
+    //   return;
+    // }
+    // List<Group> gitems = res.data
+    //     .map((l) => Group(
+    //         name: l.name, id: l.id, overtime: l.overtime, config: l.config))
+    //     .toList();
+    // if (mounted) {
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => GroupPage(
+                  themename: _titems[index].name, tid: _titems[index].id)));
+    // }
   }
 
   void add() async {
@@ -206,14 +219,14 @@ class _ThemePageState extends State<ThemePage> {
       return;
     }
 
-    final res = await Http().posttheme(RequestPostTheme(name: result!));
+    final res = await Http().postTheme(RequestPostTheme(name: result!));
 
     if (res.isNotOK) {
       return;
     }
 
     setState(() {
-      _items.add(Theme(name: result!, id: res.id));
+      _titems.add(Theme(name: result!, id: res.id));
     });
   }
 
@@ -228,7 +241,7 @@ class _ThemePageState extends State<ThemePage> {
             onChanged: (value) {
               result = value;
             },
-            decoration: InputDecoration(hintText: _items[index].name),
+            decoration: InputDecoration(hintText: _titems[index].name),
           ),
           actions: <Widget>[
             TextButton(
@@ -254,15 +267,15 @@ class _ThemePageState extends State<ThemePage> {
       return;
     }
 
-    final res = await Http(tid: _items[index].id)
-        .puttheme(RequestPutTheme(name: result!));
+    final res = await Http(tid: _titems[index].id)
+        .putTheme(RequestPutTheme(name: result!));
 
     if (res.isNotOK) {
       return;
     }
 
     setState(() {
-      _items[index].name = result!;
+      _titems[index].name = result!;
     });
   }
 
@@ -272,14 +285,13 @@ class _ThemePageState extends State<ThemePage> {
       return;
     }
 
-    final res = await Http(tid: item.id).deletetheme();
+    final res = await Http(tid: item.id).deleteTheme();
 
     if (res.isNotOK) {
       return;
     }
     setState(() {
-      _items.remove(item);
+      _titems.remove(item);
     });
   }
-
 }

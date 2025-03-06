@@ -10,12 +10,19 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+type GroupConfig struct {
+	IsMulti  bool   `json:"is_multi"`
+	IsAll    bool   `json:"is_all"`
+	Levels   []bool `json:"levels"`
+	ViewType int    `json:"view_type"`
+}
 type Group struct {
-	Name     string `json:"name" bson:"name"`
-	ID       string `json:"id" bson:"gid"`
-	CRTime   string `json:"crtime" bson:"crtime"`
-	UPTime   string `json:"uptime" bson:"uptime"`
-	OverTime string `json:"overtime" bson:"overtime"`
+	Name     string      `json:"name" bson:"name"`
+	ID       string      `json:"id" bson:"gid"`
+	CRTime   string      `json:"crtime" bson:"crtime"`
+	UPTime   string      `json:"uptime" bson:"uptime"`
+	OverTime string      `json:"overtime" bson:"overtime"`
+	Config   GroupConfig `json:"config"`
 }
 
 type RequestGroupPost struct {
@@ -28,9 +35,15 @@ type RequestGroupPost struct {
 }
 type RequestGroupPut struct {
 	Data struct {
-		Name     string `json:"name"`
-		UPTime   string `json:"uptime"`
-		OverTime string `json:"overtime"`
+		Name     *string `json:"name"`
+		UPTime   *string `json:"uptime"`
+		OverTime *string `json:"overtime"`
+		Config   *struct {
+			IsMulti  *bool   `json:"is_multi"`
+			IsAll    *bool   `json:"is_all"`
+			Levels   *[]bool `json:"levels"`
+			ViewType *int    `json:"view_type"`
+		} `json:"config"`
 	} `json:"data"`
 }
 
@@ -54,12 +67,36 @@ func GroupsGet(toid primitive.ObjectID) ([]Group, error) {
 			log.Error(err)
 			return nil, err
 		}
+		config := NewGroupConfig()
+
+		if ms, ok := m["config"].(bson.M); ok {
+
+			if ret, o := ms["is_multi"].(bool); o {
+				config.IsMulti = ret
+			}
+			if ret, o := ms["is_all"].(bool); o {
+				config.IsAll = ret
+			}
+			if ret, o := ms["levels"].(primitive.A); o {
+				if len(ret) == 5 {
+					config.Levels = []bool{ret[0].(bool), ret[1].(bool), ret[2].(bool), ret[3].(bool), ret[4].(bool)}
+				}
+			}
+
+			if ret, o := ms["view_type"].(int); o {
+				config.ViewType = ret
+			}
+
+		} else {
+			log.Error("config is not bson.M")
+		}
 		results = append(results, Group{
 			ID:       m["gid"].(string),
 			Name:     m["name"].(string),
 			CRTime:   m["crtime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
 			UPTime:   m["uptime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
 			OverTime: m["overtime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
+			Config:   config,
 		})
 	}
 
@@ -73,7 +110,7 @@ func GroupsGet(toid primitive.ObjectID) ([]Group, error) {
 }
 func GroupGet(toid primitive.ObjectID, goid primitive.ObjectID) (Group, error) {
 
-	var response Group
+	var res Group
 	var m bson.M
 
 	filter := bson.D{
@@ -85,13 +122,22 @@ func GroupGet(toid primitive.ObjectID, goid primitive.ObjectID) (Group, error) {
 	if err != nil {
 		return Group{}, err
 	}
-	response.ID = m["gid"].(string)
-	response.Name = m["name"].(string)
-	response.CRTime = m["crtime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05")
-	response.UPTime = m["uptime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05")
-	response.OverTime = m["overtime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05")
+	res.ID = m["gid"].(string)
+	res.Name = m["name"].(string)
+	res.CRTime = m["crtime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05")
+	res.UPTime = m["uptime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05")
+	res.OverTime = m["overtime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05")
 
-	return response, nil
+	res.Config = NewGroupConfig()
+
+	if config, ok := m["config"].(bson.M); ok {
+		res.Config.IsMulti = config["is_multi"].(bool)
+		res.Config.IsAll = config["is_all"].(bool)
+		res.Config.Levels = config["levels"].([]bool)
+		res.Config.ViewType = config["view_type"].(int)
+	}
+
+	return res, nil
 }
 func GroupGetAndDocDetail(toid primitive.ObjectID, goid primitive.ObjectID) (any, error) {
 
@@ -179,16 +225,31 @@ func GroupPut(toid primitive.ObjectID, goid primitive.ObjectID, req *RequestGrou
 
 	m := bson.M{}
 
-	if (*req).Data.Name != "" {
+	if (*req).Data.Name != nil {
 		m["name"] = (*req).Data.Name
 	}
 
-	if (*req).Data.UPTime != "" {
-		m["uptime"] = sys.StringtoTime((*req).Data.UPTime)
+	if (*req).Data.UPTime != nil {
+		m["uptime"] = sys.StringtoTime(*(*req).Data.UPTime)
 	}
 
-	if (*req).Data.OverTime != "" {
-		m["overtime"] = sys.StringtoTime((*req).Data.OverTime)
+	if (*req).Data.OverTime != nil {
+		m["overtime"] = sys.StringtoTime(*(*req).Data.OverTime)
+	}
+	if req.Data.Config != nil {
+
+		if req.Data.Config.IsMulti != nil {
+			m["config.is_multi"] = req.Data.Config.IsMulti
+		}
+		if req.Data.Config.IsAll != nil {
+			m["config.is_all"] = req.Data.Config.IsAll
+		}
+		if req.Data.Config.Levels != nil {
+			m["config.levels"] = req.Data.Config.Levels
+		}
+		if req.Data.Config.ViewType != nil {
+			m["config.view_type"] = req.Data.Config.ViewType
+		}
 	}
 
 	_, err := db.Collection("group").UpdateOne(
@@ -241,4 +302,13 @@ func GroupDeleteFromGOID(goid primitive.ObjectID) error {
 	}
 	_, err := db.Collection("group").DeleteOne(context.TODO(), filter, nil)
 	return err
+}
+
+func NewGroupConfig() GroupConfig {
+	return GroupConfig{
+		IsMulti:  false,
+		IsAll:    false,
+		Levels:   []bool{true, false, false, false, false},
+		ViewType: 0,
+	}
 }
