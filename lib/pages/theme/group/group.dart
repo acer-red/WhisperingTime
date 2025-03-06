@@ -76,6 +76,9 @@ class _GroupPage extends State<GroupPage> {
   /// true: 单选
   /// false: 多选
   bool isSingleMultiChoose = false;
+
+  bool isAllChoose = false;
+
   @override
   void initState() {
     super.initState();
@@ -128,8 +131,15 @@ class _GroupPage extends State<GroupPage> {
                 ),
                 PopupMenuItem(
                   onTap: () => dialogBottom(ViewSetting(
+                    gid: _gitems[gidx].id,
                     mode: viewType,
                     pageIndex: pageIndex,
+                    isAllChoose: isAllChoose,
+                    onAllChooseChanged: (value) {
+                      setState(() {
+                        isAllChoose = value;
+                      });
+                    },
                     onPageChanged: (value) {
                       setState(() {
                         pageIndex = value;
@@ -543,10 +553,9 @@ class _GroupPage extends State<GroupPage> {
                 ElevatedButton(
                   onPressed: () => clickDeleteGroup(gidx),
                   style: ButtonStyle(
-                    backgroundColor: WidgetStateProperty.all<Color>(
-                        Colors.red.shade900),
-                    minimumSize: WidgetStateProperty.all(
-                        Size(200, 60)), 
+                    backgroundColor:
+                        WidgetStateProperty.all<Color>(Colors.red.shade900),
+                    minimumSize: WidgetStateProperty.all(Size(200, 60)),
                   ),
                   child: Text(
                     "删除 ${_gitems[gidx].name}",
@@ -1001,23 +1010,30 @@ class _ViewTypeDropDown extends State<ViewTypeDropDown> {
 
 class ViewSetting extends StatefulWidget {
   final bool isSingleMultiChoose;
+  final bool isAllChoose;
   final List<bool> isSelected;
   final ValueChanged<List<bool>> onLevelChanged;
   final ValueChanged<bool> onModeChanged;
   final ValueChanged<int> onViewModeChanged;
   final ValueChanged<int> onPageChanged;
+  final ValueChanged<bool> onAllChooseChanged;
   final int pageIndex;
   final int mode;
+  final String gid;
   const ViewSetting(
       {super.key,
       required this.isSingleMultiChoose,
+      required this.isAllChoose,
       required this.isSelected,
       required this.onLevelChanged,
       required this.onModeChanged,
       required this.onViewModeChanged,
+      required this.onAllChooseChanged,
       required this.onPageChanged,
       required this.pageIndex,
-      required this.mode});
+      required this.mode,
+      required this.gid,
+      });
 
   @override
   State<ViewSetting> createState() => ViewSettingState();
@@ -1025,7 +1041,9 @@ class ViewSetting extends StatefulWidget {
 
 class ViewSettingState extends State<ViewSetting> {
   List<bool> _isSelected = [true, false, false, false, false];
+  List<bool> _isOldSelected = [true, false, false, false, false];
   bool isSingleMultiChoose = false;
+  late bool isAllChoose;
   late int mode;
   late int pageIndex;
   late final PageController _pageController;
@@ -1035,9 +1053,11 @@ class ViewSettingState extends State<ViewSetting> {
     super.initState();
     _isSelected = widget.isSelected;
     isSingleMultiChoose = widget.isSingleMultiChoose;
+    isAllChoose = widget.isAllChoose;
     mode = widget.mode;
     pageIndex = widget.pageIndex;
     _pageController = PageController(initialPage: widget.pageIndex);
+    print(widget.isAllChoose);
   }
 
   @override
@@ -1135,6 +1155,7 @@ class ViewSettingState extends State<ViewSetting> {
                   _isSelected =
                       List.generate(_isSelected.length, (i) => i == index);
                 }
+                _isOldSelected = _isSelected;
                 widget.onLevelChanged(_isSelected);
               });
               // clickLevel();
@@ -1142,24 +1163,57 @@ class ViewSettingState extends State<ViewSetting> {
           ),
         ),
         // 分级选择
-        Row(
-          children: [
-            Expanded(
-              child: SwitchListTile(
-                title: Text('单选/多选'),
-                subtitle: Text(!isSingleMultiChoose
-                    ? '当前单选，分级选项只能选择一个'
-                    : '当前多选，分级选项能够选择多个'),
-                value: isSingleMultiChoose,
-                onChanged: (bool value) async {
-                  setState(() {
-                    isSingleMultiChoose = value;
-                  });
-                  widget.onModeChanged(isSingleMultiChoose);
-                },
+        Padding(
+          padding: const EdgeInsets.only(left: 40, right: 40),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: SwitchListTile(
+                      title: Text('默认/全选'),
+                      subtitle: Text(!isAllChoose ? '当前默认' : '当前全选'),
+                      value: isAllChoose,
+                      onChanged: (bool value) async {
+                        setState(() {
+                          isAllChoose = value;
+                          if (isAllChoose) {
+                            isSingleMultiChoose = true;
+                            widget.onModeChanged(isSingleMultiChoose);
+                            _isSelected =
+                                List.generate(_isSelected.length, (i) => true);
+                          } else {
+                            _isSelected = _isOldSelected;
+                          }
+                        });
+                        widget.onAllChooseChanged(isAllChoose);
+                        widget.onLevelChanged(_isSelected);
+                      },
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+              Row(
+                children: [
+                  Expanded(
+                    child: SwitchListTile(
+                      title: Text('单选/多选'),
+                      subtitle: Text(!isSingleMultiChoose
+                          ? '当前单选，分级选项只能选择一个'
+                          : '当前多选，分级选项能够选择多个'),
+                      value: isSingleMultiChoose,
+                      onChanged: (bool value) async {
+                        setState(() {
+                          isSingleMultiChoose = value;
+                        });
+                        widget.onModeChanged(isSingleMultiChoose);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ],
     );
