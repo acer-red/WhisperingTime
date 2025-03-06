@@ -73,6 +73,12 @@ class _SettingsPage extends State<SettingsPage> {
   }
 
   Future<void> dialogExport() async {
-    Export(Export.resourceTheme).dialog(context,"导出所有数据");
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return Export(ResourceType.theme, title: "导出所有数据");
+      },
+    );
   }
 }

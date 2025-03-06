@@ -504,16 +504,19 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
 
   // 打开对话框，导出窗口
   void dialogExport() {
-    Export(Export.resourceDoc,
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return Export(ResourceType.doc,
+            title: "导出印迹",
             doc: ExportData(
                 content: getEditOrigin(),
                 title: titleEdit.text,
                 plainText: getEditPlainText(),
                 level: level,
-                crtime: crtime))
-        .dialog(
-      context,
-      "导出印迹",
+                crtime: crtime));
+      },
     );
   }
 

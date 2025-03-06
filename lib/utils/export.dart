@@ -31,108 +31,156 @@ class ExportData {
   });
 }
 
-class Export {
-  int integrateMode = 0;
-  static const int resourceTheme = 0;
-  static const int resourceGroup = 1;
-  static const int resourceDoc = 2;
-  int resourceType;
+class Export extends StatefulWidget {
+  final String? tid;
+  final String? gid;
+  final ExportData? doc;
+  final String title;
+  final ResourceType t;
 
-  String? tid;
-  String? gid;
-  ExportData? doc;
-  Export(this.resourceType, {this.tid, this.gid, this.doc});
+  Export(this.t, {required this.title, this.tid, this.gid, this.doc});
 
-  void dialog(
-    BuildContext context,
-    String title,
-  ) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(title),
-          content: Container(
-            width: 300,
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                const Text("导出选项",
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 10),
-                RadioListTileExample(onValueChanged: (int value) {
-                  integrateMode = value;
-                }),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: <Widget>[
-                    ElevatedButton(
-                      onPressed: () {
-                        pdf();
-                        Navigator.of(context).pop();
+  @override
+  State<Export> createState() => _Export();
+}
+
+enum ResourceType { theme, group, doc }
+
+enum IntegrateType { multiple, one }
+
+class _Export extends State<Export> {
+  late IntegrateType i;
+  int mediaType = 0;
+  late ResourceType t;
+
+  @override
+  void initState() {
+    super.initState();
+    t = widget.t;
+    i = widget.t == ResourceType.doc
+        ? IntegrateType.one
+        : IntegrateType.multiple;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
+      content: Container(
+        width: 400,
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            widget.t == ResourceType.doc
+                ? const SizedBox.shrink()
+                : ListTile(
+                    title: const Text('导出选项'),
+                    subtitle: Text(i == IntegrateType.multiple ? '每个印迹一个文件' : '所有印迹合并为一个文件'),
+                    trailing: DropdownButton<IntegrateType>(
+                      value: i,
+                      onChanged: (IntegrateType? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            i = newValue;
+                          });
+                        }
                       },
-                      child: const Text("导出为PDF"),
+                      items: const [
+                        DropdownMenuItem(
+                          value: IntegrateType.multiple,
+                          child: Text('多个'),
+                        ),
+                        DropdownMenuItem(
+                          value: IntegrateType.one,
+                          child: Text('一个'),
+                        ),
+                      ],
                     ),
-                    ElevatedButton(
-                      onPressed: () {
-                        txt();
-                        Navigator.of(context).pop();
-                      },
-                      child: const Text("导出为文本"),
-                    ),
-                  ],
-                ),
-              ],
+                  ),
+            ListTile(
+              title: const Text('媒体类型'),
+              trailing: DropdownButton<int>(
+                value: mediaType,
+                onChanged: (int? newValue) {
+                  if (newValue != null) {
+                    setState(() {
+                      mediaType = newValue;
+                    });
+                  }
+                },
+                items: const [
+                  DropdownMenuItem(
+                    value: 0,
+                    child: Text('PDF'),
+                  ),
+                  DropdownMenuItem(
+                    value: 1,
+                    child: Text('纯文本'),
+                  ),
+                ],
+              ),
             ),
-          ),
-        );
-      },
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                switch (mediaType) {
+                  case 0:
+                    pdf();
+                    break;
+                  case 1:
+                    txt();
+                    break;
+                }
+                Navigator.of(context).pop();
+              },
+              child: const Text("开始"),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   pdf() {
-    switch (integrateMode) {
+    switch (i) {
       // 拆分为多个文件
-      case 0:
-        switch (resourceType) {
-          case resourceTheme:
+      case IntegrateType.multiple:
+        switch (t) {
+          case ResourceType.theme:
             PDF().themeSplit();
             break;
-          case resourceGroup:
-            if (tid == null || gid == null) {
+          case ResourceType.group:
+            if (widget.tid == null || widget.gid == null) {
               log.e("tid或gid为空");
               return;
             }
-            TXT(tid: tid, gid: gid).groupSplit();
+            TXT(tid: widget.tid, gid: widget.gid).groupSplit();
             break;
-          case resourceDoc:
-            if (doc == null) {
+          case ResourceType.doc:
+            if (widget.doc == null) {
               log.e("doc为空");
               return;
             }
-            PDF().docSplit(doc!);
+            PDF().docSplit(widget.doc!);
             break;
           default:
         }
         break;
       // 合并为一个文件
-      case 1:
-        switch (resourceType) {
-          case resourceTheme:
+      case IntegrateType.one:
+        switch (t) {
+          case ResourceType.theme:
             PDF().themeOne();
             break;
-          case resourceGroup:
-            if (tid == null || gid == null) {
+          case ResourceType.group:
+            if (widget.tid == null || widget.gid == null) {
               log.e("tid或gid为空");
               return;
             }
-            PDF(tid: tid, gid: gid).groupOne();
+            PDF(tid: widget.tid, gid: widget.gid).groupOne();
             break;
-          case resourceDoc:
+          case ResourceType.doc:
             // if (doc == null) {
             //   log.e("doc为空");
             //   return;
@@ -146,45 +194,45 @@ class Export {
   }
 
   txt() {
-    switch (integrateMode) {
+    switch (i) {
       // 拆分为多个文件
-      case 0:
-        switch (resourceType) {
-          case resourceTheme:
+      case IntegrateType.multiple:
+        switch (t) {
+          case ResourceType.theme:
             TXT().themeSplit();
             break;
-          case resourceGroup:
-            if (tid == null || gid == null) {
+          case ResourceType.group:
+            if (widget.tid == null || widget.gid == null) {
               log.e("tid或gid为空");
               return;
             }
-            TXT(tid: tid, gid: gid).groupSplit();
+            TXT(tid: widget.tid, gid: widget.gid).groupSplit();
             break;
-          case resourceDoc:
-            if (doc == null) {
+          case ResourceType.doc:
+            if (widget.doc == null) {
               log.e("doc为空");
               return;
             }
-            TXT().docSplit(doc!);
+            TXT().docSplit(widget.doc!);
             break;
           default:
         }
         break;
       // 合并为一个文件
-      case 1:
-        switch (resourceType) {
-          case resourceTheme:
+      case IntegrateType.one:
+        switch (t) {
+          case ResourceType.theme:
             TXT().themeOne();
             break;
-          case resourceGroup:
-            if (tid == null || gid == null) {
+          case ResourceType.group:
+            if (widget.tid == null || widget.gid == null) {
               log.e("tid或gid为空");
               return;
             }
-            TXT(tid: tid, gid: gid).groupOne();
+            TXT(tid: widget.tid, gid: widget.gid).groupOne();
             break;
-          case resourceDoc:
-            if (doc == null) {
+          case ResourceType.doc:
+            if (widget.doc == null) {
               log.e("doc为空");
               return;
             }

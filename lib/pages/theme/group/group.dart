@@ -593,9 +593,13 @@ class _GroupPage extends State<GroupPage> {
 
   /// 弹窗导出窗口
   dialogExport() {
-    Export(Export.resourceGroup, tid: widget.tid, gid: _gitems[gidx].id).dialog(
-      context,
-      "导出当前分组",
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return Export(ResourceType.group,
+            title: "导出当前分组", tid: widget.tid, gid: _gitems[gidx].id);
+      },
     );
   }
 
