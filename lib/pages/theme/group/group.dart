@@ -4,7 +4,10 @@ import 'package:whispering_time/utils/export.dart';
 import 'package:whispering_time/pages/theme/group/doc/setting.dart';
 import 'doc/edit.dart';
 import 'package:intl/intl.dart';
-import 'package:whispering_time/services/http.dart';
+import 'package:whispering_time/services/http/self.dart';
+import 'package:whispering_time/utils/time.dart';
+import 'package:whispering_time/utils/ui.dart';
+import 'package:whispering_time/services/Isar/config.dart';
 
 class Group {
   String name;
@@ -275,7 +278,7 @@ class _GroupPage extends State<GroupPage> {
                         Level.l[item.level],
                         style: TextStyle(
                             fontSize: 12,
-                            color: Color(Colors.grey.shade600.value)),
+                            color: Color(Colors.grey.shade600.hashCode)),
                       ),
                     ),
 
@@ -283,7 +286,7 @@ class _GroupPage extends State<GroupPage> {
                     Visibility(
                       visible: item.title.isNotEmpty ||
                           (item.title.isEmpty &&
-                              !Settings().getVisualNoneTitle()),
+                              Config.instance.visualNoneTitle),
                       child: ListTile(
                         title: Text(item.title,
                             style: TextStyle(fontWeight: FontWeight.bold)),
@@ -305,7 +308,7 @@ class _GroupPage extends State<GroupPage> {
                         Time.string(item.crtime),
                         style: TextStyle(
                             fontSize: 12,
-                            color: Color(Colors.grey.shade600.value)),
+                            color: Color(Colors.grey.shade600.hashCode)),
                       ),
                     )
                   ],
@@ -572,7 +575,7 @@ class _GroupPage extends State<GroupPage> {
                   child: Text(
                     "删除 ${_gitems[gidx].name}",
                     style: TextStyle(
-                        color: Color(Colors.white.value), fontSize: 17),
+                        color: Color(Colors.white.hashCode), fontSize: 17),
                   ),
                 )
               ],
@@ -661,7 +664,7 @@ class _GroupPage extends State<GroupPage> {
           title: "",
           content: "",
           level: getSelectLevel(),
-          config: DocConfigration(isShowTool: Settings().getDefaultShowTool()),
+          config: DocConfigration(isShowTool: Config.instance.defaultShowTool),
           crtime: DateTime.now(),
           uptime: DateTime.now(),
           freeze: false,
@@ -982,8 +985,7 @@ class ViewTypeDropDown extends StatefulWidget {
   final ValueChanged<int> onValueChanged; // 添加回调函数
 
   const ViewTypeDropDown(
-      {Key? key, required this.value, required this.onValueChanged})
-      : super(key: key);
+      {super.key, required this.value, required this.onValueChanged});
 
   @override
   State<StatefulWidget> createState() => _ViewTypeDropDown();

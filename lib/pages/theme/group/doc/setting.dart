@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:whispering_time/services/http.dart';
+import 'package:whispering_time/services/http/self.dart';
 import 'package:whispering_time/utils/env.dart';
+import 'package:whispering_time/utils/time.dart';
+import 'package:whispering_time/utils/ui.dart';
 
 class DocConfigration {
   bool? isShowTool;
@@ -89,7 +91,7 @@ class _DocSetting extends State<DocSetting> {
               child: Text(
                 '删除',
                 style:
-                    TextStyle(color: Color(Colors.white.value), fontSize: 17),
+                    TextStyle(color: Color(Colors.white.hashCode), fontSize: 17),
               ),
             )
           ],

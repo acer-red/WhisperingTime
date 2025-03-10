@@ -4,9 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
-import 'package:whispering_time/services/http.dart';
+import 'package:whispering_time/services/http/self.dart';
 import 'package:whispering_time/utils/export.dart';
 import 'package:whispering_time/utils/env.dart';
+import 'package:whispering_time/services/Isar/config.dart';
 import 'setting.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
@@ -183,9 +184,9 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
 
             // 富文本工具栏（含图片）
             if (config.isShowTool!)
-              QuillToolbar.simple(
+              QuillSimpleToolbar(
                 controller: edit,
-                configurations: QuillSimpleToolbarConfigurations(
+                config: QuillSimpleToolbarConfig(
                   customButtons: [
                     // 添加图片
                     QuillToolbarCustomButtonOptions(
@@ -212,15 +213,8 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
                   controller: edit,
                   focusNode: FocusScopeNode(),
                   scrollController: ScrollController(),
-                  configurations: QuillEditorConfigurations(
-                    sharedConfigurations: QuillSharedConfigurations(
-                      extraConfigurations: {
-                        QuillSharedExtensionsConfigurations.key:
-                            QuillSharedExtensionsConfigurations(
-                          assetsPrefix: 'assets',
-                        ),
-                      },
-                    ),
+                  config: QuillEditorConfig(
+                    
                     scrollable: true,
                     expands: false,
 
@@ -572,7 +566,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
         return;
       }
       final String newValue =
-          "http://${Settings().getServerAddress()}/image/${res.name}";
+          "http://${Config.instance.serverAddress}/image/${res.name}";
 
       ops[i] = Operation.fromJson({
         "insert": {"image": newValue}
@@ -695,7 +689,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     // 插入在线链接
     edit.insertImageBlock(
         imageSource:
-            "http://${Settings().getServerAddress()}/image/${res.name}");
+            "http://${Config.instance.serverAddress}/image/${res.name}");
 
     // 插入base64
     // edit.insertImageBlock(imageSource:data);

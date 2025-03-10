@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:whispering_time/utils/env.dart';
+
+import 'package:whispering_time/utils/export.dart';
+import 'package:whispering_time/utils/ui.dart';
+import 'package:whispering_time/services/Isar/config.dart';
+
+import 'font_manager.dart';
 import 'show.dart';
 import 'develop_mode.dart';
-import 'package:whispering_time/utils/export.dart';
 
 class SettingsPage extends StatefulWidget {
   @override
@@ -44,6 +48,13 @@ class _SettingsPage extends State<SettingsPage> {
                     child: Text("开发者"))),
             divider(),
             TextButton(
+                onPressed: () => dialogFontManager(),
+                child: Container(
+                    padding: EdgeInsets.only(bottom: 15, top: 15, left: 15),
+                    alignment: Alignment.centerLeft,
+                    child: Text("字体管理"))),
+            divider(),
+            TextButton(
                 onPressed: () => dialogExport(),
                 child: Container(
                     padding: EdgeInsets.only(bottom: 15, top: 15, left: 15),
@@ -54,7 +65,7 @@ class _SettingsPage extends State<SettingsPage> {
               children: [
                 TextButton(
                   onPressed: () {
-                    Clipboard.setData(ClipboardData(text: Settings().getuid()));
+                    Clipboard.setData(ClipboardData(text: Config.instance.uid));
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('文本已复制到剪贴板')),
                     );
@@ -63,7 +74,7 @@ class _SettingsPage extends State<SettingsPage> {
                     overlayColor: WidgetStateProperty.all(Colors.transparent),
                   ),
                   child: Text(
-                    "用户ID：${Settings().getuid()}",
+                    "用户ID：${Config.instance.uid}",
                   ),
                 ),
               ],
@@ -78,6 +89,16 @@ class _SettingsPage extends State<SettingsPage> {
       barrierDismissible: true,
       builder: (BuildContext context) {
         return Export(ResourceType.theme, title: "导出所有数据");
+      },
+    );
+  }
+
+  Future<void> dialogFontManager() async {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return FontManager();
       },
     );
   }

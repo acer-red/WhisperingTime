@@ -5,10 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:intl/intl.dart';
-import 'package:whispering_time/services/http.dart';
+import 'package:whispering_time/services/http/self.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:whispering_time/utils/env.dart';
+import 'package:whispering_time/utils/time.dart';
 import 'package:file_picker/file_picker.dart';
 
 class ExportData {
@@ -328,14 +329,14 @@ class TXT {
           // 创建文件夹并写入文件
           final filePath = '$savePath/$fileName.txt';
 
-          File file = File(filePath);
-
           try {
             await Directory(savePath).create(recursive: true);
           } catch (e) {
             log.e('创建文件夹失败: $e');
             return;
           }
+
+          File file = File(filePath);
 
           try {
             await file.writeAsString(doc.plainText);
@@ -623,13 +624,13 @@ class PDF {
                         style: pw.TextStyle(
                             fontSize: mainBodyFontSize,
                             font: font,
-                            color: PdfColor.fromInt(Colors.grey.value),
+                            color: PdfColor.fromInt(Colors.grey.hashCode),
                             fontWeight: pw.FontWeight.normal)),
                     pw.Text("创建时间: ${doc.crtimeString}",
                         style: pw.TextStyle(
                             fontSize: mainBodyFontSize,
                             font: font,
-                            color: PdfColor.fromInt(Colors.grey.value),
+                            color: PdfColor.fromInt(Colors.grey.hashCode),
                             fontWeight: pw.FontWeight.normal)),
                   ],
                 ),
@@ -679,7 +680,7 @@ class PDF {
                           fontSize: mainBodyFontSize,
                           font: font,
                           fontWeight: pw.FontWeight.normal));
-                }).toList()
+                })
               ]));
         }
       }
@@ -717,7 +718,7 @@ class PDF {
                       fontSize: 12,
                       font: font,
                     ));
-              }).toList(),
+              }),
             ],
           );
         },
@@ -847,13 +848,13 @@ class PDF {
                 style: pw.TextStyle(
                     fontSize: mainBodyFontSize,
                     font: font,
-                    color: PdfColor.fromInt(Colors.grey.value),
+                    color: PdfColor.fromInt(Colors.grey.hashCode),
                     fontWeight: pw.FontWeight.normal)),
             pw.Text("创建时间: ${doc.crtimeString}",
                 style: pw.TextStyle(
                     fontSize: mainBodyFontSize,
                     font: font,
-                    color: PdfColor.fromInt(Colors.grey.value),
+                    color: PdfColor.fromInt(Colors.grey.hashCode),
                     fontWeight: pw.FontWeight.normal)),
           ],
         ),
@@ -903,7 +904,7 @@ class PDF {
                   fontSize: mainBodyFontSize,
                   font: font,
                   fontWeight: pw.FontWeight.normal));
-        }).toList()
+        })
       ]));
     }
 
@@ -939,7 +940,7 @@ class PDF {
                       fontSize: 12,
                       font: font,
                     ));
-              }).toList(),
+              }),
             ],
           );
         },
@@ -1086,13 +1087,13 @@ class PDF {
               style: pw.TextStyle(
                   fontSize: fontsize,
                   font: font,
-                  color: PdfColor.fromInt(Colors.grey.value),
+                  color: PdfColor.fromInt(Colors.grey.hashCode),
                   fontWeight: pw.FontWeight.normal)),
           pw.Text("创建时间: ${doc.crtimeString}",
               style: pw.TextStyle(
                   fontSize: fontsize,
                   font: font,
-                  color: PdfColor.fromInt(Colors.grey.value),
+                  color: PdfColor.fromInt(Colors.grey.hashCode),
                   fontWeight: pw.FontWeight.normal)),
         ],
       ),

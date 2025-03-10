@@ -9,6 +9,7 @@ import (
 
 	"github.com/tengfei-xy/go-log"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -45,7 +46,7 @@ func ImageGet(name string) (bytes.Buffer, error) {
 	}
 
 	// 从结果印迹中获取 _id
-	objectID, ok := resultDoc["_id"].(interface{}) //  _id 可能是 interface{} 类型
+	objectID, ok := resultDoc["_id"].(primitive.ObjectID)
 	if !ok {
 		return bytes.Buffer{}, sys.ERR_INTERNAL_SERVER_ERROR
 	}

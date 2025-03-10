@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:whispering_time/utils/env.dart';
+import 'package:whispering_time/utils/ui.dart';
+import 'package:whispering_time/services/Isar/config.dart';
 
 class Devleopmode extends StatefulWidget {
   @override
@@ -7,12 +8,12 @@ class Devleopmode extends StatefulWidget {
 }
 
 class _DevleopmodeState extends State<Devleopmode> {
-   bool _isOpened = Settings().getDevlopMode();
+  bool _isOpened = Config.instance.devlopMode;
   TextEditingController serverAddressControl = TextEditingController();
   @override
   void initState() {
     super.initState();
-    serverAddressControl.text = Settings().getServerAddress();
+    serverAddressControl.text = Config.instance.serverAddress;
   }
 
   @override
@@ -32,7 +33,7 @@ class _DevleopmodeState extends State<Devleopmode> {
             value: _isOpened,
             onChanged: (bool value) {
               setState(() {
-                Settings().setDevlopMode(value);
+                Config.instance.setDevlopMode(value);
                 _isOpened = value;
               });
             },
@@ -69,11 +70,11 @@ class _DevleopmodeState extends State<Devleopmode> {
   }
 
   backPage() {
-    if (_isOpened != Settings().getDevlopMode()) {
-      Settings().setDevlopMode(_isOpened);
+    if (_isOpened != Config.instance.devlopMode) {
+      Config.instance.setDevlopMode(_isOpened);
     }
-    if (serverAddressControl.text != Settings().getServerAddress()) {
-      Settings().setServerAddress(serverAddressControl.text);
+    if (serverAddressControl.text != Config.instance.serverAddress) {
+      Config.instance.setServerAddress(serverAddressControl.text);
     }
     Navigator.of(context).pop();
   }

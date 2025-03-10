@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:whispering_time/utils/env.dart';
+import 'package:whispering_time/services/Isar/config.dart';
 
 class Show extends StatefulWidget {
   @override
@@ -7,8 +7,8 @@ class Show extends StatefulWidget {
 }
 
 class _ShowState extends State<Show> {
- bool visualNoneTitle = Settings().getVisualNoneTitle();
-  bool defaultShowTool = Settings().getDefaultShowTool();
+ bool visualNoneTitle = Config.instance.visualNoneTitle;
+  bool defaultShowTool = Config.instance.defaultShowTool;
   @override
   void initState() {
     super.initState();
@@ -33,7 +33,7 @@ class _ShowState extends State<Show> {
             onChanged: (bool value) {
               setState(() {
                 visualNoneTitle = value;
-                Settings().setVisualNoneTitle(value);
+                Config.instance.setVisualNoneTitle(value);
               });
             },
           ),
@@ -43,7 +43,7 @@ class _ShowState extends State<Show> {
             onChanged: (bool value) {
               setState(() {
                 defaultShowTool = value;
-                Settings().setDefaultShowTool(value);
+                Config.instance.setDefaultShowTool(value);
               });
             },
           ),
