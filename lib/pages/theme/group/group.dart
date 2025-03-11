@@ -277,7 +277,7 @@ class _GroupPage extends State<GroupPage> {
                         Level.l[item.level],
                         style: TextStyle(
                             fontSize: 12,
-                            color: Color(Colors.grey.shade600.hashCode)),
+                            color: Colors.grey.shade600),
                       ),
                     ),
 
@@ -307,7 +307,7 @@ class _GroupPage extends State<GroupPage> {
                         Time.string(item.crtime),
                         style: TextStyle(
                             fontSize: 12,
-                            color: Color(Colors.grey.shade600.hashCode)),
+                            color: Colors.grey.shade600),
                       ),
                     )
                   ],
@@ -574,7 +574,7 @@ class _GroupPage extends State<GroupPage> {
                   child: Text(
                     "删除 ${_gitems[gidx].name}",
                     style: TextStyle(
-                        color: Color(Colors.white.hashCode), fontSize: 17),
+                        color: Colors.white, fontSize: 17),
                   ),
                 )
               ],

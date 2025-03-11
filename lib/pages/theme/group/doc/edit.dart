@@ -187,7 +187,8 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
               QuillSimpleToolbar(
                 controller: edit,
                 config: QuillSimpleToolbarConfig(
-                  embedButtons: FlutterQuillEmbeds.toolbarButtons(),
+                  // 官方的工具栏按钮，提供图片、视频按钮
+                  // embedButtons: FlutterQuillEmbeds.toolbarButtons(),
                   customButtons: [
                     // 添加图片
                     QuillToolbarCustomButtonOptions(

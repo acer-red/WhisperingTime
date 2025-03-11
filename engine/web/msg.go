@@ -102,6 +102,7 @@ func okImage(g *gin.Context, data bytes.Buffer) {
 	case "png":
 		g.Data(http.StatusOK, "image/png", data.Bytes())
 	case "jpg":
+	case "jpeg":
 		g.Data(http.StatusOK, "image/jpeg", data.Bytes())
 	default:
 		log.Warnf("未知图片类型,%s", name)

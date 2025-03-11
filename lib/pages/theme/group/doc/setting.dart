@@ -91,7 +91,7 @@ class _DocSetting extends State<DocSetting> {
               child: Text(
                 '删除',
                 style:
-                    TextStyle(color: Color(Colors.white.hashCode), fontSize: 17),
+                    TextStyle(color: Colors.white, fontSize: 17),
               ),
             )
           ],
