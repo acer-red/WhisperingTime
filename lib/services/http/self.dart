@@ -698,8 +698,6 @@ class Http {
   Future<T> _handleRequest<T>(
       Method method, Uri u, Function(Map<String, dynamic>) fromJson,
       {Map<String, dynamic>? data, Map<String, String>? headers}) async {
-    print("请求地址: $serverAddress");
-    print("uid=$uid");
     if (data != null) {
       log.d(data);
     }

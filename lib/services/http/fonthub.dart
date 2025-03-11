@@ -1,9 +1,7 @@
 import 'dart:convert';
-import 'dart:io';
-
-import 'package:path_provider/path_provider.dart';
 import 'package:whispering_time/utils/env.dart';
 import 'package:whispering_time/services/Isar/config.dart';
+import 'package:whispering_time/services/Isar/font.dart';
 import 'package:http/http.dart' as http;
 import 'base.dart';
 
@@ -14,6 +12,8 @@ class FontItem {
   String copyRight;
   String license;
   String fileName;
+  String version;
+  String sha256;
   String downloadURL;
   FontItem(
       {required this.name,
@@ -21,6 +21,8 @@ class FontItem {
       required this.subName,
       required this.copyRight,
       required this.license,
+      required this.version,
+      required this.sha256,
       required this.fileName,
       required this.downloadURL});
   factory FontItem.fromJson(Map<String, dynamic> json) {
@@ -31,13 +33,16 @@ class FontItem {
         copyRight: json['copy_right'],
         license: json['license'],
         fileName: json['file_name'],
+        version: json['version'],
+        sha256: json['sha256'],
         downloadURL: json['download_url']);
   }
 }
 
 class ResponseGetFonts extends Basic {
   List<FontItem> data = [];
-  ResponseGetFonts({required super.err, required super.msg, required this.data});
+  ResponseGetFonts(
+      {required super.err, required super.msg, required this.data});
   factory ResponseGetFonts.fromJson(Map<String, dynamic> json) {
     return ResponseGetFonts(
         err: json['err'],
@@ -48,12 +53,12 @@ class ResponseGetFonts extends Basic {
   }
 }
 
-class Font {
+class Fontx {
   String name;
   String downloadURL;
-  Font({required this.name, required this.downloadURL});
-  factory Font.fromJson(Map<String, dynamic> json) {
-    return Font(name: json['name'], downloadURL: json['download_url']);
+  Fontx({required this.name, required this.downloadURL});
+  factory Fontx.fromJson(Map<String, dynamic> json) {
+    return Fontx(name: json['name'], downloadURL: json['download_url']);
   }
 }
 
@@ -106,16 +111,30 @@ class Http {
   }
 
   Future<bool> getFontFile(FontItem item) async {
-    Directory path = await getTemporaryDirectory();
-    if (await File("${path.path}/${item.fileName}").exists()) {
+    final b = await Font().isExistFont(item.fileName, item.sha256);
+    if (b) {
       return true;
     }
-    String savePath = "${path.path}/${item.fileName}";
-    File file = File(savePath);
-    var request = await http.get(Uri.parse(item.downloadURL));
-    var bytes = request.bodyBytes;
-    await file.writeAsBytes(bytes);
-    log.i("下载字体文件 ${item.fullName} 到 $savePath");
+
+    final request = await http.get(Uri.parse(item.downloadURL));
+    try {
+      await Font(
+        name: item.name,
+        fullName: item.fullName,
+        subName: item.subName,
+        copyRight: item.copyRight,
+        license: item.license,
+        fileName: item.name,
+        version: item.version,
+        sha256: item.sha256,
+        downloadURL: item.downloadURL,
+      ).uploadFont(request.bodyBytes);
+
+    } catch (e) {
+      log.e("保存字体失败,${e.toString()}");
+      return false;
+    }
+    log.i("下载字体文件 ${item.fullName}");
     return true;
   }
 }

@@ -656,7 +656,7 @@ class _GroupPage extends State<GroupPage> {
       Msg.diy(context, "已定格或已进入定格缓冲期，无法编辑");
       return;
     }
-    final LastPageDoc ret = await Navigator.push(
+    final LastStateDoc ret = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => DocEditPage(
@@ -673,7 +673,7 @@ class _GroupPage extends State<GroupPage> {
     );
 
     switch (ret.state) {
-      case LastPage.create:
+      case LastState.create:
         if (!isContainSelectLevel(ret.level)) {
           break;
         }
@@ -689,7 +689,7 @@ class _GroupPage extends State<GroupPage> {
               id: ret.id));
         });
         break;
-      case LastPage.nocreate:
+      case LastState.nocreate:
         return;
       default:
         return;
@@ -700,7 +700,7 @@ class _GroupPage extends State<GroupPage> {
   enterDoc(int index) async {
     Group group = _gitems[gidx];
     Doc doc = _ditems[index];
-    final LastPageDoc ret = await Navigator.push(
+    final LastStateDoc ret = await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (con) => DocEditPage(
@@ -718,10 +718,10 @@ class _GroupPage extends State<GroupPage> {
         ));
     setState(() {
       switch (ret.state) {
-        case LastPage.delete:
+        case LastState.delete:
           _ditems.removeAt(index);
           break;
-        case LastPage.change:
+        case LastState.change:
           if (!isContainSelectLevel(ret.level)) {
             _ditems.removeAt(index);
             break;
@@ -742,7 +742,7 @@ class _GroupPage extends State<GroupPage> {
             _ditems[index].config.isShowTool = ret.config.isShowTool;
           }
           break;
-        case LastPage.changeConfig:
+        case LastState.changeConfig:
           if (doc.crtime != ret.crtime) {
             _ditems[index].crtime = ret.crtime;
             _ditems[index].crtime = ret.crtime;

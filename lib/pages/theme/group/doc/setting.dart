@@ -28,11 +28,11 @@ class DocSetting extends StatefulWidget {
   State<DocSetting> createState() => _DocSetting();
 }
 
-class LastPageDocSetting {
-  LastPage state;
+class LastStateDocSetting {
+  LastState state;
   DocConfigration? config;
   DateTime? crtime;
-  LastPageDocSetting({required this.state, this.config, this.crtime});
+  LastStateDocSetting({required this.state, this.config, this.crtime});
 }
 
 class _DocSetting extends State<DocSetting> {
@@ -134,10 +134,10 @@ class _DocSetting extends State<DocSetting> {
 
   backPage() {
     if (!isChange) {
-      return Navigator.of(context).pop(LastPageDocSetting(state: LastPage.ok));
+      return Navigator.of(context).pop(LastStateDocSetting(state: LastState.ok));
     }
-    return Navigator.of(context).pop(LastPageDocSetting(
-        state: LastPage.change,
+    return Navigator.of(context).pop(LastStateDocSetting(
+        state: LastState.change,
         crtime: crtime,
         config: DocConfigration(isShowTool: isShowTool)));
   }
@@ -153,7 +153,7 @@ class _DocSetting extends State<DocSetting> {
       return;
     }
     if (mounted) {
-      Navigator.of(context).pop(LastPageDocSetting(state: LastPage.delete));
+      Navigator.of(context).pop(LastStateDocSetting(state: LastState.delete));
     }
   }
 

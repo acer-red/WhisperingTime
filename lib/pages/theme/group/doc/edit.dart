@@ -15,9 +15,9 @@ import 'package:path/path.dart' as p;
 
 const String defaultTitle = "未命名的标题";
 
-class LastPageDoc extends Doc {
-  LastPage state;
-  LastPageDoc(
+class LastStateDoc extends Doc {
+  LastState state;
+  LastStateDoc(
       {required this.state,
       required super.title,
       required super.content,
@@ -344,8 +344,8 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
       if (ok) {
         log.i("保存成功");
         if (mounted) {
-          return Navigator.of(context).pop(LastPageDoc(
-              state: widget.id == null ? LastPage.create : LastPage.change,
+          return Navigator.of(context).pop(LastStateDoc(
+              state: widget.id == null ? LastState.create : LastState.change,
               title: titleEdit.text,
               content: getEditOrigin(),
               plainText: getEditPlainText(),
@@ -358,8 +358,8 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
       } else {
         log.e("保存失败");
         if (mounted) {
-          return Navigator.of(context).pop(LastPageDoc(
-              state: LastPage.nochange,
+          return Navigator.of(context).pop(LastStateDoc(
+              state: LastState.nochange,
               title: titleEdit.text,
               content: widget.content,
               plainText: getEditPlainText(),
@@ -375,8 +375,8 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     // 印迹内容无变化
     if (keepCRTime && keepConfig) {
       if (mounted) {
-        return Navigator.of(context).pop(LastPageDoc(
-            state: LastPage.nochange,
+        return Navigator.of(context).pop(LastStateDoc(
+            state: LastState.nochange,
             title: titleEdit.text,
             content: widget.content,
             plainText: getEditPlainText(),
@@ -389,8 +389,8 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
       // 印迹内容无变化，配置有变化
     } else {
       if (mounted) {
-        return Navigator.of(context).pop(LastPageDoc(
-            state: LastPage.changeConfig,
+        return Navigator.of(context).pop(LastStateDoc(
+            state: LastState.changeConfig,
             title: titleEdit.text,
             content: widget.content,
             plainText: getEditPlainText(),
@@ -404,7 +404,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   }
 
   void enterSettingPage() async {
-    final LastPageDocSetting ret = await Navigator.push(
+    final LastStateDocSetting ret = await Navigator.push(
         context,
         MaterialPageRoute(
             builder: (context) => DocSetting(
@@ -413,7 +413,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
                 crtime: widget.crtime,
                 config: config)));
     switch (ret.state) {
-      case LastPage.change:
+      case LastState.change:
         if (widget.id != null) {
           RequestPutDoc req = RequestPutDoc(crtime: ret.crtime);
           req.config = ret.config;
@@ -432,9 +432,9 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
           }
         });
         break;
-      case LastPage.delete:
+      case LastState.delete:
         print("返回并删除印迹");
-        Navigator.of(context).pop(LastPageDoc(
+        Navigator.of(context).pop(LastStateDoc(
             state: ret.state,
             title: "",
             plainText: "",
@@ -450,9 +450,9 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     }
   }
 
-  LastPageDoc nocreateDoc({bool failed = false}) {
-    return LastPageDoc(
-      state: failed ? LastPage.err : LastPage.nocreate,
+  LastStateDoc nocreateDoc({bool failed = false}) {
+    return LastStateDoc(
+      state: failed ? LastState.err : LastState.nocreate,
       content: "",
       plainText: "",
       level: 0,

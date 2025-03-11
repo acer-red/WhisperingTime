@@ -3,9 +3,10 @@ import 'package:isar/isar.dart';
 import 'package:provider/provider.dart';
 import 'pages/theme/theme.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:whispering_time/utils/env.dart';
+import 'package:whispering_time/utils/path.dart';
 import 'pages/setting/setting.dart';
 import 'package:whispering_time/services/Isar/config.dart';
+import 'package:whispering_time/services/Isar/font.dart';
 import 'package:whispering_time/services/Isar/env.dart';
 
 
@@ -16,7 +17,7 @@ void main() async {
   print("数据存储路径:${dir.path}");
   
   isar = await Isar.open(
-    [ConfigSchema], // 你的模型 Schema 列表
+    [ConfigSchema,FontSchema], // 你的模型 Schema 列表
     directory: dir.path, // 指定数据库存储目录
     inspector: true, // 启用 Isar Inspector 连接
   );
