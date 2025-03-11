@@ -37,6 +37,38 @@ class FontItem {
         sha256: json['sha256'],
         downloadURL: json['download_url']);
   }
+  Future<bool> save() async {
+    final f = Font(
+      name: name,
+      fullName: fullName,
+      subName: subName,
+      copyRight: copyRight,
+      license: license,
+      fileName: fileName,
+      version: version,
+      sha256: sha256,
+      downloadURL: downloadURL,
+    );
+
+    if (await f.isExist() == true) {
+      return true;
+    }
+
+    print("发现字体文件不存在，准备下载字体: $fullName 链接: $downloadURL");
+    final request = await http.get(Uri.parse(downloadURL));
+    request.statusCode == 200
+        ? print("下载字体文件成功")
+        : print("下载字体文件失败");
+    try {
+      f.saveFile(request.bodyBytes);
+      f.upload();
+    } catch (e) {
+      log.e("保存字体失败,${e.toString()}");
+      return false;
+    }
+    print("下载字体文件 $fullName");
+    return true;
+  }
 }
 
 class ResponseGetFonts extends Basic {
@@ -104,37 +136,10 @@ class Http {
   }
 
   Future<ResponseGetFonts> getFonts() async {
+    log.i("从网络获取字体列表");
     final Uri u = Uri.parse("$serverAddress/api/fonts");
     return _handleRequest<ResponseGetFonts>(Method.get, u, (json) {
       return ResponseGetFonts.fromJson(json);
     });
-  }
-
-  Future<bool> getFontFile(FontItem item) async {
-    final b = await Font().isExistFont(item.fileName, item.sha256);
-    if (b) {
-      return true;
-    }
-
-    final request = await http.get(Uri.parse(item.downloadURL));
-    try {
-      await Font(
-        name: item.name,
-        fullName: item.fullName,
-        subName: item.subName,
-        copyRight: item.copyRight,
-        license: item.license,
-        fileName: item.name,
-        version: item.version,
-        sha256: item.sha256,
-        downloadURL: item.downloadURL,
-      ).uploadFont(request.bodyBytes);
-
-    } catch (e) {
-      log.e("保存字体失败,${e.toString()}");
-      return false;
-    }
-    log.i("下载字体文件 ${item.fullName}");
-    return true;
   }
 }

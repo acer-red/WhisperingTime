@@ -40,6 +40,10 @@ class Config {
       await isar.configs.put(this);
     });
   }
+  // Future<String> getuid()async {
+  //   final c =await isar.configs.where().findFirst();
+  //  return c!.uid;
+  // }
 
   setDevlopMode(bool b) async {
     print("更新配置 开发者模式 $b");

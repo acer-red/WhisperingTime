@@ -1,9 +1,11 @@
+import 'dart:typed_data';
+
 import 'package:isar/isar.dart';
 import 'env.dart';
 import 'package:whispering_time/services/Isar/font.dart';
 import 'package:whispering_time/utils/path.dart';
-import 'package:whispering_time/utils/env.dart';
 import 'package:path/path.dart' as path;
+import 'dart:ui' as ui; // 访问 ui.loadFontFromList
 import 'dart:io';
 
 part 'font.g.dart';
@@ -21,6 +23,7 @@ class Font {
   String? version = '';
   String? sha256 = '';
   String? downloadURL = '';
+
   Font({
     this.name,
     this.fullName,
@@ -33,60 +36,60 @@ class Font {
     this.downloadURL,
   });
 
-  Future<bool> isExistFont(String filename, String sha256) async {
-    final d = await getFontsDir();
-    String f = path.join(d, fileName);
-
-    final isFile = await File(f).exists();
-    final isDB = await isar.fonts.filter().sha256EqualTo(sha256).findFirst();
-
-    if (isFile) {
-      // 文件存在，数据库存在
-      if (isDB != null) {
-        return true;
-      }
-      // 文件存在，数据库不存在
-      await File(f).delete();
-      return false;
-    } else {
-      // 文件不存在，但是数据库存在
-      if (isDB != null) {
-        return await isar.writeTxn(() async {
-          return await isar.fonts.delete(isDB.id);
-        });
-      }
-      return false;
-    }
+  void load() async {
+    final fontFile = await getFilePath();
+    final data = File(fontFile);
+    print("加载字体文件 $fullName");
+    await ui.loadFontFromList(await data.readAsBytes(), fontFamily: fullName);
   }
 
-  Future<LastState> uploadFont(List<int> data) async {
-    final existingFont =
-        await isar.fonts.filter().sha256EqualTo(sha256).findFirst();
+  Future<String> getFilePath() async {
+    return path.join(await getFontsDir(), fileName!);
+  }
 
-    if (existingFont != null) {
-      return LastState.exist;
+  Future<bool> isExist() async {
+    final fontFile = await getFilePath();
+    final f = File(fontFile);
+    final isFileExist = (await f.stat()).type != FileSystemEntityType.notFound;
+    final d = isar.fonts.filter().sha256EqualTo(sha256);
+    final isDBExist = await d.findFirst();
+
+    if (isFileExist && isDBExist != null) {
+      return true;
+    }
+    if (isFileExist) {
+      f.delete();
+    }
+    if (isDBExist != null) {
+      d.deleteAll();
     }
 
-    final d = await getFontsDir();
-    String f = path.join(d, fileName);
-    File file = File(f);
+    return false;
+  }
 
-    try {
-      await file.writeAsBytes(data);
-    } catch (e) {
-      log.e(e.toString());
-      return LastState.err;
-    }
+  Future<List<Font?>> getFonts() async {
+    print("查找所有字体信息");
+    return isar.fonts.where().findAll();
+  }
 
-    try {
-      await isar.writeTxn(() async {
-        await isar.fonts.put(this);
-      });
-    } catch (e) {
-      log.e(e.toString());
-      file.delete();
-      return LastState.err;
+  void saveFile(Uint8List data) async {
+    final f = await getFilePath();
+    print("保存字体文件 $fullName 路径:$f");
+
+    await File(f).writeAsBytes(data);
+    return;
+  }
+
+  Future<bool> upload() async {
+    print("上传字体文件 $fullName");
+    final isDB = await isar.fonts.filter().sha256EqualTo(sha256).findFirst();
+    if (isDB != null) {
+      return true;
     }
-    return LastState.ok;
+    await isar.writeTxn(() async {
+      await isar.fonts.put(this);
+    });
+
+    return true;
   }
 }

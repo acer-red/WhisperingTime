@@ -22,7 +22,6 @@ void main() async {
     inspector: true, // 启用 Isar Inspector 连接
   );
   await Config().init();
-
   runApp(const MyApp());
 }
 
