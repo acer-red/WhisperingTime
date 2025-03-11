@@ -187,6 +187,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
               QuillSimpleToolbar(
                 controller: edit,
                 config: QuillSimpleToolbarConfig(
+                  embedButtons: FlutterQuillEmbeds.toolbarButtons(),
                   customButtons: [
                     // 添加图片
                     QuillToolbarCustomButtonOptions(
@@ -214,9 +215,8 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
                   focusNode: FocusScopeNode(),
                   scrollController: ScrollController(),
                   config: QuillEditorConfig(
-                    
                     scrollable: true,
-                    expands: false,
+                    expands: true,
 
                     // 添加图片后，能够显示图片的构建
                     embedBuilders: kIsWeb

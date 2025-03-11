@@ -166,8 +166,7 @@ class _GroupPage extends State<GroupPage> {
                     isMulti: _gitems[gidx].config.isMulti,
                     onLevelChanged: (value) {
                       setState(() {
-                        _gitems[gidx].config.levels = value;
-                        clickLevel();
+                        clickLevel(value);
                       });
                     },
                     onModeChanged: (value) {
@@ -868,7 +867,13 @@ class _GroupPage extends State<GroupPage> {
   }
 
   /// 点击分级按钮
-  clickLevel() {
+  clickLevel(List<bool> value) {
+    _gitems[gidx].config.levels = value;
+
+    RequestPutGroup req = RequestPutGroup(
+        config: GroupConfigNULL(levels: _gitems[gidx].config.levels));
+    Http(tid: widget.tid, gid: _gitems[gidx].id).putGroup(req);
+
     switch (_gitems[gidx].config.viewType) {
       case 0:
         setDocs();
@@ -976,6 +981,7 @@ class _GroupPage extends State<GroupPage> {
           .map((l) => Group(
               name: l.name, id: l.id, overtime: l.overtime, config: l.config))
           .toList();
+      setDocs();
     });
   }
 }
@@ -1073,7 +1079,6 @@ class ViewSettingState extends State<ViewSetting> {
     viewType = widget.viewType;
     pageIndex = widget.pageIndex;
     _pageController = PageController(initialPage: widget.pageIndex);
-    print(widget.isAll);
   }
 
   @override

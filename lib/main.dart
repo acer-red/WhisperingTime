@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:isar/isar.dart';
 import 'package:provider/provider.dart';
 import 'pages/theme/theme.dart';
@@ -9,15 +10,14 @@ import 'package:whispering_time/services/Isar/config.dart';
 import 'package:whispering_time/services/Isar/font.dart';
 import 'package:whispering_time/services/Isar/env.dart';
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final dir = await getMainStoreDir();
   print("数据存储路径:${dir.path}");
-  
+
   isar = await Isar.open(
-    [ConfigSchema,FontSchema], // 你的模型 Schema 列表
+    [ConfigSchema, FontSchema], // 你的模型 Schema 列表
     directory: dir.path, // 指定数据库存储目录
     inspector: true, // 启用 Isar Inspector 连接
   );
@@ -45,6 +45,7 @@ class MyApp extends StatelessWidget {
           GlobalMaterialLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
+          FlutterQuillLocalizations.delegate,
         ],
         supportedLocales: [
           const Locale('zh', 'CH'),
