@@ -149,7 +149,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
           // 标题右侧按钮
           actions: <Widget>[
             IconButton(
-                onPressed: () => dialogExport(), icon: Icon(Icons.share)),
+                onPressed: () => dialogExport(), icon: Icon(Icons.download)),
             widget.freeze
                 ? IconButton(
                     icon: Icon(Icons.settings, color: Colors.grey),
@@ -183,62 +183,70 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
                   ),
 
             // 富文本工具栏（含图片）
-            if (config.isShowTool!)
-              QuillSimpleToolbar(
-                controller: edit,
-                config: QuillSimpleToolbarConfig(
-                  // 官方的工具栏按钮，提供图片、视频按钮
-                  // embedButtons: FlutterQuillEmbeds.toolbarButtons(),
-                  customButtons: [
-                    // 添加图片
-                    QuillToolbarCustomButtonOptions(
-                      icon: Icon(Icons.image),
-                      onPressed: () => dialogSelectImage(context, edit),
-                    ),
-                    // 测试按钮
-                    QuillToolbarCustomButtonOptions(
-                      icon: Icon(Icons.radio_button_checked),
-                      onPressed: () {
-                        print(getEditOrigin());
-                      },
-                    )
-                  ],
-                ),
-              ),
+            if (config.isShowTool!) quillToolBar() else SizedBox.shrink(),
 
             // 富文本编辑框
             Expanded(
               child: Container(
                 padding:
                     const EdgeInsets.only(top: 8.0, left: 30.0, right: 30.0),
-                child: QuillEditor(
-                  controller: edit,
-                  focusNode: FocusScopeNode(),
-                  scrollController: ScrollController(),
-                  config: QuillEditorConfig(
-                    scrollable: true,
-                    expands: true,
-
-                    // 添加图片后，能够显示图片的构建
-                    embedBuilders: kIsWeb
-                        ? FlutterQuillEmbeds.editorWebBuilders()
-                        : FlutterQuillEmbeds.editorBuilders(),
-                    customStyles: DefaultStyles(
-                      paragraph: DefaultTextBlockStyle(
-                          TextStyle(
-                              fontSize: 16, height: 1.4, color: Colors.black),
-                          HorizontalSpacing(0, 0),
-                          // 10像素底部间距，0像素顶部间距
-                          VerticalSpacing(10, 0),
-                          VerticalSpacing(0, 0),
-                          null),
-                    ),
-                  ),
-                ),
+                child: quillEditor(),
               ),
             ),
           ],
         ));
+  }
+
+  // 富文本工具栏
+  Widget quillToolBar() {
+    return QuillSimpleToolbar(
+      controller: edit,
+      config: QuillSimpleToolbarConfig(
+        // 官方的工具栏按钮，提供图片、视频按钮
+        // embedButtons: FlutterQuillEmbeds.toolbarButtons(),
+        customButtons: [
+          // 添加图片
+          QuillToolbarCustomButtonOptions(
+            icon: Icon(Icons.image),
+            onPressed: () => dialogSelectImage(context, edit),
+          ),
+          // 测试按钮
+          QuillToolbarCustomButtonOptions(
+            icon: Icon(Icons.radio_button_checked),
+            onPressed: () {
+              print(getEditOrigin());
+            },
+          )
+        ],
+      ),
+    );
+  }
+
+  // 富文本编辑器
+  Widget quillEditor() {
+    return QuillEditor(
+      controller: edit,
+      focusNode: FocusScopeNode(),
+      scrollController: ScrollController(),
+      config: QuillEditorConfig(
+        scrollable: true,
+        expands: true,
+        autoFocus: true,
+        // 添加图片后，能够显示图片的构建
+        embedBuilders: kIsWeb
+            ? FlutterQuillEmbeds.editorWebBuilders()
+            : FlutterQuillEmbeds.editorBuilders(),
+
+        customStyles: DefaultStyles(
+          paragraph: DefaultTextBlockStyle(
+              TextStyle(fontSize: 16, height: 1.4, color: Colors.black),
+              HorizontalSpacing(0, 0),
+              VerticalSpacing(10, 0),
+              VerticalSpacing(0, 0),
+              null),
+        ),
+      ),
+    );
   }
 
   clickNewLevel(int index) async {
@@ -665,6 +673,17 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     );
   }
 
+// 假设你有一个 QuillController
+  void insertImage(QuillController controller, String imageUrl) {
+    final index = controller.selection.baseOffset;
+    final embed = BlockEmbed.image(imageUrl);
+    controller.document.insert(index, embed);
+    controller.updateSelection(
+      TextSelection.collapsed(offset: index + 1),
+      ChangeSource.local,
+    );
+  }
+
   pickerLocalImage() async {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
@@ -688,9 +707,8 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
         await Http().postImage(RequestPostImage(type: type, data: bytes));
 
     // 插入在线链接
-    edit.insertImageBlock(
-        imageSource:
-            "http://${Config.instance.serverAddress}/image/${res.name}");
+    insertImage(
+        edit, "http://${Config.instance.serverAddress}/image/${res.name}");
 
     // 插入base64
     // edit.insertImageBlock(imageSource:data);

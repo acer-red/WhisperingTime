@@ -97,15 +97,19 @@ func okData(g *gin.Context, obj any) {
 }
 func okImage(g *gin.Context, data bytes.Buffer) {
 	name := g.Param("file")
-
-	switch strings.Split(name, ".")[1] {
+	if !strings.Contains(name, ".") {
+		badRequest(g)
+		return
+	}
+	fotmat := strings.ToLower(strings.Split(name, ".")[1])
+	switch fotmat {
 	case "png":
 		g.Data(http.StatusOK, "image/png", data.Bytes())
 	case "jpg":
 	case "jpeg":
 		g.Data(http.StatusOK, "image/jpeg", data.Bytes())
 	default:
-		log.Warnf("未知图片类型,%s", name)
+		log.Errorf("未知图片类型,%s", fotmat)
 	}
 }
 
