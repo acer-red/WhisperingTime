@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:isar/isar.dart';
 import 'package:provider/provider.dart';
-import 'pages/theme/theme.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:whispering_time/utils/path.dart';
-import 'pages/setting/setting.dart';
 import 'package:whispering_time/services/Isar/config.dart';
 import 'package:whispering_time/services/Isar/font.dart';
 import 'package:whispering_time/services/Isar/env.dart';
+import 'package:whispering_time/pages/home.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,7 +39,7 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(
               seedColor: const Color.fromARGB(255, 211, 118, 5)),
         ),
-        home: MyHomePage(),
+        home: HomePage(),
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
@@ -61,43 +60,43 @@ class MyAppState extends ChangeNotifier {
   MyAppState();
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key});
+// class MyHomePage extends StatefulWidget {
+//   const MyHomePage({super.key});
 
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
+//   @override
+//   State<MyHomePage> createState() => _MyHomePageState();
+// }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int idx = 0;
-  Widget panel(int idx) {
-    switch (idx) {
-      case 0:
-        return ThemePage();
-      case 1:
-        return SettingsPage();
-      default:
-        throw UnimplementedError('no widget');
-    }
-  }
+// class _MyHomePageState extends State<MyHomePage> {
+//   int idx = 0;
+//   Widget panel(int idx) {
+//     switch (idx) {
+//       case 0:
+//         return ThemePage();
+//       case 1:
+//         return SettingsPage();
+//       default:
+//         throw UnimplementedError('no widget');
+//     }
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, constraints) {
-      return Scaffold(
-        body: panel(idx),
-        bottomNavigationBar: BottomNavigationBar(
-            items: const <BottomNavigationBarItem>[
-              BottomNavigationBarItem(icon: Icon(Icons.home), label: "主页"),
-              BottomNavigationBarItem(icon: Icon(Icons.settings), label: "设置"),
-            ],
-            currentIndex: idx,
-            onTap: (x) {
-              setState(() {
-                idx = x;
-              });
-            }),
-      );
-    });
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return LayoutBuilder(builder: (context, constraints) {
+//       return Scaffold(
+//         body: panel(idx),
+//         bottomNavigationBar: BottomNavigationBar(
+//             items: const <BottomNavigationBarItem>[
+//               BottomNavigationBarItem(icon: Icon(Icons.home), label: "主页"),
+//               BottomNavigationBarItem(icon: Icon(Icons.settings), label: "设置"),
+//             ],
+//             currentIndex: idx,
+//             onTap: (x) {
+//               setState(() {
+//                 idx = x;
+//               });
+//             }),
+//       );
+//     });
+//   }
+// }

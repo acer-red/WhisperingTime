@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'group/group.dart';
+import 'package:whispering_time/pages/theme/group/group.dart';
 import 'package:whispering_time/services/http/self.dart';
 import 'package:whispering_time/utils/ui.dart';
+import 'package:whispering_time/pages/setting/feedback/feedback.dart';
 
 class Theme {
   String id;
@@ -16,7 +17,9 @@ class ThemePage extends StatefulWidget {
 
 class _ThemePageState extends State<ThemePage> {
   List<Theme> _titems = [];
+  final scrollController = ScrollController();
 
+  double initialDragPosition = 0;
   @override
   void initState() {
     super.initState();
@@ -42,64 +45,53 @@ class _ThemePageState extends State<ThemePage> {
 
   @override
   Widget build(BuildContext context) {
-    final scrollController = ScrollController();
-
-    double initialDragPosition = 0;
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding:
-              const EdgeInsets.only(bottom: 10, top: 10.0, left: 50, right: 50),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Text(
-                    "印迹主题",
-                    style: TextStyle(fontWeight: FontWeight.w500, fontSize: 17),
-                  ),
-                  PopupMenuButton(
-                    icon: Icon(Icons.more_horiz),
-                    itemBuilder: (BuildContext context) => <PopupMenuEntry>[
-                      PopupMenuItem(
-                        value: 'event_add_theme',
-                        child: Text('添加主题'),
-                        onTap: () => add(),
-                      ),
-                    ],
-                  )
-                ],
-              ),
-              SizedBox(
-                height: 70,
-                child: GestureDetector(
-                  onHorizontalDragStart: (details) {
-                    initialDragPosition = details.localPosition.dx;
-                  },
-                  onHorizontalDragUpdate: (details) {
-                    final currentPosition = details.localPosition.dx;
-                    final delta = currentPosition - initialDragPosition;
-                    scrollController.jumpTo(scrollController.offset - delta);
-                    initialDragPosition = currentPosition;
-                  },
-                  child: ListView.builder(
-                    controller: scrollController,
-                    itemCount: _titems.length,
-                    scrollDirection: Axis.horizontal, // 设置滚动方向为水平
-                    itemBuilder: (context, index) {
-                      return _buildItem(index);
-                    },
-                  ),
+    return Column(
+      children: [
+        Row(
+          children: [
+            Text(
+              "印迹主题",
+              style: TextStyle(fontWeight: FontWeight.w500, fontSize: 17),
+            ),
+            PopupMenuButton(
+              icon: Icon(Icons.more_horiz),
+              style: ButtonStyle(iconSize: WidgetStateProperty.all(20.0)),
+              itemBuilder: (BuildContext context) => <PopupMenuEntry>[
+                PopupMenuItem(
+                  child: Text('添加主题'),
+                  onTap: () => add(),
                 ),
-              )
-            ],
-          ),
+              ],
+            )
+          ],
         ),
-      ),
+        SizedBox(
+          height: 70,
+          child: GestureDetector(
+            onHorizontalDragStart: (details) {
+              initialDragPosition = details.localPosition.dx;
+            },
+            onHorizontalDragUpdate: (details) {
+              final currentPosition = details.localPosition.dx;
+              final delta = currentPosition - initialDragPosition;
+              scrollController.jumpTo(scrollController.offset - delta);
+              initialDragPosition = currentPosition;
+            },
+            child: ListView.builder(
+              controller: scrollController,
+              itemCount: _titems.length,
+              scrollDirection: Axis.horizontal, // 设置滚动方向为水平
+              itemBuilder: (context, index) {
+                return item(index);
+              },
+            ),
+          ),
+        )
+      ],
     );
   }
 
-  Widget _buildItem(int index) {
+  Widget item(int index) {
     final GlobalKey buttonKey = GlobalKey();
     return Padding(
       padding: EdgeInsets.only(right: 16),
@@ -175,11 +167,11 @@ class _ThemePageState extends State<ThemePage> {
     //         name: l.name, id: l.id, overtime: l.overtime, config: l.config))
     //     .toList();
     // if (mounted) {
-      Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (context) => GroupPage(
-                  themename: _titems[index].name, tid: _titems[index].id)));
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => GroupPage(
+                themename: _titems[index].name, tid: _titems[index].id)));
     // }
   }
 

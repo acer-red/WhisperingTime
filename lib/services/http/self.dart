@@ -5,7 +5,7 @@ import 'package:http/http.dart';
 import 'package:intl/intl.dart';
 import 'package:whispering_time/utils/env.dart';
 import 'base.dart';
-import 'package:whispering_time/pages/theme/group/doc/setting.dart';
+import 'package:whispering_time/pages/theme/doc/setting.dart';
 import 'package:whispering_time/utils/time.dart';
 import 'package:whispering_time/services/Isar/config.dart';
 

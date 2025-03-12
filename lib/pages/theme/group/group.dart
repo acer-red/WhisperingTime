@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:whispering_time/utils/env.dart';
 import 'package:whispering_time/utils/export.dart';
-import 'package:whispering_time/pages/theme/group/doc/setting.dart';
-import 'doc/edit.dart';
+import 'package:whispering_time/pages/theme/doc/setting.dart';
+import '../doc/edit.dart';
 import 'package:intl/intl.dart';
 import 'package:whispering_time/services/http/self.dart';
 import 'package:whispering_time/utils/time.dart';

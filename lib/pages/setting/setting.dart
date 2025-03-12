@@ -1,105 +1,159 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import 'package:whispering_time/utils/export.dart';
-import 'package:whispering_time/utils/ui.dart';
-import 'package:whispering_time/services/Isar/config.dart';
 
 import 'font_manager.dart';
 import 'show.dart';
 import 'develop_mode.dart';
+import 'feedback/feedback.dart';
 
-class SettingsPage extends StatefulWidget {
+class SettingPage extends StatefulWidget {
   @override
-  State<SettingsPage> createState() => _SettingsPage();
+  State<SettingPage> createState() => _SettingPage();
 }
 
-class _SettingsPage extends State<SettingsPage> {
+enum OpenWay {
+  dialog,
+  page,
+}
+
+class Setting {
+  String title;
+  Widget widget;
+  OpenWay ow;
+  Setting({required this.title, required this.widget, required this.ow});
+}
+
+class _SettingPage extends State<SettingPage> {
+  List<Setting> _items = [
+    Setting(
+      title: "显示",
+      widget: Show(),
+      ow: OpenWay.page,
+    ),
+    Setting(
+      title: "字体管理",
+      widget: FontManager(),
+      ow: OpenWay.dialog,
+    ),
+    Setting(
+      title: "数据导出",
+      widget: Export(ResourceType.theme, title: "导出所有数据"),
+      ow: OpenWay.dialog,
+    ),
+    Setting(
+      title: "交流反馈",
+      widget: FeedbackPage(),
+      ow: OpenWay.page,
+    ),
+    Setting(
+      title: "开发者",
+      widget: Devleopmode(),
+      ow: OpenWay.page,
+    ),
+  ];
+  final scrollController = ScrollController();
+
+  double initialDragPosition = 0;
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-          title: Text("设置"),
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8.0),
+          child: Row(
+            children: [
+              Text(
+                "设置",
+                style: TextStyle(fontWeight: FontWeight.w500, fontSize: 17),
+              ),
+            ],
+          ),
         ),
-        body: Column(
-          children: [
-            TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => Show()),
-                  );
-                },
-                child: Container(
-                    padding: EdgeInsets.only(bottom: 15, top: 15, left: 15),
-                    alignment: Alignment.centerLeft,
-                    child: Text("显示"))),
-            divider(),
-            TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => Devleopmode()),
-                  );
-                },
-                child: Container(
-                    padding: EdgeInsets.only(bottom: 15, top: 15, left: 15),
-                    alignment: Alignment.centerLeft,
-                    child: Text("开发者"))),
-            divider(),
-            TextButton(
-                onPressed: () => dialogFontManager(),
-                child: Container(
-                    padding: EdgeInsets.only(bottom: 15, top: 15, left: 15),
-                    alignment: Alignment.centerLeft,
-                    child: Text("字体管理"))),
-            divider(),
-            TextButton(
-                onPressed: () => dialogExport(),
-                child: Container(
-                    padding: EdgeInsets.only(bottom: 15, top: 15, left: 15),
-                    alignment: Alignment.centerLeft,
-                    child: Text("数据导出"))),
-            divider(),
-            Column(
-              children: [
-                TextButton(
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: Config.instance.uid));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('文本已复制到剪贴板')),
-                    );
-                  },
-                  style: ButtonStyle(
-                    overlayColor: WidgetStateProperty.all(Colors.transparent),
-                  ),
-                  child: Text(
-                    "用户ID：${Config.instance.uid}",
-                  ),
-                ),
-              ],
-            )
-          ],
-        ));
-  }
-
-  Future<void> dialogExport() async {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (BuildContext context) {
-        return Export(ResourceType.theme, title: "导出所有数据");
-      },
+        SizedBox(
+          height: 70,
+          child: GestureDetector(
+            onHorizontalDragStart: (details) {
+              initialDragPosition = details.localPosition.dx;
+            },
+            onHorizontalDragUpdate: (details) {
+              final currentPosition = details.localPosition.dx;
+              final delta = currentPosition - initialDragPosition;
+              scrollController.jumpTo(scrollController.offset - delta);
+              initialDragPosition = currentPosition;
+            },
+            child: ListView.builder(
+              controller: scrollController,
+              itemCount: _items.length,
+              scrollDirection: Axis.horizontal, // 设置滚动方向为水平
+              itemBuilder: (context, index) {
+                return gridGeneral(index);
+              },
+            ),
+          ),
+        )
+      ],
     );
   }
 
-  Future<void> dialogFontManager() async {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (BuildContext context) {
-        return FontManager();
-      },
+  Widget gridGeneral(int index) {
+    final GlobalKey buttonKey = GlobalKey();
+    return Padding(
+      padding: EdgeInsets.only(right: 16),
+      child: ElevatedButton(
+        key: buttonKey,
+        onPressed: () {
+          switch (_items[index].ow) {
+            case OpenWay.dialog:
+              showDialog(
+                context: context,
+                barrierDismissible: true,
+                builder: (BuildContext context) {
+                  return _items[index].widget;
+                },
+              );
+              break;
+            case OpenWay.page:
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => _items[index].widget!),
+              );
+              break;
+          }
+        },
+        style: ElevatedButton.styleFrom(
+            elevation: 0, // 阴影大小
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.0), // 圆角
+            ),
+            padding: EdgeInsets.only(left: 25, right: 25)),
+        child: Text(
+          _items[index].title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
     );
   }
+
+  // Future<void> dialogExport() async {
+  //   showDialog(
+  //     context: context,
+  //     barrierDismissible: true,
+  //     builder: (BuildContext context) {
+  //       return Export(ResourceType.theme, title: "导出所有数据");
+  //     },
+  //   );
+  // }
+
+  // Future<void> dialogFontManager() async {
+  //   showDialog(
+  //     context: context,
+  //     barrierDismissible: true,
+  //     builder: (BuildContext context) {
+  //       return FontManager();
+  //     },
+  //   );
+  // }
 }
