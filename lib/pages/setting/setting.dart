@@ -117,7 +117,7 @@ class _SettingPage extends State<SettingPage> {
             case OpenWay.page:
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => _items[index].widget!),
+                MaterialPageRoute(builder: (context) => _items[index].widget),
               );
               break;
           }

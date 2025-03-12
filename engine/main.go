@@ -53,8 +53,6 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	g := gin.Default()
 
-	web.ImageRoute(g)
-
 	g.Use(modb.ExistUser())
 
 	User := g.Group("/user")
@@ -67,6 +65,7 @@ func main() {
 	web.ThemeRoute(g)
 	web.GroupRoute(g)
 	web.DocRoute(g)
+	web.FeedbackRoute(g)
 
 	init_mongo()
 	go quit()

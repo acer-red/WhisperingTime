@@ -9,8 +9,6 @@ import 'package:whispering_time/pages/theme/doc/setting.dart';
 import 'package:whispering_time/utils/time.dart';
 import 'package:whispering_time/services/Isar/config.dart';
 
-
-
 // theme
 class ResponseGetThemes extends Basic {
   List<ThemeListData> data;
@@ -668,6 +666,19 @@ class RequestPostImage {
   RequestPostImage({required this.type, required this.data});
 }
 
+class ResponsePostFeedback extends Basic {
+  String id;
+  ResponsePostFeedback(
+      {required super.err, required super.msg, required this.id});
+  factory ResponsePostFeedback.fromJson(Map<String, dynamic> json) {
+    return ResponsePostFeedback(
+      err: json['err'] as int,
+      msg: json['msg'] as String,
+      id: json['data']['id'] == null ? "" : json['data']['id'] as String,
+    );
+  }
+}
+
 class ResponsePostImage extends Basic {
   final String name;
   ResponsePostImage(
@@ -679,6 +690,21 @@ class ResponsePostImage extends Basic {
       name: json['data']['name'] as String,
     );
   }
+}
+
+// feedback
+class RequestPostFeedback {
+  FeedbackType fbType;
+  String title;
+  String content;
+  String? deviceFilePath;
+  List<String>? images;
+  RequestPostFeedback(
+      {required this.fbType,
+      required this.title,
+      required this.content,
+      this.deviceFilePath,
+      this.images});
 }
 
 class Http {
@@ -1056,9 +1082,9 @@ class Http {
 
   // image
   Future<ResponsePostImage> postImage(RequestPostImage req) async {
-    log.i("发送请求 上传图片");
+    log.i("发送请求 上传印迹图片");
 
-    String path = "/image";
+    String path = "/doc/image";
     final String mine;
     switch (req.type) {
       case IMGType.jpg:
@@ -1079,10 +1105,9 @@ class Http {
     return ResponsePostImage.fromJson(jsonDecode(response.body));
   }
 
-  // deleteImage
   Future<ResponseDeleteImage> deleteImage(String name) async {
-    log.i("发送请求 删除图片");
-    String path = "/image/$name";
+    log.i("发送请求 删除印迹图片");
+    String path = "/doc/image/$name";
     final Map<String, String> headers = {
       'Authorization': getAuthorization(),
     };
@@ -1096,5 +1121,38 @@ class Http {
       (json) => ResponseDeleteImage.fromJson(json),
       headers: headers,
     );
+  }
+
+  Future<ResponsePostFeedback> postFeedback(RequestPostFeedback req) async {
+    log.i("发送请求 提交反馈");
+    String path = "/feedback";
+
+    final url = Uri.http(serverAddress, path);
+    var request = http.MultipartRequest('POST', url);
+    request.headers['Authorization'] = getAuthorization();
+    request.fields['fb_type'] = req.fbType.index.toString();
+    request.fields['title'] = req.title;
+    request.fields['content'] = req.content;
+
+    if (req.deviceFilePath != null) {
+      request.files.add(await http.MultipartFile.fromPath(
+        'device_file',
+        req.deviceFilePath!,
+      ));
+    }
+
+    if (req.images != null && req.images!.isNotEmpty) {
+      for (String imagePath in req.images!) {
+        request.files.add(await http.MultipartFile.fromPath(
+          'images',
+          imagePath,
+        ));
+      }
+    }
+
+    var response = await request.send();
+    var responseBody = await response.stream.bytesToString();
+    final Map<String, dynamic> json = jsonDecode(responseBody);
+    return ResponsePostFeedback.fromJson(json);
   }
 }

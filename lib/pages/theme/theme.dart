@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:whispering_time/pages/theme/group/group.dart';
 import 'package:whispering_time/services/http/self.dart';
 import 'package:whispering_time/utils/ui.dart';
-import 'package:whispering_time/pages/setting/feedback/feedback.dart';
 
 class Theme {
   String id;

@@ -11,7 +11,7 @@ import 'package:whispering_time/services/Isar/config.dart';
 import 'setting.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
-import 'package:path/path.dart' as p;
+import 'package:path/path.dart' as path;
 
 const String defaultTitle = "未命名的标题";
 
@@ -575,7 +575,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
         return;
       }
       final String newValue =
-          "http://${Config.instance.serverAddress}/image/${res.name}";
+          "http://${Config.instance.serverAddress}/doc/image/${res.name}";
 
       ops[i] = Operation.fromJson({
         "insert": {"image": newValue}
@@ -651,7 +651,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
                     Navigator.of(context).pop();
                   },
                   icon: Icon(Icons.folder_open),
-                  label: Text("本地文件"),
+                  label: Text("本地"),
                 ),
                 TextButton.icon(
                   onPressed: () {},
@@ -690,15 +690,13 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     if (image == null) {
       return;
     }
-    final String extension = p.extension(image.path).toLowerCase();
+    final String extension = path.extension(image.path).toLowerCase();
     final bytes = await image.readAsBytes();
-    // final String data;
     IMGType type = IMGType.png;
+
     if (extension == '.jpg' || extension == '.jpeg') {
       type = IMGType.jpg;
-      // data = "data:image/jpg;base64,${base64Encode(bytes)}";
     } else if (extension == '.png') {
-      // data = "data:image/png;base64,${base64Encode(bytes)}";
     } else {
       print('其他文件类型');
       return;
@@ -708,7 +706,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
 
     // 插入在线链接
     insertImage(
-        edit, "http://${Config.instance.serverAddress}/image/${res.name}");
+        edit, "http://${Config.instance.serverAddress}/doc/image/${res.name}");
 
     // 插入base64
     // edit.insertImageBlock(imageSource:data);

@@ -67,14 +67,13 @@ func ImageGet(name string) (bytes.Buffer, error) {
 }
 func ImageCreate(name string, data []byte) error {
 
-	// 获取 GridFS Bucket 对象
 	bucket, err := gridfs.NewBucket(db)
 	if err != nil {
 		panic(err)
 	}
 
 	uploadStream, err := bucket.OpenUploadStream(
-		name, // 文件名
+		name,
 		options.GridFSUpload().SetMetadata(map[string]string{"type": "image"}), // 可选的元数据
 	)
 	if err != nil {

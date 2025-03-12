@@ -22,3 +22,7 @@ Future<Directory> getMainStoreDir() async {
   final document = await getApplicationDocumentsDirectory();
   return document;
 }
+Future<Directory> getTempDir() async {
+  final directory = await getTemporaryDirectory();
+  return directory;
+}
