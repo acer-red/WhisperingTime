@@ -17,7 +17,7 @@ type Doc struct {
 	Title     string  `json:"title" bson:"title"`
 	Content   string  `json:"content" bson:"content"`
 	PlainText string  `json:"plain_text" bson:"plain_text"`
-	Level     int     `json:"level" bson:"level"`
+	Level     int32   `json:"level" bson:"level"`
 	CRTime    string  `json:"crtime"`
 	UPTime    string  `json:"uptime"`
 	Config    *config `json:"config,omitempty" bson:"config"`
@@ -29,7 +29,7 @@ type RequestDocPost struct {
 		Content   string  `json:"content"`
 		Title     string  `json:"title"`
 		PlainText string  `json:"plain_text"`
-		Level     int     `json:"level"`
+		Level     int32   `json:"level"`
 		CRTime    string  `json:"crtime"`
 		Config    *config `json:"config"`
 	} `json:"data"`
@@ -40,7 +40,7 @@ type RequestDocPut struct {
 		Title     *string `json:"title,omitempty" bson:"title"`
 		Content   *string `json:"content,omitempty" bson:"content"`
 		PlainText *string `json:"plain_text,omitempty" bson:"plain_text"`
-		Level     *int    `json:"level,omitempty" bson:"level"`
+		Level     *int32  `json:"level,omitempty" bson:"level"`
 		CRTime    *string `json:"crtime,omitempty"`
 		UPTime    *string `json:"uptime,omitempty"`
 		Config    *config `json:"config,omitempty" bson:"config"`
@@ -72,7 +72,7 @@ func DocsGet(goid primitive.ObjectID) ([]Doc, error) {
 			Title:     m["title"].(string),
 			Content:   m["content"].(string),
 			PlainText: m["plain_text"].(string),
-			Level:     int(m["level"].(int32)),
+			Level:     m["level"].(int32),
 			CRTime:    m["crtime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
 			UPTime:    m["uptime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
 			Config: &config{
@@ -118,7 +118,7 @@ func DocsGetWithDate(goid primitive.ObjectID, yyyy int, mm int) ([]Doc, error) {
 			Title:     m["title"].(string),
 			Content:   m["content"].(string),
 			PlainText: m["plain_text"].(string),
-			Level:     int(m["level"].(int32)),
+			Level:     m["level"].(int32),
 			CRTime:    m["crtime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
 			UPTime:    m["uptime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
 			Config: &config{

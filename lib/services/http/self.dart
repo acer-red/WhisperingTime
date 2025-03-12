@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
-import 'package:http/http.dart';
 import 'package:intl/intl.dart';
 import 'package:whispering_time/utils/env.dart';
 import 'base.dart';
@@ -644,11 +643,6 @@ class ResponseDeleteDoc extends Basic {
   }
 }
 
-enum IMGType {
-  jpg,
-  png,
-}
-
 // image
 class ResponseDeleteImage extends Basic {
   ResponseDeleteImage({required super.err, required super.msg});
@@ -666,19 +660,6 @@ class RequestPostImage {
   RequestPostImage({required this.type, required this.data});
 }
 
-class ResponsePostFeedback extends Basic {
-  String id;
-  ResponsePostFeedback(
-      {required super.err, required super.msg, required this.id});
-  factory ResponsePostFeedback.fromJson(Map<String, dynamic> json) {
-    return ResponsePostFeedback(
-      err: json['err'] as int,
-      msg: json['msg'] as String,
-      id: json['data']['id'] == null ? "" : json['data']['id'] as String,
-    );
-  }
-}
-
 class ResponsePostImage extends Basic {
   final String name;
   ResponsePostImage(
@@ -693,6 +674,43 @@ class ResponsePostImage extends Basic {
 }
 
 // feedback
+class FeedBack {
+  final String fbid;
+  final FeedbackType type;
+  final String title;
+  final String content;
+  final String? deviceFile;
+  final List<String>? images;
+
+  final String crtime;
+  final String uptime;
+
+  FeedBack({
+    required this.fbid,
+    required this.type,
+    required this.title,
+    required this.content,
+    required this.crtime,
+    required this.uptime,
+    this.deviceFile,
+    this.images,
+  });
+  factory FeedBack.fromJson(Map<String, dynamic> json) {
+    return FeedBack(
+      fbid: json['fbid'] as String,
+      type: FeedbackType.values[json['fb_type'] as int],
+      title: json['title'] as String,
+      content: json['content'] as String,
+      deviceFile: json['device_file'] as String,
+      images: json['images'] != null
+          ? (json['images'] as List<dynamic>).map((e) => e as String).toList()
+          : null,
+      crtime: json['crtime'] as String,
+      uptime: json['uptime'] as String,
+    );
+  }
+}
+
 class RequestPostFeedback {
   FeedbackType fbType;
   String title;
@@ -707,6 +725,36 @@ class RequestPostFeedback {
       this.images});
 }
 
+class ResponsePostFeedback extends Basic {
+  String id;
+  ResponsePostFeedback(
+      {required super.err, required super.msg, required this.id});
+  factory ResponsePostFeedback.fromJson(Map<String, dynamic> json) {
+    return ResponsePostFeedback(
+      err: json['err'] as int,
+      msg: json['msg'] as String,
+      id: json['data']['id'] == null ? "" : json['data']['id'] as String,
+    );
+  }
+}
+
+class ResponseGetFeedbacks extends Basic {
+  List<FeedBack> data;
+  ResponseGetFeedbacks(
+      {required super.err, required super.msg, required this.data});
+  factory ResponseGetFeedbacks.fromJson(Map<String, dynamic> json) {
+    return ResponseGetFeedbacks(
+      err: json['err'] as int,
+      msg: json['msg'] as String,
+      data: json['data'] != null
+          ? (json['data'] as List<dynamic>)
+              .map((item) => FeedBack.fromJson(item as Map<String, dynamic>))
+              .toList()
+          : List.empty(),
+    );
+  }
+}
+
 class Http {
   final String? content;
   final String? tid;
@@ -716,10 +764,6 @@ class Http {
   final String serverAddress = Config.instance.serverAddress;
 
   Http({this.content, this.tid, this.gid, this.did});
-  String getAuthorization() {
-    final credentials = '$uid:';
-    return 'Basic ${base64Encode(utf8.encode(credentials))}';
-  }
 
   Future<T> _handleRequest<T>(
       Method method, Uri u, Function(Map<String, dynamic>) fromJson,
@@ -727,8 +771,9 @@ class Http {
     if (data != null) {
       log.d(data);
     }
+    final http.Response response;
+
     try {
-      final http.Response response;
       switch (method) {
         case Method.get:
           response = await http.get(u, headers: headers);
@@ -750,13 +795,23 @@ class Http {
         log.e("服务器返回空");
         return fromJson({'err': 1, 'msg': ''});
       }
-
-      final Map<String, dynamic> json = jsonDecode(response.body);
-      return fromJson(json);
     } catch (e) {
-      log.e(e.toString());
+      log.e("请求失败:${e.toString()}");
       return fromJson({'err': 1, 'msg': ''});
     }
+
+    try {
+      final Map<String, dynamic> g = jsonDecode(response.body);
+      return fromJson(g);
+    } catch (e) {
+      log.e("解析数据失败 ${e.toString()}");
+      return fromJson({'err': 1, 'msg': ''});
+    }
+  }
+
+  String getAuthorization() {
+    final credentials = '$uid:';
+    return 'Basic ${base64Encode(utf8.encode(credentials))}';
   }
 
   // theme
@@ -1100,7 +1155,8 @@ class Http {
       "Content-Type": mine,
     };
 
-    Response response = await http.post(url, headers: headers, body: req.data);
+    http.Response response =
+        await http.post(url, headers: headers, body: req.data);
 
     return ResponsePostImage.fromJson(jsonDecode(response.body));
   }
@@ -1154,5 +1210,20 @@ class Http {
     var responseBody = await response.stream.bytesToString();
     final Map<String, dynamic> json = jsonDecode(responseBody);
     return ResponsePostFeedback.fromJson(json);
+  }
+
+  Future<ResponseGetFeedbacks> getFeedbacks() {
+    log.i("发送请求 获取反馈列表");
+    String path = "/feedbacks";
+    final Map<String, String> headers = {
+      'Authorization': getAuthorization(),
+    };
+    final url = Uri.http(serverAddress, path);
+    return _handleRequest<ResponseGetFeedbacks>(
+      Method.get,
+      url,
+      (json) => ResponseGetFeedbacks.fromJson(json),
+      headers: headers,
+    );
   }
 }

@@ -13,6 +13,11 @@ enum LastState {
   exist,
 }
 
+enum IMGType {
+  jpg,
+  png,
+}
+
 // 这里的顺序要对应Dropdown组件的顺序
 enum FeedbackType {
   optFeature, // 优化功能

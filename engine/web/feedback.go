@@ -18,11 +18,10 @@ func FeedbackRoute(g *gin.Engine) {
 		a.POST("", fbPost)
 	}
 
-	// b := g.Group("/feedbacks")
-	// {
-	// 	b.Use(getGid())
-	// 	b.GET("", fbsGet)
-	// }
+	b := g.Group("/feedbacks")
+	{
+		b.GET("", fbsGet)
+	}
 
 	// c := g.Group("/feedback/:fbid")
 	// {
@@ -32,13 +31,14 @@ func FeedbackRoute(g *gin.Engine) {
 	// }
 }
 func fbPost(g *gin.Context) {
+	log.Info("创建反馈")
+
 	type response struct {
 		ID string `json:"id"`
 	}
 	res := response{
 		ID: sys.CreateUUID(),
 	}
-	log.Info("创建反馈")
 
 	var req modb.RequestFeedbackPost
 	req.FBID = res.ID
@@ -69,13 +69,13 @@ func fbPost(g *gin.Context) {
 		}
 		defer file.Close()
 		req.DeviceFileName = fmt.Sprintf("%s_device.txt", res.ID)
-		req.DeviceFile = file // 这里假设 modb.RequestFeedbackPost 结构体有 DeviceFile 字段
-		log.Info("device file")
+		req.DeviceFile = file
 	}
 
 	imageFiles := form.File["images"]
 	if len(imageFiles) > 0 {
-		req.Images = make([]io.Reader, len(imageFiles)) // 这里假设 modb.RequestFeedbackPost 结构体有 Images 字段
+		req.Images = make([]io.Reader, len(imageFiles))
+		req.ImagesName = make([]string, len(imageFiles))
 		for i, fileHeader := range imageFiles {
 			file, err := fileHeader.Open()
 			if err != nil {
@@ -84,14 +84,13 @@ func fbPost(g *gin.Context) {
 				return
 			}
 			defer file.Close()
-
-			req.ImagesName[i] = fmt.Sprintf("%s_image_%d.%s", res.ID, i, filepath.Ext(fileHeader.Filename))
+			req.ImagesName[i] = fmt.Sprintf("%s_fb_%d%s", res.ID, i, filepath.Ext(fileHeader.Filename))
 			log.Info("image file")
 			req.Images[i] = file
 		}
 	}
 
-	if err := req.Put(); err != nil {
+	if err := modb.FeedbackPost(&req); err != nil {
 		log.Error(err)
 		badRequest(g)
 		return
@@ -105,18 +104,16 @@ func atoi(s string) int {
 	return i
 }
 
-// func fbsGet(g *gin.Context) {
-// 	type response struct {
-// 		Feedbacks []modb.Feedback `json:"feedbacks"`
-// 	}
-
-// 	goid := g.MustGet("goid").(primitive.ObjectID)
-// 	feedbacks, err := modb.FeedbacksGet(goid)
-// 	if err != nil {
-// 		log.Error(err)
-// 		badRequest(g)
-// 		return
-// 	}
+func fbsGet(g *gin.Context) {
+	log.Infof("获取反馈列表")
+	feedbacks, err := modb.FeedbacksGet()
+	if err != nil {
+		log.Error(err)
+		internalServerError(g)
+		return
+	}
+	okData(g, feedbacks)
+}
 
 // 	g.JSON(sys.StatusOK, response{Feedbacks: feedbacks})
 // }

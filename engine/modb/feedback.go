@@ -7,6 +7,7 @@ import (
 
 	"github.com/tengfei-xy/go-log"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -22,7 +23,7 @@ type RequestFeedbackPost struct {
 	ImagesName     []string
 }
 
-func (req *RequestFeedbackPost) Put() error {
+func FeedbackPost(req *RequestFeedbackPost) error {
 	if req.DeviceFile != nil {
 		bucket, err := gridfs.NewBucket(db)
 		if err != nil {
@@ -87,4 +88,64 @@ func (req *RequestFeedbackPost) Put() error {
 	}
 
 	return nil
+}
+
+func FeedbacksGet() (any, error) {
+	type response struct {
+		FBID       string   `json:"fbid"`
+		FbType     int32    `json:"fb_type"`
+		Title      string   `json:"title"`
+		Content    string   `json:"content"`
+		DeviceFile string   `json:"device_file"`
+		Images     []string `json:"images"`
+		CRTime     string   `json:"crtime"`
+		UPTime     string   `json:"uptime"`
+	}
+	var res []response
+	cur, err := db.Collection("feedback").Find(context.TODO(), bson.M{})
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+	defer cur.Close(context.Background())
+	for cur.Next(context.Background()) {
+		var m bson.M
+
+		err := cur.Decode(&m)
+		if err != nil {
+			log.Error(err)
+			return nil, err
+		}
+		fbid, _ := m["fbid"].(string)
+		var fbType int32
+		if v, ok := m["fb_type"].(int32); ok {
+			fbType = v
+		}
+		title, _ := m["title"].(string)
+		content, _ := m["content"].(string)
+		deviceFile, _ := m["device"].(string)
+		var images []string
+		if v, ok := m["images"].([]string); ok {
+			images = v
+		}
+		crtime := m["crtime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05")
+		uptime := m["uptime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05")
+
+		res = append(res, response{
+			FBID:       fbid,
+			FbType:     fbType,
+			Title:      title,
+			Content:    content,
+			DeviceFile: deviceFile,
+			Images:     images,
+			CRTime:     crtime,
+			UPTime:     uptime,
+		})
+	}
+	if err := cur.Err(); err != nil {
+		log.Error(err)
+		return nil, err
+	}
+	return res, nil
+
 }

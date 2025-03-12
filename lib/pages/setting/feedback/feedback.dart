@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:whispering_time/services/http/self.dart';
 import 'edit.dart';
 
 class FeedbackPage extends StatefulWidget {
@@ -9,10 +10,19 @@ class FeedbackPage extends StatefulWidget {
 }
 
 class _FeedbackPageState extends State<FeedbackPage> {
-  double initialDragPosition = 0;
+  List<FeedBack> _items = [];
   @override
   void initState() {
     super.initState();
+    getItems();
+  }
+
+  getItems() {
+    Http().getFeedbacks().then((value) {
+      setState(() {
+        _items = value.data;
+      });
+    });
   }
 
   @override
@@ -33,30 +43,82 @@ class _FeedbackPageState extends State<FeedbackPage> {
         ],
       ),
       body: SafeArea(
-        child: Container(
-          padding: EdgeInsets.all(10),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.onPrimary,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Icon(Icons.search, color: Colors.grey),
-                ),
-                Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: '搜索',
-                      border: InputBorder.none,
+        child: Column(
+          children: [
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(25),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.2),
+                    spreadRadius: 1,
+                    blurRadius: 2,
+                    offset: Offset(0, 2), // changes position of shadow
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Icon(Icons.search, color: Colors.grey),
+                  ),
+                  Expanded(
+                    child: TextField(
+                      decoration: InputDecoration(
+                        hintText: '搜索',
+                        border: InputBorder.none,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
+            Expanded(
+              child: ListView.separated(
+                itemCount: _items.length,
+                separatorBuilder: (BuildContext context, int index) => SizedBox(
+                  height: 30.0,
+                ),
+                itemBuilder: (context, index) {
+                  final item = _items[index];
+                  return Card(
+                    elevation: 2,
+                    margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                    child: ExpansionTile(
+                      title: Text(
+                        item.title,
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text(
+                        item.content.length > 50
+                            ? '${item.content.substring(0, 50)}...'
+                            : item.content,
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                      trailing: Icon(Icons.expand_more),
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('类型: ${item.type}',
+                                  style: TextStyle(fontSize: 14)),
+                              SizedBox(height: 8),
+                              // Text('其他信息: ${item.otherInfo ?? '暂无'}'),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );

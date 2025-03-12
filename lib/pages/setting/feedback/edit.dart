@@ -232,7 +232,7 @@ class _EditState extends State<Edit> {
     );
   }
 
-  // 其他多选框 (是否上传用户信息)
+  // 其他多选框 (上传用户信息)
   Widget moreCheckbox() {
     return Row(
       children: [
@@ -245,7 +245,7 @@ class _EditState extends State<Edit> {
             });
           },
         ),
-        Text('是否上传设备信息'),
+        Text('上传设备信息'),
       ],
     );
   }
