@@ -1,142 +1,59 @@
 package web
 
 import (
+	"fmt"
 	"modb"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/tengfei-xy/go-log"
 )
 
-func getTid() gin.HandlerFunc {
-	return func(g *gin.Context) {
-		tid := g.Param("tid")
-		toid, err := modb.GetTOIDFromTID(tid)
-		if err != nil {
-			log.Error(err)
-			internalServerError(g)
-			return
-		}
-		g.Set("toid", toid)
-		g.Next()
-	}
+type Env struct {
+	FullServerAddress string
+
+	SslEnable bool
+	CrtFile   string
+	KeyFile   string
+	Port      int
 }
 
-func getGid() gin.HandlerFunc {
-	return func(g *gin.Context) {
+func Init(env Env) {
+	gin.SetMode(gin.ReleaseMode)
+	g := gin.Default()
 
-		gid := g.Param("gid")
-		if gid == "" {
-			log.Error("gid is empty")
-			badRequest(g)
-			return
-		}
-		if strings.Contains(gid, "?") {
-			gid = strings.Split(gid, "?")[0]
-		}
-		goid, err := modb.GetGOIDFromGID(gid)
+	// 获取图片时不需要通过header来验证用户
+	RouterImageGet(g)
+
+	// 检查请求头以验证用户
+	g.Use(modb.ExistUser())
+	g.Use(setEnv(env))
+
+	RouteUser(g)
+	RouteTheme(g)
+	RouteGroup(g)
+	RouteDoc(g)
+	RouteFeedback(g)
+	RouteImage(g)
+
+	log.Infof("API: %s", env.FullServerAddress)
+	log.Info("启动监听...")
+
+	if env.SslEnable {
+		err := g.RunTLS(fmt.Sprintf(":%d", env.Port), env.CrtFile, env.KeyFile)
 		if err != nil {
-			log.Error(err)
-			internalServerError(g)
-			return
+			log.Fatal(err)
 		}
-
-		g.Set("goid", goid)
-		g.Next()
+		return
+	} else {
+		err := g.Run(fmt.Sprintf(":%d", env.Port))
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
+
 }
-
-func getTidAndGid() gin.HandlerFunc {
+func setEnv(env Env) gin.HandlerFunc {
 	return func(g *gin.Context) {
-
-		tid := g.Param("tid")
-		if tid == "" {
-			log.Error("tid is empty")
-			badRequest(g)
-			return
-		}
-		toid, err := modb.GetTOIDFromTID(tid)
-		if err != nil {
-			log.Error(err)
-			internalServerError(g)
-			return
-		}
-		g.Set("toid", toid)
-
-		gid := g.Param("gid")
-		if gid == "" {
-			log.Error("gid is empty")
-			badRequest(g)
-			return
-		}
-		goid, err := modb.GetGOIDFromGID(gid)
-		if err != nil {
-			log.Error(err)
-			internalServerError(g)
-			return
-		}
-
-		g.Set("goid", goid)
-		g.Next()
+		g.Set("env", env)
 	}
-}
-
-func getGidAndDid() gin.HandlerFunc {
-	return func(g *gin.Context) {
-
-		gid := g.Param("gid")
-		if gid == "" {
-			log.Error("gid is empty")
-			badRequest(g)
-			return
-		}
-		goid, err := modb.GetGOIDFromGID(gid)
-		if err != nil {
-			log.Error(err)
-			internalServerError(g)
-			return
-		}
-
-		g.Set("goid", goid)
-
-		did := g.Param("did")
-		if did == "" {
-			log.Error("did is empty")
-			badRequest(g)
-			return
-		}
-		doid, err := modb.GetDOIDFromGOIDAndDID(goid, did)
-		if err != nil {
-			log.Error(err)
-			internalServerError(g)
-			return
-		}
-		g.Set("doid", doid)
-
-		g.Next()
-	}
-}
-
-func query(g *gin.Context, s string) string {
-	query := g.Request.URL.RawQuery
-	if !strings.Contains(query, "&") {
-		if !strings.Contains(query, "=") {
-			return ""
-
-		}
-		if !strings.Contains(query, s) {
-			return ""
-		}
-		if strings.Split(query, "=")[0] != s {
-			return ""
-		}
-		return strings.Split(query, "=")[1]
-	}
-
-	for _, str := range strings.Split(query, "&") {
-		if strings.Contains(str, s) {
-			return strings.Split(str, "=")[1]
-		}
-	}
-	return s
 }

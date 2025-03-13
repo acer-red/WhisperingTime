@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	log "github.com/tengfei-xy/go-log"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func ExistUser() gin.HandlerFunc {
@@ -21,7 +22,7 @@ func ExistUser() gin.HandlerFunc {
 			g.AbortWithStatusJSON(http.StatusBadRequest, "缺少uid")
 			return
 		}
-
+		g.Set("uid", uid)
 		ctx := context.TODO()
 		identified := bson.D{{Key: "uid", Value: uid}}
 
@@ -43,18 +44,12 @@ func ExistUser() gin.HandlerFunc {
 		}
 
 		// 创建用户
-		_, err = db.Collection("user").InsertOne(ctx, identified)
+		ret, err := db.Collection("user").InsertOne(ctx, identified)
 		if err != nil {
 			g.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
-		uoid, err := GetUOIDFromUID(uid)
-		if err != nil {
-			log.Error(err)
-			g.AbortWithStatus(http.StatusInternalServerError)
-			return
-		}
-		g.Set("uoid", uoid)
+		g.Set("uoid", ret.InsertedID.(primitive.ObjectID))
 		log.Infof("新用户 uid=%s", uid)
 	}
 }

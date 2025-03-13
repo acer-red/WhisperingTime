@@ -662,15 +662,18 @@ class RequestPostImage {
 
 class ResponsePostImage extends Basic {
   final String name;
+  final String url;
   ResponsePostImage(
-      {required super.err, required super.msg, required this.name});
+      {required super.err, required super.msg, required this.name,required this.url});
   factory ResponsePostImage.fromJson(Map<String, dynamic> json) {
     return ResponsePostImage(
       err: json['err'] as int,
       msg: json['msg'] as String,
       name: json['data']['name'] as String,
+      url: json['data']['url'] as String,
     );
   }
+  String get imageFullUrl => url;
 }
 
 // feedback
@@ -1048,15 +1051,15 @@ class Http {
     log.i("发送请求 获取分组的日志列表");
 
     String path = "/docs/${gid!}";
+    Map<String, String> param = {};
     if (year != null) {
-      if (month != null) {
-        path += "?year=$year&month=$month";
-      } else {
-        path += "?year=$year";
-      }
+      param["year"] = year.toString();
+    }
+    if (month != null) {
+      param["month"] = month.toString();
     }
 
-    final url = Uri.http(serverAddress, path);
+    final url = Uri.http(serverAddress, path, param.isEmpty ? null : param);
     final Map<String, String> headers = {
       "Content-Type": "application/json",
       'Authorization': getAuthorization(),
@@ -1144,7 +1147,7 @@ class Http {
   Future<ResponsePostImage> postImage(RequestPostImage req) async {
     log.i("发送请求 上传印迹图片");
 
-    String path = "/doc/image";
+    String path = "/image";
     final String mine;
     switch (req.type) {
       case IMGType.jpg:
@@ -1168,7 +1171,7 @@ class Http {
 
   Future<ResponseDeleteImage> deleteImage(String name) async {
     log.i("发送请求 删除印迹图片");
-    String path = "/doc/image/$name";
+    String path = "/image/$name";
     final Map<String, String> headers = {
       'Authorization': getAuthorization(),
     };
@@ -1184,6 +1187,7 @@ class Http {
     );
   }
 
+  // feedback
   Future<ResponsePostFeedback> postFeedback(RequestPostFeedback req) async {
     log.i("发送请求 提交反馈");
     String path = "/feedback";

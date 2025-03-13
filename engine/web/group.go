@@ -8,7 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func GroupRoute(g *gin.Engine) {
+func RouteGroup(g *gin.Engine) {
 	a := g.Group("/groups/:tid")
 	{
 		a.Use(getTid())
@@ -44,8 +44,8 @@ func GroupsGet(g *gin.Context) {
 }
 func GroupGet(g *gin.Context) {
 
-	has_doc := query(g, "doc")
-	has_detail := query(g, "detail")
+	has_doc := g.Query("doc")
+	has_detail := g.Query("detail")
 
 	if has_doc == "1" && has_detail == "1" {
 		groupGetAndDocDetail(g)

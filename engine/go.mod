@@ -9,7 +9,7 @@ replace sys => ./sys
 replace web => ./web
 
 require (
-	github.com/gin-gonic/gin v1.10.0
+	github.com/gin-gonic/gin v1.10.0 // indirect
 	go.mongodb.org/mongo-driver v1.17.1 // indirect
 	modb v0.0.0-00010101000000-000000000000
 	web v0.0.0-00010101000000-000000000000
@@ -52,6 +52,6 @@ require (
 	golang.org/x/sys v0.27.0 // indirect
 	golang.org/x/text v0.20.0 // indirect
 	google.golang.org/protobuf v1.35.2 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
+	gopkg.in/yaml.v3 v3.0.1
 	sys v0.0.0-00010101000000-000000000000 // indirect
 )

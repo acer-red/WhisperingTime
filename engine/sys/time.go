@@ -13,6 +13,9 @@ func MM() int {
 	return int(time.Now().Month())
 }
 func YYYYToInt(s string) int {
+	if s == "" {
+		return 0
+	}
 	i, err := strconv.Atoi(s)
 	if err != nil || i <= 0 {
 		return YYYY()

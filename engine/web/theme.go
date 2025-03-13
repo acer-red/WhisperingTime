@@ -8,7 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func ThemeRoute(g *gin.Engine) {
+func RouteTheme(g *gin.Engine) {
 	a := g.Group("/themes")
 	{
 		a.GET("", ThemesGet)

@@ -1,10 +1,7 @@
 package web
 
 import (
-	"fmt"
-	"io"
 	"modb"
-	"strings"
 	"sys"
 
 	"github.com/gin-gonic/gin"
@@ -12,7 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func DocRoute(g *gin.Engine) {
+func RouteDoc(g *gin.Engine) {
 	a := g.Group("/docs/:gid")
 	{
 		a.Use(getGid())
@@ -31,26 +28,23 @@ func DocRoute(g *gin.Engine) {
 		c.PUT("", DocIDPut)
 		c.DELETE("", DocIDDelete)
 	}
-	d := g.Group("/doc/image/:file")
-	{
-		d.GET("", DocImageGet)
-		d.DELETE("", DocImageDelete)
-	}
-	e := g.Group("/doc/image")
-	{
-		e.POST("", DocImagePost)
-	}
 }
 
 func DocsGet(g *gin.Context) {
-	year_str := query(g, "year")
-	month_str := query(g, "month")
 
-	if year_str == "" && month_str == "" {
-		docsGetNoDate(g)
+	log.Info("获取所有印迹")
+
+	goid := g.MustGet("goid").(primitive.ObjectID)
+
+	ret, err := modb.DocsGet(goid, modb.DocFilter{
+		Year:  sys.YYYYToInt(g.Query("year")),
+		Month: sys.MMToInt(g.Query("month")),
+	})
+	if err != nil {
+		internalServerError(g)
 		return
 	}
-	docsGetWithDate(g, year_str, month_str)
+	okData(g, ret)
 
 }
 func DocPost(g *gin.Context) {
@@ -103,97 +97,6 @@ func DocIDDelete(g *gin.Context) {
 
 	if err := modb.DocDelete(goid, doid); err != nil {
 		log.Error(err)
-		internalServerError(g)
-		return
-	}
-	ok(g)
-}
-
-func docsGetNoDate(g *gin.Context) {
-	log.Info("获取所有印迹")
-	goid := g.MustGet("goid").(primitive.ObjectID)
-
-	ret, err := modb.DocsGet(goid)
-	if err != nil {
-		internalServerError(g)
-		return
-	}
-	okData(g, ret)
-}
-
-func docsGetWithDate(g *gin.Context, year, month string) {
-	log.Info("获取所有印迹(含时间)")
-
-	goid := g.MustGet("goid").(primitive.ObjectID)
-
-	yyyy := sys.YYYYToInt(year)
-	mm := sys.MMToInt(month)
-	ret, err := modb.DocsGetWithDate(goid, yyyy, mm)
-	if err != nil {
-		internalServerError(g)
-		return
-	}
-	okData(g, ret)
-}
-
-func DocImageGet(g *gin.Context) {
-	log.Debugf("印迹图片提取")
-	name := g.Param("file")
-	res, err := modb.ImageGet(name)
-
-	if err == sys.ERR_NO_FOUND {
-		notFound(g)
-		return
-	}
-	if err != nil {
-		internalServerError(g)
-		return
-	}
-
-	okImage(g, res)
-}
-func DocImagePost(g *gin.Context) {
-	log.Infof("印迹图片创建")
-	type request struct {
-		Name string `json:"name"`
-	}
-	contentType := g.Request.Header.Get("Content-Type")
-	contentType = strings.ToLower(contentType)
-
-	if contentType != "image/png" && contentType != "image/jpeg" {
-		badRequest(g)
-		return
-	}
-	name := fmt.Sprintf("%s.%s", sys.CreateUUID(), contentType[6:])
-
-	body, err := io.ReadAll(g.Request.Body)
-	if err != nil {
-		badRequest(g)
-		return
-	}
-	if len(body) == 0 {
-		badRequest(g)
-		return
-	}
-
-	if err := modb.ImageCreate(name, body); err != nil {
-		internalServerError(g)
-		return
-	}
-	okData(g, request{
-		Name: name,
-	})
-}
-func DocImageDelete(g *gin.Context) {
-	log.Infof("印迹图片删除")
-	name := g.Param("file")
-
-	err := modb.ImageDelete(name)
-	if err == sys.ERR_NO_FOUND {
-		notFound(g)
-		return
-	}
-	if err != nil {
 		internalServerError(g)
 		return
 	}

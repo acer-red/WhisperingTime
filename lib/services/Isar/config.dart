@@ -9,7 +9,7 @@ class Config {
   Id id = Isar.autoIncrement;
 
   String uid = '';
-  String serverAddress = '127.0.0.1:21523';
+  String serverAddress = 'http://127.0.0.1:21523';
   String fontHubServerAddress = "https://fonthub.acer.red:21520";
   bool devlopMode = false;
   bool visualNoneTitle = false;

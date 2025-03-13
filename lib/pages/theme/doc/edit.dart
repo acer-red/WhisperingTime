@@ -7,7 +7,6 @@ import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:whispering_time/services/http/self.dart';
 import 'package:whispering_time/utils/export.dart';
 import 'package:whispering_time/utils/env.dart';
-import 'package:whispering_time/services/Isar/config.dart';
 import 'setting.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
@@ -574,11 +573,10 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
         log.e('创建图片失败');
         return;
       }
-      final String newValue =
-          "http://${Config.instance.serverAddress}/doc/image/${res.name}";
+      final String imageFullUrl   = res.imageFullUrl;
 
       ops[i] = Operation.fromJson({
-        "insert": {"image": newValue}
+        "insert": {"image": imageFullUrl}
       });
 
       edit.document = Document.fromDelta(
@@ -705,8 +703,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
         await Http().postImage(RequestPostImage(type: type, data: bytes));
 
     // 插入在线链接
-    insertImage(
-        edit, "http://${Config.instance.serverAddress}/doc/image/${res.name}");
+    insertImage(edit, res.imageFullUrl);
 
     // 插入base64
     // edit.insertImageBlock(imageSource:data);

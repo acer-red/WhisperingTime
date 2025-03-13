@@ -47,60 +47,65 @@ type RequestDocPut struct {
 		ID        *string `json:"id" bson:"did"`
 	} `json:"data"`
 }
-
-func DocsGet(goid primitive.ObjectID) ([]Doc, error) {
-	var results []Doc
-
-	filter := bson.D{
-		{Key: "_goid", Value: goid},
-	}
-
-	cursor, err := db.Collection("doc").Find(context.TODO(), filter)
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
-
-	for cursor.Next(context.TODO()) {
-		var m bson.M
-		err := cursor.Decode(&m)
-		if err != nil {
-			log.Error(err)
-			return nil, err
-		}
-		results = append(results, Doc{
-			Title:     m["title"].(string),
-			Content:   m["content"].(string),
-			PlainText: m["plain_text"].(string),
-			Level:     m["level"].(int32),
-			CRTime:    m["crtime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
-			UPTime:    m["uptime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
-			Config: &config{
-				IsShowTool: m["config"].(bson.M)["is_show_tool"].(bool),
-			},
-			ID: m["did"].(string),
-		})
-	}
-
-	if err := cursor.Err(); err != nil {
-		log.Error(err)
-		return nil, err
-	}
-
-	return results, nil
+type DocFilter struct {
+	Year  int `json:"year"`
+	Month int `json:"month"`
 }
-func DocsGetWithDate(goid primitive.ObjectID, yyyy int, mm int) ([]Doc, error) {
+
+// func DocsGet(goid primitive.ObjectID,DocFilter f) ([]Doc, error) {
+// 	var results []Doc
+
+// 	filter := bson.D{
+// 		{Key: "_goid", Value: goid},
+// 	}
+
+// 	cursor, err := db.Collection("doc").Find(context.TODO(), filter)
+// 	if err != nil {
+// 		log.Error(err)
+// 		return nil, err
+// 	}
+
+// 	for cursor.Next(context.TODO()) {
+// 		var m bson.M
+// 		err := cursor.Decode(&m)
+// 		if err != nil {
+// 			log.Error(err)
+// 			return nil, err
+// 		}
+// 		results = append(results, Doc{
+// 			Title:     m["title"].(string),
+// 			Content:   m["content"].(string),
+// 			PlainText: m["plain_text"].(string),
+// 			Level:     m["level"].(int32),
+// 			CRTime:    m["crtime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
+// 			UPTime:    m["uptime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
+// 			Config: &config{
+// 				IsShowTool: m["config"].(bson.M)["is_show_tool"].(bool),
+// 			},
+// 			ID: m["did"].(string),
+// 		})
+// 	}
+
+// 	if err := cursor.Err(); err != nil {
+// 		log.Error(err)
+// 		return nil, err
+// 	}
+
+//		return results, nil
+//	}
+func DocsGet(goid primitive.ObjectID, f DocFilter) ([]Doc, error) {
 
 	var results []Doc
 
 	filter := bson.D{
 		{Key: "_goid", Value: goid},
-		{Key: "crtime", Value: bson.M{
-			"$gte": time.Date(yyyy, time.Month(mm), 1, 0, 0, 0, 0, time.Local),
-			"$lt":  time.Date(yyyy, time.Month(mm+1), 1, 0, 0, 0, 0, time.Local),
-		}},
 	}
-
+	if f.Year != 0 && f.Month != 0 {
+		filter = append(filter, bson.E{Key: "crtime", Value: bson.M{
+			"$gte": time.Date(f.Year, time.Month(f.Month), 1, 0, 0, 0, 0, time.Local),
+			"$lt":  time.Date(f.Year, time.Month(f.Month+1), 1, 0, 0, 0, 0, time.Local),
+		}})
+	}
 	cursor, err := db.Collection("doc").Find(context.TODO(), filter)
 	if err != nil {
 		log.Error(err)

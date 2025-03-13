@@ -15,16 +15,22 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func ImageGet(name string) (bytes.Buffer, error) {
+func ImageGet(uid, name string) (bytes.Buffer, error) {
 
+	uoid, err := GetUOIDFromUID(uid)
+	if err != nil {
+		log.Error(err)
+		return bytes.Buffer{}, err
+	}
 	// 获取 GridFS Bucket 对象
 	bucket, err := gridfs.NewBucket(db)
 	if err != nil {
-		panic(err)
+		log.Error(err)
+		return bytes.Buffer{}, err
 	}
 
 	// 查询条件：根据 filename 查找
-	filter := bson.D{{Key: "filename", Value: name}}
+	filter := bson.D{{Key: "filename", Value: name}, {Key: "metadata.uoid", Value: uoid}}
 
 	// 投影：只返回 _id 字段
 	projection := bson.D{{Key: "_id", Value: 1}}
@@ -65,7 +71,7 @@ func ImageGet(name string) (bytes.Buffer, error) {
 
 	return downloadBuffer, nil
 }
-func ImageCreate(name string, data []byte) error {
+func ImageCreate(name string, data []byte, UOID primitive.ObjectID) error {
 
 	bucket, err := gridfs.NewBucket(db)
 	if err != nil {
@@ -74,7 +80,7 @@ func ImageCreate(name string, data []byte) error {
 
 	uploadStream, err := bucket.OpenUploadStream(
 		name,
-		options.GridFSUpload().SetMetadata(map[string]string{"type": "image"}), // 可选的元数据
+		options.GridFSUpload().SetMetadata(map[string]interface{}{"type": "image", "uoid": UOID}), // 可选的元数据
 	)
 	if err != nil {
 		log.Error(err)

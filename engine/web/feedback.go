@@ -13,7 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func FeedbackRoute(g *gin.Engine) {
+func RouteFeedback(g *gin.Engine) {
 	a := g.Group("/feedback")
 	{
 		a.POST("", fbPost)
@@ -119,7 +119,6 @@ func fbsGet(g *gin.Context) {
 		return
 	}
 	okData(g, feedbacks)
-
 }
 
 // 	g.JSON(sys.StatusOK, response{Feedbacks: feedbacks})
