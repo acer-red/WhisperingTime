@@ -679,6 +679,7 @@ class FeedBack {
   final FeedbackType type;
   final String title;
   final String content;
+  final bool isPublic;
   final String? deviceFile;
   final List<String>? images;
 
@@ -690,6 +691,7 @@ class FeedBack {
     required this.type,
     required this.title,
     required this.content,
+    required this.isPublic,
     required this.crtime,
     required this.uptime,
     this.deviceFile,
@@ -701,6 +703,7 @@ class FeedBack {
       type: FeedbackType.values[json['fb_type'] as int],
       title: json['title'] as String,
       content: json['content'] as String,
+      isPublic: json['is_public'] as bool,
       deviceFile: json['device_file'] as String,
       images: json['images'] != null
           ? (json['images'] as List<dynamic>).map((e) => e as String).toList()
@@ -715,12 +718,14 @@ class RequestPostFeedback {
   FeedbackType fbType;
   String title;
   String content;
+  bool isPublic;
   String? deviceFilePath;
   List<String>? images;
   RequestPostFeedback(
       {required this.fbType,
       required this.title,
       required this.content,
+      required this.isPublic,
       this.deviceFilePath,
       this.images});
 }
@@ -804,7 +809,7 @@ class Http {
       final Map<String, dynamic> g = jsonDecode(response.body);
       return fromJson(g);
     } catch (e) {
-      log.e("解析数据失败 ${e.toString()}");
+      log.e("解析数据失败 \n${response.body}\n${e.toString()}");
       return fromJson({'err': 1, 'msg': ''});
     }
   }
@@ -1189,7 +1194,7 @@ class Http {
     request.fields['fb_type'] = req.fbType.index.toString();
     request.fields['title'] = req.title;
     request.fields['content'] = req.content;
-
+    request.fields['is_public'] = req.isPublic ? "1" : "0";
     if (req.deviceFilePath != null) {
       request.files.add(await http.MultipartFile.fromPath(
         'device_file',
@@ -1212,13 +1217,19 @@ class Http {
     return ResponsePostFeedback.fromJson(json);
   }
 
-  Future<ResponseGetFeedbacks> getFeedbacks() {
+  Future<ResponseGetFeedbacks> getFeedbacks({String? text}) {
     log.i("发送请求 获取反馈列表");
-    String path = "/feedbacks";
+    final String path = "/feedbacks";
+    Map<String, String> param = {};
+    if (text != null) {
+      param = {
+        "text": text,
+      };
+    }
     final Map<String, String> headers = {
       'Authorization': getAuthorization(),
     };
-    final url = Uri.http(serverAddress, path);
+    final url = Uri.http(serverAddress, path, param.isEmpty ? null : param);
     return _handleRequest<ResponseGetFeedbacks>(
       Method.get,
       url,

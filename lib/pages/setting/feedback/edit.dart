@@ -20,6 +20,8 @@ class _EditState extends State<Edit> {
   FeedbackType feedbackType = FeedbackType.optFeature;
 
   bool isUploadDeviceInfo = true;
+  bool isPublic = true;
+
   @override
   void initState() {
     super.initState();
@@ -234,18 +236,40 @@ class _EditState extends State<Edit> {
 
   // 其他多选框 (上传用户信息)
   Widget moreCheckbox() {
-    return Row(
+    return Column(
       children: [
-        Checkbox(
-          value: isUploadDeviceInfo, // Initial value, can be stateful
-          onChanged: (bool? value) {
-            // Handle checkbox change
-            setState(() {
-              isUploadDeviceInfo = value!;
-            });
-          },
+        SizedBox(
+          width: double.infinity,
+          child: Row(
+            children: [
+              Checkbox(
+                value: isUploadDeviceInfo,
+                onChanged: (bool? value) {
+                  setState(() {
+                    isUploadDeviceInfo = value!;
+                  });
+                },
+              ),
+              Text('上传设备信息'),
+            ],
+          ),
         ),
-        Text('上传设备信息'),
+         SizedBox(
+          width: double.infinity,
+          child: Row(
+            children: [
+              Checkbox(
+                value: isPublic,
+                onChanged: (bool? value) {
+                  setState(() {
+                    isPublic = value!;
+                  });
+                },
+              ),
+              Text('公开'),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -277,9 +301,13 @@ class _EditState extends State<Edit> {
         fbType: feedbackType,
         title: title.text,
         content: desc.text,
-        images: images);
+        isPublic: isPublic,
+        );
     if (isUploadDeviceInfo) {
       req.deviceFilePath = await Device().write();
+    }
+    if (images.isNotEmpty) {
+      req.images = images;
     }
     Http().postFeedback(req).then((value) {
       if (value.isNotOK) {

@@ -13,18 +13,32 @@ import (
 )
 
 type RequestFeedbackPost struct {
+	UOID           primitive.ObjectID
 	FBID           string
 	FbType         int
 	Title          string
 	Content        string
 	DeviceFile     io.Reader
 	DeviceFileName string
+	IsPublic       bool
 	Images         []io.Reader
 	ImagesName     []string
 }
 
 func FeedbackPost(req *RequestFeedbackPost) error {
+	m := bson.M{
+		"uoid":      req.UOID,
+		"fbid":      req.FBID,
+		"fb_type":   req.FbType,
+		"title":     req.Title,
+		"content":   req.Content,
+		"is_public": req.IsPublic,
+		"create":    time.Now(),
+		"update":    time.Now(),
+	}
+
 	if req.DeviceFile != nil {
+		m["device"] = req.DeviceFileName
 		bucket, err := gridfs.NewBucket(db)
 		if err != nil {
 			panic(err)
@@ -32,7 +46,7 @@ func FeedbackPost(req *RequestFeedbackPost) error {
 
 		uploadStream, err := bucket.OpenUploadStream(
 			req.DeviceFileName,
-			options.GridFSUpload().SetMetadata(map[string]string{"type": "txt"}), // 可选的元数据
+			options.GridFSUpload().SetMetadata(map[string]interface{}{"type": "txt", "uoid": req.UOID}), // 可选的元数据
 		)
 		if err != nil {
 			log.Error(err)
@@ -48,15 +62,17 @@ func FeedbackPost(req *RequestFeedbackPost) error {
 		log.Infof("创建设备信息: %s(%s)", req.DeviceFileName, ByteCountSI(fileSize))
 	}
 	if len(req.Images) > 0 {
+		m["images"] = req.ImagesName
 		bucket, err := gridfs.NewBucket(db)
 		if err != nil {
-			panic(err)
+			log.Error(err)
+			return err
 		}
 
 		for i, image := range req.Images {
 			uploadStream, err := bucket.OpenUploadStream(
 				req.ImagesName[i],
-				options.GridFSUpload().SetMetadata(map[string]string{"type": "image"}), // 可选的元数据
+				options.GridFSUpload().SetMetadata(map[string]interface{}{"type": "image", "uoid": req.UOID}), // 可选的元数据
 			)
 			if err != nil {
 				log.Error(err)
@@ -72,37 +88,41 @@ func FeedbackPost(req *RequestFeedbackPost) error {
 			log.Infof("创建图片: %s(%s)", req.ImagesName[i], ByteCountSI(fileSize))
 		}
 	}
-	m := bson.M{
-		"fbid":    req.FBID,
-		"fb_type": req.FbType,
-		"title":   req.Title,
-		"content": req.Content,
-		"device":  req.DeviceFileName,
-		"images":  req.ImagesName,
-		"create":  time.Now(),
-		"update":  time.Now(),
-	}
+
 	_, err := db.Collection("feedback").InsertOne(context.TODO(), m)
 	if err != nil {
 		log.Error(err)
+		return err
 	}
 
 	return nil
 }
 
-func FeedbacksGet() (any, error) {
+type FBFilter struct {
+	Text string
+}
+
+func FeedbacksGet(f FBFilter) (any, error) {
 	type response struct {
 		FBID       string   `json:"fbid"`
 		FbType     int32    `json:"fb_type"`
 		Title      string   `json:"title"`
 		Content    string   `json:"content"`
+		IsPublic   bool     `json:"is_public"`
 		DeviceFile string   `json:"device_file"`
 		Images     []string `json:"images"`
 		CRTime     string   `json:"crtime"`
 		UPTime     string   `json:"uptime"`
 	}
 	var res []response
-	cur, err := db.Collection("feedback").Find(context.TODO(), bson.M{})
+	filter := bson.M{"is_public": true}
+	if f.Text != "" {
+		filter["$or"] = []bson.M{
+			{"title": bson.M{"$regex": f.Text, "$options": "i"}},
+			{"content": bson.M{"$regex": f.Text, "$options": "i"}},
+		}
+	}
+	cur, err := db.Collection("feedback").Find(context.TODO(), filter)
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -123,6 +143,11 @@ func FeedbacksGet() (any, error) {
 		}
 		title, _ := m["title"].(string)
 		content, _ := m["content"].(string)
+		isPublic := false
+		if v, ok := m["is_public"].(bool); ok && v {
+			isPublic = true
+		}
+
 		deviceFile, _ := m["device"].(string)
 		var images []string
 		if v, ok := m["images"].([]string); ok {
@@ -136,6 +161,7 @@ func FeedbacksGet() (any, error) {
 			FbType:     fbType,
 			Title:      title,
 			Content:    content,
+			IsPublic:   isPublic,
 			DeviceFile: deviceFile,
 			Images:     images,
 			CRTime:     crtime,
