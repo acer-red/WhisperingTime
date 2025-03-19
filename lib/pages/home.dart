@@ -9,20 +9,11 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // String leadText = "";
-  // bool isVisitor = false;
   @override
   initState() {
     super.initState();
-    _loadData();
   }
 
-  Future<void> _loadData() async {
-    // isVisitor = await SP().getIsVisitor();
-    // setState(() {
-    //   leadText = isVisitor ? "游客模式" : "正式用户用户";
-    // });
-  }
 
   @override
   Widget build(BuildContext context) {

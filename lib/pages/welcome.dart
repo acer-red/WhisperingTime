@@ -59,7 +59,7 @@ class _Welcome extends State<Welcome> {
                     if (_showLogin)
                       _isRegister ? registerForm() : loginForm()
                     else
-                      ...accountType(),
+                      accountType(),
                   ],
                 ),
               ),
@@ -70,28 +70,57 @@ class _Welcome extends State<Welcome> {
     );
   }
 
-  List<Widget> accountType() {
-    return [
-      ElevatedButton(
-        onPressed: () => visitor(),
-        child: const Text('游客访问'),
-      ),
-      const SizedBox(height: 20),
-      ElevatedButton(
-        onPressed: () {
-          setState(() {
-            _showLogin = true;
-          });
-        },
-        child: const Text('账号登陆'),
-      ),
-      const SizedBox(height: 20),
-      const Text(
-        '游客模式下，无法提交反馈且不支持多端数据共享',
-        style: TextStyle(fontSize: 14, color: Colors.grey),
-        textAlign: TextAlign.center,
-      )
-    ];
+  Widget accountType() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        ElevatedButton.icon(
+          onPressed: () => visitor(),
+          icon: const Icon(Icons.explore),
+          label: const Text('游客访问'),
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          ),
+        ),
+        const SizedBox(height: 20),
+        ElevatedButton.icon(
+          onPressed: () {
+            setState(() {
+              _showLogin = true;
+            });
+          },
+          icon: const Icon(Icons.account_circle),
+          label: const Text('账号登陆'),
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          ),
+        ),
+        const SizedBox(height: 10),
+        TextButton.icon(
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: const Text("游客模式说明"),
+                  content: const Text("游客模式下，无法提交反馈且不支持多端数据共享"),
+                  actions: [
+                    TextButton(
+                      child: const Text("知道了"),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+          icon: const Icon(Icons.info_outline),
+          label: const Text('了解更多'),
+        ),
+      ],
+    );
   }
 
   Widget registerForm() {

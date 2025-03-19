@@ -10,16 +10,16 @@ enum OpenWay {
   page,
 }
 
-class grid {
+class Grid {
   String title;
   Widget widget;
   OpenWay ow;
-  grid({required this.title, required this.widget, required this.ow});
+  Grid({required this.title, required this.widget, required this.ow});
 }
 
 
 class _UserPage extends State<UserPage> {
-  List<grid> _items = [
+  List<Grid> _items = [
     
   ];
   final scrollController = ScrollController();

@@ -10,7 +10,6 @@ import 'feedback/feedback.dart';
 import 'package:whispering_time/utils/ui.dart';
 import 'package:whispering_time/pages/welcome.dart';
 import 'package:whispering_time/services/isar/config.dart';
-import 'package:whispering_time/services/sp/sp.dart';
 
 class SettingPage extends StatefulWidget {
   @override
@@ -138,11 +137,13 @@ class _SettingPage extends State<SettingPage> {
                   return;
                 }
                 Config().close();
-                Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => Welcome(),
-                    ));
+                if (mounted) {
+                  Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => Welcome(),
+                      ));
+                }
               });
               break;
           }
