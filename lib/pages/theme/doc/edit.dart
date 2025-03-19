@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
-import 'package:whispering_time/services/http/self.dart';
+import 'package:whispering_time/services/http/http.dart';
 import 'package:whispering_time/utils/export.dart';
 import 'package:whispering_time/utils/env.dart';
 import 'setting.dart';

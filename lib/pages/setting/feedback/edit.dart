@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:whispering_time/utils/env.dart';
 import 'package:whispering_time/utils/device.dart';
-import 'package:whispering_time/services/http/self.dart';
+import 'package:whispering_time/services/http/index.dart';
 
 class Edit extends StatefulWidget {
   const Edit({super.key});

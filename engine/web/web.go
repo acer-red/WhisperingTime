@@ -32,7 +32,6 @@ func Init(env Env) {
 	RouteTheme(g)
 	RouteGroup(g)
 	RouteDoc(g)
-	RouteFeedback(g)
 	RouteImage(g)
 
 	log.Infof("API: %s", env.FullServerAddress)

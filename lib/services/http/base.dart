@@ -1,4 +1,13 @@
+import 'package:whispering_time/services/Isar/config.dart';
+
 enum Method { get, post, put, delete }
+
+class HTTPConfig {
+   String indexServerAddress = String.fromEnvironment(
+    'INDEX_SERVER_ADDRESS',
+    defaultValue: Config().indexServerAddress,
+  );
+}
 
 class Basic {
   int err;

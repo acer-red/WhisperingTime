@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:whispering_time/services/http/self.dart';
+import 'package:whispering_time/services/http/http.dart';
 import 'package:whispering_time/utils/env.dart';
 import 'package:whispering_time/utils/time.dart';
 import 'package:whispering_time/utils/ui.dart';

@@ -1,12 +1,14 @@
 import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+
 import 'package:whispering_time/utils/env.dart';
-import 'base.dart';
 import 'package:whispering_time/pages/theme/doc/setting.dart';
 import 'package:whispering_time/utils/time.dart';
 import 'package:whispering_time/services/Isar/config.dart';
+import 'base.dart';
 
 // theme
 class ResponseGetThemes extends Basic {
@@ -676,92 +678,6 @@ class ResponsePostImage extends Basic {
   String get imageFullUrl => url;
 }
 
-// feedback
-class FeedBack {
-  final String fbid;
-  final FeedbackType type;
-  final String title;
-  final String content;
-  final bool isPublic;
-  final String? deviceFile;
-  final List<String>? images;
-
-  final String crtime;
-  final String uptime;
-
-  FeedBack({
-    required this.fbid,
-    required this.type,
-    required this.title,
-    required this.content,
-    required this.isPublic,
-    required this.crtime,
-    required this.uptime,
-    this.deviceFile,
-    this.images,
-  });
-  factory FeedBack.fromJson(Map<String, dynamic> json) {
-    return FeedBack(
-      fbid: json['fbid'] as String,
-      type: FeedbackType.values[json['fb_type'] as int],
-      title: json['title'] as String,
-      content: json['content'] as String,
-      isPublic: json['is_public'] as bool,
-      deviceFile: json['device_file'] as String,
-      images: json['images'] != null
-          ? (json['images'] as List<dynamic>).map((e) => e as String).toList()
-          : null,
-      crtime: json['crtime'] as String,
-      uptime: json['uptime'] as String,
-    );
-  }
-}
-
-class RequestPostFeedback {
-  FeedbackType fbType;
-  String title;
-  String content;
-  bool isPublic;
-  String? deviceFilePath;
-  List<String>? images;
-  RequestPostFeedback(
-      {required this.fbType,
-      required this.title,
-      required this.content,
-      required this.isPublic,
-      this.deviceFilePath,
-      this.images});
-}
-
-class ResponsePostFeedback extends Basic {
-  String id;
-  ResponsePostFeedback(
-      {required super.err, required super.msg, required this.id});
-  factory ResponsePostFeedback.fromJson(Map<String, dynamic> json) {
-    return ResponsePostFeedback(
-      err: json['err'] as int,
-      msg: json['msg'] as String,
-      id: json['data']['id'] == null ? "" : json['data']['id'] as String,
-    );
-  }
-}
-
-class ResponseGetFeedbacks extends Basic {
-  List<FeedBack> data;
-  ResponseGetFeedbacks(
-      {required super.err, required super.msg, required this.data});
-  factory ResponseGetFeedbacks.fromJson(Map<String, dynamic> json) {
-    return ResponseGetFeedbacks(
-      err: json['err'] as int,
-      msg: json['msg'] as String,
-      data: json['data'] != null
-          ? (json['data'] as List<dynamic>)
-              .map((item) => FeedBack.fromJson(item as Map<String, dynamic>))
-              .toList()
-          : List.empty(),
-    );
-  }
-}
 
 class Http {
   final String? content;
@@ -1187,58 +1103,5 @@ class Http {
     );
   }
 
-  // feedback
-  Future<ResponsePostFeedback> postFeedback(RequestPostFeedback req) async {
-    log.i("发送请求 提交反馈");
-    String path = "/feedback";
 
-    final url = Uri.http(serverAddress, path);
-    var request = http.MultipartRequest('POST', url);
-    request.headers['Authorization'] = getAuthorization();
-    request.fields['fb_type'] = req.fbType.index.toString();
-    request.fields['title'] = req.title;
-    request.fields['content'] = req.content;
-    request.fields['is_public'] = req.isPublic ? "1" : "0";
-    if (req.deviceFilePath != null) {
-      request.files.add(await http.MultipartFile.fromPath(
-        'device_file',
-        req.deviceFilePath!,
-      ));
-    }
-
-    if (req.images != null && req.images!.isNotEmpty) {
-      for (String imagePath in req.images!) {
-        request.files.add(await http.MultipartFile.fromPath(
-          'images',
-          imagePath,
-        ));
-      }
-    }
-
-    var response = await request.send();
-    var responseBody = await response.stream.bytesToString();
-    final Map<String, dynamic> json = jsonDecode(responseBody);
-    return ResponsePostFeedback.fromJson(json);
-  }
-
-  Future<ResponseGetFeedbacks> getFeedbacks({String? text}) {
-    log.i("发送请求 获取反馈列表");
-    final String path = "/feedbacks";
-    Map<String, String> param = {};
-    if (text != null) {
-      param = {
-        "text": text,
-      };
-    }
-    final Map<String, String> headers = {
-      'Authorization': getAuthorization(),
-    };
-    final url = Uri.http(serverAddress, path, param.isEmpty ? null : param);
-    return _handleRequest<ResponseGetFeedbacks>(
-      Method.get,
-      url,
-      (json) => ResponseGetFeedbacks.fromJson(json),
-      headers: headers,
-    );
-  }
 }

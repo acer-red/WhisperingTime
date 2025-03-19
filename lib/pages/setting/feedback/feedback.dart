@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:whispering_time/services/http/self.dart';
+import 'package:whispering_time/services/http/index.dart';
 import 'edit.dart';
 
 class FeedbackPage extends StatefulWidget {

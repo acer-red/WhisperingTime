@@ -4,7 +4,7 @@ import 'package:whispering_time/utils/export.dart';
 import 'package:whispering_time/pages/theme/doc/setting.dart';
 import '../doc/edit.dart';
 import 'package:intl/intl.dart';
-import 'package:whispering_time/services/http/self.dart';
+import 'package:whispering_time/services/http/http.dart';
 import 'package:whispering_time/utils/time.dart';
 import 'package:whispering_time/utils/ui.dart';
 import 'package:whispering_time/services/Isar/config.dart';

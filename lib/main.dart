@@ -37,7 +37,7 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color.fromARGB(255, 211, 118, 5)),
+              seedColor: const Color.fromRGBO(255, 238, 227,1)),
         ),
         home: HomePage(),
         localizationsDelegates: const [
