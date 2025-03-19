@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:whispering_time/services/Isar/font.dart';
+import 'package:whispering_time/services/isar/font.dart';
 import 'package:whispering_time/services/http/fonthub.dart';
 
 class FontManager extends StatefulWidget {

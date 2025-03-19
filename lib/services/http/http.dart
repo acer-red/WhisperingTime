@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:whispering_time/utils/env.dart';
 import 'package:whispering_time/pages/theme/doc/setting.dart';
 import 'package:whispering_time/utils/time.dart';
-import 'package:whispering_time/services/Isar/config.dart';
+import 'package:whispering_time/services/isar/config.dart';
 import 'base.dart';
 
 // theme

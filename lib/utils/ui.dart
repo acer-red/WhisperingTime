@@ -1,10 +1,9 @@
-
 import 'package:flutter/material.dart';
 
 class MyDialog {
-  String title;
+  String? title;
   String content;
-  MyDialog({required this.title, required this.content});
+  MyDialog({this.title, required this.content});
 }
 
 // 定义一个函数，用于显示弹窗
@@ -15,7 +14,7 @@ Future<bool> showConfirmationDialog(
     barrierDismissible: true, // user must tap button!
     builder: (BuildContext context) {
       return AlertDialog(
-        title: Text(dialog.title),
+        title: dialog.title != null ? Text(dialog.title!) : null,
         content: SingleChildScrollView(
           child: ListBody(
             children: <Widget>[
@@ -77,4 +76,19 @@ class Msg {
   }
 }
 
+void showErrMsg(BuildContext context, String msg) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Row(
+        children: [
+          Icon(Icons.error , color: Colors.red.shade300),
+          SizedBox(width: 8),
+        
+          Text(msg),
+        ],
+      ),
+      duration: Duration(seconds: 2),
 
+    ),
+  );
+}

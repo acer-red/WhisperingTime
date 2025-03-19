@@ -1,8 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:isar/isar.dart';
-import 'env.dart';
-import 'package:whispering_time/services/Isar/font.dart';
+import 'config.dart';
 import 'package:whispering_time/utils/path.dart';
 import 'package:path/path.dart' as path;
 import 'dart:ui' as ui; // 访问 ui.loadFontFromList

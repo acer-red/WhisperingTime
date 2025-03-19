@@ -1,67 +1,26 @@
 import 'package:flutter/material.dart';
 
-import 'package:whispering_time/utils/export.dart';
-
-import 'font_manager.dart';
-import 'show.dart';
-import 'develop_mode.dart';
-import 'feedback/feedback.dart';
-
-import 'package:whispering_time/utils/ui.dart';
-import 'package:whispering_time/pages/welcome.dart';
-import 'package:whispering_time/services/isar/config.dart';
-import 'package:whispering_time/services/sp/sp.dart';
-
-class SettingPage extends StatefulWidget {
+class UserPage extends StatefulWidget {
   @override
-  State<SettingPage> createState() => _SettingPage();
+  State<UserPage> createState() => _UserPage();
 }
 
 enum OpenWay {
   dialog,
   page,
-  confirmationDialog,
 }
 
-class Setting {
+class grid {
   String title;
   Widget widget;
   OpenWay ow;
-  Setting({required this.title, required this.widget, required this.ow});
+  grid({required this.title, required this.widget, required this.ow});
 }
 
-class _SettingPage extends State<SettingPage> {
-  List<Setting> _items = [
-    Setting(
-      title: "显示",
-      widget: Show(),
-      ow: OpenWay.page,
-    ),
-    Setting(
-      title: "字体管理",
-      widget: FontManager(),
-      ow: OpenWay.dialog,
-    ),
-    Setting(
-      title: "数据导出",
-      widget: Export(ResourceType.theme, title: "导出所有数据"),
-      ow: OpenWay.dialog,
-    ),
-    Setting(
-      title: "交流反馈",
-      widget: FeedbackPage(),
-      ow: OpenWay.page,
-    ),
-    Setting(
-      title: "开发者",
-      widget: Devleopmode(),
-      ow: OpenWay.page,
-    ),
-    Setting(
-      title: "退出",
-      widget: Container(),
-      ow: OpenWay.confirmationDialog,
-    ),
+
+class _UserPage extends State<UserPage> {
+  List<grid> _items = [
+    
   ];
   final scrollController = ScrollController();
 
@@ -76,7 +35,7 @@ class _SettingPage extends State<SettingPage> {
           child: Row(
             children: [
               Text(
-                "设置",
+                "用户",
                 style: TextStyle(fontWeight: FontWeight.w500, fontSize: 17),
               ),
             ],
@@ -131,20 +90,6 @@ class _SettingPage extends State<SettingPage> {
                 MaterialPageRoute(builder: (context) => _items[index].widget),
               );
               break;
-            case OpenWay.confirmationDialog:
-              showConfirmationDialog(context, MyDialog(content: "确定退出吗？"))
-                  .then((value) {
-                if (!value) {
-                  return;
-                }
-                Config().close();
-                Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => Welcome(),
-                    ));
-              });
-              break;
           }
         },
         style: ElevatedButton.styleFrom(
@@ -161,24 +106,4 @@ class _SettingPage extends State<SettingPage> {
       ),
     );
   }
-
-  // Future<void> dialogExport() async {
-  //   showDialog(
-  //     context: context,
-  //     barrierDismissible: true,
-  //     builder: (BuildContext context) {
-  //       return Export(ResourceType.theme, title: "导出所有数据");
-  //     },
-  //   );
-  // }
-
-  // Future<void> dialogFontManager() async {
-  //   showDialog(
-  //     context: context,
-  //     barrierDismissible: true,
-  //     builder: (BuildContext context) {
-  //       return FontManager();
-  //     },
-  //   );
-  // }
 }

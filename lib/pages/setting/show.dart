@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:whispering_time/services/Isar/config.dart';
+import 'package:whispering_time/services/isar/config.dart';
 
 class Show extends StatefulWidget {
   @override

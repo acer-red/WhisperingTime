@@ -5,6 +5,62 @@ import 'package:http/http.dart' as http;
 import './base.dart';
 import 'package:whispering_time/utils/env.dart';
 
+// 用户登陆
+class RequestPostUserLogin {
+  final String account;
+  final String password;
+  RequestPostUserLogin({required this.account, required this.password});
+  Map<String, dynamic> toJson() {
+    return {'account': account, 'password': password};
+  }
+}
+
+class ReponsePostUserLogin extends Basic {
+  final String id;
+
+  ReponsePostUserLogin(
+      {required super.err, required super.msg, required this.id});
+
+  factory ReponsePostUserLogin.fromJson(Map<String, dynamic> g) {
+    return ReponsePostUserLogin(
+        err: g['err'],
+        msg: g['msg'],
+        id: g['data'] != null ? g['data']['id'] : '');
+  }
+}
+
+// 用户注册
+class RequestPostUserRegister {
+  final String username;
+  final String email;
+  final String password;
+
+  RequestPostUserRegister({
+    required this.username,
+    required this.email,
+    required this.password,
+  });
+  Map<String, dynamic> toJson() {
+    return {'username': username, 'password': password, 'email': email};
+  }
+}
+
+class ReponsePostUserRegister extends Basic {
+  final String id;
+
+  ReponsePostUserRegister({
+    required super.err,
+    required super.msg,
+    required this.id,
+  });
+  factory ReponsePostUserRegister.fromJson(Map<String, dynamic> g) {
+    return ReponsePostUserRegister(
+      err: g['err'],
+      msg: g['msg'],
+      id: g['data'] != null ? g['data']['id'] : '',
+    );
+  }
+}
 
 // feedback
 class FeedBack {
@@ -93,10 +149,13 @@ class ResponseGetFeedbacks extends Basic {
   }
 }
 
-class Http{
-  final String serverAddress = HTTPConfig().indexServerAddress;
+class Http {
+  final String serverAddress = HTTPConfig.indexServerAddress;
 
-    Future<T> _handleRequest<T>(
+  Http() {
+    print("服务器:$serverAddress");
+  }
+  Future<T> _handleRequest<T>(
       Method method, Uri u, Function(Map<String, dynamic>) fromJson,
       {Map<String, dynamic>? data, Map<String, String>? headers}) async {
     if (data != null) {
@@ -122,24 +181,24 @@ class Http{
               await http.delete(u, body: jsonEncode(data), headers: headers);
           break;
       }
-      if (response.body.isEmpty) {
-        log.e("服务器返回空");
-        return fromJson({'err': 1, 'msg': ''});
+      if (err(response.statusCode)) {
+        return fromJson({'err': 1, 'msg': getMsg(response.statusCode)});
       }
     } catch (e) {
-      log.e("请求失败:${e.toString()}");
-      return fromJson({'err': 1, 'msg': ''});
+      log.e("请求失败\n${e.toString()}");
+      return fromJson({'err': 1, 'msg': '登陆失败，请稍后尝试'});
     }
-
     try {
-      final Map<String, dynamic> g = jsonDecode(response.body);
-      return fromJson(g);
+      return fromJson(jsonDecode(response.body));
     } catch (e) {
-      log.e("解析数据失败 \n${response.body}\n${e.toString()}");
-      return fromJson({'err': 1, 'msg': ''});
+      log.e("解析数据失败 ${e.toString()}\n${response.body}");
+      return fromJson({'err': 1, 'msg': '未知错误'});
     }
   }
 
+  bool err(int statusCode) {
+    return statusCode >= 400;
+  }
 
   Future<ResponsePostFeedback> postFeedback(RequestPostFeedback req) async {
     log.i("发送请求 提交反馈");
@@ -195,4 +254,45 @@ class Http{
     );
   }
 
+  Future<ReponsePostUserRegister> userRegister(RequestPostUserRegister req) {
+    final path = "/api/v1/user/register";
+    final uri = Uri.parse(serverAddress + path);
+
+    return _handleRequest(
+      Method.post,
+      uri,
+      (g) => ReponsePostUserRegister.fromJson(g),
+      data: req.toJson(),
+    );
+  }
+
+  Future<ReponsePostUserLogin> userLogin(RequestPostUserLogin req) async {
+    final path = "/api/v1/user/login";
+    final uri = Uri.parse(serverAddress + path);
+    return _handleRequest(
+      Method.post,
+      uri,
+      (g) => ReponsePostUserLogin.fromJson(g),
+      data: req.toJson(),
+    );
+  }
+
+  getMsg(int statusCode) {
+    final String msg;
+    switch (statusCode) {
+      case 400:
+        msg = "用户名或密码错误";
+        break;
+      case 409:
+        msg = "已存在";
+        break;
+      case 500:
+        msg = "服务器错误";
+        break;
+      default:
+        msg = "未知错误，稍后重试";
+        break;
+    }
+    return msg;
+  }
 }

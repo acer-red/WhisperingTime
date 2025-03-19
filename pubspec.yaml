@@ -42,5 +42,10 @@ dev_dependencies:
 
 flutter:
   assets:
-    - lib/assets/
+    - assets/images/
   uses-material-design: true
+
+flutter_launcher_icons:
+  android: "launcher_icon" # Android 图标文件名 (不包含扩展名)
+  ios: true
+  image_path: "assets/images/icon-512.png" # 你的主图标文件路径

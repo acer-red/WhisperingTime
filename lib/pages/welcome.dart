@@ -1,0 +1,451 @@
+import 'package:flutter/material.dart';
+import 'package:whispering_time/utils/ui.dart';
+import 'package:whispering_time/pages/home.dart';
+import 'package:whispering_time/services/http/index.dart';
+import 'package:whispering_time/services/sp/sp.dart';
+import 'package:whispering_time/services/isar/config.dart';
+
+class Welcome extends StatefulWidget {
+  const Welcome({super.key});
+
+  @override
+  State<Welcome> createState() => _Welcome();
+}
+
+class _Welcome extends State<Welcome> {
+  TextEditingController userController = TextEditingController();
+  TextEditingController emailController = TextEditingController();
+  TextEditingController accountController = TextEditingController();
+  TextEditingController passwordController = TextEditingController();
+  TextEditingController registerPasswordController = TextEditingController();
+  TextEditingController passwordAgainController = TextEditingController();
+
+  bool _showLogin = false;
+  bool _isRegister = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Padding(
+                    padding:
+                        EdgeInsets.only(left: 70.0, right: 70.0, bottom: 20),
+                    child: Image(
+                        image:
+                            AssetImage('assets/images/wt-transparent-512.png')),
+                  ),
+                  Text('枫迹',
+                      style:
+                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                  SizedBox(height: 10),
+                  Text('生活不只是日复一日，更是步步印迹',
+                      maxLines: 1,
+                      style: TextStyle(fontSize: 15, color: Color(0xFF777777))),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (_showLogin)
+                      _isRegister ? registerForm() : loginForm()
+                    else
+                      ...accountType(),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> accountType() {
+    return [
+      ElevatedButton(
+        onPressed: () => visitor(),
+        child: const Text('游客访问'),
+      ),
+      const SizedBox(height: 20),
+      ElevatedButton(
+        onPressed: () {
+          setState(() {
+            _showLogin = true;
+          });
+        },
+        child: const Text('账号登陆'),
+      ),
+      const SizedBox(height: 20),
+      const Text(
+        '游客模式下，无法提交反馈且不支持多端数据共享',
+        style: TextStyle(fontSize: 14, color: Colors.grey),
+        textAlign: TextAlign.center,
+      )
+    ];
+  }
+
+  Widget registerForm() {
+    return Column(
+      spacing: 20,
+      children: [
+        TextFormField(
+          autofocus: true,
+          controller: userController,
+          decoration: const InputDecoration(
+            labelText: '用户名',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        TextFormField(
+          controller: emailController,
+          decoration: const InputDecoration(
+            labelText: '邮箱',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        TextFormField(
+          controller: registerPasswordController,
+          decoration: const InputDecoration(
+            labelText: '密码',
+            border: OutlineInputBorder(),
+          ),
+          obscureText: true,
+        ),
+        TextFormField(
+          controller: passwordAgainController,
+          decoration: const InputDecoration(
+            labelText: '再次输入密码',
+            border: OutlineInputBorder(),
+          ),
+          obscureText: true,
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _isRegister = false;
+                });
+              },
+              child: const Text('已有账号'),
+            ),
+            ElevatedButton(
+              onPressed: () => register(),
+              child: const Text('注册'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget loginForm() {
+    return Column(
+      spacing: 20,
+      children: [
+        TextFormField(
+          autofocus: true,
+          controller: accountController,
+          decoration: const InputDecoration(
+            labelText: '用户名/邮箱',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        TextFormField(
+          controller: passwordController,
+          decoration: const InputDecoration(
+            labelText: '密码',
+            border: OutlineInputBorder(),
+          ),
+          obscureText: true,
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextButton(
+              onPressed: () => visitor(),
+              child: const Text('游客登陆'),
+            ),
+            Column(
+              spacing: 10,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _isRegister = true;
+                    });
+                  },
+                  child: const Text('注册账号'),
+                ),
+                ElevatedButton(
+                  onPressed: () => login(),
+                  child: const Text('登录'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void visitor() {
+    showConfirmationDialog(context, MyDialog(content: "是否以游客身份登陆？"))
+        .then((value) async {
+      if (!value) {
+        return;
+      }
+      SP().setIsVisitor(true);
+      final id = await SP().getID();
+      await Config().init(id);
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => HomePage(),
+          ),
+        );
+      }
+    });
+  }
+
+  bool checkAccount() {
+    if (accountController.text.isEmpty) {
+      showErrMsg(context, '用户名不能为空');
+      return false;
+    }
+    return true;
+  }
+
+  bool checkPassword() {
+    if (passwordController.text.isEmpty) {
+      showErrMsg(context, '密码不能为空');
+      return false;
+    }
+    return true;
+  }
+
+  bool loginCheck() {
+    if (!checkAccount()) {
+      return false;
+    }
+    if (!checkPassword()) {
+      return false;
+    }
+    return true;
+  }
+
+  void login() {
+    final ok = loginCheck();
+    if (!ok) {
+      return;
+    }
+
+    final String account = accountController.text;
+    final String password = passwordController.text;
+
+    Http()
+        .userLogin(RequestPostUserLogin(account: account, password: password))
+        .then((value) async {
+      if (value.isOK) {
+        if (value.id.isEmpty) {
+          if (mounted) {
+            showErrMsg(context, '用户不存在');
+          }
+          return;
+        }
+        SP().setIsVisitor(false);
+        SP().setRegisterAccount(value.id);
+        await Config().init(value.id);
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => HomePage(),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          showErrMsg(context, value.msg);
+        }
+      }
+    });
+  }
+
+  bool checkRegisterPasswd() {
+    final password = registerPasswordController.text;
+
+    if (password.isEmpty) {
+      showErrMsg(context, '密码不能为空');
+      return false;
+    }
+
+    if (password.length < 8) {
+      showErrMsg(context, '密码长度不能少于 8 个字符');
+      return false;
+    }
+
+    // 检查是否包含大写字母
+    if (!password.contains(RegExp(r'[A-Z]'))) {
+      showErrMsg(context, '密码需要包含至少一个大写字母');
+      return false;
+    }
+
+    // 检查是否包含小写字母
+    if (!password.contains(RegExp(r'[a-z]'))) {
+      showErrMsg(context, '密码需要包含至少一个小写字母');
+      return false;
+    }
+
+    // 检查是否包含数字
+    if (!password.contains(RegExp(r''))) {
+      showErrMsg(context, '密码需要包含至少一个数字');
+      return false;
+    }
+
+    // 检查是否包含特殊字符 (可以根据需求调整)
+    if (!password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
+      showErrMsg(context, '密码需要包含至少一个特殊字符');
+      return false;
+    }
+
+    return true;
+  }
+
+  bool checkUser() {
+    final username = userController.text;
+    if (username.isEmpty) {
+      showErrMsg(context, '用户名不能为空');
+      return false;
+    }
+    if (username.length < 3) {
+      showErrMsg(context, '用户名长度不能少于 3 个字符');
+      return false;
+    }
+
+    if (username.length > 20) {
+      showErrMsg(context, '用户名长度不能超过 20 个字符');
+      return false;
+    }
+
+    // 允许字母、数字、下划线和点
+    final allowedChars = RegExp(r'^[a-zA-Z0-9_.]+$');
+    if (!allowedChars.hasMatch(username)) {
+      showErrMsg(context, '用户名只能包含字母、数字、下划线和点');
+      return false;
+    }
+
+    // 避免使用过于简单的数字组合
+    final onlyNumbers = RegExp(r'^[0-9]+$');
+    if (onlyNumbers.hasMatch(username) && username.length < 6) {
+      showErrMsg(context, '不允许过于简单的纯数字用户名');
+      return false;
+    }
+
+    // 避免常见的敏感词
+    final forbiddenWords = [
+      'admin',
+      'test',
+      'guest',
+      'root',
+      'administrator',
+      'administrators',
+      "superuser",
+    ];
+    if (forbiddenWords.contains(username.toLowerCase())) {
+      showErrMsg(context, '该用户名已被禁用');
+      return false;
+    }
+    return true;
+  }
+
+  bool checkEmail() {
+    if (emailController.text.isEmpty) {
+      showErrMsg(context, '邮箱不能为空');
+      return false;
+    }
+    if (!RegExp(
+      r'^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$',
+    ).hasMatch(emailController.text)) {
+      showErrMsg(context, '邮箱格式不正确');
+      return false;
+    }
+    return true;
+  }
+
+  bool registerCheck() {
+    if (!checkUser()) {
+      return false;
+    }
+    if (!checkEmail()) {
+      return false;
+    }
+    if (!checkRegisterPasswd()) {
+      return false;
+    }
+    if (registerPasswordController.text != passwordAgainController.text) {
+      showErrMsg(context, '密码不一致');
+      return false;
+    }
+    return true;
+  }
+
+  void register() {
+    final ok = registerCheck();
+    if (!ok) {
+      return;
+    }
+
+    final String user = userController.text;
+    final String email = emailController.text;
+    final String password = registerPasswordController.text;
+
+    Http()
+        .userRegister(
+      RequestPostUserRegister(
+        username: user,
+        email: email,
+        password: password,
+      ),
+    )
+        .then((value) async {
+      if (value.isOK) {
+        if (value.id.isEmpty) {
+          if (mounted) {
+            showErrMsg(context, '用户不存在');
+          }
+          return;
+        }
+        SP().setIsVisitor(false);
+        SP().setRegisterAccount(value.id);
+        await Config().init(value.id);
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => HomePage(),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          showErrMsg(context, value.msg);
+        }
+      }
+    });
+  }
+}

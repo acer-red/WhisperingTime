@@ -1,8 +1,11 @@
 import 'package:isar/isar.dart';
-import 'env.dart';
 import 'package:whispering_time/utils/uuid.dart';
+import 'package:whispering_time/services/isar/font.dart';
+import 'package:whispering_time/utils/path.dart';
 
 part 'config.g.dart';
+
+late Isar isar; // 声明 Isar 实例
 
 @Collection()
 class Config {
@@ -10,8 +13,8 @@ class Config {
 
   String uid = '';
   String serverAddress = 'http://127.0.0.1:21523';
-  String fontHubServerAddress = "https://fonthub.acer.red:21520";
-  String indexServerAddress = "https://acer.red";
+  static const String fontHubServerAddress = "https://fonthub.acer.red:21520";
+  static const String indexServerAddress = "https://acer.red";
   bool devlopMode = false;
   bool visualNoneTitle = false;
   bool defaultShowTool = true;
@@ -25,7 +28,19 @@ class Config {
     return _instance!;
   }
 
-  init() async {
+  init(String id) async {
+    if (_instance != null) {
+      await isar.close();
+    }
+    final dir = await getMainStoreDir();
+    print("数据文件 路径:${dir.path} 名称:$id");
+    isar = await Isar.open(
+      [ConfigSchema, FontSchema], // 你的模型 Schema 列表
+      directory: dir.path, // 指定数据库存储目录
+      inspector: true, // 启用 Isar Inspector 连接
+      name: id, // 默认为default
+    );
+
     // 检查 Isar 中是否已经存在 Config 对象
     final existingConfig = await isar.configs.where().findFirst();
 
@@ -41,10 +56,12 @@ class Config {
       await isar.configs.put(this);
     });
   }
-  // Future<String> getuid()async {
-  //   final c =await isar.configs.where().findFirst();
-  //  return c!.uid;
-  // }
+
+  close() async {
+    if (_instance != null) {
+      await isar.close();
+    }
+  }
 
   setDevlopMode(bool b) async {
     print("更新配置 开发者模式 $b");

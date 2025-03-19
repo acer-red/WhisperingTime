@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:whispering_time/utils/env.dart';
-import 'package:whispering_time/services/Isar/config.dart';
-import 'package:whispering_time/services/Isar/font.dart';
+import 'package:whispering_time/services/isar/config.dart';
+import 'package:whispering_time/services/isar/font.dart';
 import 'package:http/http.dart' as http;
 import 'base.dart';
 
@@ -95,7 +95,7 @@ class Fontx {
 }
 
 class Http {
-  static final String serverAddress = Config.instance.fontHubServerAddress;
+  static final String serverAddress = Config.fontHubServerAddress;
 
   Future<T> _handleRequest<T>(
       Method method, Uri u, Function(Map<String, dynamic>) fromJson,

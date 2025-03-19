@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:whispering_time/utils/ui.dart';
-import 'package:whispering_time/services/Isar/config.dart';
+import 'package:whispering_time/services/isar/config.dart';
 
 class Devleopmode extends StatefulWidget {
   @override

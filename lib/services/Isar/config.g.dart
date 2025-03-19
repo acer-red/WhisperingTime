@@ -27,23 +27,18 @@ const ConfigSchema = CollectionSchema(
       name: r'devlopMode',
       type: IsarType.bool,
     ),
-    r'fontHubServerAddress': PropertySchema(
-      id: 2,
-      name: r'fontHubServerAddress',
-      type: IsarType.string,
-    ),
     r'serverAddress': PropertySchema(
-      id: 3,
+      id: 2,
       name: r'serverAddress',
       type: IsarType.string,
     ),
     r'uid': PropertySchema(
-      id: 4,
+      id: 3,
       name: r'uid',
       type: IsarType.string,
     ),
     r'visualNoneTitle': PropertySchema(
-      id: 5,
+      id: 4,
       name: r'visualNoneTitle',
       type: IsarType.bool,
     )
@@ -68,7 +63,6 @@ int _configEstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
-  bytesCount += 3 + object.fontHubServerAddress.length * 3;
   bytesCount += 3 + object.serverAddress.length * 3;
   bytesCount += 3 + object.uid.length * 3;
   return bytesCount;
@@ -82,10 +76,9 @@ void _configSerialize(
 ) {
   writer.writeBool(offsets[0], object.defaultShowTool);
   writer.writeBool(offsets[1], object.devlopMode);
-  writer.writeString(offsets[2], object.fontHubServerAddress);
-  writer.writeString(offsets[3], object.serverAddress);
-  writer.writeString(offsets[4], object.uid);
-  writer.writeBool(offsets[5], object.visualNoneTitle);
+  writer.writeString(offsets[2], object.serverAddress);
+  writer.writeString(offsets[3], object.uid);
+  writer.writeBool(offsets[4], object.visualNoneTitle);
 }
 
 Config _configDeserialize(
@@ -97,11 +90,10 @@ Config _configDeserialize(
   final object = Config();
   object.defaultShowTool = reader.readBool(offsets[0]);
   object.devlopMode = reader.readBool(offsets[1]);
-  object.fontHubServerAddress = reader.readString(offsets[2]);
   object.id = id;
-  object.serverAddress = reader.readString(offsets[3]);
-  object.uid = reader.readString(offsets[4]);
-  object.visualNoneTitle = reader.readBool(offsets[5]);
+  object.serverAddress = reader.readString(offsets[2]);
+  object.uid = reader.readString(offsets[3]);
+  object.visualNoneTitle = reader.readBool(offsets[4]);
   return object;
 }
 
@@ -121,8 +113,6 @@ P _configDeserializeProp<P>(
     case 3:
       return (reader.readString(offset)) as P;
     case 4:
-      return (reader.readString(offset)) as P;
-    case 5:
       return (reader.readBool(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -233,142 +223,6 @@ extension ConfigQueryFilter on QueryBuilder<Config, Config, QFilterCondition> {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'devlopMode',
         value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<Config, Config, QAfterFilterCondition>
-      fontHubServerAddressEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'fontHubServerAddress',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Config, Config, QAfterFilterCondition>
-      fontHubServerAddressGreaterThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'fontHubServerAddress',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Config, Config, QAfterFilterCondition>
-      fontHubServerAddressLessThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'fontHubServerAddress',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Config, Config, QAfterFilterCondition>
-      fontHubServerAddressBetween(
-    String lower,
-    String upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'fontHubServerAddress',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Config, Config, QAfterFilterCondition>
-      fontHubServerAddressStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'fontHubServerAddress',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Config, Config, QAfterFilterCondition>
-      fontHubServerAddressEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'fontHubServerAddress',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Config, Config, QAfterFilterCondition>
-      fontHubServerAddressContains(String value, {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'fontHubServerAddress',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Config, Config, QAfterFilterCondition>
-      fontHubServerAddressMatches(String pattern, {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'fontHubServerAddress',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Config, Config, QAfterFilterCondition>
-      fontHubServerAddressIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'fontHubServerAddress',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<Config, Config, QAfterFilterCondition>
-      fontHubServerAddressIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'fontHubServerAddress',
-        value: '',
       ));
     });
   }
@@ -724,18 +578,6 @@ extension ConfigQuerySortBy on QueryBuilder<Config, Config, QSortBy> {
     });
   }
 
-  QueryBuilder<Config, Config, QAfterSortBy> sortByFontHubServerAddress() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'fontHubServerAddress', Sort.asc);
-    });
-  }
-
-  QueryBuilder<Config, Config, QAfterSortBy> sortByFontHubServerAddressDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'fontHubServerAddress', Sort.desc);
-    });
-  }
-
   QueryBuilder<Config, Config, QAfterSortBy> sortByServerAddress() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'serverAddress', Sort.asc);
@@ -795,18 +637,6 @@ extension ConfigQuerySortThenBy on QueryBuilder<Config, Config, QSortThenBy> {
   QueryBuilder<Config, Config, QAfterSortBy> thenByDevlopModeDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'devlopMode', Sort.desc);
-    });
-  }
-
-  QueryBuilder<Config, Config, QAfterSortBy> thenByFontHubServerAddress() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'fontHubServerAddress', Sort.asc);
-    });
-  }
-
-  QueryBuilder<Config, Config, QAfterSortBy> thenByFontHubServerAddressDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'fontHubServerAddress', Sort.desc);
     });
   }
 
@@ -872,14 +702,6 @@ extension ConfigQueryWhereDistinct on QueryBuilder<Config, Config, QDistinct> {
     });
   }
 
-  QueryBuilder<Config, Config, QDistinct> distinctByFontHubServerAddress(
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'fontHubServerAddress',
-          caseSensitive: caseSensitive);
-    });
-  }
-
   QueryBuilder<Config, Config, QDistinct> distinctByServerAddress(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -918,13 +740,6 @@ extension ConfigQueryProperty on QueryBuilder<Config, Config, QQueryProperty> {
   QueryBuilder<Config, bool, QQueryOperations> devlopModeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'devlopMode');
-    });
-  }
-
-  QueryBuilder<Config, String, QQueryOperations>
-      fontHubServerAddressProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'fontHubServerAddress');
     });
   }
 
