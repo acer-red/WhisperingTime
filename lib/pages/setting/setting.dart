@@ -1,142 +1,161 @@
 import 'package:flutter/material.dart';
-
-import 'package:whispering_time/utils/export.dart';
-
-import 'font_manager.dart';
-import 'show.dart';
-import 'develop_mode.dart';
-import 'feedback/feedback.dart';
-
-
+import 'package:whispering_time/services/isar/config.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingPage extends StatefulWidget {
   @override
-  State<SettingPage> createState() => _SettingPage();
+  State createState() => _SettingPageState();
 }
 
-enum OpenWay {
-  dialog,
-  page,
-}
+class _SettingPageState extends State<SettingPage> {
+  bool _isOpened = Config.instance.devlopMode;
+  TextEditingController serverAddressControl = TextEditingController();
+  String isarurl = '';
+   bool visualNoneTitle = Config.instance.visualNoneTitle;
+  bool defaultShowTool = Config.instance.defaultShowTool;
 
-class Setting {
-  String title;
-  Widget widget;
-  OpenWay ow;
-  Setting({required this.title, required this.widget, required this.ow});
-}
+  @override
+  void initState() {
+    super.initState();
+    serverAddressControl.text = Config.instance.serverAddress;
+    init();
+  }
 
-class _SettingPage extends State<SettingPage> {
-  List<Setting> _items = [
-    Setting(
-      title: "显示",
-      widget: Show(),
-      ow: OpenWay.page,
-    ),
-    Setting(
-      title: "字体管理",
-      widget: FontManager(),
-      ow: OpenWay.dialog,
-    ),
-    Setting(
-      title: "数据导出",
-      widget: Export(ResourceType.theme, title: "导出所有印迹数据"),
-      ow: OpenWay.dialog,
-    ),
-    Setting(
-      title: "反馈",
-      widget: FeedbackPage(),
-      ow: OpenWay.page,
-    ),
-    Setting(
-      title: "开发者",
-      widget: Devleopmode(),
-      ow: OpenWay.page,
-    ),
-  ];
-  final scrollController = ScrollController();
-
-  double initialDragPosition = 0;
+  init() {
+    setState(() {
+      Config().getInspectorURL().then((onValue) {
+        isarurl = onValue;
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8.0),
-          child: Row(
-            children: [
-              Text(
-                "设置",
-                style: TextStyle(fontWeight: FontWeight.w500, fontSize: 17),
-              ),
-            ],
-          ),
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () => backPage(),
         ),
-        SizedBox(
-          height: 70,
-          child: GestureDetector(
-            onHorizontalDragStart: (details) {
-              initialDragPosition = details.localPosition.dx;
-            },
-            onHorizontalDragUpdate: (details) {
-              final currentPosition = details.localPosition.dx;
-              final delta = currentPosition - initialDragPosition;
-              scrollController.jumpTo(scrollController.offset - delta);
-              initialDragPosition = currentPosition;
-            },
-            child: ListView.builder(
-              controller: scrollController,
-              itemCount: _items.length,
-              scrollDirection: Axis.horizontal, // 设置滚动方向为水平
-              itemBuilder: (context, index) {
-                return gridGeneral(index);
-              },
+        title: Text("设置"),
+      ),
+      body: ListView(
+        
+        children: [
+          ListTile(
+            title: Text(
+              '显示',
+              style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
             ),
+            enabled: false, // 设置为 false 使其看起来像标题
           ),
-        )
-      ],
+SwitchListTile(
+            title: const Text('隐藏空白标题'),
+            value: visualNoneTitle,
+            onChanged: (bool value) {
+              setState(() {
+                visualNoneTitle = value;
+                Config.instance.setVisualNoneTitle(value);
+              });
+            },
+          ),
+          SwitchListTile(
+            title: const Text('默认显示工具栏'),
+            value: defaultShowTool,
+            onChanged: (bool value) {
+              setState(() {
+                defaultShowTool = value;
+                Config.instance.setDefaultShowTool(value);
+              });
+            },
+          ),
+             ListTile(
+            title: Text(
+              '调试',
+              style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+            ),
+            enabled: false, // 设置为 false 使其看起来像标题
+          ),
+          SwitchListTile(
+            title: const Text('开发者模式'),
+            value: _isOpened,
+            onChanged: (bool value) {
+              setState(() {
+                Config.instance.setDevlopMode(value);
+                _isOpened = value;
+              });
+            },
+          ),
+    
+          !_isOpened
+              ? SizedBox.shrink()
+              : Padding(
+                  padding: const EdgeInsets.only(left: 18, right: 18),
+                  child: Row(children: [
+                    Expanded(
+                      child: Text(
+                        '服务器地址',
+                        style: TextStyle(fontSize: 16.0),
+                      ),
+                    ),
+                    Expanded(
+                      child: TextField(
+                        textAlign: TextAlign.right,
+                        enabled: _isOpened,
+                        maxLines: 1,
+                        autofocus: true,
+                        decoration: InputDecoration(
+                          hintText: serverAddressControl.text,
+                          border: InputBorder.none,
+                        ),
+                        controller: serverAddressControl,
+                        onChanged: (value) {
+                          serverAddressControl.text = value;
+                          Config.instance.setServerAddress(value);
+                        },
+                      ),
+                    )
+                  ]),
+                ),
+           !_isOpened
+              ? SizedBox.shrink()
+              :Padding(
+            padding: const EdgeInsets.only(left: 18, right: 18),
+            child: Row(children: [
+              Text(
+                '数据库后台管理',
+                style: TextStyle(fontSize: 16.0),
+              ),
+              Spacer(),
+              isarurl.isEmpty
+                  ? SizedBox.shrink()
+                  : TextButton(
+                      onPressed: () {
+                        _launchUrl(isarurl);
+                      },
+                      child: Text("打开"),
+                    )
+            ]),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget gridGeneral(int index) {
-    final GlobalKey buttonKey = GlobalKey();
-    return Padding(
-      padding: EdgeInsets.only(right: 16),
-      child: ElevatedButton(
-        key: buttonKey,
-        onPressed: () {
-          switch (_items[index].ow) {
-            case OpenWay.dialog:
-              showDialog(
-                context: context,
-                barrierDismissible: true,
-                builder: (BuildContext context) {
-                  return _items[index].widget;
-                },
-              );
-              break;
-            case OpenWay.page:
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => _items[index].widget),
-              );
-              break;
-    
-          }
-        },
-        style: ElevatedButton.styleFrom(
-            elevation: 0, // 阴影大小
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8.0), // 圆角
-            ),
-            padding: EdgeInsets.only(left: 25, right: 25)),
-        child: Text(
-          _items[index].title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
-    );
+  Future<void> _launchUrl(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (!await launchUrl(uri)) {
+      throw Exception('Could not launch $url');
+    }
+  }
+
+  backPage() {
+    if (_isOpened != Config.instance.devlopMode) {
+      Config.instance.setDevlopMode(_isOpened);
+    }
+    if (serverAddressControl.text != Config.instance.serverAddress) {
+      Config.instance.setServerAddress(serverAddressControl.text);
+    }
+    Navigator.of(context).pop();
   }
 }

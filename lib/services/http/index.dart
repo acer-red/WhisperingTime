@@ -260,7 +260,7 @@ class Http {
     log.i("发送请求 提交反馈");
     String path = "/api/v1/feedback";
 
-    final url = Uri.https(serverAddress, path);
+    final url = URI().get(serverAddress, path);
     var request = http.MultipartRequest('POST', url);
     request.headers['Authorization'] = "";
     request.fields['fb_type'] = req.fbType.index.toString();
@@ -301,7 +301,7 @@ class Http {
     final Map<String, String> headers = {
       'Authorization': getAPI(),
     };
-    final url = Uri.https(serverAddress, path, param.isEmpty ? null : param);
+    final url = URI().get(serverAddress, path, param:param);
     return _handleRequest<ResponseGetFeedbacks>(
       Method.get,
       url,

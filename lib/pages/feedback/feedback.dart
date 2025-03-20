@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:whispering_time/services/http/index.dart';
+import 'package:whispering_time/services/sp/sp.dart';
+import 'package:whispering_time/utils/ui.dart';
 import 'edit.dart';
 
 class FeedbackPage extends StatefulWidget {
@@ -26,21 +28,28 @@ class _FeedbackPageState extends State<FeedbackPage> {
     });
   }
 
+  add() async {
+    final value = await SP().getIsVisitor();
+    if (mounted) {
+      if (value) {
+        showErrMsg(context, '游客无法创建反馈');
+      } else {
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => Edit(),
+            ));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text("反馈"),
         actions: <Widget>[
-          IconButton(
-              icon: Icon(Icons.add),
-              onPressed: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => Edit(),
-                    ));
-              })
+          IconButton(icon: Icon(Icons.add), onPressed: () => add())
         ],
       ),
       body: SafeArea(
