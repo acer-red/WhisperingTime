@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:isar/isar.dart';
 import 'package:whispering_time/utils/uuid.dart';
+import 'package:whispering_time/utils/env.dart';
 import 'package:whispering_time/services/isar/font.dart';
 import 'package:whispering_time/utils/path.dart';
 import 'package:path/path.dart' as path;
@@ -20,6 +21,7 @@ class Config {
   bool devlopMode = false;
   bool visualNoneTitle = false;
   bool defaultShowTool = true;
+  List<API> apis=[];
 
   static Config? _instance; // 静态实例缓存
 
@@ -103,5 +105,20 @@ class Config {
     await isar.writeTxn(() async {
       await isar.configs.put(this);
     });
+  }
+
+  setAPIs(List<API> apis) async {
+    print("更新配置 API");
+    instance.apis = apis;
+    await isar.writeTxn(() async {
+      await isar.configs.put(this);
+    });
+    return ;
+  }
+  String getAPIkey() {
+    if (instance.apis.isEmpty) {
+      return '';
+    }
+    return instance.apis[0].key;
   }
 }

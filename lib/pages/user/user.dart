@@ -1,31 +1,46 @@
 import 'package:flutter/material.dart';
+import 'package:whispering_time/services/http/base.dart';
 import 'package:whispering_time/utils/ui.dart';
+import 'package:whispering_time/utils/env.dart';
 import 'package:whispering_time/pages/welcome.dart';
 import 'package:whispering_time/services/isar/config.dart';
 import 'package:whispering_time/services/sp/sp.dart';
+import 'package:whispering_time/services/http/index.dart';
 
 class UserPage extends StatefulWidget {
   @override
   State<UserPage> createState() => _UserPage();
 }
 
-enum OpenWay {
-  dialog,
-  page,
-}
-
-class Grid {
-  String title;
-  Widget widget;
-  OpenWay ow;
-  Grid({required this.title, required this.widget, required this.ow});
-}
-
 class _UserPage extends State<UserPage> {
-  List<Grid> _items = [];
-  final scrollController = ScrollController();
+  late Future<UserBasicInfo> _userInfoFuture;
+  UserBasicInfo user = UserBasicInfo(
+      email: "",
+      profile:
+          Profile(nickname: "", avatar: Avatar(name: "", url: ""))); // 初始化 user
 
-  double initialDragPosition = 0;
+  @override
+  void initState() {
+    super.initState();
+    _userInfoFuture = init();
+  }
+
+  @override
+  void didUpdateWidget(covariant UserPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    SP().setIsAutoLogin(false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: () {
+        logout();
+      },
+      child: avatarIcon(),
+    );
+  }
+
   logout() {
     showConfirmationDialog(context, MyDialog(content: "确定退出吗？")).then((value) {
       if (!value) {
@@ -43,97 +58,57 @@ class _UserPage extends State<UserPage> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8.0),
-          child: Row(
-            children: [
-              Text(
-                "用户",
-                style: TextStyle(fontWeight: FontWeight.w500, fontSize: 17),
-              ),
-              PopupMenuButton(itemBuilder: (context) {
-                return [
-                  PopupMenuItem(
-                      value: 0,
-                      child: Row(spacing: 10, children: [
-                        Icon(Icons.exit_to_app),
-                        Text("退出"),
-                      ]),
-                      onTap: () {
-                        logout();
-                      }),
-                ];
-              }),
-            ],
-          ),
-        ),
-        SizedBox(
-          height: 70,
+  Future<UserBasicInfo> init() async {
+    final value = await Http().userInfo();
+    if (value.isNotOK) {
+      if (mounted) {
+        showErrMsg(context, "服务器连接失败");
+        return user;
+      }
+      return user;
+    }
+    setState(() {
+      user = UserBasicInfo(email: value.email, profile: value.profile);
+    });
+    return user;
+  }
+
+  Widget avatarIcon() {
+    return Padding(
+        padding: const EdgeInsets.all(2.0),
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
           child: GestureDetector(
-            onHorizontalDragStart: (details) {
-              initialDragPosition = details.localPosition.dx;
-            },
-            onHorizontalDragUpdate: (details) {
-              final currentPosition = details.localPosition.dx;
-              final delta = currentPosition - initialDragPosition;
-              scrollController.jumpTo(scrollController.offset - delta);
-              initialDragPosition = currentPosition;
-            },
-            child: ListView.builder(
-              controller: scrollController,
-              itemCount: _items.length,
-              scrollDirection: Axis.horizontal, // 设置滚动方向为水平
-              itemBuilder: (context, index) {
-                return gridGeneral(index);
+            onTap: () {},
+            child: FutureBuilder<UserBasicInfo>(
+              future: _userInfoFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return CircularProgressIndicator();
+                }
+                if (snapshot.hasError) {
+                  return CircleAvatar(
+                    radius: 15,
+                    child: Icon(Icons.person),
+                  );
+                }
+
+                if (snapshot.hasData &&
+                    snapshot.data?.profile.avatar.url != null) {
+                  return CircleAvatar(
+                    backgroundImage:
+                        NetworkImage("${HTTPConfig.indexServerAddress}${snapshot.data!.profile.avatar.url}"),
+                    radius: 15,
+                  );
+                } else {
+                  return CircleAvatar(
+                    radius: 15,
+                    child: Icon(Icons.person), // 或者其他默认的占位符
+                  );
+                }
               },
             ),
           ),
-        )
-      ],
-    );
-  }
-
-  Widget gridGeneral(int index) {
-    final GlobalKey buttonKey = GlobalKey();
-    return Padding(
-      padding: EdgeInsets.only(right: 16),
-      child: ElevatedButton(
-        key: buttonKey,
-        onPressed: () {
-          switch (_items[index].ow) {
-            case OpenWay.dialog:
-              showDialog(
-                context: context,
-                barrierDismissible: true,
-                builder: (BuildContext context) {
-                  return _items[index].widget;
-                },
-              );
-              break;
-            case OpenWay.page:
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => _items[index].widget),
-              );
-              break;
-          }
-        },
-        style: ElevatedButton.styleFrom(
-            elevation: 0, // 阴影大小
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8.0), // 圆角
-            ),
-            padding: EdgeInsets.only(left: 25, right: 25)),
-        child: Text(
-          _items[index].title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
-    );
+        ));
   }
 }

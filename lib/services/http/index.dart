@@ -1,9 +1,8 @@
 import 'dart:convert';
-
 import 'package:http/http.dart' as http;
-
 import './base.dart';
 import 'package:whispering_time/utils/env.dart';
+import 'package:whispering_time/services/isar/config.dart';
 
 // 用户登陆
 class RequestPostUserLogin {
@@ -11,21 +10,31 @@ class RequestPostUserLogin {
   final String password;
   RequestPostUserLogin({required this.account, required this.password});
   Map<String, dynamic> toJson() {
-    return {'account': account, 'password': password};
+    return {'account': account, 'password': password, 'category': appName};
   }
 }
 
 class ReponsePostUserLogin extends Basic {
   final String id;
+  final List<API> api;
 
   ReponsePostUserLogin(
-      {required super.err, required super.msg, required this.id});
+      {required super.err,
+      required super.msg,
+      required this.id,
+      required this.api});
 
   factory ReponsePostUserLogin.fromJson(Map<String, dynamic> g) {
     return ReponsePostUserLogin(
-        err: g['err'],
-        msg: g['msg'],
-        id: g['data'] != null ? g['data']['id'] : '');
+      err: g['err'] as int,
+      msg: g['msg'] as String,
+      id: g['data'] != null ? g['data']['id'] : '',
+      api: g['data'] != null && g['data']['products'][appName] != null
+          ? (g['data']['products'][appName] as List<dynamic>)
+              .map((item) => API.fromJson(item))
+              .toList()
+          : List.empty(),
+    );
   }
 }
 
@@ -66,7 +75,37 @@ class ReponsePostUserRegister extends Basic {
   }
 }
 
-// feedback
+
+
+// 用户信息
+class ReponseGetUserInfo extends Basic {
+  final String username;
+  final String email;
+  final String crtime;
+  final Profile profile;
+  ReponseGetUserInfo(
+      {required super.err,
+      required super.msg,
+      required this.username,
+      required this.email,
+      required this.crtime,
+      required this.profile});
+  factory ReponseGetUserInfo.fromJson(Map<String, dynamic> g) {
+    return ReponseGetUserInfo(
+      err: g['err'],
+      msg: g['msg'],
+      username: g['data'] != null ? g['data']['username'] : '',
+      email: g['data'] != null ? g['data']['email'] : '',
+      crtime: g['data'] != null ? g['data']['crtime'] : '',
+      profile: g['data'] != null && g['data']['profile'] != null
+          ? Profile.fromJson(g['data']['profile'])
+          : Profile(nickname: '', avatar: Avatar(name: "", url: "url")),
+     
+    );
+  }
+}
+
+// 反馈
 class FeedBack {
   final String fbid;
   final FeedbackType type;
@@ -157,34 +196,50 @@ class Http {
   final String serverAddress = HTTPConfig.indexServerAddress;
 
   Future<T> _handleRequest<T>(
-      Method method, Uri u, Function(Map<String, dynamic>) fromJson,
-      {Map<String, dynamic>? data, Map<String, String>? headers}) async {
+    Method method,
+    Uri u,
+    Function(Map<String, dynamic>) fromJson, {
+    Map<String, dynamic>? data,
+    Map<String, String>? headers,
+  }) async {
     if (data != null) {
       log.d(data);
     }
     final http.Response response;
 
+    // 发送请求
     try {
       switch (method) {
         case Method.get:
           response = await http.get(u, headers: headers);
           break;
         case Method.post:
-          response =
-              await http.post(u, body: jsonEncode(data), headers: headers);
+          response = await http.post(
+            u,
+            body: jsonEncode(data),
+            headers: headers,
+          );
+
           break;
         case Method.put:
-          response =
-              await http.put(u, body: jsonEncode(data), headers: headers);
+          response = await http.put(
+            u,
+            body: jsonEncode(data),
+            headers: headers,
+          );
           break;
         case Method.delete:
-          response =
-              await http.delete(u, body: jsonEncode(data), headers: headers);
+          response = await http.delete(
+            u,
+            body: jsonEncode(data),
+            headers: headers,
+          );
           break;
       }
       if (err(response.statusCode)) {
         return fromJson({'err': 1, 'msg': getMsg(response.statusCode)});
       }
+      // log.d("响应头: ${response.headers}");
     } catch (e) {
       log.e("请求失败\n${e.toString()}");
       return fromJson({'err': 1, 'msg': '登陆失败，请稍后尝试'});
@@ -244,7 +299,7 @@ class Http {
       };
     }
     final Map<String, String> headers = {
-      'Authorization': "",
+      'Authorization': getAPI(),
     };
     final url = Uri.https(serverAddress, path, param.isEmpty ? null : param);
     return _handleRequest<ResponseGetFeedbacks>(
@@ -256,6 +311,7 @@ class Http {
   }
 
   Future<ReponsePostUserRegister> userRegister(RequestPostUserRegister req) {
+    log.i("发送请求 用户注册");
     final path = "/api/v1/user/register";
 
     final uri = URI().get(serverAddress, path);
@@ -269,17 +325,30 @@ class Http {
   }
 
   Future<ReponsePostUserLogin> userLogin(RequestPostUserLogin req) async {
+    log.i("发送请求 用户登陆");
     final path = "/api/v1/user/login";
-    final Map<String, String> param = {
-      "category": appName,
-    };
-    final uri = URI().get(serverAddress, path, param: param);
+    final uri = URI().get(serverAddress, path);
 
     return _handleRequest(
       Method.post,
       uri,
       (g) => ReponsePostUserLogin.fromJson(g),
       data: req.toJson(),
+    );
+  }
+
+  Future<ReponseGetUserInfo> userInfo() async {
+    log.i("发送请求 获取用户信息");
+    final path = "/api/v1/user/info";
+    final uri = Uri.parse(serverAddress + path);
+    final Map<String, String> header = {
+      'Authorization': getAPI(),
+    };
+    return _handleRequest(
+      Method.get,
+      uri,
+      (g) => ReponseGetUserInfo.fromJson(g),
+      headers: header,
     );
   }
 
@@ -300,5 +369,14 @@ class Http {
         break;
     }
     return msg;
+  }
+
+  getAPI() {
+    final api = Config().getAPIkey();
+    if (api.isEmpty) {
+      log.e("api key 为空");
+      return '';
+    }
+    return api;
   }
 }

@@ -339,6 +339,8 @@ class _Welcome extends State<Welcome> {
         SP().setRegisterAccount(value.id);
         SP().setIsAutoLogin(isAutoLogin);
         await Config().init(value.id);
+        await Config().setAPIs(value.api);
+
         if (mounted) {
           Navigator.pushReplacement(
             context,
