@@ -30,7 +30,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("交流反馈"),
+        title: Text("反馈"),
         actions: <Widget>[
           IconButton(
               icon: Icon(Icons.add),

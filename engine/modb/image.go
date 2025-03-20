@@ -45,16 +45,16 @@ func ImageGet(uid, name string) (bytes.Buffer, error) {
 	if err != nil {
 		log.Error(err)
 		if err == mongo.ErrNoDocuments {
-			return bytes.Buffer{}, sys.ERR_NO_FOUND
+			return bytes.Buffer{}, sys.ErrNoFound
 		} else {
-			return bytes.Buffer{}, sys.ERR_INTERNAL_SERVER_ERROR
+			return bytes.Buffer{}, sys.ErrInternalServer
 		}
 	}
 
 	// 从结果印迹中获取 _id
 	objectID, ok := resultDoc["_id"].(primitive.ObjectID)
 	if !ok {
-		return bytes.Buffer{}, sys.ERR_INTERNAL_SERVER_ERROR
+		return bytes.Buffer{}, sys.ErrInternalServer
 	}
 
 	var downloadBuffer bytes.Buffer
@@ -128,16 +128,16 @@ func ImageDelete(name string) error {
 	if err != nil {
 		log.Error(err)
 		if err == mongo.ErrNoDocuments {
-			return sys.ERR_NO_FOUND
+			return sys.ErrNoFound
 		} else {
-			return sys.ERR_INTERNAL_SERVER_ERROR
+			return sys.ErrInternalServer
 		}
 	}
 
 	// 从结果印迹中获取 _id
 	objectID, ok := resultDoc["_id"].(primitive.ObjectID)
 	if !ok {
-		return sys.ERR_INTERNAL_SERVER_ERROR
+		return sys.ErrInternalServer
 	}
 	// 获取 GridFS Bucket 对象
 	bucket, err := gridfs.NewBucket(db)

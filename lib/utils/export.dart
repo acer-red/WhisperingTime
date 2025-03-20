@@ -73,6 +73,30 @@ class _Export extends State<Export> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
+            ListTile(
+              title: const Text('类型'),
+              trailing: DropdownButton<int>(
+                value: mediaType,
+                onChanged: (int? newValue) {
+                  if (newValue != null) {
+                    setState(() {
+                      mediaType = newValue;
+                    });
+                  }
+                },
+                items: const [
+                  DropdownMenuItem(
+                    value: 0,
+                    child: Text('PDF'),
+                  ),
+                  DropdownMenuItem(
+                    value: 1,
+                    child: Text('纯文本'),
+                  ),
+                ],
+              ),
+            ),
+            
             widget.t == ResourceType.doc
                 ? const SizedBox.shrink()
                 : ListTile(
@@ -99,30 +123,6 @@ class _Export extends State<Export> {
                       ],
                     ),
                   ),
-            ListTile(
-              title: const Text('媒体类型'),
-              trailing: DropdownButton<int>(
-                value: mediaType,
-                onChanged: (int? newValue) {
-                  if (newValue != null) {
-                    setState(() {
-                      mediaType = newValue;
-                    });
-                  }
-                },
-                items: const [
-                  DropdownMenuItem(
-                    value: 0,
-                    child: Text('PDF'),
-                  ),
-                  DropdownMenuItem(
-                    value: 1,
-                    child: Text('纯文本'),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
                 switch (mediaType) {

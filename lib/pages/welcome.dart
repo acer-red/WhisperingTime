@@ -346,11 +346,11 @@ class _Welcome extends State<Welcome> {
       return false;
     }
 
-    // 检查是否包含特殊字符 (可以根据需求调整)
-    if (!password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
-      showErrMsg(context, '密码需要包含至少一个特殊字符');
-      return false;
-    }
+    // 检查是否包含特殊字符
+    // if (!password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
+    //   showErrMsg(context, '密码需要包含至少一个特殊字符如');
+    //   return false;
+    // }
 
     return true;
   }
@@ -449,6 +449,7 @@ class _Welcome extends State<Welcome> {
         username: user,
         email: email,
         password: password,
+        
       ),
     )
         .then((value) async {

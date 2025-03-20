@@ -666,7 +666,10 @@ class ResponsePostImage extends Basic {
   final String name;
   final String url;
   ResponsePostImage(
-      {required super.err, required super.msg, required this.name,required this.url});
+      {required super.err,
+      required super.msg,
+      required this.name,
+      required this.url});
   factory ResponsePostImage.fromJson(Map<String, dynamic> json) {
     return ResponsePostImage(
       err: json['err'] as int,
@@ -677,7 +680,6 @@ class ResponsePostImage extends Basic {
   }
   String get imageFullUrl => url;
 }
-
 
 class Http {
   final String? content;
@@ -746,7 +748,7 @@ class Http {
     final Map<String, String> headers = {
       'Authorization': getAuthorization(),
     };
-    final url = Uri.http(serverAddress, path);
+    final url = URI().get(serverAddress, path);
 
     return _handleRequest<ResponseGetThemes>(
         Method.get, url, (json) => ResponseGetThemes.fromJson(json),
@@ -763,7 +765,7 @@ class Http {
     final Map<String, String> headers = {
       'Authorization': getAuthorization(),
     };
-    final url = Uri.http(serverAddress, path, param);
+    final url = URI().get(serverAddress, path, param: param);
 
     return _handleRequest<ResponseGetThemesAndDataX>(
         Method.get, url, (json) => ResponseGetThemesAndDataX.fromJson(json),
@@ -781,7 +783,7 @@ class Http {
     final Map<String, String> headers = {
       'Authorization': getAuthorization(),
     };
-    final url = Uri.http(serverAddress, path, param);
+    final url = URI().get(serverAddress, path, param: param);
 
     return _handleRequest<ResponseGetThemesAndDataD>(
         Method.get, url, (json) => ResponseGetThemesAndDataD.fromJson(json),
@@ -799,7 +801,7 @@ class Http {
       "Content-Type": "application/json",
       'Authorization': getAuthorization(),
     };
-    final url = Uri.http(serverAddress, path);
+    final url = URI().get(serverAddress, path);
 
     return _handleRequest<ResponsePostTheme>(
       Method.post,
@@ -821,7 +823,7 @@ class Http {
       "Content-Type": "application/json",
       'Authorization': getAuthorization(),
     };
-    final url = Uri.http(serverAddress, path);
+    final url = URI().get(serverAddress, path);
 
     return _handleRequest<ResponsePutTheme>(
       Method.put,
@@ -840,7 +842,7 @@ class Http {
       "Content-Type": "application/json",
       'Authorization': getAuthorization(),
     };
-    final url = Uri.http(serverAddress, path);
+    final url = URI().get(serverAddress, path);
     return _handleRequest<ResponseDeleteTheme>(
         Method.delete, url, (json) => ResponseDeleteTheme.fromJson(json),
         headers: headers);
@@ -861,7 +863,7 @@ class Http {
       'Authorization': getAuthorization(),
     };
 
-    final url = Uri.http(serverAddress, path);
+    final url = URI().get(serverAddress, path);
 
     return _handleRequest<ResponseGetGroup>(
         Method.get, url, (json) => ResponseGetGroup.fromJson(json),
@@ -885,7 +887,7 @@ class Http {
       "doc": "1",
       "detail": "1",
     };
-    final url = Uri.http(serverAddress, path, param);
+    final url = URI().get(serverAddress, path, param: param);
 
     return _handleRequest<ResponseGetGroupAndDocDetail>(
         Method.get, url, (json) => ResponseGetGroupAndDocDetail.fromJson(json),
@@ -907,7 +909,7 @@ class Http {
       "Content-Type": "application/json",
       "Authorization": getAuthorization(),
     };
-    final url = Uri.http(serverAddress, path);
+    final url = URI().get(serverAddress, path);
 
     return _handleRequest<ResponsePostGroup>(
       Method.post,
@@ -933,7 +935,7 @@ class Http {
       "Content-Type": "application/json",
       "Authorization": getAuthorization(),
     };
-    final url = Uri.http(serverAddress, path);
+    final url = URI().get(serverAddress, path);
 
     return _handleRequest<ResponsePutGroup>(
       Method.put,
@@ -956,7 +958,7 @@ class Http {
       "Authorization": getAuthorization(),
     };
 
-    final url = Uri.http(serverAddress, path);
+    final url = URI().get(serverAddress, path);
     return _handleRequest<ResponseDeleteGroup>(
         Method.delete, url, (json) => ResponseDeleteGroup.fromJson(json),
         headers: headers);
@@ -975,7 +977,8 @@ class Http {
       param["month"] = month.toString();
     }
 
-    final url = Uri.http(serverAddress, path, param.isEmpty ? null : param);
+    final url =
+        URI().get(serverAddress, path, param: param.isEmpty ? null : param);
     final Map<String, String> headers = {
       "Content-Type": "application/json",
       'Authorization': getAuthorization(),
@@ -1009,7 +1012,7 @@ class Http {
       "Content-Type": "application/json",
       'Authorization': getAuthorization(),
     };
-    final url = Uri.http(serverAddress, path);
+    final url = URI().get(serverAddress, path);
     return _handleRequest<ResponsePostDoc>(
       Method.post,
       url,
@@ -1031,7 +1034,7 @@ class Http {
       "Content-Type": "application/json",
       'Authorization': getAuthorization(),
     };
-    final url = Uri.http(serverAddress, path);
+    final url = URI().get(serverAddress, path);
     return _handleRequest<ResponsePutDoc>(
       Method.put,
       url,
@@ -1047,7 +1050,7 @@ class Http {
     final Map<String, String> headers = {
       'Authorization': getAuthorization(),
     };
-    final url = Uri.http(
+    final url = URI().get(
       serverAddress,
       path,
     );
@@ -1073,7 +1076,7 @@ class Http {
         mine = "image/png";
         break;
     }
-    final url = Uri.http(serverAddress, path);
+    final url = URI().get(serverAddress, path);
     final Map<String, String> headers = {
       'Authorization': getAuthorization(),
       "Content-Type": mine,
@@ -1091,7 +1094,7 @@ class Http {
     final Map<String, String> headers = {
       'Authorization': getAuthorization(),
     };
-    final url = Uri.http(
+    final url = URI().get(
       serverAddress,
       path,
     );
@@ -1102,6 +1105,4 @@ class Http {
       headers: headers,
     );
   }
-
-
 }

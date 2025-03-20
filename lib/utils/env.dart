@@ -30,7 +30,7 @@ extension LastStateMethods on LastState {
   bool get isErr => this == LastState.err;
 }
 
-const String appName = "whipseringtime";
+const String appName = "whisperingtime";
 const String defaultGroupName = "默认分组";
 
 var log = Logger(

@@ -34,7 +34,7 @@ func ImageGet(g *gin.Context) {
 	name := g.Param("file")
 	res, err := modb.ImageGet(uid, name)
 
-	if err == sys.ERR_NO_FOUND {
+	if err == sys.ErrNoFound {
 		notFound(g)
 		return
 	}
@@ -86,7 +86,7 @@ func ImageDelete(g *gin.Context) {
 	name := g.Param("file")
 
 	err := modb.ImageDelete(name)
-	if err == sys.ERR_NO_FOUND {
+	if err == sys.ErrNoFound {
 		notFound(g)
 		return
 	}

@@ -1,8 +1,10 @@
+import 'dart:io';
+
 import 'package:isar/isar.dart';
 import 'package:whispering_time/utils/uuid.dart';
 import 'package:whispering_time/services/isar/font.dart';
 import 'package:whispering_time/utils/path.dart';
-
+import 'package:path/path.dart' as path;
 part 'config.g.dart';
 
 late Isar isar; // 声明 Isar 实例
@@ -30,10 +32,17 @@ class Config {
 
   init(String id) async {
     if (_instance != null) {
+      _instance = null;
       await isar.close();
     }
+
     final dir = await getMainStoreDir();
-    print("数据文件 路径:${dir.path} 名称:$id");
+    final f = "${path.join(dir.path, id)}.isar";
+    if (!File(f).existsSync()) {
+      print("数据文件不存在");
+      // 加入导入数据文件
+    }
+    print("数据文件 路径:$f");
     isar = await Isar.open(
       [ConfigSchema, FontSchema], // 你的模型 Schema 列表
       directory: dir.path, // 指定数据库存储目录
@@ -57,8 +66,9 @@ class Config {
     });
   }
 
-  close() async {
+  void close() async {
     if (_instance != null) {
+      _instance = null;
       await isar.close();
     }
   }

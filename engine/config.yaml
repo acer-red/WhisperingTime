@@ -3,7 +3,7 @@ web:
   ssl_enable: false
   crt_file: ./server.crt
   key_file: ./server.key
-  port: 21520
+  port: 13341
 
 db: # mongo
   address: ""

@@ -34,14 +34,18 @@ class RequestPostUserRegister {
   final String username;
   final String email;
   final String password;
-
   RequestPostUserRegister({
     required this.username,
     required this.email,
     required this.password,
   });
   Map<String, dynamic> toJson() {
-    return {'username': username, 'password': password, 'email': email};
+    return {
+      'username': username,
+      'password': password,
+      'email': email,
+      'category': appName
+    };
   }
 }
 
@@ -152,9 +156,6 @@ class ResponseGetFeedbacks extends Basic {
 class Http {
   final String serverAddress = HTTPConfig.indexServerAddress;
 
-  Http() {
-    print("服务器:$serverAddress");
-  }
   Future<T> _handleRequest<T>(
       Method method, Uri u, Function(Map<String, dynamic>) fromJson,
       {Map<String, dynamic>? data, Map<String, String>? headers}) async {
@@ -256,7 +257,8 @@ class Http {
 
   Future<ReponsePostUserRegister> userRegister(RequestPostUserRegister req) {
     final path = "/api/v1/user/register";
-    final uri = Uri.parse(serverAddress + path);
+
+    final uri = URI().get(serverAddress, path);
 
     return _handleRequest(
       Method.post,
@@ -268,7 +270,11 @@ class Http {
 
   Future<ReponsePostUserLogin> userLogin(RequestPostUserLogin req) async {
     final path = "/api/v1/user/login";
-    final uri = Uri.parse(serverAddress + path);
+    final Map<String, String> param = {
+      "category": appName,
+    };
+    final uri = URI().get(serverAddress, path, param: param);
+
     return _handleRequest(
       Method.post,
       uri,

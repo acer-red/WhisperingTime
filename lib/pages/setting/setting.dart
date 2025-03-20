@@ -43,11 +43,11 @@ class _SettingPage extends State<SettingPage> {
     ),
     Setting(
       title: "数据导出",
-      widget: Export(ResourceType.theme, title: "导出所有数据"),
+      widget: Export(ResourceType.theme, title: "导出所有印迹数据"),
       ow: OpenWay.dialog,
     ),
     Setting(
-      title: "交流反馈",
+      title: "反馈",
       widget: FeedbackPage(),
       ow: OpenWay.page,
     ),
@@ -136,7 +136,7 @@ class _SettingPage extends State<SettingPage> {
                 if (!value) {
                   return;
                 }
-                Config().close();
+                 Config().close();
                 if (mounted) {
                   Navigator.pushReplacement(
                       context,

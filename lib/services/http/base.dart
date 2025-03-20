@@ -3,9 +3,9 @@ import 'package:whispering_time/services/isar/config.dart';
 enum Method { get, post, put, delete }
 
 class HTTPConfig {
-  static const  String indexServerAddress = String.fromEnvironment(
+  static const String indexServerAddress = String.fromEnvironment(
     'INDEX_SERVER_ADDRESS',
-    defaultValue:  Config.indexServerAddress,
+    defaultValue: Config.indexServerAddress,
   );
 }
 
@@ -20,5 +20,17 @@ class Basic {
 
   void getmsg() {
     print(msg);
+  }
+}
+
+class URI {
+  Uri get(String serverAddress, String path, {Map<String, String>? param}) {
+    if (serverAddress.startsWith("https")) {
+      return Uri.https(serverAddress.split("https://").last, path, param);
+    } else if (serverAddress.startsWith("http")) {
+      return Uri.http(serverAddress.split("http://").last, path, param);
+    } else {
+      throw Uri.http(serverAddress, path, param);
+    }
   }
 }
