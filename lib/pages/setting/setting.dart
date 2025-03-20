@@ -7,9 +7,7 @@ import 'show.dart';
 import 'develop_mode.dart';
 import 'feedback/feedback.dart';
 
-import 'package:whispering_time/utils/ui.dart';
-import 'package:whispering_time/pages/welcome.dart';
-import 'package:whispering_time/services/isar/config.dart';
+
 
 class SettingPage extends StatefulWidget {
   @override
@@ -19,7 +17,6 @@ class SettingPage extends StatefulWidget {
 enum OpenWay {
   dialog,
   page,
-  confirmationDialog,
 }
 
 class Setting {
@@ -55,11 +52,6 @@ class _SettingPage extends State<SettingPage> {
       title: "开发者",
       widget: Devleopmode(),
       ow: OpenWay.page,
-    ),
-    Setting(
-      title: "退出",
-      widget: Container(),
-      ow: OpenWay.confirmationDialog,
     ),
   ];
   final scrollController = ScrollController();
@@ -130,22 +122,7 @@ class _SettingPage extends State<SettingPage> {
                 MaterialPageRoute(builder: (context) => _items[index].widget),
               );
               break;
-            case OpenWay.confirmationDialog:
-              showConfirmationDialog(context, MyDialog(content: "确定退出吗？"))
-                  .then((value) {
-                if (!value) {
-                  return;
-                }
-                Config().close();
-                if (mounted) {
-                  Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => Welcome(),
-                      ));
-                }
-              });
-              break;
+    
           }
         },
         style: ElevatedButton.styleFrom(
@@ -162,24 +139,4 @@ class _SettingPage extends State<SettingPage> {
       ),
     );
   }
-
-  // Future<void> dialogExport() async {
-  //   showDialog(
-  //     context: context,
-  //     barrierDismissible: true,
-  //     builder: (BuildContext context) {
-  //       return Export(ResourceType.theme, title: "导出所有数据");
-  //     },
-  //   );
-  // }
-
-  // Future<void> dialogFontManager() async {
-  //   showDialog(
-  //     context: context,
-  //     barrierDismissible: true,
-  //     builder: (BuildContext context) {
-  //       return FontManager();
-  //     },
-  //   );
-  // }
 }

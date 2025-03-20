@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:whispering_time/utils/ui.dart';
+import 'package:whispering_time/pages/welcome.dart';
+import 'package:whispering_time/services/isar/config.dart';
+import 'package:whispering_time/services/sp/sp.dart';
 
 class UserPage extends StatefulWidget {
   @override
@@ -17,14 +21,27 @@ class Grid {
   Grid({required this.title, required this.widget, required this.ow});
 }
 
-
 class _UserPage extends State<UserPage> {
-  List<Grid> _items = [
-    
-  ];
+  List<Grid> _items = [];
   final scrollController = ScrollController();
 
   double initialDragPosition = 0;
+  logout() {
+    showConfirmationDialog(context, MyDialog(content: "确定退出吗？")).then((value) {
+      if (!value) {
+        return;
+      }
+      Config().close();
+      SP().setIsAutoLogin(false);
+      if (mounted) {
+        Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => Welcome(),
+            ));
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +55,19 @@ class _UserPage extends State<UserPage> {
                 "用户",
                 style: TextStyle(fontWeight: FontWeight.w500, fontSize: 17),
               ),
+              PopupMenuButton(itemBuilder: (context) {
+                return [
+                  PopupMenuItem(
+                      value: 0,
+                      child: Row(spacing: 10, children: [
+                        Icon(Icons.exit_to_app),
+                        Text("退出"),
+                      ]),
+                      onTap: () {
+                        logout();
+                      }),
+                ];
+              }),
             ],
           ),
         ),

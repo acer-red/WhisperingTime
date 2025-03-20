@@ -22,12 +22,12 @@ class _HomePageState extends State<HomePage> {
       body: SafeArea(
         child: Padding(
           padding:
-              const EdgeInsets.only(bottom: 10, top: 10.0, left: 50, right: 50),
+              const EdgeInsets.only(bottom: 10, top: 30.0, left: 50, right: 50),
           child: Column(
             spacing: 40,
             children: [
-              ThemePage(),
               UserPage(),
+              ThemePage(),
               SettingPage(),
             ],
           ),
