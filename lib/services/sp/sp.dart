@@ -18,6 +18,14 @@ class SP {
     return Future.value(_prefs!.setBool("is_visitor", s));
   }
 
+  Future<bool> setIsAutoLogin(bool s) {
+    return Future.value(_prefs!.setBool("is_auto_login", s));
+  }
+
+  Future<bool> getIsAutoLogin() {
+    return Future.value(_prefs!.getBool("is_auto_login"));
+  }
+
   Future<bool> setRegisterAccount(String s) {
     return Future.value(_prefs!.setString("register_account", s));
   }

@@ -59,6 +59,10 @@ class _DevleopmodeState extends State<Devleopmode> {
                     border: InputBorder.none,
                   ),
                   controller: serverAddressControl,
+                  onChanged: (value) {
+                    serverAddressControl.text = value;
+                    Config.instance.setServerAddress(value);
+                  },
                 ),
               )
             ]),

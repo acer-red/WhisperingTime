@@ -136,7 +136,7 @@ class _SettingPage extends State<SettingPage> {
                 if (!value) {
                   return;
                 }
-                 Config().close();
+                Config().close();
                 if (mounted) {
                   Navigator.pushReplacement(
                       context,

@@ -22,6 +22,35 @@ class _Welcome extends State<Welcome> {
 
   bool _showLogin = false;
   bool _isRegister = false;
+  bool isAutoLogin = true;
+
+  @override
+  void initState() {
+    super.initState();
+    autologin();
+  }
+
+  void autologin() {
+    SP().getIsAutoLogin().then((value) {
+      if (!value) {
+        return;
+      }
+      SP().getRegisterAccount().then((value) async {
+        if (value.isEmpty) {
+          return;
+        }
+        await Config().init(value);
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => HomePage(),
+            ),
+          );
+        }
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -184,6 +213,20 @@ class _Welcome extends State<Welcome> {
     return Column(
       spacing: 20,
       children: [
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          TextButton(
+            onPressed: () => visitor(),
+            child: const Text('游客登陆'),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _isRegister = true;
+              });
+            },
+            child: const Text('注册账号'),
+          ),
+        ]),
         TextFormField(
           autofocus: true,
           controller: accountController,
@@ -204,26 +247,22 @@ class _Welcome extends State<Welcome> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextButton(
-              onPressed: () => visitor(),
-              child: const Text('游客登陆'),
-            ),
-            Column(
-              spacing: 10,
+            Row(
               children: [
-                TextButton(
-                  onPressed: () {
+                Checkbox(
+                  value: isAutoLogin,
+                  onChanged: (bool? value) {
                     setState(() {
-                      _isRegister = true;
+                      isAutoLogin = value!;
                     });
                   },
-                  child: const Text('注册账号'),
                 ),
-                ElevatedButton(
-                  onPressed: () => login(),
-                  child: const Text('登录'),
-                ),
+                const Text('自动登录'),
               ],
+            ),
+            ElevatedButton(
+              onPressed: () => login(),
+              child: const Text('登录'),
             ),
           ],
         ),
@@ -298,6 +337,7 @@ class _Welcome extends State<Welcome> {
         }
         SP().setIsVisitor(false);
         SP().setRegisterAccount(value.id);
+        SP().setIsAutoLogin(isAutoLogin);
         await Config().init(value.id);
         if (mounted) {
           Navigator.pushReplacement(
@@ -449,7 +489,6 @@ class _Welcome extends State<Welcome> {
         username: user,
         email: email,
         password: password,
-        
       ),
     )
         .then((value) async {
