@@ -25,7 +25,14 @@ class _ThemePageState extends State<ThemePage> {
 
     final list = Http().getthemes();
     list.then((list) {
+      if (list.isNotOK) {
+        if (mounted) {
+          showErrMsg(context, "服务器连接失败");
+        }
+        return;
+      }
       if (list.data.isEmpty) {
+        add();
         return;
       }
       for (int i = 0; i < list.data.length; i++) {
@@ -52,16 +59,7 @@ class _ThemePageState extends State<ThemePage> {
               "印迹主题",
               style: TextStyle(fontWeight: FontWeight.w500, fontSize: 17),
             ),
-            PopupMenuButton(
-              icon: Icon(Icons.more_horiz),
-              style: ButtonStyle(iconSize: WidgetStateProperty.all(20.0)),
-              itemBuilder: (BuildContext context) => <PopupMenuEntry>[
-                PopupMenuItem(
-                  child: Text('添加主题'),
-                  onTap: () => add(),
-                ),
-              ],
-            )
+            IconButton(onPressed: () => add(), icon: Icon(Icons.add))
           ],
         ),
         SizedBox(
@@ -184,7 +182,7 @@ class _ThemePageState extends State<ThemePage> {
             onChanged: (value) {
               result = value;
             },
-            decoration: const InputDecoration(hintText: "请输入主题名"),
+            decoration: const InputDecoration(hintText: "创建您的主题"),
           ),
           actions: <Widget>[
             TextButton(
