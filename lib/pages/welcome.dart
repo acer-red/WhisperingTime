@@ -22,7 +22,7 @@ class _Welcome extends State<Welcome> {
 
   bool _showLogin = false;
   bool _isRegister = false;
-  bool isAutoLogin = true;
+  bool isAutoLogin = false;
 
   @override
   void initState() {

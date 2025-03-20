@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:whispering_time/services/http/base.dart';
 import 'package:whispering_time/utils/ui.dart';
 import 'package:whispering_time/utils/env.dart';
-import 'package:whispering_time/pages/welcome.dart';
-import 'package:whispering_time/services/isar/config.dart';
+
 import 'package:whispering_time/services/sp/sp.dart';
 import 'package:whispering_time/services/http/index.dart';
+
+const double iconsize = 25;
 
 class UserPage extends StatefulWidget {
   @override
@@ -29,34 +30,39 @@ class _UserPage extends State<UserPage> {
   void didUpdateWidget(covariant UserPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     SP().setIsAutoLogin(false);
+  
   }
 
   @override
   Widget build(BuildContext context) {
-    return TextButton(
-      onPressed: () {
-        logout();
+    return FutureBuilder<UserBasicInfo>(
+      future: _userInfoFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const CircularProgressIndicator();
+        }
+        if (snapshot.hasError) {
+          return const Text("Error loading user info");
+        }
+
+        final nickname = snapshot.data?.profile.nickname ?? "";
+
+        return Column(
+          spacing: 20,
+          children: [
+
+            avatarIcon(),
+            Text(
+              nickname,
+              style: TextStyle(letterSpacing: 2.0),
+            ),
+          ],
+        );
       },
-      child: avatarIcon(),
     );
   }
 
-  logout() {
-    showConfirmationDialog(context, MyDialog(content: "确定退出吗？")).then((value) {
-      if (!value) {
-        return;
-      }
-      Config().close();
-      SP().setIsAutoLogin(false);
-      if (mounted) {
-        Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => Welcome(),
-            ));
-      }
-    });
-  }
+
 
   Future<UserBasicInfo> init() async {
     final value = await Http().userInfo();
@@ -74,41 +80,84 @@ class _UserPage extends State<UserPage> {
   }
 
   Widget avatarIcon() {
-    return Padding(
-        padding: const EdgeInsets.all(2.0),
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: GestureDetector(
-            onTap: () {},
-            child: FutureBuilder<UserBasicInfo>(
-              future: _userInfoFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return CircularProgressIndicator();
-                }
-                if (snapshot.hasError) {
-                  return CircleAvatar(
-                    radius: 15,
-                    child: Icon(Icons.person),
-                  );
-                }
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            PageRouteBuilder(
+              opaque: false,
+              pageBuilder: (BuildContext context, Animation<double> animation,
+                  Animation<double> secondaryAnimation) {
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
+                  child: Container(
+                    color: Colors.black54,
+                    child: Center(
+                      child: FutureBuilder<UserBasicInfo>(
+                        future: _userInfoFuture,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const CircularProgressIndicator();
+                          }
+                          if (snapshot.hasError) {
+                            return const Icon(
+                              Icons.error,
+                              size: 100,
+                              color: Colors.white,
+                            );
+                          }
 
-                if (snapshot.hasData &&
-                    snapshot.data?.profile.avatar.url != null) {
-                  return CircleAvatar(
-                    backgroundImage:
-                        NetworkImage("${HTTPConfig.indexServerAddress}${snapshot.data!.profile.avatar.url}"),
-                    radius: 15,
-                  );
-                } else {
-                  return CircleAvatar(
-                    radius: 15,
-                    child: Icon(Icons.person), // 或者其他默认的占位符
-                  );
-                }
+                          final avatarUrl = snapshot.data?.profile.avatar.url;
+                          return avatarUrl != null
+                              ? Image.network(
+                                  "${HTTPConfig.indexServerAddress}$avatarUrl",
+                                  fit: BoxFit.contain,
+                                )
+                              : const Icon(
+                                  Icons.person,
+                                  size: 100,
+                                  color: Colors.white,
+                                );
+                        },
+                      ),
+                    ),
+                  ),
+                );
               },
             ),
-          ),
-        ));
+          );
+        },
+        child: FutureBuilder<UserBasicInfo>(
+          future: _userInfoFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const CircularProgressIndicator();
+            }
+            if (snapshot.hasError) {
+              return const CircleAvatar(
+                radius: iconsize,
+                child: Icon(Icons.person),
+              );
+            }
+
+            final avatarUrl = snapshot.data?.profile.avatar.url;
+            return CircleAvatar(
+              radius: iconsize,
+              backgroundImage: avatarUrl != null
+                  ? NetworkImage(
+                      "${HTTPConfig.indexServerAddress}$avatarUrl",
+                    )
+                  : null,
+              child: avatarUrl == null ? const Icon(Icons.person) : null,
+            );
+          },
+        ),
+      ),
+    );
   }
 }

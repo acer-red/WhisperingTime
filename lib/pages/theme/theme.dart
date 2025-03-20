@@ -148,28 +148,11 @@ class _ThemePageState extends State<ThemePage> {
   }
 
   void enterGroupPage(int index) async {
-    // final res = await Http(tid: _titems[index].id).getGroups();
-    // if (res.isNotOK) {
-    //   if (mounted) {
-    //     Msg.diy(context, "获取分组失败");
-    //   }
-    //   return;
-    // }
-
-    // if (res.data.isEmpty) {
-    //   return;
-    // }
-    // List<Group> gitems = res.data
-    //     .map((l) => Group(
-    //         name: l.name, id: l.id, overtime: l.overtime, config: l.config))
-    //     .toList();
-    // if (mounted) {
     Navigator.push(
         context,
         MaterialPageRoute(
             builder: (context) => GroupPage(
                 themename: _titems[index].name, tid: _titems[index].id)));
-    // }
   }
 
   void add() async {

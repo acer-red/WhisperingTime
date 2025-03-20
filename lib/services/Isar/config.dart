@@ -6,6 +6,8 @@ import 'package:whispering_time/utils/env.dart';
 import 'package:whispering_time/services/isar/font.dart';
 import 'package:whispering_time/utils/path.dart';
 import 'package:path/path.dart' as path;
+import 'dart:developer';
+
 part 'config.g.dart';
 
 late Isar isar; // 声明 Isar 实例
@@ -21,7 +23,7 @@ class Config {
   bool devlopMode = false;
   bool visualNoneTitle = false;
   bool defaultShowTool = true;
-  List<API> apis=[];
+  List<API> apis = [];
 
   static Config? _instance; // 静态实例缓存
 
@@ -75,6 +77,23 @@ class Config {
     }
   }
 
+  Future<String> getInspectorURL() async {
+    final info = await Service.getInfo();
+    final serviceUri = info.serverUri;
+    if (serviceUri == null) {
+      return "";
+    }
+    final port = serviceUri.port;
+    var path = serviceUri.path;
+    if (path.endsWith('/')) {
+      path = path.substring(0, path.length - 1);
+    }
+    if (path.endsWith('=')) {
+      path = path.substring(0, path.length - 1);
+    }
+    return 'https://inspect.isar.dev/${Isar.version}/#/$port$path';
+  }
+
   setDevlopMode(bool b) async {
     print("更新配置 开发者模式 $b");
     instance.devlopMode = b;
@@ -113,8 +132,9 @@ class Config {
     await isar.writeTxn(() async {
       await isar.configs.put(this);
     });
-    return ;
+    return;
   }
+
   String getAPIkey() {
     if (instance.apis.isEmpty) {
       return '';
