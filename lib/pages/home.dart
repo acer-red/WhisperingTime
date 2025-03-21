@@ -6,12 +6,10 @@ import 'package:whispering_time/pages/setting/setting.dart';
 import 'package:whispering_time/pages/feedback/feedback.dart';
 import 'package:whispering_time/pages/welcome.dart';
 import 'package:whispering_time/pages/font_manager/font_manager.dart';
-
 import 'package:whispering_time/services/isar/config.dart';
 import 'package:whispering_time/services/sp/sp.dart';
 import 'package:whispering_time/utils/ui.dart';
 import 'package:whispering_time/utils/export.dart';
-
 import 'package:whispering_time/services/http/base.dart';
 import 'package:whispering_time/utils/env.dart';
 import 'package:whispering_time/services/http/index.dart';
@@ -251,13 +249,15 @@ class _HomePageState extends State<HomePage> {
             final avatarUrl = snapshot.data?.profile.avatar.url;
             return CircleAvatar(
               radius: iconsize,
-              backgroundImage: (!isEdit) || (avatarUrl != null)
+              backgroundImage: (avatarUrl != null && !isEdit)
                   ? NetworkImage(
                       "${HTTPConfig.indexServerAddress}$avatarUrl",
                     )
                   : null,
               child: isEdit
-                  ? Icon(Icons.upload)
+                  ? const Icon(
+                      Icons.upload,
+                    )
                   : avatarUrl == null
                       ? const Icon(Icons.person)
                       : null,
@@ -267,16 +267,6 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-
-  // menu() {
-  //   showMenu(
-  //     context: context,
-  //     position: RelativeRect.fromLTRB(100, 0, 0, 0),
-  //     items: [
-
-  //     ],
-  //   );
-  // }
 
   logout() {
     showConfirmationDialog(context, MyDialog(content: "确定退出吗？")).then((value) {
