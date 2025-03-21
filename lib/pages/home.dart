@@ -24,6 +24,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  GlobalKey<ScaffoldState> scaffoldKey = GlobalKey();
   bool isEdit = false;
   late Future<UserBasicInfo> _userInfoFuture;
   TextEditingController nicknameController = TextEditingController();
@@ -65,6 +66,94 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: scaffoldKey,
+      endDrawer: Drawer(
+        child: Padding(
+          padding:
+              const EdgeInsets.only(top: 15, left: 20, right: 15, bottom: 20),
+          child: Column(
+            spacing: 5,
+            children: <Widget>[
+              PopupMenuItem(
+                child: Row(
+                  spacing: 10,
+                  children: [
+                    Icon(Icons.settings),
+                    Text("设置"),
+                  ],
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SettingPage(),
+                    ),
+                  );
+                },
+              ),
+              PopupMenuItem(
+                child: Row(
+                  spacing: 10,
+                  children: [Icon(Icons.download), Text("导出")],
+                ),
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    barrierDismissible: true,
+                    builder: (BuildContext context) {
+                      return Export(ResourceType.theme, title: "导出所有印迹数据");
+                    },
+                  );
+                },
+              ),
+              PopupMenuItem(
+                child: Row(
+                  spacing: 10,
+                  children: [Icon(Icons.font_download), Text("字体")],
+                ),
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    barrierDismissible: true,
+                    builder: (BuildContext context) {
+                      return FontManager();
+                    },
+                  );
+                },
+              ),
+              PopupMenuItem(
+                child: Row(
+                  spacing: 10,
+                  children: [
+                    Icon(Icons.chat),
+                    Text("反馈"),
+                  ],
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FeedbackPage(),
+                    ),
+                  );
+                },
+              ),
+              Spacer(),
+              PopupMenuItem(
+                  child: Row(
+                    spacing: 10,
+                    children: [
+                      Icon(Icons.exit_to_app),
+                      Text('退出'),
+                    ],
+                  ),
+                  onTap: () {
+                    logout();
+                  }),
+            ],
+          ),
+        ),
+      ),
       appBar: AppBar(actions: [
         isEdit
             ? IconButton(
@@ -79,7 +168,9 @@ class _HomePageState extends State<HomePage> {
                 icon: Icon(Icons.edit)),
         IconButton(
           icon: const Icon(Icons.menu),
-          onPressed: () => menu(),
+          onPressed: () => {
+            scaffoldKey.currentState!.openEndDrawer(),
+          },
         ),
       ]),
       body: SafeArea(
@@ -177,89 +268,15 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  menu() {
-    showMenu(
-      context: context,
-      position: RelativeRect.fromLTRB(100, 0, 0, 0),
-      items: [
-        PopupMenuItem(
-          child: Row(
-            spacing: 10,
-            children: [
-              Icon(Icons.settings),
-              Text("设置"),
-            ],
-          ),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => SettingPage(),
-              ),
-            );
-          },
-        ),
-        PopupMenuItem(
-          child: Row(
-            spacing: 10,
-            children: [Icon(Icons.download), Text("导出")],
-          ),
-          onTap: () {
-            showDialog(
-              context: context,
-              barrierDismissible: true,
-              builder: (BuildContext context) {
-                return Export(ResourceType.theme, title: "导出所有印迹数据");
-              },
-            );
-          },
-        ),
-        PopupMenuItem(
-          child: Row(
-            spacing: 10,
-            children: [Icon(Icons.font_download), Text("字体")],
-          ),
-          onTap: () {
-            showDialog(
-              context: context,
-              barrierDismissible: true,
-              builder: (BuildContext context) {
-                return FontManager();
-              },
-            );
-          },
-        ),
-        PopupMenuItem(
-          child: Row(
-            spacing: 10,
-            children: [
-              Icon(Icons.chat),
-              Text("反馈"),
-            ],
-          ),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => FeedbackPage(),
-              ),
-            );
-          },
-        ),
-        PopupMenuItem(
-            child: Row(
-              spacing: 10,
-              children: [
-                Icon(Icons.exit_to_app),
-                Text('退出'),
-              ],
-            ),
-            onTap: () {
-              logout();
-            }),
-      ],
-    );
-  }
+  // menu() {
+  //   showMenu(
+  //     context: context,
+  //     position: RelativeRect.fromLTRB(100, 0, 0, 0),
+  //     items: [
+
+  //     ],
+  //   );
+  // }
 
   logout() {
     showConfirmationDialog(context, MyDialog(content: "确定退出吗？")).then((value) {
