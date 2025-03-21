@@ -241,6 +241,7 @@ class _Welcome extends State<Welcome> {
             labelText: '密码',
             border: OutlineInputBorder(),
           ),
+          onFieldSubmitted: (value) => login(),
           obscureText: true,
         ),
         Row(
@@ -339,7 +340,7 @@ class _Welcome extends State<Welcome> {
         SP().setRegisterAccount(value.id);
         SP().setIsAutoLogin(isAutoLogin);
         await Config().init(value.id);
-        await Config().setAPIs(value.api);
+        await Config().setAPIs(value.apis);
 
         if (mounted) {
           Navigator.pushReplacement(
@@ -504,6 +505,8 @@ class _Welcome extends State<Welcome> {
         SP().setIsVisitor(false);
         SP().setRegisterAccount(value.id);
         await Config().init(value.id);
+        await Config().setAPIs(value.apis);
+
         if (mounted) {
           Navigator.pushReplacement(
             context,

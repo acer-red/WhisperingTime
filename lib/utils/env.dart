@@ -54,19 +54,7 @@ class Level {
   }
 }
 
-class API {
-  String key;
-  String extime;
-  API({required this.key, required this.extime});
-  factory API.fromJson(Map<String, dynamic> g) {
-    return API(
-      key: g['apikey'],
-      extime: g['extime'],
-    );
-  }
-}
-
-class Avatar{
+class Avatar {
   String name;
   String url;
   Avatar({required this.name, required this.url});
@@ -80,7 +68,8 @@ class Profile {
   Avatar avatar;
   Profile({required this.nickname, required this.avatar});
   factory Profile.fromJson(Map<String, dynamic> g) {
-    return Profile(nickname: g['nickname'], avatar: Avatar.fromJson(g['avatar']));
+    return Profile(
+        nickname: g['nickname'], avatar: Avatar.fromJson(g['avatar']));
   }
 }
 
@@ -88,4 +77,16 @@ class UserBasicInfo {
   final String email;
   final Profile profile;
   UserBasicInfo({required this.email, required this.profile});
+}
+
+class API {
+  String key;
+  String extime;
+  API({required this.key, required this.extime});
+  factory API.fromJson(Map<String, dynamic> g) {
+    return API(
+      key: g['apikey'],
+      extime: g['extime'],
+    );
+  }
 }

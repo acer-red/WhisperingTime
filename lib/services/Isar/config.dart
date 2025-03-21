@@ -2,9 +2,9 @@ import 'dart:io';
 
 import 'package:isar/isar.dart';
 import 'package:whispering_time/utils/uuid.dart';
-import 'package:whispering_time/utils/env.dart';
 import 'package:whispering_time/services/isar/font.dart';
 import 'package:whispering_time/utils/path.dart';
+import 'package:whispering_time/utils/env.dart';
 import 'package:path/path.dart' as path;
 import 'dart:developer';
 
@@ -23,7 +23,7 @@ class Config {
   bool devlopMode = false;
   bool visualNoneTitle = false;
   bool defaultShowTool = true;
-  List<API> apis = [];
+  List<APIsar> apis = [];
 
   static Config? _instance; // 静态实例缓存
 
@@ -46,7 +46,7 @@ class Config {
       print("数据文件不存在");
       // 加入导入数据文件
     }
-    print("数据文件 路径:$f");
+    print("数据文件库路径: $f");
     isar = await Isar.open(
       [ConfigSchema, FontSchema], // 你的模型 Schema 列表
       directory: dir.path, // 指定数据库存储目录
@@ -127,8 +127,9 @@ class Config {
   }
 
   setAPIs(List<API> apis) async {
-    print("更新配置 API");
-    instance.apis = apis;
+    print("更新配置API列表 $apis");
+    final l = apis.map((e) => APIsar(key: e.key, extime: e.extime)).toList();
+    instance.apis = l;
     await isar.writeTxn(() async {
       await isar.configs.put(this);
     });
@@ -139,6 +140,19 @@ class Config {
     if (instance.apis.isEmpty) {
       return '';
     }
-    return instance.apis[0].key;
+    return instance.apis.first.key!;
+  }
+}
+
+@embedded
+class APIsar {
+  String? key;
+  String? extime;
+  APIsar({this.key, this.extime});
+  factory APIsar.fromJson(Map<String, dynamic> g) {
+    return APIsar(
+      key: g['apikey'],
+      extime: g['extime'],
+    );
   }
 }

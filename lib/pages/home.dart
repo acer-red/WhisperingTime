@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as path;
 import 'package:whispering_time/pages/theme/theme.dart';
-import 'package:whispering_time/pages/user/user.dart';
 import 'package:whispering_time/pages/setting/setting.dart';
 import 'package:whispering_time/pages/feedback/feedback.dart';
 import 'package:whispering_time/pages/welcome.dart';
@@ -11,21 +12,71 @@ import 'package:whispering_time/services/sp/sp.dart';
 import 'package:whispering_time/utils/ui.dart';
 import 'package:whispering_time/utils/export.dart';
 
+import 'package:whispering_time/services/http/base.dart';
+import 'package:whispering_time/utils/env.dart';
+import 'package:whispering_time/services/http/index.dart';
+
+const double iconsize = 25;
+
 class HomePage extends StatefulWidget {
   @override
   State createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
+  bool isEdit = false;
+  late Future<UserBasicInfo> _userInfoFuture;
+  TextEditingController nicknameController = TextEditingController();
+  UserBasicInfo userinfo = UserBasicInfo(
+      email: "",
+      profile:
+          Profile(nickname: "", avatar: Avatar(name: "", url: ""))); // 初始化 user
+
+  Future<UserBasicInfo> init() async {
+    final value = await Http().userInfo();
+    if (value.isNotOK) {
+      if (mounted) {
+        showErrMsg(context, "服务器连接失败");
+        return userinfo;
+      }
+      return userinfo;
+    }
+
+    setState(() {
+      userinfo = UserBasicInfo(email: value.email, profile: value.profile);
+      nicknameController.text = userinfo.profile.nickname;
+    });
+    return userinfo;
+  }
+
   @override
   initState() {
     super.initState();
+    _userInfoFuture = init();
+  }
+
+  editDone(String nickname) {
+    updateNickname(nickname);
+    setState(() {
+      isEdit = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(actions: [
+        isEdit
+            ? IconButton(
+                onPressed: () => editDone(nicknameController.text),
+                icon: Icon(Icons.done))
+            : IconButton(
+                onPressed: () {
+                  setState(() {
+                    isEdit = true;
+                  });
+                },
+                icon: Icon(Icons.edit)),
         IconButton(
           icon: const Icon(Icons.menu),
           onPressed: () => menu(),
@@ -38,10 +89,89 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             spacing: 40,
             children: [
-              UserPage(),
+              user(),
               ThemePage(),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget user() {
+    return FutureBuilder<UserBasicInfo>(
+      future: _userInfoFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const CircularProgressIndicator();
+        }
+        if (snapshot.hasError) {
+          return const Text("Error loading user info");
+        }
+
+        return Column(
+          spacing: 20,
+          children: [
+            avatarIcon(),
+            nicknameText(snapshot.data?.profile.nickname ?? ""),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget nicknameText(String nickname) {
+    return isEdit
+        ? TextField(
+            controller: nicknameController,
+            decoration: InputDecoration(),
+            onSubmitted: (value) => editDone(value),
+          )
+        : Text(
+            nickname,
+            style: TextStyle(letterSpacing: 2.0),
+          );
+  }
+
+  Widget avatarIcon() {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () {
+          if (!isEdit) {
+            watchAvatar();
+          } else {
+            updateAvatar();
+          }
+        },
+        child: FutureBuilder<UserBasicInfo>(
+          future: _userInfoFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const CircularProgressIndicator();
+            }
+            if (snapshot.hasError) {
+              return const CircleAvatar(
+                radius: iconsize,
+                child: Icon(Icons.person),
+              );
+            }
+
+            final avatarUrl = snapshot.data?.profile.avatar.url;
+            return CircleAvatar(
+              radius: iconsize,
+              backgroundImage: (!isEdit) || (avatarUrl != null)
+                  ? NetworkImage(
+                      "${HTTPConfig.indexServerAddress}$avatarUrl",
+                    )
+                  : null,
+              child: isEdit
+                  ? Icon(Icons.upload)
+                  : avatarUrl == null
+                      ? const Icon(Icons.person)
+                      : null,
+            );
+          },
         ),
       ),
     );
@@ -52,7 +182,7 @@ class _HomePageState extends State<HomePage> {
       context: context,
       position: RelativeRect.fromLTRB(100, 0, 0, 0),
       items: [
-         PopupMenuItem(
+        PopupMenuItem(
           child: Row(
             spacing: 10,
             children: [
@@ -107,7 +237,6 @@ class _HomePageState extends State<HomePage> {
               Text("反馈"),
             ],
           ),
-          
           onTap: () {
             Navigator.push(
               context,
@@ -146,6 +275,113 @@ class _HomePageState extends State<HomePage> {
               builder: (context) => Welcome(),
             ));
       }
+    });
+  }
+
+  watchAvatar() {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        opaque: false,
+        pageBuilder: (BuildContext context, Animation<double> animation,
+            Animation<double> secondaryAnimation) {
+          return GestureDetector(
+            onTap: () {
+              Navigator.pop(context);
+            },
+            child: Container(
+              color: Colors.black54,
+              child: Center(
+                child: FutureBuilder<UserBasicInfo>(
+                  future: _userInfoFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const CircularProgressIndicator();
+                    }
+                    if (snapshot.hasError) {
+                      return const Icon(
+                        Icons.error,
+                        size: 100,
+                        color: Colors.white,
+                      );
+                    }
+
+                    final avatarUrl = snapshot.data?.profile.avatar.url;
+                    return avatarUrl != null
+                        ? Image.network(
+                            "${HTTPConfig.indexServerAddress}$avatarUrl",
+                            fit: BoxFit.contain,
+                          )
+                        : const Icon(
+                            Icons.person,
+                            size: 100,
+                            color: Colors.white,
+                          );
+                  },
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  updateAvatar() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    if (image == null) {
+      return;
+    }
+    final String ext = path.extension(image.path).toLowerCase();
+    final bytes = await image.readAsBytes();
+    switch (ext) {
+      case '.png':
+      case '.jpg':
+      case '.jpeg':
+        break;
+      default:
+        showErrMsg(context, "不支持的图片格式: $ext");
+        return;
+    }
+
+    RequestPutUserProfile req = RequestPutUserProfile(bytes: bytes, ext: ext);
+
+    Http().userProfile(req).then((value) {
+      if (value.isNotOK) {
+        if (mounted) {
+          showErrMsg(context, "上传失败");
+        }
+        return;
+      }
+      if (mounted) {
+        showSuccessMsg(context, "上传成功");
+      }
+      setState(() {
+        userinfo.profile.avatar.url = value.url!;
+      });
+    });
+  }
+
+  updateNickname(String value) {
+    if (value == userinfo.profile.nickname) {
+      return;
+    }
+    RequestPutUserProfile req = RequestPutUserProfile(nickname: value);
+
+    Http().userProfile(req).then((onValue) {
+      if (onValue.isNotOK) {
+        if (mounted) {
+          showErrMsg(context, "上传失败");
+        }
+        return;
+      }
+      if (mounted) {
+        showSuccessMsg(context, "上传成功");
+      }
+      setState(() {
+        userinfo.profile.nickname = value;
+      });
     });
   }
 }

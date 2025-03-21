@@ -81,14 +81,27 @@ void showErrMsg(BuildContext context, String msg) {
     SnackBar(
       content: Row(
         children: [
-          Icon(Icons.error , color: Colors.red.shade300),
+          Icon(Icons.error, color: Colors.red.shade300),
           SizedBox(width: 8),
-        
           Text(msg),
         ],
       ),
       duration: Duration(seconds: 2),
+    ),
+  );
+}
 
+void showSuccessMsg(BuildContext context, String msg) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Row(
+        children: [
+          Icon(Icons.check_circle, color: Colors.green.shade300),
+          SizedBox(width: 8),
+          Text(msg),
+        ],
+      ),
+      duration: Duration(seconds: 2),
     ),
   );
 }

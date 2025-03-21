@@ -694,8 +694,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
 
     if (extension == '.jpg' || extension == '.jpeg') {
       type = IMGType.jpg;
-    } else if (extension == '.png') {
-    } else {
+    }  else {
       print('其他文件类型');
       return;
     }
