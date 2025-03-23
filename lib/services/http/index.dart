@@ -74,9 +74,18 @@ class ReponsePostUserRegister extends Basic {
         id: g['data'] != null ? g['data']['id'] : '',
         apis: g['data'] != null && g['data']['api'] != null
             ? (g['data']['api'] as List<dynamic>)
-                .map((e) => API.fromJson(e))
+                .map((e) => API.fromJson(e as Map<String, dynamic>))
                 .toList()
             : []);
+  }
+}
+
+class RequestPostUserRegisterVisitor {
+  RequestPostUserRegisterVisitor();
+  Map<String, dynamic> toJson() {
+    return {
+      'category': appName,
+    };
   }
 }
 
@@ -270,7 +279,7 @@ class Http {
     try {
       final j = jsonDecode(response.body);
       log.i(
-          "请求路径:${u.path} 响应体: \n${const JsonEncoder.withIndent('  ').convert(j)}");
+          "请求路径:${u.path}  \n原始响应数据:\n${response.body}\nJOSN响应数据:\n${const JsonEncoder.withIndent('  ').convert(j)}");
       return fromJson(j);
     } catch (e) {
       log.e("解析数据失败 ${e.toString()}\n${response.body}");
@@ -341,6 +350,25 @@ class Http {
     final path = "/api/v1/user/register";
 
     final uri = URI().get(serverAddress, path);
+
+    return _handleRequest(
+      Method.post,
+      uri,
+      (g) => ReponsePostUserRegister.fromJson(g),
+      data: req.toJson(),
+    );
+  }
+
+  Future<ReponsePostUserRegister> userRegisterVisitor() {
+    log.i("发送请求 游客注册");
+    RequestPostUserRegisterVisitor req = RequestPostUserRegisterVisitor();
+
+    final path = "/api/v1/user/register";
+    final Map<String, String> param = {
+      "visitor": "1",
+    };
+
+    final uri = URI().get(serverAddress, path, param: param);
 
     return _handleRequest(
       Method.post,

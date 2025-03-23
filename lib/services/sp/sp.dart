@@ -14,6 +14,10 @@ class SP {
     _prefs ??= await SharedPreferences.getInstance();
   }
 
+  over() {
+    _prefs?.clear();
+  }
+
   Future<bool> setIsVisitor(bool s) {
     return Future.value(_prefs!.setBool("is_visitor", s));
   }
@@ -22,29 +26,61 @@ class SP {
     return Future.value(_prefs!.setBool("is_auto_login", s));
   }
 
-  Future<bool> getIsAutoLogin() {
-    return Future.value(_prefs!.getBool("is_auto_login"));
+  Future<bool> setIsVisitorLogged(bool s) {
+    return Future.value(_prefs!.setBool("is_visitor_logged", s));
   }
 
-  Future<bool> setRegisterAccount(String s) {
-    return Future.value(_prefs!.setString("register_account", s));
-  }
-
-  Future<String> getRegisterAccount() {
-    return Future.value(_prefs!.getString("register_account"));
-  }
-
-  Future<String> getID() async {
-    final v = await getIsVisitor();
-    if (v) {
-      return "visitor";
-    } else {
-      return Future.value(_prefs!.getString("visitor_account"));
+  bool getIsVisitorLogged() {
+    final b = _prefs!.getBool("is_visitor_logged");
+    if (b == null) {
+      setIsVisitorLogged(false);
+      return false;
     }
+    return b;
   }
 
-  Future<bool> getIsVisitor() {
-    return Future.value(_prefs!.getBool("is_visitor"));
+  bool getIsAutoLogin() {
+    final v = _prefs!.getBool("is_auto_login");
+    if (v == null) {
+      setIsAutoLogin(false);
+      return false;
+    }
+    return v;
+  }
+
+  Future<bool> setUID(String s) {
+    return Future.value(_prefs!.setString("uid", s));
+  }
+
+  String getUID() {
+    final v = _prefs!.getString("uid");
+    if (v == null) {
+      setUID("");
+      return "";
+    }
+    return v;
+  }
+
+  Future<bool> setVisitorUID(String s) {
+    return Future.value(_prefs!.setString("visitor_uid", s));
+  }
+
+  String getVisitorUID() {
+    final v = _prefs!.getString("visitor_uid");
+    if (v == null) {
+      setVisitorUID("");
+      return "";
+    }
+    return v;
+  }
+
+  bool getIsVisitor() {
+    final v = _prefs!.getBool("is_visitor");
+    if (v == null) {
+      setIsVisitor(true);
+      return true;
+    }
+    return v;
   }
 
   Future<bool> setbool(String s, bool b) {

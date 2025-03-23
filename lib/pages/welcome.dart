@@ -27,29 +27,31 @@ class _Welcome extends State<Welcome> {
   @override
   void initState() {
     super.initState();
-    autologin();
+    init();
   }
 
-  void autologin() {
-    SP().getIsAutoLogin().then((value) {
-      if (!value) {
-        return;
-      }
-      SP().getRegisterAccount().then((value) async {
-        if (value.isEmpty) {
-          return;
-        }
-        await Config().init(value);
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => HomePage(),
-            ),
-          );
-        }
-      });
-    });
+  init() async {
+    await SP().init();
+    // final isAutoLogin = SP().getIsAutoLogin();
+
+    // if (!isAutoLogin) {
+    //   return;
+    // }
+
+    // final uid = SP().getUID();
+    // if (uid.isEmpty) {
+    //   return;
+    // }
+    // print("uid=$uid");
+    // await Config().init(uid);
+    // if (mounted) {
+    //   Navigator.pushReplacement(
+    //     context,
+    //     MaterialPageRoute(
+    //       builder: (context) => HomePage(),
+    //     ),
+    //   );
+    // }
   }
 
   @override
@@ -277,17 +279,51 @@ class _Welcome extends State<Welcome> {
       if (!value) {
         return;
       }
-      SP().setIsVisitor(true);
-      final id = await SP().getID();
-      await Config().init(id);
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => HomePage(),
-          ),
-        );
+      final id = SP().getVisitorUID();
+      bool isVisitorLogged = SP().getIsVisitorLogged();
+      if (isVisitorLogged && id.isNotEmpty) {
+        print("使用旧游客账号登陆");
+        await Config().init(id);
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => HomePage(),
+            ),
+          );
+        }
+        return;
       }
+      print("使用新游客账号登陆");
+
+      Http().userRegisterVisitor().then((value) async {
+        if (value.isNotOK) {
+          if (mounted) {
+            showErrMsg(context, value.msg);
+          }
+          return;
+        }
+        if (value.id.isEmpty) {
+          if (mounted) {
+            showErrMsg(context, '用户不存在');
+          }
+          return;
+        }
+        SP().setIsVisitor(true);
+        SP().setVisitorUID(value.id);
+        SP().setIsVisitorLogged(true);
+        await Config().init(value.id);
+        await Config.instance.setAPIs(value.apis);
+
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => HomePage(),
+            ),
+          );
+        }
+      });
     });
   }
 
@@ -337,10 +373,10 @@ class _Welcome extends State<Welcome> {
           return;
         }
         SP().setIsVisitor(false);
-        SP().setRegisterAccount(value.id);
+        SP().setUID(value.id);
+        SP().setIsVisitorLogged(false);
         SP().setIsAutoLogin(isAutoLogin);
-        await Config().init(value.id);
-        await Config().setAPIs(value.apis);
+        await Config.instance.setAPIs(value.apis);
 
         if (mounted) {
           Navigator.pushReplacement(
@@ -503,9 +539,10 @@ class _Welcome extends State<Welcome> {
           return;
         }
         SP().setIsVisitor(false);
-        SP().setRegisterAccount(value.id);
+        SP().setUID(value.id);
+        SP().setIsVisitorLogged(false);
         await Config().init(value.id);
-        await Config().setAPIs(value.apis);
+        await Config.instance.setAPIs(value.apis);
 
         if (mounted) {
           Navigator.pushReplacement(

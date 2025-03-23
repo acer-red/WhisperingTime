@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:whispering_time/services/sp/sp.dart';
 import 'package:whispering_time/pages/welcome.dart';
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
-  await SP().init();
   runApp(const MyApp());
 }
 

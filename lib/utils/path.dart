@@ -26,3 +26,7 @@ Future<Directory> getTempDir() async {
   final directory = await getTemporaryDirectory();
   return directory;
 }
+Future<Directory> getLibraryDir() async {
+  final directory = await getLibraryDirectory();
+  return directory;
+}

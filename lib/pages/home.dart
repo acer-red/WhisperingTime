@@ -249,7 +249,7 @@ class _HomePageState extends State<HomePage> {
             final avatarUrl = snapshot.data?.profile.avatar.url;
             return CircleAvatar(
               radius: iconsize,
-              backgroundImage: (avatarUrl != null && !isEdit)
+              backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty && !isEdit)
                   ? NetworkImage(
                       "${HTTPConfig.indexServerAddress}$avatarUrl",
                     )

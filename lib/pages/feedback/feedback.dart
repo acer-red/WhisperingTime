@@ -29,17 +29,17 @@ class _FeedbackPageState extends State<FeedbackPage> {
   }
 
   add() async {
-    final value = await SP().getIsVisitor();
+    final isVisitor = SP().getIsVisitor();
     if (mounted) {
-      if (value) {
+      if (isVisitor) {
         showErrMsg(context, '游客无法创建反馈');
-      } else {
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => Edit(),
-            ));
+        return;
       }
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => Edit(),
+          ));
     }
   }
 

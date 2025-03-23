@@ -26,7 +26,7 @@ class Config {
   List<APIsar> apis = [];
 
   static Config? _instance; // 静态实例缓存
-
+  static String _id = '';
   static Config get instance {
     if (_instance == null) {
       throw Exception("Config instance not initialized. Call init() first.");
@@ -34,37 +34,50 @@ class Config {
     return _instance!;
   }
 
-  init(String id) async {
-    if (_instance != null) {
-      _instance = null;
-      await isar.close();
-    }
-
+  Future<String> getFilePath() async {
     final dir = await getMainStoreDir();
-    final f = "${path.join(dir.path, id)}.isar";
-    if (!File(f).existsSync()) {
-      print("数据文件不存在");
-      // 加入导入数据文件
-    }
-    print("数据文件库路径: $f");
+    final f = "${path.join(dir.path, _id)}.isar";
+    return f;
+  }
+
+  open(String id) async {
+    final dir = await getMainStoreDir();
+
     isar = await Isar.open(
       [ConfigSchema, FontSchema], // 你的模型 Schema 列表
       directory: dir.path, // 指定数据库存储目录
       inspector: true, // 启用 Isar Inspector 连接
       name: id, // 默认为default
     );
+  }
 
-    // 检查 Isar 中是否已经存在 Config 对象
+  // 数据库不存在时，初始化
+  init(String paramID) async {
+    log.i("isar初始化");
+    if (_instance != null) {
+      await isar.close();
+      _instance = null;
+    }
+
+    _id = paramID;
+    final dir = await getMainStoreDir();
+    final f = await getFilePath();
+    if (!File(f).existsSync()) {}
+    isar = await Isar.open(
+      [ConfigSchema, FontSchema], // 你的模型 Schema 列表
+      directory: dir.path, // 指定数据库存储目录
+      inspector: true, // 启用 Isar Inspector 连接
+      name: paramID, // 默认为default
+    );
     final existingConfig = await isar.configs.where().findFirst();
 
-    // 如果 Isar 中没有 Config 对象
     if (existingConfig != null) {
       _instance = existingConfig; // 从数据库加载实例
       return;
     }
+
     uid = UUID().build;
     _instance = this; // 将当前实例缓存为静态实例
-
     await isar.writeTxn(() async {
       await isar.configs.put(this);
     });
@@ -127,13 +140,12 @@ class Config {
   }
 
   setAPIs(List<API> apis) async {
-    print("更新配置API列表 $apis");
-    final l = apis.map((e) => APIsar(key: e.key, extime: e.extime)).toList();
-    instance.apis = l;
+    print("更新配置API列表 ");
+    instance.apis =
+        apis.map((e) => APIsar(key: e.key, extime: e.extime)).toList();
     await isar.writeTxn(() async {
       await isar.configs.put(this);
     });
-    return;
   }
 
   String getAPIkey() {
