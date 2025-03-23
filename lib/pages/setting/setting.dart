@@ -29,7 +29,6 @@ class _SettingPageState extends State<SettingPage> {
   }
 
   init() async {
-
     setState(() {
       Config().getInspectorURL().then((onValue) {
         isarurl = onValue;
@@ -129,21 +128,21 @@ class _SettingPageState extends State<SettingPage> {
                           ),
                         )
                       ]),
-                      Row(children: [
-                        Text(
-                          '数据库后台管理',
-                          style: TextStyle(fontSize: 16.0),
-                        ),
-                        Spacer(),
-                        isarurl.isEmpty
-                            ? SizedBox.shrink()
-                            : TextButton(
+                      isarurl.isEmpty
+                          ? SizedBox.shrink()
+                          : Row(children: [
+                              Text(
+                                '数据库后台管理',
+                                style: TextStyle(fontSize: 16.0),
+                              ),
+                              Spacer(),
+                              TextButton(
                                 onPressed: () {
                                   _launchUrl(isarurl);
                                 },
                                 child: Text("打开"),
                               )
-                      ]),
+                            ]),
                       Row(children: [
                         Text(
                           '本地数据管理',
@@ -201,15 +200,6 @@ class _SettingPageState extends State<SettingPage> {
       Navigator.pushReplacement(
           context, MaterialPageRoute(builder: (context) => Welcome()));
     }
-  }
-
-  Future<bool> launchUrl(Uri uri) async {
-    print("打开$uri");
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-      return true;
-    }
-    return false;
   }
 
   backPage() {
