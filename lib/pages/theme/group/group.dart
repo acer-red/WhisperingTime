@@ -171,7 +171,7 @@ class _GroupPage extends State<GroupPage> {
                       });
                     },
                   )),
-                  child: const Text("显式设置"),
+                  child: const Text("显示设置"),
                 ),
                 PopupMenuItem(
                   child: Text('其他设置'),
@@ -479,7 +479,7 @@ class _GroupPage extends State<GroupPage> {
     );
   }
 
-  /// 弹窗样式设置
+  /// 窗口: 显示设置
   dialogWidget(Widget widget) {
     showModalBottomSheet<void>(
       context: context,
@@ -705,7 +705,7 @@ class _GroupPage extends State<GroupPage> {
     });
   }
 
-  /// 点击新增按钮，进入空白印迹的编辑页面
+  /// 页面：空白印迹编辑页面
   enterDocBlank() async {
     Group item = _gitems[gidx];
 
@@ -753,7 +753,7 @@ class _GroupPage extends State<GroupPage> {
     }
   }
 
-  /// 点击卡片按钮，进入印迹编辑页面
+  /// 页面：印迹编辑页面
   enterDoc(int index) async {
     Group group = _gitems[gidx];
     Doc doc = _ditems[index];
@@ -774,6 +774,7 @@ class _GroupPage extends State<GroupPage> {
           ),
         ));
     setState(() {
+      log.i("状态变更: ${ret.state}");
       switch (ret.state) {
         case LastState.delete:
           _ditems.removeAt(index);
@@ -798,6 +799,9 @@ class _GroupPage extends State<GroupPage> {
           if (ret.config.isShowTool != doc.config.isShowTool) {
             _ditems[index].config.isShowTool = ret.config.isShowTool;
           }
+          if (doc.level != ret.level) {
+            doc.level = ret.level;
+          }
           break;
         case LastState.changeConfig:
           if (doc.crtime != ret.crtime) {
@@ -820,7 +824,8 @@ class _GroupPage extends State<GroupPage> {
     });
   }
 
-  /// 点击分组按钮（在分组列表中），切换分组显示
+  /// 按钮：切换分组按钮
+  /// 位置：在分组列表中
   clickGroupTitle(int index) {
     setState(() {
       gidx = index;
@@ -831,7 +836,8 @@ class _GroupPage extends State<GroupPage> {
     getDocs();
   }
 
-  /// 点击删除分组
+  /// 按钮：删除分组
+  /// 位置：在设置中
   clickDeleteGroup(int index) async {
     if (_gitems.length == 1) {
       Msg.diy(context, "无法删除，请保留至少一个项目。");
@@ -859,7 +865,8 @@ class _GroupPage extends State<GroupPage> {
     }
   }
 
-  /// 点击分级按钮
+  /// 按钮：分级按钮
+  /// 位置：在显示设置中
   clickLevel(List<bool> value) {
     _gitems[gidx].config.levels = value;
 
@@ -877,7 +884,7 @@ class _GroupPage extends State<GroupPage> {
     }
   }
 
-  /// 更新当前分组下的印迹列表
+  /// 功能：更新当前分组下的印迹列表
   getDocs({int? year, int? month}) async {
     if (_gitems.isEmpty) {
       return;
