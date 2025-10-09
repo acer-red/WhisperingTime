@@ -82,13 +82,9 @@ class _GroupPage extends State<GroupPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int gidx = 0;
   bool isGrouTitleSubmitted = true;
-  // TextEditingController groupTitleEdit = TextEditingController();
   DateTime pickedDate = DateTime.now();
   int pageIndex = 0;
 
-  /// 分级选项
-  /// true: 单选
-  /// false: 多选
 
   @override
   void initState() {
@@ -247,7 +243,7 @@ class _GroupPage extends State<GroupPage> {
     );
   }
 
-  // 卡片模式
+  // UI: 主体内容-卡片模式
   Widget screenCard() {
     return ListView.builder(
         itemCount: _ditems.length,
@@ -316,7 +312,7 @@ class _GroupPage extends State<GroupPage> {
         });
   }
 
-  // 日历模式
+  // UI: 主体内容-日历模式
   Widget screenCalendar() {
     DateTime currentDate = DateTime.now();
 
@@ -360,7 +356,7 @@ class _GroupPage extends State<GroupPage> {
       setState(() {
         pickedDate = d;
       });
-      setDocs(year: pickedDate.year, month: pickedDate.month);
+      getDocs(year: pickedDate.year, month: pickedDate.month);
     }
 
     Widget dateTitle() {
@@ -493,7 +489,7 @@ class _GroupPage extends State<GroupPage> {
     );
   }
 
-  /// 弹窗设置窗口
+  /// 窗口: 设置
   dialogSetting() async {
     if (_gitems.isEmpty) {
       return;
@@ -582,7 +578,7 @@ class _GroupPage extends State<GroupPage> {
     );
   }
 
-  /// 弹窗导出窗口
+  /// 窗口: 导出
   dialogExport() {
     showDialog(
       context: context,
@@ -594,7 +590,7 @@ class _GroupPage extends State<GroupPage> {
     );
   }
 
-  /// 弹窗重命名窗口
+  /// 窗口: 重命名
   dialogRename() async {
     String? result;
     await showDialog(
@@ -641,6 +637,71 @@ class _GroupPage extends State<GroupPage> {
 
     setState(() {
       _gitems[gidx].name = result!;
+    });
+  }
+
+  /// 窗口: 添加分组
+  dialogAddGroup() async {
+    String? result;
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("创建分组"),
+          content: TextField(
+            onChanged: (value) {
+              result = value;
+            },
+            decoration: const InputDecoration(hintText: "请输入"),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('取消'),
+              onPressed: () {
+                Navigator.of(context).pop(); // 关闭对话框
+              },
+            ),
+            TextButton(
+              child: const Text('确定'),
+              onPressed: () {
+                Navigator.of(context).pop(result);
+              },
+            ),
+          ],
+        );
+      },
+    );
+    if (result == null) {
+      if (_gitems.isEmpty) {
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+      }
+      return;
+    }
+    if (result!.isEmpty) {
+      return;
+    }
+    final req = RequestPostGroup(name: result!);
+    final res = await Http(tid: widget.tid).postGroup(req);
+
+    if (res.isNotOK) {
+      return;
+    }
+
+    setState(() {
+      _gitems.add(Group(
+          name: result!,
+          id: res.id,
+          overtime: req.overtime,
+          config: GroupConfig.getDefault()));
+      gidx = _gitems.length - 1;
+      _ditems.clear();
+      for (int i = 0; i < _gitems[gidx].config.levels.length; i++) {
+        if (_gitems[gidx].config.levels[i]) {
+          _gitems[gidx].config.levels[i] = false;
+        }
+      }
     });
   }
 
@@ -767,7 +828,7 @@ class _GroupPage extends State<GroupPage> {
     });
 
     Navigator.pop(context); // 关闭 drawer
-    setDocs();
+    getDocs();
   }
 
   /// 点击删除分组
@@ -778,7 +839,7 @@ class _GroupPage extends State<GroupPage> {
     }
 
     if (!(await showConfirmationDialog(
-        context, MyDialog(content: "是否删除", title: "提示")))) {
+        context, MyDialog(content: "是否删除？", title: "提示")))) {
       return;
     }
 
@@ -798,71 +859,6 @@ class _GroupPage extends State<GroupPage> {
     }
   }
 
-  /// 点击添加分组
-  dialogAddGroup() async {
-    String? result;
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text("创建分组"),
-          content: TextField(
-            onChanged: (value) {
-              result = value;
-            },
-            decoration: const InputDecoration(hintText: "请输入"),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('取消'),
-              onPressed: () {
-                Navigator.of(context).pop(); // 关闭对话框
-              },
-            ),
-            TextButton(
-              child: const Text('确定'),
-              onPressed: () {
-                Navigator.of(context).pop(result);
-              },
-            ),
-          ],
-        );
-      },
-    );
-    if (result == null) {
-      if (_gitems.isEmpty) {
-        if (mounted) {
-          Navigator.of(context).pop();
-        }
-      }
-      return;
-    }
-    if (result!.isEmpty) {
-      return;
-    }
-    final req = RequestPostGroup(name: result!);
-    final res = await Http(tid: widget.tid).postGroup(req);
-
-    if (res.isNotOK) {
-      return;
-    }
-
-    setState(() {
-      _gitems.add(Group(
-          name: result!,
-          id: res.id,
-          overtime: req.overtime,
-          config: GroupConfig.getDefault()));
-      gidx = _gitems.length - 1;
-      _ditems.clear();
-      for (int i = 0; i < _gitems[gidx].config.levels.length; i++) {
-        if (_gitems[gidx].config.levels[i]) {
-          _gitems[gidx].config.levels[i] = false;
-        }
-      }
-    });
-  }
-
   /// 点击分级按钮
   clickLevel(List<bool> value) {
     _gitems[gidx].config.levels = value;
@@ -873,16 +869,16 @@ class _GroupPage extends State<GroupPage> {
 
     switch (_gitems[gidx].config.viewType) {
       case 0:
-        setDocs();
+        getDocs();
         break;
       case 1:
-        setDocs(year: pickedDate.year, month: pickedDate.month);
+        getDocs(year: pickedDate.year, month: pickedDate.month);
         break;
     }
   }
 
   /// 更新当前分组下的印迹列表
-  setDocs({int? year, int? month}) async {
+  getDocs({int? year, int? month}) async {
     if (_gitems.isEmpty) {
       return;
     }
@@ -978,7 +974,7 @@ class _GroupPage extends State<GroupPage> {
           .map((l) => Group(
               name: l.name, id: l.id, overtime: l.overtime, config: l.config))
           .toList();
-      setDocs();
+      getDocs();
     });
   }
 }

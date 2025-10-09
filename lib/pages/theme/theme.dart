@@ -253,7 +253,7 @@ class _ThemePageState extends State<ThemePage> {
 
   void delete(Theme item) async {
     if (!(await showConfirmationDialog(
-        context, MyDialog(content: "是否删除", title: "提示")))) {
+        context, MyDialog(content: "是否删除？", title: "提示")))) {
       return;
     }
 

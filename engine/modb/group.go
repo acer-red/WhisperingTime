@@ -207,6 +207,7 @@ func GroupPost(toid primitive.ObjectID, req *RequestGroupPost) (string, error) {
 		{Key: "uptime", Value: sys.StringtoTime(req.Data.UPTime)},
 		{Key: "overtime", Value: sys.StringtoTime(req.Data.OverTime)},
 		{Key: "gid", Value: gid},
+		{Key: "config", Value: bson.D{{Key: "levels", Value: NewGroupConfig()}}},
 	}
 
 	_, err := db.Collection("group").InsertOne(context.TODO(), data)
@@ -273,6 +274,7 @@ func GroupCreateDefault(toid primitive.ObjectID, gd RequestThemePostDefaultGroup
 		{Key: "uptime", Value: sys.StringtoTime(gd.CRTime)},
 		{Key: "overtime", Value: sys.StringtoTime(gd.OverTime)},
 		{Key: "default", Value: true},
+		{Key: "levels", Value: NewGroupConfig()},
 	}
 
 	_, err := db.Collection("group").InsertOne(context.TODO(), data)
@@ -308,7 +310,7 @@ func NewGroupConfig() GroupConfig {
 	return GroupConfig{
 		IsMulti:  false,
 		IsAll:    false,
-		Levels:   []bool{true, false, false, false, false},
+		Levels:   []bool{true, true, true, true, true},
 		ViewType: 0,
 	}
 }

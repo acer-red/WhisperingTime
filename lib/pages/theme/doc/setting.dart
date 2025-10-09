@@ -144,7 +144,7 @@ class _DocSetting extends State<DocSetting> {
 
   deleteDoc() async {
     if (!(await showConfirmationDialog(
-        context, MyDialog(content: "是否删除", title: "提示")))) {
+        context, MyDialog(content: "是否删除？", title: "提示")))) {
       return;
     }
 
