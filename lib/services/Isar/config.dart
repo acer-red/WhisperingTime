@@ -5,6 +5,7 @@ import 'package:whispering_time/utils/uuid.dart';
 import 'package:whispering_time/services/isar/font.dart';
 import 'package:whispering_time/utils/path.dart';
 import 'package:whispering_time/utils/env.dart';
+
 import 'package:path/path.dart' as path;
 import 'dart:developer';
 
@@ -29,7 +30,7 @@ class Config {
   static String _id = '';
   static Config get instance {
     if (_instance == null) {
-      throw Exception("Config instance not initialized. Call init() first.");
+      throw Exception("isar instance not initialized.");
     }
     return _instance!;
   }
@@ -42,7 +43,7 @@ class Config {
 
   open(String id) async {
     final dir = await getMainStoreDir();
-
+    log.i("打开配置 $id");
     isar = await Isar.open(
       [ConfigSchema, FontSchema], // 你的模型 Schema 列表
       directory: dir.path, // 指定数据库存储目录
@@ -63,6 +64,7 @@ class Config {
     final dir = await getMainStoreDir();
     final f = await getFilePath();
     if (!File(f).existsSync()) {}
+
     isar = await Isar.open(
       [ConfigSchema, FontSchema], // 你的模型 Schema 列表
       directory: dir.path, // 指定数据库存储目录

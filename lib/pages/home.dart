@@ -32,6 +32,7 @@ class _HomePageState extends State<HomePage> {
           Profile(nickname: "", avatar: Avatar(name: "", url: ""))); // 初始化 user
 
   Future<UserBasicInfo> init() async {
+    
     final value = await Http().userInfo();
     if (value.isNotOK) {
       if (mounted) {

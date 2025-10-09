@@ -31,6 +31,7 @@ func ExistUser() gin.HandlerFunc {
 			g.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
+
 		// 存在用户
 		if count > 0 {
 			uoid, err := GetUOIDFromUID(uid)

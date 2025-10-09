@@ -111,7 +111,7 @@ class _EditState extends State<Edit> {
         });
         // Handle dropdown value change
       },
-      value: feedbackType,
+      initialValue: feedbackType,
     );
   }
 

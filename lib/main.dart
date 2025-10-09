@@ -3,9 +3,15 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:whispering_time/pages/welcome.dart';
+import 'package:whispering_time/pages/home.dart';
+import 'package:whispering_time/services/sp/sp.dart';
+import 'package:whispering_time/services/isar/config.dart';
+
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
+  await SP().init();
+  await Config().init(SP().getUID());
   runApp(const MyApp());
 }
 
@@ -24,7 +30,8 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(
               seedColor: const Color.fromRGBO(255, 238, 227, 1)),
         ),
-        home:   Welcome(),
+    
+        home: SP().getIsAutoLogin() ?HomePage() : Welcome(),
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,

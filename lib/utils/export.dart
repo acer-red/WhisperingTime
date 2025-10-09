@@ -96,12 +96,13 @@ class _Export extends State<Export> {
                 ],
               ),
             ),
-            
             widget.t == ResourceType.doc
                 ? const SizedBox.shrink()
                 : ListTile(
                     title: const Text('导出选项'),
-                    subtitle: Text(i == IntegrateType.multiple ? '每个印迹一个文件' : '所有印迹合并为一个文件'),
+                    subtitle: Text(i == IntegrateType.multiple
+                        ? '每个印迹一个文件'
+                        : '所有印迹合并为一个文件'),
                     trailing: DropdownButton<IntegrateType>(
                       value: i,
                       onChanged: (IntegrateType? newValue) {
@@ -259,40 +260,30 @@ class _RadioListTileExampleState extends State<RadioListTileExample> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        RadioListTile<int>(
-          title: const Text('保存为多个文件'),
-          value: 0,
-          groupValue: _selectedValue,
-          onChanged: (int? value) {
-            if (value == null) {
-              return;
-            }
+    return RadioGroup<int>(
+        groupValue: _selectedValue,
+        onChanged: (value) {
+          if (value == null) {
+            return;
+          }
 
-            setState(() {
-              _selectedValue = value;
-              widget.onValueChanged(value);
-            });
-          },
-        ),
-        RadioListTile<int>(
-          title: const Text('保存为一个文件'),
-          value: 1,
-          groupValue: _selectedValue,
-          onChanged: (int? value) {
-            if (value == null) {
-              return;
-            }
-
-            setState(() {
-              _selectedValue = value;
-              widget.onValueChanged(value);
-            });
-          },
-        ),
-      ],
-    );
+          setState(() {
+            _selectedValue = value;
+            widget.onValueChanged(value);
+          });
+        },
+        child: const Column(
+          children: [
+            RadioListTile<int>(
+              title: Text('保存为多个文件'),
+              value: 0,
+            ),
+            RadioListTile<int>(
+              title: Text('保存为一个文件'),
+              value: 1,
+            ),
+          ],
+        ));
   }
 }
 

@@ -37,7 +37,6 @@ class Device {
         'type': platform.type,
         'isPhysicalDevice': platform.isPhysicalDevice,
         'systemFeatures': platform.systemFeatures,
-        'serialNumber': platform.serialNumber,
         'isLowRamDevice': platform.isLowRamDevice,
       };
     } else if (Platform.isIOS) {

@@ -27,32 +27,8 @@ class _Welcome extends State<Welcome> {
   @override
   void initState() {
     super.initState();
-    init();
   }
 
-  init() async {
-    await SP().init();
-    // final isAutoLogin = SP().getIsAutoLogin();
-
-    // if (!isAutoLogin) {
-    //   return;
-    // }
-
-    // final uid = SP().getUID();
-    // if (uid.isEmpty) {
-    //   return;
-    // }
-    // print("uid=$uid");
-    // await Config().init(uid);
-    // if (mounted) {
-    //   Navigator.pushReplacement(
-    //     context,
-    //     MaterialPageRoute(
-    //       builder: (context) => HomePage(),
-    //     ),
-    //   );
-    // }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -154,6 +130,7 @@ class _Welcome extends State<Welcome> {
     );
   }
 
+  // 注册UI
   Widget registerForm() {
     return Column(
       spacing: 20,
@@ -211,6 +188,7 @@ class _Welcome extends State<Welcome> {
     );
   }
 
+  // 登录UI
   Widget loginForm() {
     return Column(
       spacing: 20,
@@ -273,17 +251,18 @@ class _Welcome extends State<Welcome> {
     );
   }
 
+  // 游客访问
   void visitor() {
     showConfirmationDialog(context, MyDialog(content: "是否以游客身份登陆？"))
         .then((value) async {
       if (!value) {
         return;
       }
-      final id = SP().getVisitorUID();
+      final oldVisitorId = SP().getVisitorUID();
       bool isVisitorLogged = SP().getIsVisitorLogged();
-      if (isVisitorLogged && id.isNotEmpty) {
+      if (isVisitorLogged && oldVisitorId.isNotEmpty) {
         print("使用旧游客账号登陆");
-        await Config().init(id);
+        await Config().init(oldVisitorId);
         if (mounted) {
           Navigator.pushReplacement(
             context,
@@ -297,6 +276,7 @@ class _Welcome extends State<Welcome> {
       print("使用新游客账号登陆");
 
       Http().userRegisterVisitor().then((value) async {
+        final newVisitorId = value.id;
         if (value.isNotOK) {
           if (mounted) {
             showErrMsg(context, value.msg);
@@ -312,7 +292,7 @@ class _Welcome extends State<Welcome> {
         SP().setIsVisitor(true);
         SP().setVisitorUID(value.id);
         SP().setIsVisitorLogged(true);
-        await Config().init(value.id);
+        await Config().init(newVisitorId);
         await Config.instance.setAPIs(value.apis);
 
         if (mounted) {
@@ -353,6 +333,7 @@ class _Welcome extends State<Welcome> {
     return true;
   }
 
+  // 用户登录
   void login() {
     final ok = loginCheck();
     if (!ok) {
@@ -365,17 +346,19 @@ class _Welcome extends State<Welcome> {
     Http()
         .userLogin(RequestPostUserLogin(account: account, password: password))
         .then((value) async {
+          final loginUserId = value.id;
       if (value.isOK) {
-        if (value.id.isEmpty) {
+        if (loginUserId.isEmpty) {
           if (mounted) {
             showErrMsg(context, '用户不存在');
           }
           return;
         }
         SP().setIsVisitor(false);
-        SP().setUID(value.id);
+        SP().setUID(loginUserId);
         SP().setIsVisitorLogged(false);
         SP().setIsAutoLogin(isAutoLogin);
+        await Config().init(loginUserId); 
         await Config.instance.setAPIs(value.apis);
 
         if (mounted) {
@@ -512,6 +495,7 @@ class _Welcome extends State<Welcome> {
     return true;
   }
 
+  // 用户注册
   void register() {
     final ok = registerCheck();
     if (!ok) {
@@ -531,17 +515,18 @@ class _Welcome extends State<Welcome> {
       ),
     )
         .then((value) async {
+          final registerUserId = value.id;
       if (value.isOK) {
-        if (value.id.isEmpty) {
+        if (registerUserId.isEmpty) {
           if (mounted) {
             showErrMsg(context, '用户不存在');
           }
           return;
         }
         SP().setIsVisitor(false);
-        SP().setUID(value.id);
+        SP().setUID(registerUserId);
         SP().setIsVisitorLogged(false);
-        await Config().init(value.id);
+        await Config().init(registerUserId);
         await Config.instance.setAPIs(value.apis);
 
         if (mounted) {

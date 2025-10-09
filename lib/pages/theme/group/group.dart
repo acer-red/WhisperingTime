@@ -276,8 +276,7 @@ class _GroupPage extends State<GroupPage> {
                       child: Text(
                         Level.l[item.level],
                         style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600),
+                            fontSize: 12, color: Colors.grey.shade600),
                       ),
                     ),
 
@@ -306,8 +305,7 @@ class _GroupPage extends State<GroupPage> {
                       child: Text(
                         Time.string(item.crtime),
                         style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600),
+                            fontSize: 12, color: Colors.grey.shade600),
                       ),
                     )
                   ],
@@ -573,8 +571,7 @@ class _GroupPage extends State<GroupPage> {
                   ),
                   child: Text(
                     "删除 ${_gitems[gidx].name}",
-                    style: TextStyle(
-                        color: Colors.white, fontSize: 17),
+                    style: TextStyle(color: Colors.white, fontSize: 17),
                   ),
                 )
               ],
@@ -1119,9 +1116,7 @@ class ViewSettingState extends State<ViewSetting> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Expanded(
-              child: RadioListTile<int>(
-                title: const Text('卡片'),
-                value: 0,
+              child: RadioGroup<int>(
                 groupValue: viewType,
                 onChanged: (int? value) {
                   setState(() {
@@ -1132,22 +1127,18 @@ class ViewSettingState extends State<ViewSetting> {
                       RequestPutGroup(
                           config: GroupConfigNULL(viewType: value)));
                 },
-              ),
-            ),
-            Expanded(
-              child: RadioListTile<int>(
-                title: const Text('日历'),
-                value: 1,
-                groupValue: viewType,
-                onChanged: (int? value) {
-                  setState(() {
-                    viewType = value!;
-                    widget.onViewTypeChanged(viewType);
-                  });
-                  Http(tid: widget.tid, gid: widget.gid).putGroup(
-                      RequestPutGroup(
-                          config: GroupConfigNULL(viewType: value)));
-                },
+                child: const Column(
+                  children: [
+                    RadioListTile<int>(
+                      title: Text('卡片'),
+                      value: 0,
+                    ),
+                    RadioListTile<int>(
+                      title: Text('日历'),
+                      value: 1,
+                    )
+                  ],
+                ),
               ),
             ),
           ],
