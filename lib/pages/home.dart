@@ -13,7 +13,8 @@ import 'package:whispering_time/utils/ui.dart';
 import 'package:whispering_time/utils/export.dart';
 import 'package:whispering_time/services/http/base.dart';
 import 'package:whispering_time/utils/env.dart';
-import 'package:whispering_time/services/http/index.dart';
+import 'package:whispering_time/services/http/index.dart' as http_index;
+import 'package:whispering_time/services/http/http.dart' as http;
 
 const double iconsize = 25;
 
@@ -24,18 +25,21 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   GlobalKey<ScaffoldState> scaffoldKey = GlobalKey();
+  GlobalKey iconAddKey = GlobalKey();
   bool isEdit = false;
   late Future<UserBasicInfo> _userInfoFuture;
   late Future<void> _initFontFuture;
+  late Future<List<ThemeItem>> _initThemeFuture;
   bool _fontInitScheduled = false;
   TextEditingController nicknameController = TextEditingController();
   UserBasicInfo userinfo = UserBasicInfo(
       email: "",
       profile:
           Profile(nickname: "", avatar: Avatar(name: "", url: ""))); // 初始化 user
+  List<ThemeItem> themes = [];
 
   Future<UserBasicInfo> init() async {
-    final value = await Http().userInfo();
+    final value = await http_index.Http().userInfo();
     if (value.isNotOK) {
       if (mounted) {
         showErrMsg(context, "服务器连接失败");
@@ -55,6 +59,7 @@ class _HomePageState extends State<HomePage> {
   initState() {
     super.initState();
     _userInfoFuture = init();
+    _initThemeFuture = initTheme();
   }
 
   @override
@@ -99,13 +104,25 @@ class _HomePageState extends State<HomePage> {
   Widget body() {
     return Scaffold(
       key: scaffoldKey,
-      appBar: AppBar(centerTitle: true, title: appBarTitle(), actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 10),
-          child: appBarAvator(),
-        )
-      ]),
-      endDrawer: Drawer(
+      appBar: AppBar(
+          centerTitle: true,
+          title: appBarTitle(),
+          actions: [
+            Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: IconButton(
+                    key: iconAddKey,
+                    icon: Icon(Icons.add),
+                    onPressed: () {
+                      dialogAdd(iconAddKey.currentContext!.findRenderObject()
+                          as RenderBox);
+                    }))
+          ],
+          leading: Padding(
+            padding: const EdgeInsets.all(10),
+            child: appBarAvator(),
+          )),
+      drawer: Drawer(
         width: 220,
         child: Padding(
           padding:
@@ -202,15 +219,32 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       body: SafeArea(
-        child: Padding(
-          padding:
-              const EdgeInsets.only(bottom: 0, top: 0, left: 50, right: 50),
-          child: Column(
-            spacing: 40,
-            children: [
-              ThemePage(),
-            ],
-          ),
+        child: Column(
+          spacing: 40,
+          children: [
+            FutureBuilder<List<ThemeItem>>(
+                future: _initThemeFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: SizedBox(
+                        height: 48,
+                        width: 48,
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  } else if (snapshot.hasError) {
+                    log.e(snapshot.error);
+                    return const Center(
+                      child: Text("主题加载失败"),
+                    );
+                  } else if (snapshot.connectionState ==
+                      ConnectionState.done) {
+                    return ThemePage(snapshot.data ?? []);
+                  }
+                  return const SizedBox.shrink();
+                }),
+          ],
         ),
       ),
     );
@@ -269,7 +303,7 @@ class _HomePageState extends State<HomePage> {
           width: 30,
           height: 30,
           child: avatarIcon(() {
-            scaffoldKey.currentState!.openEndDrawer();
+            scaffoldKey.currentState!.openDrawer();
           }),
         );
       },
@@ -328,6 +362,43 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
+  }
+
+  Future<List<ThemeItem>> initTheme() async {
+    final list = await http.Http().getthemes();
+    if (list.isNotOK) {
+      if (mounted) {
+        showErrMsg(context, "服务器连接失败");
+      }
+      return [];
+    }
+    if (list.data.isEmpty) {
+      // add();
+      return [];
+    }
+
+
+    for (int i = 0; i < list.data.length; i++) {
+      if (list.data[i].id == "") {
+        continue;
+      }
+      // 如果存在，下一个
+      if (themes.any((element) => element.id == list.data[i].id)) {
+        continue;
+      }
+
+      themes.add(ThemeItem(
+        id: list.data[i].id,
+        name: list.data[i].name,
+      ));
+    }
+    return themes;
+
+    // setState(() {
+    //   _titems = themes;
+    //   _tabController.dispose();
+    //   _tabController = TabController(length: _titems.length, vsync: this);
+    // });
   }
 
   void editDone(String nickname) {
@@ -421,9 +492,10 @@ class _HomePageState extends State<HomePage> {
         return;
     }
 
-    RequestPutUserProfile req = RequestPutUserProfile(bytes: bytes, ext: ext);
+    http_index.RequestPutUserProfile req =
+        http_index.RequestPutUserProfile(bytes: bytes, ext: ext);
 
-    Http().userProfile(req).then((value) {
+    http_index.Http().userProfile(req).then((value) {
       if (value.isNotOK) {
         if (mounted) {
           showErrMsg(context, "上传失败");
@@ -443,9 +515,10 @@ class _HomePageState extends State<HomePage> {
     if (value == userinfo.profile.nickname) {
       return;
     }
-    RequestPutUserProfile req = RequestPutUserProfile(nickname: value);
+    http_index.RequestPutUserProfile req =
+        http_index.RequestPutUserProfile(nickname: value);
 
-    Http().userProfile(req).then((onValue) {
+    http_index.Http().userProfile(req).then((onValue) {
       if (onValue.isNotOK) {
         if (mounted) {
           showErrMsg(context, "上传失败");
@@ -506,5 +579,87 @@ class _HomePageState extends State<HomePage> {
       default:
         return appNameEn;
     }
+  }
+
+  void dialogAdd(RenderBox button) {
+    final RenderBox overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox;
+
+    final Offset position =
+        button.localToGlobal(Offset.zero, ancestor: overlay);
+    final RelativeRect positionRect = RelativeRect.fromLTRB(
+      position.dx,
+      position.dy + button.size.height,
+      position.dx + button.size.width,
+      position.dy + button.size.height,
+    );
+
+    showMenu(
+      context: context,
+      position: positionRect,
+      items: [
+        PopupMenuItem(
+          value: 1,
+          child: Text('添加主题'),
+          onTap: () => addTheme(),
+        ),
+        PopupMenuItem(
+          value: 3,
+          child: Text(
+            '添加分组',
+          ),
+          onTap: () {},
+        ),
+      ],
+    );
+  }
+
+  void addTheme() async {
+    String? result;
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          content: TextField(
+            onChanged: (value) {
+              result = value;
+            },
+            decoration: const InputDecoration(hintText: "创建您的主题"),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('取消'),
+              onPressed: () {
+                Navigator.of(context).pop(); // 关闭对话框
+              },
+            ),
+            TextButton(
+              child: const Text('确定'),
+              onPressed: () {
+                Navigator.of(context).pop(result);
+              },
+            ),
+          ],
+        );
+      },
+    );
+    if (result == null) {
+      return;
+    }
+    if (result!.isEmpty) {
+      return;
+    }
+
+    final res =
+        await http.Http().postTheme(http.RequestPostTheme(name: result!));
+
+    if (res.isNotOK) {
+      return;
+    }
+
+    // 刷新主题列表
+    setState(() {
+      _initThemeFuture = initTheme();
+    });
   }
 }
