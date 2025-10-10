@@ -1,11 +1,10 @@
-import 'dart:typed_data';
-
 import 'package:isar/isar.dart';
 import 'config.dart';
 import 'package:whispering_time/utils/path.dart';
 import 'package:path/path.dart' as path;
 import 'dart:ui' as ui; // 访问 ui.loadFontFromList
 import 'dart:io';
+import 'package:http/http.dart' as http;
 
 part 'font.g.dart';
 
@@ -35,10 +34,10 @@ class Font {
     this.downloadURL,
   });
 
-  void load() async {
+  Future<void> load() async {
     final fontFile = await getFilePath();
     final data = File(fontFile);
-    print("加载字体文件 $fullName");
+    print("加载字体文件 $name");
     await ui.loadFontFromList(await data.readAsBytes(), fontFamily: fullName);
   }
 
@@ -71,16 +70,21 @@ class Font {
     return isar.fonts.where().findAll();
   }
 
-  void saveFile(Uint8List data) async {
+  Future<bool> download() async {
+    final request = await http.get(Uri.parse(downloadURL!));
+    if (request.statusCode != 200) {
+      print("下载字体文件失败 $name 链接: $downloadURL 状态码: ${request.statusCode}");
+      return false;
+    }
     final f = await getFilePath();
-    print("保存字体文件 $fullName 路径:$f");
+    print("保存字体文件 $name 路径:$f");
 
-    await File(f).writeAsBytes(data);
-    return;
+    await File(f).writeAsBytes(request.bodyBytes);
+    return true;
   }
 
   Future<bool> upload() async {
-    print("上传字体文件 $fullName");
+    print("上传字体文件 $name");
     final isDB = await isar.fonts.filter().sha256EqualTo(sha256).findFirst();
     if (isDB != null) {
       return true;

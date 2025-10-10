@@ -11,7 +11,7 @@ class RequestPostUserLogin {
   final String password;
   RequestPostUserLogin({required this.account, required this.password});
   Map<String, dynamic> toJson() {
-    return {'account': account, 'password': password, 'category': appName};
+    return {'account': account, 'password': password, 'category': appNameEn};
   }
 }
 
@@ -53,7 +53,7 @@ class RequestPostUserRegister {
       'username': username,
       'password': password,
       'email': email,
-      'category': appName
+      'category': appNameEn
     };
   }
 }
@@ -84,7 +84,7 @@ class RequestPostUserRegisterVisitor {
   RequestPostUserRegisterVisitor();
   Map<String, dynamic> toJson() {
     return {
-      'category': appName,
+      'category': appNameEn,
     };
   }
 }

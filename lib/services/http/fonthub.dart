@@ -47,7 +47,6 @@ class FontItem {
       fileName: fileName,
       version: version,
       sha256: sha256,
-      downloadURL: downloadURL,
     );
 
     if (await f.isExist() == true) {
@@ -55,13 +54,10 @@ class FontItem {
     }
 
     print("发现字体文件不存在，准备下载字体: $fullName 链接: $downloadURL");
-    final request = await http.get(Uri.parse(downloadURL));
-    request.statusCode == 200
-        ? print("下载字体文件成功")
-        : print("下载字体文件失败");
+    f.download();
     try {
-      f.saveFile(request.bodyBytes);
-      f.upload();
+      await f.download();
+      await f.upload();
     } catch (e) {
       log.e("保存字体失败,${e.toString()}");
       return false;

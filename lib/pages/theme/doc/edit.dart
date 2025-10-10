@@ -5,6 +5,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:whispering_time/services/http/http.dart';
+import 'package:whispering_time/services/sp/sp.dart';
 import 'package:whispering_time/utils/export.dart';
 import 'package:whispering_time/utils/env.dart';
 import 'setting.dart';
@@ -62,9 +63,10 @@ class DocEditPage extends StatefulWidget {
 class _DocEditPage extends State<DocEditPage> with RouteAware {
   TextEditingController titleEdit = TextEditingController();
   QuillController edit = QuillController.basic();
+
   DocConfigration config = DocConfigration();
   bool chooseLeveled = false;
-  bool _isSelected = true;
+  bool isLevelSelected = true;
   bool isTitleSubmited = true;
   int level = 0;
   DateTime crtime = DateTime.now();
@@ -80,8 +82,9 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
   bool get hasContent => !(isEditorEmpty() && titleEdit.text.isEmpty);
   bool get isNoCreateDoc =>
       getEditOrigin().isEmpty && titleEdit.text.isEmpty || widget.id!.isEmpty;
+  bool isEditMode = SP().getDocEditMode();
+  late final ColorScheme colorScheme = Theme.of(context).colorScheme;
 
-  @override
   void initState() {
     super.initState();
     if (widget.content.isNotEmpty) {
@@ -101,6 +104,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     if (hasDocID) {
       id = widget.id!;
     }
+    edit.readOnly = isEditMode;
   }
 
   @override
@@ -110,7 +114,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
         appBar: AppBar(
           centerTitle: true,
 
-          // 标题左侧的返回按钮
+          // 标题左侧：返回按钮
           leading: IconButton(
             icon: Icon(Icons.arrow_back),
             onPressed: () => backPage(),
@@ -145,7 +149,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
             ),
           ),
 
-          // 标题右侧按钮
+          // 标题右侧：导出、设置按钮
           actions: <Widget>[
             IconButton(
                 onPressed: () => dialogExport(), icon: Icon(Icons.download)),
@@ -165,38 +169,78 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            !widget.freeze && _isSelected
-                ? TextButton(
-                    child: Text(Level.string(level)),
-                    onPressed: () => {
-                      setState(() {
-                        _isSelected = false;
-                      })
-                    },
-                  )
-                : ToggleButtons(
-                    onPressed: (int index) => clickNewLevel(index),
-                    isSelected: [true, false, false, false, false],
-                    children: List.generate(
-                        Level.l.length, (index) => Level.levelWidget(index)),
-                  ),
+            !widget.freeze && isLevelSelected
+                ? levelButton()
+                : levelToggleButton(),
 
             // 富文本工具栏（含图片）
-            if (config.isShowTool!) quillToolBar() else SizedBox.shrink(),
+            if (config.isShowTool! && isEditMode)
+              quillToolBar()
+            else
+              SizedBox.shrink(),
 
-            // 富文本编辑框
             Expanded(
-              child: Container(
-                padding:
-                    const EdgeInsets.only(top: 8.0, left: 30.0, right: 30.0),
-                child: quillEditor(),
+              child: GestureDetector(
+                onHorizontalDragEnd: horizontalDragend,
+                child: Container(
+                  padding:
+                      const EdgeInsets.only(top: 8.0, left: 30.0, right: 30.0),
+                  child: quillEditor(),
+                ),
               ),
             ),
+          ],
+        ),
+
+        // 右下角浮动按钮
+        floatingActionButton: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          spacing: 18,
+          children: [
+            isEditMode
+                ? Row(
+          spacing: 18,
+
+                    children: [
+                      FloatingActionButton(
+                        onPressed: getPreviousDoc,
+                        child: Icon(Icons.arrow_back_outlined ),
+                        
+                      ),
+                       FloatingActionButton(
+                        onPressed: getNextDoc,
+                        child: Icon(Icons.arrow_forward_outlined ),
+                      ),
+                    ],
+                  )
+                : SizedBox.shrink(),
+            FloatingActionButton(
+              onPressed: switchEditMode,
+              child: Icon(isEditMode ? Icons.edit : Icons.swap_horiz),
+            )
           ],
         ));
   }
 
-  // 富文本工具栏
+  void getPreviousDoc(){
+    // Http().getPreviousDoc(id:id);
+  }
+  void getNextDoc(){
+
+  }
+  void horizontalDragend(DragEndDetails details) {
+    // details.primaryVelocity 是拖动结束时沿主轴的速度
+    // 如果 primaryVelocity 小于 0，表示向左滑动 (速度为负)
+    // 如果 primaryVelocity 大于 0，表示向右滑动 (速度为正)
+    // 我们通常会加一个阈值（比如 100）来避免过于敏感的误触
+    if (details.primaryVelocity! < -100) {
+      print("Swiped Left"); // 在控制台输出，方便调试
+    } else if (details.primaryVelocity! > 100) {
+      print("Swiped Right"); // 在控制台输出，方便调试
+    }
+  }
+
+  // UI: 富文本工具栏
   Widget quillToolBar() {
     return QuillSimpleToolbar(
       controller: edit,
@@ -221,7 +265,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     );
   }
 
-  // 富文本编辑器
+  // UI: 富文本编辑器
   Widget quillEditor() {
     return QuillEditor(
       controller: edit,
@@ -248,6 +292,34 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     );
   }
 
+  // UI: 分级按钮
+  Widget levelButton() {
+    return TextButton(
+        child: Text(Level.string(level),
+            style: TextStyle(
+                color: isEditMode
+                    ? colorScheme.primary
+                    : colorScheme.primary.withValues(alpha: 0.3))),
+        onPressed: () => isEditMode
+            ? {
+                setState(() {
+                  isLevelSelected = false;
+                })
+              }
+            : null);
+  }
+
+  // UI: 分级展开按钮
+  Widget levelToggleButton() {
+    return ToggleButtons(
+      onPressed: (int index) => clickNewLevel(index),
+      isSelected: List.generate(Level.l.length, (i) => i == level),
+      children:
+          List.generate(Level.l.length, (index) => Level.levelWidget(index)),
+    );
+  }
+
+  // 按钮: 分级展开后的按钮
   clickNewLevel(int index) async {
     if (hasDocID) {
       final res = await Http(gid: widget.gid, did: widget.id!)
@@ -259,7 +331,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
 
     setState(() {
       level = index;
-      _isSelected = true;
+      isLevelSelected = true;
     });
   }
 
@@ -301,16 +373,11 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
       }
     }
     _previousFullDelta = currentDelta;
-
-    //  **在检测完成后，更新 _previousFullDelta 为当前的印迹状态，以便下次变化时进行比较**
   }
 
   // 执行删除图片的逻辑
   void _onImageDeleted(String imageUrl) {
     Http().deleteImage(imageUrl.split('/').last);
-    // ScaffoldMessenger.of(context).showSnackBar(
-    //   SnackBar(content: Text('图片 $imageUrl 已被删除!')),
-    // );
   }
 
   // 保存印迹
@@ -339,7 +406,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     return true;
   }
 
-// 返回上一级页面
+  // 页面: 上一级页面
   void backPage() async {
     // 返回时既没有ID，也没有内容
     if (!hasDocID && !hasContent) {
@@ -411,6 +478,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     }
   }
 
+  // 页面: 设置页面
   void enterSettingPage() async {
     final LastStateDocSetting ret = await Navigator.push(
         context,
@@ -573,7 +641,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
         log.e('创建图片失败');
         return;
       }
-      final String imageFullUrl   = res.imageFullUrl;
+      final String imageFullUrl = res.imageFullUrl;
 
       ops[i] = Operation.fromJson({
         "insert": {"image": imageFullUrl}
@@ -671,7 +739,6 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
     );
   }
 
-// 假设你有一个 QuillController
   void insertImage(QuillController controller, String imageUrl) {
     final index = controller.selection.baseOffset;
     final embed = BlockEmbed.image(imageUrl);
@@ -694,7 +761,7 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
 
     if (extension == '.jpg' || extension == '.jpeg') {
       type = IMGType.jpg;
-    }  else {
+    } else {
       print('其他文件类型');
       return;
     }
@@ -742,5 +809,13 @@ class _DocEditPage extends State<DocEditPage> with RouteAware {
 
   String getEditPlainText() {
     return edit.document.toPlainText();
+  }
+
+  void switchEditMode() {
+    setState(() {
+      isEditMode = !isEditMode;
+      if (!isLevelSelected) isLevelSelected = !isLevelSelected;
+    });
+    SP().setDocEditMode(isEditMode);
   }
 }

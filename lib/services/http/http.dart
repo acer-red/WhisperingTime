@@ -530,11 +530,11 @@ class Doc {
   }
 }
 
-class ResponseGetDoc extends Basic {
+class ResponseGetDocs extends Basic {
   List<Doc> data;
-  ResponseGetDoc({required super.err, required super.msg, required this.data});
-  factory ResponseGetDoc.fromJson(Map<String, dynamic> json) {
-    return ResponseGetDoc(
+  ResponseGetDocs({required super.err, required super.msg, required this.data});
+  factory ResponseGetDocs.fromJson(Map<String, dynamic> json) {
+    return ResponseGetDocs(
       err: json['err'] as int,
       msg: json['msg'] as String,
       data: json['data'] != null
@@ -545,7 +545,19 @@ class ResponseGetDoc extends Basic {
     );
   }
 }
-
+class ResponseGetDoc extends Basic {
+  String  id;
+  ResponseGetDoc({required super.err, required super.msg, required this.id});
+  factory ResponseGetDoc.fromJson(Map<String, dynamic> json) {
+    return ResponseGetDoc(
+      err: json['err'] as int,
+      msg: json['msg'] as String,
+      id: json['id'] != null
+          ? json['id'] as String
+          : ""
+    );
+  }
+}
 class RequestPostDoc {
   String title;
   String content;
@@ -965,7 +977,7 @@ class Http {
   }
 
   // doc
-  Future<ResponseGetDoc> getDocs(int? year, int? month) async {
+  Future<ResponseGetDocs> getDocs(int? year, int? month) async {
     log.i("发送请求 获取分组的日志列表");
 
     String path = "/docs/${gid!}";
@@ -984,22 +996,37 @@ class Http {
       'Authorization': getAuthorization(),
     };
 
-    final res = await _handleRequest<ResponseGetDoc>(
+    final res = await _handleRequest<ResponseGetDocs>(
+      Method.get,
+      url,
+      (json) => ResponseGetDocs.fromJson(json),
+      headers: headers,
+    );
+
+  Future<ResponseGetDoc> getPreviousDoc(int id) async {
+    log.i("发送请求 获取单个印迹");
+
+    String path = "/doc/${gid!}?previous=1";
+
+    final url = URI().get(serverAddress, path);
+    final Map<String, String> headers = {
+      "Content-Type": "application/json",
+      'Authorization': getAuthorization(),
+    };
+
+    return _handleRequest<ResponseGetDoc>(
       Method.get,
       url,
       (json) => ResponseGetDoc.fromJson(json),
       headers: headers,
     );
-
-    // if (res.isOK) {
-    //   for (Doc line in res.data) {
-    //     line.crtime = line.crtime;
-    //   }
-    // }
+  }
 
     return res;
   }
 
+
+  
   Future<ResponsePostDoc> postDoc(RequestPostDoc req) async {
     log.i("发送请求 创建印迹");
 

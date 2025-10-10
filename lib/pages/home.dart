@@ -8,6 +8,7 @@ import 'package:whispering_time/pages/welcome.dart';
 import 'package:whispering_time/pages/font_manager/font_manager.dart';
 import 'package:whispering_time/services/isar/config.dart';
 import 'package:whispering_time/services/sp/sp.dart';
+import 'package:whispering_time/services/isar/font.dart';
 import 'package:whispering_time/utils/ui.dart';
 import 'package:whispering_time/utils/export.dart';
 import 'package:whispering_time/services/http/base.dart';
@@ -25,6 +26,8 @@ class _HomePageState extends State<HomePage> {
   GlobalKey<ScaffoldState> scaffoldKey = GlobalKey();
   bool isEdit = false;
   late Future<UserBasicInfo> _userInfoFuture;
+  late Future<void> _initFontFuture;
+  bool _fontInitScheduled = false;
   TextEditingController nicknameController = TextEditingController();
   UserBasicInfo userinfo = UserBasicInfo(
       email: "",
@@ -32,7 +35,6 @@ class _HomePageState extends State<HomePage> {
           Profile(nickname: "", avatar: Avatar(name: "", url: ""))); // 初始化 user
 
   Future<UserBasicInfo> init() async {
-    
     final value = await Http().userInfo();
     if (value.isNotOK) {
       if (mounted) {
@@ -55,24 +57,70 @@ class _HomePageState extends State<HomePage> {
     _userInfoFuture = init();
   }
 
-  editDone(String nickname) {
-    updateNickname(nickname);
-    setState(() {
-      isEdit = false;
-    });
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_fontInitScheduled) {
+      _initFontFuture = initAppFont();
+      _fontInitScheduled = true;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    return FutureBuilder<void>(
+      future: _initFontFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(
+              child: SizedBox(
+                height: 48,
+                width: 48,
+                child: CircularProgressIndicator(),
+              ),
+            ),
+          );
+        } else if (snapshot.hasError) {
+          log.e(snapshot.error);
+          return const Scaffold(
+            body: Center(
+              child: Text("字体加载失败"),
+            ),
+          );
+        } else if (snapshot.connectionState == ConnectionState.done) {
+          return body();
+        }
+        return const SizedBox.shrink();
+      },
+    );
+  }
+
+  Widget body() {
     return Scaffold(
       key: scaffoldKey,
+      appBar: AppBar(centerTitle: true, title: appBarTitle(), actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 10),
+          child: appBarAvator(),
+        )
+      ]),
       endDrawer: Drawer(
+        width: 220,
         child: Padding(
           padding:
               const EdgeInsets.only(top: 15, left: 20, right: 15, bottom: 20),
           child: Column(
             spacing: 5,
             children: <Widget>[
+              settingAvator(),
+              SizedBox(height: 5),
+              Divider(
+                height: 1,
+                endIndent: 150,
+                indent: 20,
+              ),
+              SizedBox(height: 2),
               PopupMenuItem(
                 child: Row(
                   spacing: 10,
@@ -153,25 +201,6 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
-      appBar: AppBar(actions: [
-        isEdit
-            ? IconButton(
-                onPressed: () => editDone(nicknameController.text),
-                icon: Icon(Icons.done))
-            : IconButton(
-                onPressed: () {
-                  setState(() {
-                    isEdit = true;
-                  });
-                },
-                icon: Icon(Icons.edit)),
-        IconButton(
-          icon: const Icon(Icons.menu),
-          onPressed: () => {
-            scaffoldKey.currentState!.openEndDrawer(),
-          },
-        ),
-      ]),
       body: SafeArea(
         child: Padding(
           padding:
@@ -179,7 +208,6 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             spacing: 40,
             children: [
-              user(),
               ThemePage(),
             ],
           ),
@@ -188,7 +216,12 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget user() {
+  Widget appBarTitle() {
+    return Text(getAppName(human: true),
+        style: TextStyle(fontFamily: getAppFontFamily(), fontSize: 30));
+  }
+
+  Widget settingAvator() {
     return FutureBuilder<UserBasicInfo>(
       future: _userInfoFuture,
       builder: (context, snapshot) {
@@ -199,12 +232,45 @@ class _HomePageState extends State<HomePage> {
           return const Text("Error loading user info");
         }
 
-        return Column(
-          spacing: 20,
+        return Row(
           children: [
-            avatarIcon(),
+            SizedBox(
+              width: 10,
+              height: 60,
+            ),
+            SizedBox(
+              height: 35,
+              width: 35,
+              child: avatarIcon(() {
+                updateAvatar();
+              }),
+            ),
+            SizedBox(width: 20),
             nicknameText(snapshot.data?.profile.nickname ?? ""),
           ],
+        );
+      },
+    );
+  }
+
+  Widget appBarAvator() {
+    return FutureBuilder<UserBasicInfo>(
+      future: _userInfoFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const CircularProgressIndicator();
+        }
+        if (snapshot.hasError) {
+          return const Text("Error loading user info");
+        }
+        // nicknameText(snapshot.data?.profile.nickname ?? ""),
+
+        return SizedBox(
+          width: 30,
+          height: 30,
+          child: avatarIcon(() {
+            scaffoldKey.currentState!.openEndDrawer();
+          }),
         );
       },
     );
@@ -223,17 +289,11 @@ class _HomePageState extends State<HomePage> {
           );
   }
 
-  Widget avatarIcon() {
+  Widget avatarIcon(Function onTap) {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
-        onTap: () {
-          if (!isEdit) {
-            watchAvatar();
-          } else {
-            updateAvatar();
-          }
-        },
+        onTap: () => onTap(),
         child: FutureBuilder<UserBasicInfo>(
           future: _userInfoFuture,
           builder: (context, snapshot) {
@@ -250,11 +310,12 @@ class _HomePageState extends State<HomePage> {
             final avatarUrl = snapshot.data?.profile.avatar.url;
             return CircleAvatar(
               radius: iconsize,
-              backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty && !isEdit)
-                  ? NetworkImage(
-                      "${HTTPConfig.indexServerAddress}$avatarUrl",
-                    )
-                  : null,
+              backgroundImage:
+                  (avatarUrl != null && avatarUrl.isNotEmpty && !isEdit)
+                      ? NetworkImage(
+                          "${HTTPConfig.indexServerAddress}$avatarUrl",
+                        )
+                      : null,
               child: isEdit
                   ? const Icon(
                       Icons.upload,
@@ -269,7 +330,14 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  logout() {
+  void editDone(String nickname) {
+    updateNickname(nickname);
+    setState(() {
+      isEdit = false;
+    });
+  }
+
+  void logout() {
     showConfirmationDialog(context, MyDialog(content: "确定退出吗？")).then((value) {
       if (!value) {
         return;
@@ -286,7 +354,7 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  watchAvatar() {
+  void watchAvatar() {
     Navigator.push(
       context,
       PageRouteBuilder(
@@ -335,7 +403,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  updateAvatar() async {
+  void updateAvatar() async {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
     if (image == null) {
@@ -371,7 +439,7 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  updateNickname(String value) {
+  void updateNickname(String value) {
     if (value == userinfo.profile.nickname) {
       return;
     }
@@ -391,5 +459,52 @@ class _HomePageState extends State<HomePage> {
         userinfo.profile.nickname = value;
       });
     });
+  }
+
+  Future<void> initAppFont() async {
+    final languageCode = Localizations.localeOf(context).languageCode;
+    final serverAddress = Config.fontHubServerAddress;
+    final downloadURL =
+        "$serverAddress/api/app?name=${getAppName()}&language=$languageCode";
+    final font = Font(
+        name: "appfont-$languageCode",
+        downloadURL: downloadURL,
+        fileName: "AppFont-$languageCode",
+        fullName: "AppFont-$languageCode");
+
+    final isExist = await font.isExist();
+    if (isExist) {
+      log.i("应用字体已存在: ${font.name}");
+      await font.load();
+      return;
+    }
+    final ok = await font.download();
+    if (!ok) {
+      throw Exception("应用字体下载失败");
+    }
+    try {
+      await font.upload();
+      await font.load();
+    } catch (e) {
+      log.e("保存应用字体失败,${e.toString()}");
+      return;
+    }
+  }
+
+  String getAppFontFamily() {
+    final languageCode = Localizations.localeOf(context).languageCode;
+    return "AppFont-$languageCode";
+  }
+
+  String getAppName({bool human = false}) {
+    final languageCode = Localizations.localeOf(context).languageCode;
+    switch (languageCode) {
+      case "zh":
+        return human ? appNameZhHuman : appNameZh;
+      case "en":
+        return human ? appNameEnHuman : appNameEn;
+      default:
+        return appNameEn;
+    }
   }
 }

@@ -30,6 +30,10 @@ class SP {
     return Future.value(_prefs!.setBool("is_visitor_logged", s));
   }
 
+  Future<bool> setDocEditMode(bool enabled) {
+    return Future.value(_prefs!.setBool("doc_edit_mode", enabled));
+  }
+
   bool getIsVisitorLogged() {
     final b = _prefs!.getBool("is_visitor_logged");
     if (b == null) {
@@ -37,6 +41,15 @@ class SP {
       return false;
     }
     return b;
+  }
+
+  bool getDocEditMode() {
+    final enabled = _prefs!.getBool("doc_edit_mode");
+    if (enabled == null) {
+      setDocEditMode(true);
+      return true;
+    }
+    return enabled;
   }
 
   bool getIsAutoLogin() {
