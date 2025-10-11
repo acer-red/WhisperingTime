@@ -274,7 +274,7 @@ func GroupCreateDefault(toid primitive.ObjectID, gd RequestThemePostDefaultGroup
 		{Key: "uptime", Value: sys.StringtoTime(gd.CRTime)},
 		{Key: "overtime", Value: sys.StringtoTime(gd.OverTime)},
 		{Key: "default", Value: true},
-		{Key: "levels", Value: NewGroupConfig()},
+		{Key: "config", Value: NewGroupConfig()},
 	}
 
 	_, err := db.Collection("group").InsertOne(context.TODO(), data)

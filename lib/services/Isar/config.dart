@@ -23,7 +23,7 @@ class Config {
   static const String indexServerAddress = "https://acer.red";
   bool devlopMode = false;
   bool visualNoneTitle = false;
-  bool defaultShowTool = true;
+  bool defaultShowTool = false;
   List<APIsar> apis = [];
 
   static Config? _instance; // 静态实例缓存

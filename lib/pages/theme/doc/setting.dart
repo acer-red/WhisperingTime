@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:whispering_time/services/http/http.dart';
-import 'package:whispering_time/utils/env.dart';
 import 'package:whispering_time/utils/time.dart';
-import 'package:whispering_time/utils/ui.dart';
 
 class DocConfigration {
   bool? isShowTool;
@@ -14,98 +12,111 @@ class DocConfigration {
   }
 }
 
-class DocSetting extends StatefulWidget {
+// 文档设置弹窗
+class DocSettingsDialog extends StatefulWidget {
   final String gid;
   final String? did;
   final DocConfigration config;
   final DateTime crtime;
-  DocSetting(
-      {required this.gid,
-      required this.did,
-      required this.crtime,
-      required this.config});
+
+  DocSettingsDialog({
+    required this.gid,
+    required this.did,
+    required this.crtime,
+    required this.config,
+  });
+
   @override
-  State<DocSetting> createState() => _DocSetting();
+  State<DocSettingsDialog> createState() => _DocSettingsDialogState();
 }
 
-class LastStateDocSetting {
-  LastState state;
-  DocConfigration? config;
-  DateTime? crtime;
-  LastStateDocSetting({required this.state, this.config, this.crtime});
-}
+class _DocSettingsDialogState extends State<DocSettingsDialog> {
+  late bool isShowTool;
+  late DateTime crtime;
+  bool isChanged = false;
 
-class _DocSetting extends State<DocSetting> {
-  bool isShowTool = false;
-  bool isChange = false;
-
-  DateTime crtime = DateTime.now();
   @override
   void initState() {
     super.initState();
-    isShowTool = widget.config.isShowTool!;
+    isShowTool = widget.config.isShowTool ?? false;
     crtime = widget.crtime;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("设置"),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios),
-          onPressed: () => backPage(),
-        ),
-      ),
-      body: Center(
+    return AlertDialog(
+      title: Text('文档设置'),
+      contentPadding: EdgeInsets.symmetric(vertical: 20),
+      content: SingleChildScrollView(
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 15.0, right: 15.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '创建时间',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                  TextButton(
-                    onPressed: () => setCRTime(),
-                    child: Text(Time.string(crtime)),
-                  ),
-                ],
+            // 创建时间设置
+            ListTile(
+              leading: Icon(Icons.access_time),
+              title: Text('创建时间'),
+              trailing: TextButton(
+                onPressed: () => _setCRTime(),
+                child: Text(
+                  Time.string(crtime),
+                  style: TextStyle(fontSize: 14),
+                ),
               ),
             ),
+            Divider(height: 1),
+            // 显示工具栏开关
             SwitchListTile(
-                title: const Text('显示工具栏'),
-                subtitle: const Text('含图片上传'),
-                value: isShowTool,
-                onChanged: (bool value) => setTool(value)),
-            ElevatedButton(
-              onPressed: () => deleteDoc(),
-              style: ButtonStyle(
-                backgroundColor:
-                    WidgetStateProperty.all<Color>(Colors.red.shade900),
-                minimumSize: WidgetStateProperty.all(Size(200, 60)),
+              secondary: Icon(Icons.build),
+              title: Text('显示工具栏'),
+              subtitle: Text('含图片上传'),
+              value: isShowTool,
+              onChanged: (value) => _setTool(value),
+            ),
+            Divider(height: 1),
+            // 删除文档按钮
+            if (widget.did != null)
+              ListTile(
+                leading: Icon(Icons.delete, color: Colors.red),
+                title: Text(
+                  '删除文档',
+                  style: TextStyle(color: Colors.red),
+                ),
+                onTap: () => _deleteDoc(),
               ),
-              child: Text(
-                '删除',
-                style:
-                    TextStyle(color: Colors.white, fontSize: 17),
-              ),
-            )
           ],
         ),
       ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text('取消'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            Navigator.of(context).pop({
+              'changed': isChanged,
+              'crtime': crtime,
+              'config': DocConfigration(isShowTool: isShowTool),
+            });
+          },
+          child: Text('确定'),
+        ),
+      ],
     );
   }
 
-  setTool(bool value) async {
-    isChange = true;
+  // 设置工具栏显示
+  void _setTool(bool value) async {
+    isChanged = true;
     if (widget.did != null) {
       final res = await Http(gid: widget.gid, did: widget.did)
           .putDoc(RequestPutDoc(config: DocConfigration(isShowTool: value)));
       if (res.isNotOK) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('设置失败')),
+          );
+        }
         return;
       }
     }
@@ -115,88 +126,113 @@ class _DocSetting extends State<DocSetting> {
     });
   }
 
-  Future<TimeOfDay?> timePicker(BuildContext context) {
-    return showTimePicker(
+  // 设置创建时间
+  void _setCRTime() async {
+    DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialTime: TimeOfDay.fromDateTime(widget.crtime), // 如果没有选择过时间，则使用当前时间
-    );
-  }
-
-  Future<DateTime?> datePicker(BuildContext context) {
-    return showDatePicker(
-      context: context,
-      initialDate: widget.crtime,
+      initialDate: crtime,
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
       locale: const Locale('zh'),
     );
-  }
 
-  backPage() {
-    if (!isChange) {
-      return Navigator.of(context).pop(LastStateDocSetting(state: LastState.ok));
+    if (pickedDate == null) {
+      pickedDate = crtime;
     }
-    return Navigator.of(context).pop(LastStateDocSetting(
-        state: LastState.change,
-        crtime: crtime,
-        config: DocConfigration(isShowTool: isShowTool)));
-  }
 
-  deleteDoc() async {
-    if (!(await showConfirmationDialog(
-        context, MyDialog(content: "是否删除？", title: "提示")))) {
+    if (!mounted) return;
+
+    TimeOfDay? pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(crtime),
+    );
+
+    DateTime newCrtime;
+    if (pickedTime == null) {
+      newCrtime = DateTime(
+        pickedDate.year,
+        pickedDate.month,
+        pickedDate.day,
+        crtime.hour,
+        crtime.minute,
+        0,
+      );
+    } else {
+      newCrtime = DateTime(
+        pickedDate.year,
+        pickedDate.month,
+        pickedDate.day,
+        pickedTime.hour,
+        pickedTime.minute,
+        0,
+      );
+    }
+
+    if (crtime == newCrtime) {
       return;
     }
 
-    final ret = await Http(gid: widget.gid, did: widget.did).deleteDoc();
-    if (ret.isNotOK) {
-      return;
-    }
-    if (mounted) {
-      Navigator.of(context).pop(LastStateDocSetting(state: LastState.delete));
+    isChanged = true;
+
+    setState(() {
+      crtime = newCrtime;
+    });
+
+    // 如果文档已保存，立即更新到服务器
+    if (widget.did != null) {
+      final res = await Http(gid: widget.gid, did: widget.did)
+          .putDoc(RequestPutDoc(crtime: newCrtime));
+      if (res.isNotOK) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('时间设置失败')),
+          );
+        }
+        return;
+      }
     }
   }
 
-  setCRTime() async {
-    DateTime? pickedDate = await datePicker(context);
-    pickedDate ??= crtime;
+  // 删除文档
+  void _deleteDoc() async {
+    bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('确认删除'),
+        content: Text('确定要删除这篇文档吗？此操作不可恢复。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text('删除', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
 
-    if (mounted) {
-      TimeOfDay? pickedTime = await timePicker(context);
+    if (confirm != true) {
+      return;
+    }
 
-      if (pickedTime == null) {
-        pickedDate = DateTime(crtime.year, crtime.month, crtime.day,
-            crtime.hour, crtime.minute, 0);
-      } else {
-        pickedDate = DateTime(
-          pickedDate.year,
-          pickedDate.month,
-          pickedDate.day,
-          pickedTime.hour,
-          pickedTime.minute,
-          0, // 秒
+    final res = await Http(gid: widget.gid, did: widget.did).deleteDoc();
+    if (res.isNotOK) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('删除失败')),
         );
       }
+      return;
+    }
 
-      if (crtime == pickedDate) {
-        return;
-      }
-      isChange = true;
-
-      setState(() {
-        crtime = pickedDate!;
+    // 返回删除状态
+    if (mounted) {
+      Navigator.of(context).pop({
+        'changed': true,
+        'deleted': true,
       });
-
-      // 如果这个设置页面并没有id（发生在未上传到服务器时打开设置页面）
-      // 则退出
-      if (widget.did == null) {
-        return;
-      }
-      final res = await Http(gid: widget.gid, did: widget.did)
-          .putDoc(RequestPutDoc(crtime: pickedDate));
-      if (res.isNotOK) {
-        return;
-      }
     }
   }
 }
