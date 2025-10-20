@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
 import 'package:whispering_time/pages/theme/theme.dart';
+import 'package:whispering_time/pages/theme/group/group.dart';
 import 'package:whispering_time/pages/setting/setting.dart';
 import 'package:whispering_time/pages/feedback/feedback.dart';
 import 'package:whispering_time/pages/welcome.dart';
@@ -15,6 +16,7 @@ import 'package:whispering_time/services/http/base.dart';
 import 'package:whispering_time/utils/env.dart';
 import 'package:whispering_time/services/http/index.dart' as http_index;
 import 'package:whispering_time/services/http/http.dart' as http;
+import 'package:provider/provider.dart';
 
 const double iconsize = 25;
 
@@ -102,157 +104,199 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget body() {
-    return Scaffold(
-      key: scaffoldKey,
-      appBar: AppBar(
-          centerTitle: true,
-          title: appBarTitle(),
-          actions: [
-            Padding(
-                padding: const EdgeInsets.only(right: 10),
-                child: IconButton(
-                    key: iconAddKey,
-                    icon: Icon(Icons.add),
-                    onPressed: () {
-                      dialogAdd(iconAddKey.currentContext!.findRenderObject()
-                          as RenderBox);
-                    }))
-          ],
-          leading: Padding(
-            padding: const EdgeInsets.all(10),
-            child: appBarAvator(),
-          )),
-      drawer: Drawer(
-        width: 220,
-        child: Padding(
-          padding:
-              const EdgeInsets.only(top: 15, left: 20, right: 15, bottom: 20),
-          child: Column(
-            spacing: 5,
-            children: <Widget>[
-              settingAvator(),
-              SizedBox(height: 5),
-              Divider(
-                height: 1,
-                endIndent: 150,
-                indent: 20,
-              ),
-              SizedBox(height: 2),
-              PopupMenuItem(
-                child: Row(
-                  spacing: 10,
-                  children: [
-                    Icon(Icons.settings),
-                    Text("设置"),
-                  ],
+    return ChangeNotifierProvider(
+      create: (context) => GroupsModel(),
+      child: Scaffold(
+        key: scaffoldKey,
+        appBar: AppBar(
+            centerTitle: true,
+            title: appBarTitle(),
+            actions: [
+              Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: appBarActions())
+            ],
+            leading: Padding(
+              padding: const EdgeInsets.all(10),
+              child: appBarAvator(),
+            )),
+        drawer: Drawer(
+          width: 220,
+          child: Padding(
+            padding:
+                const EdgeInsets.only(top: 15, left: 20, right: 15, bottom: 20),
+            child: Column(
+              spacing: 5,
+              children: <Widget>[
+                settingAvator(),
+                SizedBox(height: 5),
+                Divider(
+                  height: 1,
+                  endIndent: 150,
+                  indent: 20,
                 ),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SettingPage(),
-                    ),
-                  );
-                },
-              ),
-              PopupMenuItem(
-                child: Row(
-                  spacing: 10,
-                  children: [Icon(Icons.download), Text("导出")],
-                ),
-                onTap: () {
-                  showDialog(
-                    context: context,
-                    barrierDismissible: true,
-                    builder: (BuildContext context) {
-                      return Export(ResourceType.theme, title: "导出所有印迹数据");
-                    },
-                  );
-                },
-              ),
-              PopupMenuItem(
-                child: Row(
-                  spacing: 10,
-                  children: [Icon(Icons.font_download), Text("字体")],
-                ),
-                onTap: () {
-                  showDialog(
-                    context: context,
-                    barrierDismissible: true,
-                    builder: (BuildContext context) {
-                      return FontManager();
-                    },
-                  );
-                },
-              ),
-              PopupMenuItem(
-                child: Row(
-                  spacing: 10,
-                  children: [
-                    Icon(Icons.chat),
-                    Text("反馈"),
-                  ],
-                ),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => FeedbackPage(),
-                    ),
-                  );
-                },
-              ),
-              Spacer(),
-              PopupMenuItem(
+                SizedBox(height: 2),
+                PopupMenuItem(
                   child: Row(
                     spacing: 10,
                     children: [
-                      Icon(Icons.exit_to_app),
-                      Text('退出'),
+                      Icon(Icons.settings),
+                      Text("设置"),
                     ],
                   ),
                   onTap: () {
-                    logout();
-                  }),
-            ],
-          ),
-        ),
-      ),
-      body: SafeArea(
-        child: Column(
-          spacing: 40,
-          children: [
-            FutureBuilder<List<ThemeItem>>(
-                future: _initThemeFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                      child: SizedBox(
-                        height: 48,
-                        width: 48,
-                        child: CircularProgressIndicator(),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SettingPage(),
                       ),
                     );
-                  } else if (snapshot.hasError) {
-                    log.e(snapshot.error);
-                    return const Center(
-                      child: Text("主题加载失败"),
+                  },
+                ),
+                PopupMenuItem(
+                  child: Row(
+                    spacing: 10,
+                    children: [Icon(Icons.download), Text("导出")],
+                  ),
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      barrierDismissible: true,
+                      builder: (BuildContext context) {
+                        return Export(ResourceType.theme, title: "导出所有印迹数据");
+                      },
                     );
-                  } else if (snapshot.connectionState ==
-                      ConnectionState.done) {
-                    return ThemePage(snapshot.data ?? []);
-                  }
-                  return const SizedBox.shrink();
-                }),
-          ],
+                  },
+                ),
+                PopupMenuItem(
+                  child: Row(
+                    spacing: 10,
+                    children: [Icon(Icons.font_download), Text("字体")],
+                  ),
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      barrierDismissible: true,
+                      builder: (BuildContext context) {
+                        return FontManager();
+                      },
+                    );
+                  },
+                ),
+                PopupMenuItem(
+                  child: Row(
+                    spacing: 10,
+                    children: [
+                      Icon(Icons.chat),
+                      Text("反馈"),
+                    ],
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => FeedbackPage(),
+                      ),
+                    );
+                  },
+                ),
+                Spacer(),
+                PopupMenuItem(
+                    child: Row(
+                      spacing: 10,
+                      children: [
+                        Icon(Icons.exit_to_app),
+                        Text('退出'),
+                      ],
+                    ),
+                    onTap: () {
+                      logout();
+                    }),
+              ],
+            ),
+          ),
+        ),
+        body: SafeArea(
+          child: Column(
+            spacing: 40,
+            children: [
+              Expanded(
+                child: FutureBuilder<List<ThemeItem>>(
+                    future: _initThemeFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                          child: SizedBox(
+                            height: 48,
+                            width: 48,
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
+                      } else if (snapshot.hasError) {
+                        log.e(snapshot.error);
+                        return const Center(
+                          child: Text("主题加载失败"),
+                        );
+                      } else if (snapshot.connectionState ==
+                          ConnectionState.done) {
+                        // 在这里设置 themeID，此时 Provider 已经可用
+                        final themes = snapshot.data ?? [];
+                        if (themes.isNotEmpty) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (mounted) {
+                              Provider.of<GroupsModel>(context, listen: false)
+                                  .setThemeID(themes.first.id);
+                            }
+                          });
+                        }
+                        return ThemePage(themes);
+                      }
+                      return const SizedBox.shrink();
+                    }),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
+  Widget appBarActions() {
+    return IconButton(
+                    key: iconAddKey,
+                    icon: Icon(Icons.add),
+                    onPressed: () {
+                      dialogAdd(iconAddKey.currentContext!.findRenderObject()
+                          as RenderBox);
+                    });
+  }
+
   Widget appBarTitle() {
     return Text(getAppName(human: true),
         style: TextStyle(fontFamily: getAppFontFamily(), fontSize: 30));
+  }
+
+  Widget appBarAvator() {
+    return FutureBuilder<UserBasicInfo>(
+      future: _userInfoFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const CircularProgressIndicator();
+        }
+        if (snapshot.hasError) {
+          return const Text("Error loading user info");
+        }
+        // nicknameText(snapshot.data?.profile.nickname ?? ""),
+
+        return SizedBox(
+          width: 30,
+          height: 30,
+          child: avatarIcon(() {
+            scaffoldKey.currentState!.openDrawer();
+          }),
+        );
+      },
+    );
   }
 
   Widget settingAvator() {
@@ -282,29 +326,6 @@ class _HomePageState extends State<HomePage> {
             SizedBox(width: 20),
             nicknameText(snapshot.data?.profile.nickname ?? ""),
           ],
-        );
-      },
-    );
-  }
-
-  Widget appBarAvator() {
-    return FutureBuilder<UserBasicInfo>(
-      future: _userInfoFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const CircularProgressIndicator();
-        }
-        if (snapshot.hasError) {
-          return const Text("Error loading user info");
-        }
-        // nicknameText(snapshot.data?.profile.nickname ?? ""),
-
-        return SizedBox(
-          width: 30,
-          height: 30,
-          child: avatarIcon(() {
-            scaffoldKey.currentState!.openDrawer();
-          }),
         );
       },
     );
@@ -377,7 +398,6 @@ class _HomePageState extends State<HomePage> {
       return [];
     }
 
-
     for (int i = 0; i < list.data.length; i++) {
       if (list.data[i].id == "") {
         continue;
@@ -392,6 +412,7 @@ class _HomePageState extends State<HomePage> {
         name: list.data[i].name,
       ));
     }
+    // 移除这里的 Provider 访问，改为在 FutureBuilder 完成后设置
     return themes;
 
     // setState(() {
@@ -601,20 +622,20 @@ class _HomePageState extends State<HomePage> {
         PopupMenuItem(
           value: 1,
           child: Text('添加主题'),
-          onTap: () => addTheme(),
+          onTap: () => dialogAddTheme(),
         ),
         PopupMenuItem(
           value: 3,
+          onTap: dialogAddGroup,
           child: Text(
             '添加分组',
           ),
-          onTap: () {},
         ),
       ],
     );
   }
 
-  void addTheme() async {
+  void dialogAddTheme() async {
     String? result;
     await showDialog(
       context: context,
@@ -661,5 +682,58 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _initThemeFuture = initTheme();
     });
+  }
+
+  /// 窗口: 添加分组
+  void dialogAddGroup() {
+    // 保存包含 Provider 的 context
+    final scaffoldContext = scaffoldKey.currentContext;
+    if (scaffoldContext == null) {
+      return;
+    }
+    
+    String? inputValue;
+    showDialog<String?>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text("创建分组"),
+          content: TextField(
+            onChanged: (value) {
+              inputValue = value;
+            },
+            decoration: const InputDecoration(hintText: "请输入"),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('取消'),
+              onPressed: () {
+                Navigator.of(dialogContext).pop(); // 关闭对话框
+              },
+            ),
+            TextButton(
+              child: const Text('确定'),
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+                
+                if (inputValue == null || inputValue!.isEmpty) {
+                  return;
+                }
+                
+                // 使用 scaffoldContext 来访问 Provider
+                if (mounted) {
+                  final ok = await Provider.of<GroupsModel>(scaffoldContext, listen: false).add(inputValue!);
+                  if (!ok) {
+                    if (mounted) {
+                      showErrMsg(context, "创建失败");
+                    }
+                  }
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 }

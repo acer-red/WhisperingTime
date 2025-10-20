@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:whispering_time/services/http/http.dart';
 import 'package:whispering_time/utils/time.dart';
+import 'package:whispering_time/utils/env.dart';
 
 class DocConfigration {
   bool? isShowTool;
@@ -10,6 +11,13 @@ class DocConfigration {
       'is_show_tool': isShowTool,
     };
   }
+}
+
+class LastStateDocSetting {
+  LastState state;
+  DateTime? crtime;
+  DocConfigration? config;
+  LastStateDocSetting({required this.state, this.config, this.crtime});
 }
 
 // 文档设置弹窗
@@ -76,13 +84,22 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
             // 删除文档按钮
             if (widget.did != null)
               ListTile(
-                leading: Icon(Icons.delete, color: Colors.red),
-                title: Text(
-                  '删除文档',
-                  style: TextStyle(color: Colors.red),
-                ),
-                onTap: () => _deleteDoc(),
-              ),
+                  leading: Icon(Icons.delete, color: Colors.red),
+                  title: Text(
+                    '删除文档',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  onTap: () {
+                    final ok = _deleteDoc(context);
+                    ok.then((onValue) {
+                      if (mounted) {
+                        Navigator.of(context).pop({
+                          'changed': true,
+                          'deleted': true,
+                        });
+                      }
+                    });
+                  }),
           ],
         ),
       ),
@@ -194,19 +211,19 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
   }
 
   // 删除文档
-  void _deleteDoc() async {
+  Future<bool> _deleteDoc(BuildContext ctx) async {
     bool? confirm = await showDialog<bool>(
-      context: context,
+      context: ctx,
       builder: (context) => AlertDialog(
         title: Text('确认删除'),
         content: Text('确定要删除这篇文档吗？此操作不可恢复。'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () => Navigator.of(ctx).pop(false),
             child: Text('取消'),
           ),
           TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () => Navigator.of(ctx).pop(true),
             child: Text('删除', style: TextStyle(color: Colors.red)),
           ),
         ],
@@ -214,25 +231,19 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
     );
 
     if (confirm != true) {
-      return;
+      return false;
     }
 
     final res = await Http(gid: widget.gid, did: widget.did).deleteDoc();
     if (res.isNotOK) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(ctx).showSnackBar(
           SnackBar(content: Text('删除失败')),
         );
       }
-      return;
+      return false;
     }
-
-    // 返回删除状态
-    if (mounted) {
-      Navigator.of(context).pop({
-        'changed': true,
-        'deleted': true,
-      });
-    }
+    return true;
   }
 }
+                         

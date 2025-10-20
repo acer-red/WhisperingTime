@@ -9,6 +9,7 @@ import 'package:whispering_time/utils/time.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'dart:convert';
 import 'package:whispering_time/utils/export.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 
 class DocList extends StatefulWidget {
   final Group group;
@@ -68,17 +69,71 @@ class _DocListState extends State<DocList> {
           final item = items[index];
           final isEditing = editingIndex == index;
 
-          return Card(
-            elevation: 5,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15.0),
+          return Slidable(
+            endActionPane: ActionPane(motion: const DrawerMotion(), children: [
+              SlidableAction(
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Theme.of(context).colorScheme.primary,
+                  icon: Icons.edit,
+                  onPressed: (context) => {toggleEdit(index)}),
+              SlidableAction(
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Theme.of(context).colorScheme.error,
+                  icon: Icons.delete,
+                  onPressed: (context) => {enterSettingPage(item)}),
+            ]),
+            child: Card(
+              elevation: 5,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+              margin: EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+              child: isEditing
+                  ? _buildEditingCard(index, item)
+                  : _buildPreviewCard(index, item),
             ),
-            margin: EdgeInsets.symmetric(horizontal: 25, vertical: 10),
-            child: isEditing
-                ? _buildEditingCard(index, item)
-                : _buildPreviewCard(index, item),
           );
         });
+  }
+
+  // 页面: 设置页面
+  void enterSettingPage(Doc item) async {
+    final LastStateDocSetting ret = await Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => DocSettingsDialog(
+                gid: widget.group.id,
+                did: item.id,
+                crtime: item.crtime,
+                config: item.config)));
+    switch (ret.state) {
+      case LastState.change:
+        RequestPutDoc req = RequestPutDoc(crtime: ret.crtime);
+        req.config = ret.config;
+        final res = await Http(gid: widget.group.id, did: item.id).putDoc(req);
+        if (res.isNotOK) {
+          print("更新配置错误");
+          break;
+        }
+
+        setState(() {
+          if (ret.crtime != null) {
+            item.crtime = ret.crtime!;
+          }
+          if (ret.config != null) {
+            item.config = ret.config!;
+          }
+        });
+        break;
+      case LastState.delete:
+        print("返回并删除印迹");
+        setState(() {
+          items.remove(item);
+        });
+        break;
+      default:
+        break;
+    }
   }
 
   // 构建预览模式的卡片
@@ -153,7 +208,7 @@ class _DocListState extends State<DocList> {
 
   // 构建编辑模式的卡片
   Widget _buildEditingCard(int index, Doc item) {
-    return _DocEditor(
+    return Cardx(
       doc: item,
       group: widget.group,
       onSave: (updatedDoc) => handleDocUpdate(index, updatedDoc),
@@ -420,15 +475,14 @@ class _DocListState extends State<DocList> {
   }
 }
 
-// 文档编辑器组件（直接在卡片内编辑）
-class _DocEditor extends StatefulWidget {
+class Cardx extends StatefulWidget {
   final Doc doc;
   final Group group;
   final Function(Doc) onSave;
   final Function() onDelete;
   final Function() onCancel;
 
-  _DocEditor({
+  Cardx({
     required this.doc,
     required this.group,
     required this.onSave,
@@ -437,10 +491,10 @@ class _DocEditor extends StatefulWidget {
   });
 
   @override
-  State<_DocEditor> createState() => _DocEditorState();
+  State<Cardx> createState() => _Cardx();
 }
 
-class _DocEditorState extends State<_DocEditor> {
+class _Cardx extends State<Cardx> {
   late TextEditingController titleController;
   late QuillController quillController;
   late int level;
@@ -483,40 +537,47 @@ class _DocEditorState extends State<_DocEditor> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 标题编辑
-          TextField(
-            controller: titleController,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            decoration: InputDecoration(
-              hintText: '标题',
-              border: OutlineInputBorder(),
-              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            ),
-            enabled: !widget.group.isFreezedOrBuf(),
+          // 标题和分级选择
+          Row(
+            children: [
+              // 标题编辑
+              Expanded(
+                child: TextField(
+                  controller: titleController,
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  decoration: InputDecoration(
+                    hintText: '标题',
+                    border: titleController.text.trim().isEmpty
+                        ? OutlineInputBorder()
+                        : InputBorder.none,
+                    enabledBorder: titleController.text.trim().isEmpty
+                        ? OutlineInputBorder()
+                        : InputBorder.none,
+                    focusedBorder: titleController.text.trim().isEmpty
+                        ? OutlineInputBorder(
+                            borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.primary),
+                          )
+                        : InputBorder.none,
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                  enabled: !widget.group.isFreezedOrBuf(),
+                ),
+              ),
+              SizedBox(width: 8),
+              // 分级选择按钮
+              TextButton(
+                onPressed:
+                    widget.group.isFreezedOrBuf() ? null : _showLevelDialog,
+                child: Text(Level.l[level]),
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+              ),
+            ],
           ),
-          SizedBox(height: 12),
-
-          // 分级选择
-          if (!widget.group.isFreezedOrBuf())
-            Row(
-              spacing: 8,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ...List.generate(Level.l.length, (index) {
-                  return ChoiceChip(
-                    label: Text(Level.l[index]),
-                    selected: level == index,
-                    onSelected: (selected) {
-                      if (selected) {
-                        setState(() {
-                          level = index;
-                        });
-                      }
-                    },
-                  );
-                }),
-              ],
-            ),
           SizedBox(height: 12),
 
           // 工具栏
@@ -524,6 +585,7 @@ class _DocEditorState extends State<_DocEditor> {
             QuillSimpleToolbar(
               controller: quillController,
               config: QuillSimpleToolbarConfig(
+                color: Colors.transparent,
                 toolbarSize: 35,
                 multiRowsDisplay: false,
               ),
@@ -535,10 +597,12 @@ class _DocEditorState extends State<_DocEditor> {
               minHeight: 150,
               maxHeight: 400,
             ),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey[300]!),
-              borderRadius: BorderRadius.circular(8),
-            ),
+            decoration: !quillController.document.isEmpty()
+                ? null
+                : BoxDecoration(
+                    border: Border.all(color: Colors.grey[300]!),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
             child: QuillEditor(
               controller: quillController,
               focusNode: FocusNode(),
@@ -602,6 +666,46 @@ class _DocEditorState extends State<_DocEditor> {
           ),
         ],
       ),
+    );
+  }
+
+  // 显示分级选择对话框
+  void _showLevelDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('选择分级'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: List.generate(Level.l.length, (index) {
+              return ListTile(
+                title: Text(Level.l[index]),
+                leading: RadioGroup(
+                  groupValue: level,
+                  onChanged: (int? value) {
+                    if (value != null) {
+                      setState(() {
+                        level = value;
+                      });
+                      Navigator.of(context).pop();
+                    }
+                  },
+                  child: Radio<int>(
+                    value: index,
+                  ),
+                ),
+                onTap: () {
+                  setState(() {
+                    level = index;
+                  });
+                  Navigator.of(context).pop();
+                },
+              );
+            }),
+          ),
+        );
+      },
     );
   }
 

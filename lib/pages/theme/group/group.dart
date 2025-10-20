@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:whispering_time/utils/env.dart';
 import 'package:whispering_time/utils/export.dart';
 import 'package:whispering_time/pages/theme/doc/list.dart';
@@ -52,6 +53,101 @@ class Group {
   }
 }
 
+class GroupsModel with ChangeNotifier {
+  String tid = '';
+  List<Group> items = [];
+  int get length => items.length;
+  int idx = 0;
+  final config = GroupConfig(
+      isAll: false,
+      isMulti: false,
+      levels: [true, true, true, true, true],
+      viewType: 0);
+  // 添加边界检查的安全 getter
+  String get name => items.isNotEmpty ? items[idx].name : '';
+  Group? get item => items.isNotEmpty ? items[idx] : null;
+  String get id => items.isNotEmpty ? items[idx].id : '';
+
+  Future<bool> get() async {
+    final res = await Http(tid: tid).getGroups();
+    // 修复逻辑：应该检查 isEmpty，并更新 items
+    if (res.isNotOK || res.data.isEmpty) {
+      return false;
+    }
+
+    items = res.data
+        .map((l) => Group(
+            name: l.name, id: l.id, overtime: l.overtime, config: l.config))
+        .toList();
+
+    // 确保 idx 在有效范围内
+    if (idx >= items.length) {
+      idx = items.length - 1;
+    }
+    if (idx < 0) {
+      idx = 0;
+    }
+
+    notifyListeners();
+    return true;
+  }
+
+  void setThemeID(String id) {
+    tid = id;
+    notifyListeners();
+    get();
+  }
+
+  void setName(String name) {
+    if (items.isNotEmpty && idx < items.length) {
+      items[idx].name = name;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> add(String name) async {
+    final req = RequestPostGroup(name: name);
+    final res = await Http(tid: tid).postGroup(req);
+    if (res.isNotOK) {
+      return false;
+    }
+    items.add(Group(
+        name: req.name, id: res.id, overtime: req.overtime, config: config));
+    idx = items.length - 1; // 新增后将 idx 设置为最后一个
+    notifyListeners();
+    return true;
+  }
+
+  void removeAt(int index) {
+    if (index >= 0 && index < items.length) {
+      items.removeAt(index);
+      // 调整 idx 避免越界
+      if (idx >= items.length && items.isNotEmpty) {
+        idx = items.length - 1;
+      }
+      if (items.isEmpty) {
+        idx = 0;
+      }
+      notifyListeners();
+    }
+  }
+
+  void setOvertime(DateTime overtime) {
+    if (items.isNotEmpty && idx < items.length) {
+      items[idx].overtime = overtime;
+      notifyListeners();
+    }
+  }
+
+  // 添加设置当前索引的方法
+  void setIndex(int index) {
+    if (index >= 0 && index < items.length) {
+      idx = index;
+      notifyListeners();
+    }
+  }
+}
+
 class GroupPage extends StatefulWidget {
   final String? id;
   final String tid;
@@ -62,33 +158,26 @@ class GroupPage extends StatefulWidget {
   State<StatefulWidget> createState() => _GroupPage();
 }
 
-class _GroupPage extends State<GroupPage> {
-  List<Group> _gitems = [
-    Group(
-        name: "",
-        id: "",
-        overtime: DateTime.now(),
-        config: GroupConfig(
-            isAll: false,
-            isMulti: false,
-            levels: [true, false, false, false, false],
-            viewType: 0))
-  ];
+// 使用 AutomaticKeepAliveClientMixin 保持页面状态
+// 这样在 TabBarView 中切换 Tab 时，页面不会被销毁和重建，从而避免数据重新加载
+class _GroupPage extends State<GroupPage> with AutomaticKeepAliveClientMixin {
 
   int gidx = 0;
   bool isGrouTitleSubmitted = true;
   int pageIndex = 0;
 
+  // 重写 wantKeepAlive 属性，返回 true 表示需要保持页面状态
+  // 当此属性为 true 时，页面在离开视图后不会被销毁
   @override
-  void initState() {
-    super.initState();
-    getGroupList();
-  }
+  bool get wantKeepAlive => true;
 
   @override
   Widget build(BuildContext context) {
+    // 使用 AutomaticKeepAliveClientMixin 时，必须在 build 方法开头调用 super.build(context)
+    // 这样才能让页面保持机制正常工作
+    super.build(context);
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.all(20.0),
       child: GridView.builder(
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
@@ -96,15 +185,23 @@ class _GroupPage extends State<GroupPage> {
           crossAxisSpacing: 10.0,
           mainAxisSpacing: 10.0,
         ),
-        itemCount: _gitems.length,
+        itemCount: context.watch<GroupsModel>().length,
         itemBuilder: (context, index) {
-          final item = _gitems[index];
+          final items = context.watch<GroupsModel>().items;
+          // 修复：使用 index 而不是固定的 idx
+          if (index >= items.length) return SizedBox();
+
+          final item = items[index];
+          final name = item.name;
+
           return InkWell(
             onTap: () {
+              // 设置当前选中的索引
+              context.read<GroupsModel>().setIndex(index);
               Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => DocList(group: _gitems[gidx])));
+                      builder: (context) => DocList(group: item)));
             },
             child: Container(
                 decoration: BoxDecoration(
@@ -112,7 +209,7 @@ class _GroupPage extends State<GroupPage> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 alignment: Alignment.center,
-                child: Text(item.name)),
+                child: Text(name)),
           );
         },
       ),
@@ -131,14 +228,25 @@ class _GroupPage extends State<GroupPage> {
 
   /// 窗口: 设置
   void dialogSetting() async {
-    if (_gitems.isEmpty) {
+    final items = context.watch<GroupsModel>().items;
+
+    if (items.isEmpty) {
       return;
     }
     showDialog(
       context: context,
       barrierDismissible: true,
       builder: (BuildContext context) {
-        final Group item = _gitems[gidx];
+        final Group? item = context.watch<GroupsModel>().item;
+        final String name = context.watch<GroupsModel>().name;
+
+        // 添加空值检查
+        if (item == null) {
+          return AlertDialog(
+            content: Text('没有可用的分组'),
+          );
+        }
+
         int status = item.getOverTimeStatus();
         bool isFreezed = item.isNotEnterOverTime() ? false : true;
 
@@ -206,7 +314,7 @@ class _GroupPage extends State<GroupPage> {
                     minimumSize: WidgetStateProperty.all(Size(200, 60)),
                   ),
                   child: Text(
-                    "删除 ${_gitems[gidx].name}",
+                    "删除 $name",
                     style: TextStyle(color: Colors.white, fontSize: 17),
                   ),
                 )
@@ -220,18 +328,22 @@ class _GroupPage extends State<GroupPage> {
 
   /// 窗口: 导出
   void dialogExport() {
+    final gid = context.read<GroupsModel>().id;
     showDialog(
       context: context,
       barrierDismissible: true,
       builder: (BuildContext context) {
         return Export(ResourceType.group,
-            title: "导出当前分组", tid: widget.tid, gid: _gitems[gidx].id);
+            title: "导出当前分组", tid: widget.tid, gid: gid);
       },
     );
   }
 
   /// 窗口: 重命名
   void dialogRename() async {
+    final name = context.read<GroupsModel>().name;
+    final id = context.read<GroupsModel>().id;
+
     String? result;
     await showDialog(
       context: context,
@@ -242,7 +354,7 @@ class _GroupPage extends State<GroupPage> {
             onChanged: (value) {
               result = value;
             },
-            decoration: InputDecoration(hintText: _gitems[gidx].name),
+            decoration: InputDecoration(hintText: name),
           ),
           actions: <Widget>[
             TextButton(
@@ -268,80 +380,16 @@ class _GroupPage extends State<GroupPage> {
       return;
     }
 
-    final res = await Http(tid: widget.tid, gid: _gitems[gidx].id)
+    final res = await Http(tid: widget.tid, gid: id)
         .putGroup(RequestPutGroup(name: result!));
 
     if (res.isNotOK) {
       return;
     }
 
-    setState(() {
-      _gitems[gidx].name = result!;
-    });
-  }
-
-  /// 窗口: 添加分组
-  void dialogAddGroup() async {
-    String? result;
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text("创建分组"),
-          content: TextField(
-            onChanged: (value) {
-              result = value;
-            },
-            decoration: const InputDecoration(hintText: "请输入"),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('取消'),
-              onPressed: () {
-                Navigator.of(context).pop(); // 关闭对话框
-              },
-            ),
-            TextButton(
-              child: const Text('确定'),
-              onPressed: () {
-                Navigator.of(context).pop(result);
-              },
-            ),
-          ],
-        );
-      },
-    );
-    if (result == null) {
-      if (_gitems.isEmpty) {
-        if (mounted) {
-          Navigator.of(context).pop();
-        }
-      }
-      return;
+    if (mounted) {
+      context.read<GroupsModel>().setName(result!);
     }
-    if (result!.isEmpty) {
-      return;
-    }
-    final req = RequestPostGroup(name: result!);
-    final res = await Http(tid: widget.tid).postGroup(req);
-
-    if (res.isNotOK) {
-      return;
-    }
-
-    setState(() {
-      _gitems.add(Group(
-          name: result!,
-          id: res.id,
-          overtime: req.overtime,
-          config: GroupConfig.getDefault()));
-      gidx = _gitems.length - 1;
-      for (int i = 0; i < _gitems[gidx].config.levels.length; i++) {
-        if (_gitems[gidx].config.levels[i]) {
-          _gitems[gidx].config.levels[i] = false;
-        }
-      }
-    });
   }
 
   /// 按钮：切换分组按钮
@@ -359,7 +407,9 @@ class _GroupPage extends State<GroupPage> {
   /// 按钮：删除分组
   /// 位置：在设置中
   void clickDeleteGroup(int index) async {
-    if (_gitems.length == 1) {
+    final length = context.read<GroupsModel>().length;
+    final id = context.read<GroupsModel>().id;
+    if (length == 1) {
       Msg.diy(context, "无法删除，请保留至少一个项目。");
       return;
     }
@@ -369,18 +419,16 @@ class _GroupPage extends State<GroupPage> {
       return;
     }
 
-    final ret =
-        await Http(tid: widget.tid, gid: _gitems[index].id).deleteGroup();
+    final ret = await Http(tid: widget.tid, gid: id).deleteGroup();
     if (ret.isNotOK) {
       return;
     }
 
     if (mounted) {
-      setState(() {
-        _gitems.removeAt(index);
-        gidx = 0;
-        getGroupList();
-      });
+      // setState(() {
+      // });
+      context.read<GroupsModel>().removeAt(index);
+
       Navigator.of(context).pop();
     }
   }
@@ -405,48 +453,35 @@ class _GroupPage extends State<GroupPage> {
   // }
 
   Future<bool> setFreezeOverTime(int index) async {
+    final id = context.read<GroupsModel>().id;
     final time = Time.getOverDay();
-    final res = await Http(tid: widget.tid, gid: _gitems[gidx].id)
+    final res = await Http(tid: widget.tid, gid: id)
         .putGroup(RequestPutGroup(overtime: time));
 
     if (res.isNotOK) {
       return false;
     }
-    _gitems[index].overtime = time;
+    if (mounted) {
+      context.read<GroupsModel>().setOvertime(time);
+    }
     return true;
   }
 
   Future<bool> setForverOverTime(int index) async {
+    final id = context.read<GroupsModel>().id;
+
     final time = Time.getForver();
 
-    final res = await Http(tid: widget.tid, gid: _gitems[gidx].id)
+    final res = await Http(tid: widget.tid, gid: id)
         .putGroup(RequestPutGroup(overtime: time));
 
     if (res.isNotOK) {
       return false;
     }
-    _gitems[index].overtime = time;
+    if (mounted) {
+      context.read<GroupsModel>().setOvertime(time);
+    }
     return true;
-  }
-
-  Future<void> getGroupList() async {
-    final res = await Http(tid: widget.tid).getGroups();
-    if (res.isNotOK) {
-      if (mounted) {
-        Msg.diy(context, "获取分组失败");
-      }
-      return;
-    }
-    if (res.data.isEmpty) {
-      dialogAddGroup();
-      return;
-    }
-    setState(() {
-      _gitems = res.data
-          .map((l) => Group(
-              name: l.name, id: l.id, overtime: l.overtime, config: l.config))
-          .toList();
-    });
   }
 }
 

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:whispering_time/pages/theme/group/group.dart';
 import 'package:whispering_time/services/http/http.dart';
 import 'package:whispering_time/utils/ui.dart';
-
+import 'package:provider/provider.dart';
 class ThemeItem {
   String id;
   String name;
@@ -48,7 +48,6 @@ class _ThemePageState extends State<ThemePage> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisSize: MainAxisSize.min,
       children: [
         if (widget.titems.isNotEmpty)
             TabBar(
@@ -62,16 +61,19 @@ class _ThemePageState extends State<ThemePage> with TickerProviderStateMixin {
             dividerColor: Colors.transparent,
             dividerHeight: 0,
             tabs: widget.titems.map((theme) => Tab(text: theme.name)).toList(),
+            onTap: (value) {
+              Provider.of<GroupsModel>(context, listen: false)
+                  .setThemeID(widget.titems[value].id);
+            },
           ),
         if (widget.titems.isNotEmpty)
-          SizedBox(
-            height: 400, // 给TabBarView一个固定高度
+            Expanded(
             child: TabBarView(
               controller: _tabController,
               children: widget.titems
-                  .map((theme) =>
-                      GroupPage(themename: theme.name, tid: theme.id))
-                  .toList(),
+                .map((theme) =>
+                  GroupPage(themename: theme.name, tid: theme.id))
+                .toList(),
             ),
           ),
       ],

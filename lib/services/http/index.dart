@@ -278,8 +278,7 @@ class Http {
     }
     try {
       final j = jsonDecode(response.body);
-      log.i(
-          "请求路径:${u.path}  \n原始响应数据:\n${response.body}\nJOSN响应数据:\n${const JsonEncoder.withIndent('  ').convert(j)}");
+      // log.i("请求路径:${u.path}  \n原始响应数据:\n${response.body}\nJOSN响应数据:\n${const JsonEncoder.withIndent('  ').convert(j)}");
       return fromJson(j);
     } catch (e) {
       log.e("解析数据失败 ${e.toString()}\n${response.body}");
