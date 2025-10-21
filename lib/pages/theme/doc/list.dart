@@ -571,10 +571,10 @@ class _Cardx extends State<Cardx> {
               TextButton(
                 onPressed:
                     widget.group.isFreezedOrBuf() ? null : _showLevelDialog,
-                child: Text(Level.l[level]),
                 style: TextButton.styleFrom(
                   padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
+                child: Text(Level.l[level]),
               ),
             ],
           ),
@@ -644,21 +644,21 @@ class _Cardx extends State<Cardx> {
                 children: [
                   TextButton(
                     onPressed: widget.onCancel,
-                    child: Text('取消'),
                     style: TextButton.styleFrom(
                       padding:
                           EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
+                    child: Text('取消'),
                   ),
                   SizedBox(width: 8),
                   ElevatedButton(
                     onPressed:
                         widget.group.isFreezedOrBuf() ? null : _handleSave,
-                    child: Text('保存'),
                     style: ElevatedButton.styleFrom(
                       padding:
                           EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     ),
+                    child: Text('保存'),
                   ),
                 ],
               ),

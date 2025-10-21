@@ -321,7 +321,7 @@ class _EditState extends State<Edit> {
     });
   }
 
-  msg(String msg) {
+  void msg(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(

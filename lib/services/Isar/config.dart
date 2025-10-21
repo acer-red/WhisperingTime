@@ -41,7 +41,7 @@ class Config {
     return f;
   }
 
-  open(String id) async {
+  void open(String id) async {
     final dir = await getMainStoreDir();
     log.i("打开配置 $id");
     isar = await Isar.open(
@@ -53,7 +53,7 @@ class Config {
   }
 
   // 数据库不存在时，初始化
-  init(String paramID) async {
+  Future<void> init(String paramID) async {
     log.i("isar初始化");
     if (_instance != null) {
       await isar.close();
@@ -85,7 +85,7 @@ class Config {
     });
   }
 
-  void close() async {
+  Future<void> close() async {
     if (_instance != null) {
       _instance = null;
       await isar.close();
@@ -109,7 +109,7 @@ class Config {
     return 'https://inspect.isar.dev/${Isar.version}/#/$port$path';
   }
 
-  setDevlopMode(bool b) async {
+  void setDevlopMode(bool b) async {
     print("更新配置 开发者模式 $b");
     instance.devlopMode = b;
     await isar.writeTxn(() async {
@@ -117,7 +117,7 @@ class Config {
     });
   }
 
-  setVisualNoneTitle(bool b) async {
+  void setVisualNoneTitle(bool b) async {
     print("更新配置 隐藏空白标题 $b");
     instance.visualNoneTitle = b;
     await isar.writeTxn(() async {
@@ -125,7 +125,7 @@ class Config {
     });
   }
 
-  setDefaultShowTool(bool b) async {
+  void setDefaultShowTool(bool b) async {
     print("更新配置 默认显示工具栏 $b");
     instance.defaultShowTool = b;
     await isar.writeTxn(() async {
@@ -133,7 +133,7 @@ class Config {
     });
   }
 
-  setServerAddress(String str) async {
+  void setServerAddress(String str) async {
     print("更新配置 服务器地址 $str");
     instance.serverAddress = str;
     await isar.writeTxn(() async {
@@ -141,7 +141,7 @@ class Config {
     });
   }
 
-  setAPIs(List<API> apis) async {
+  void setAPIs(List<API> apis) async {
     print("更新配置API列表 ");
     instance.apis =
         apis.map((e) => APIsar(key: e.key, extime: e.extime)).toList();

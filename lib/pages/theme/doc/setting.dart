@@ -89,16 +89,14 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
                     '删除文档',
                     style: TextStyle(color: Colors.red),
                   ),
-                  onTap: () {
-                    final ok = _deleteDoc(context);
-                    ok.then((onValue) {
-                      if (mounted) {
-                        Navigator.of(context).pop({
+                  onTap: () async {
+                    final ok = await _deleteDoc();
+                    if (!ok) return;
+                    if (!mounted) return;
+                       Navigator.of(context).pop({
                           'changed': true,
                           'deleted': true,
                         });
-                      }
-                    });
                   }),
           ],
         ),
@@ -153,9 +151,7 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
       locale: const Locale('zh'),
     );
 
-    if (pickedDate == null) {
-      pickedDate = crtime;
-    }
+    pickedDate ??= crtime;
 
     if (!mounted) return;
 
@@ -211,19 +207,19 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
   }
 
   // 删除文档
-  Future<bool> _deleteDoc(BuildContext ctx) async {
+  Future<bool> _deleteDoc() async {
     bool? confirm = await showDialog<bool>(
-      context: ctx,
+      context: context,
       builder: (context) => AlertDialog(
         title: Text('确认删除'),
         content: Text('确定要删除这篇文档吗？此操作不可恢复。'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
+            onPressed: () => Navigator.of(context).pop(false),
             child: Text('取消'),
           ),
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
+            onPressed: () => Navigator.of(context).pop(true),
             child: Text('删除', style: TextStyle(color: Colors.red)),
           ),
         ],
@@ -235,12 +231,12 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
     }
 
     final res = await Http(gid: widget.gid, did: widget.did).deleteDoc();
+    if (!mounted) return false;
+
     if (res.isNotOK) {
-      if (mounted) {
-        ScaffoldMessenger.of(ctx).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('删除失败')),
         );
-      }
       return false;
     }
     return true;

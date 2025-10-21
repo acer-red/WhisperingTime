@@ -144,7 +144,7 @@ class _Export extends State<Export> {
     );
   }
 
-  pdf() {
+  void pdf() {
     switch (i) {
       // 拆分为多个文件
       case IntegrateType.multiple:
@@ -195,7 +195,7 @@ class _Export extends State<Export> {
     }
   }
 
-  txt() {
+  void txt() {
     switch (i) {
       // 拆分为多个文件
       case IntegrateType.multiple:

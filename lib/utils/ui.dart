@@ -54,7 +54,7 @@ Divider divider() {
 }
 
 class Msg {
-  static diy(BuildContext context, String desc, {String? title}) {
+  static void diy(BuildContext context, String desc, {String? title}) {
     showDialog(
       barrierDismissible: true,
       context: context,

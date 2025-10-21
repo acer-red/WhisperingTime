@@ -28,7 +28,7 @@ class _SettingPageState extends State<SettingPage> {
     init();
   }
 
-  init() async {
+  void init() async {
     setState(() {
       Config().getInspectorURL().then((onValue) {
         isarurl = onValue;
@@ -171,10 +171,10 @@ class _SettingPageState extends State<SettingPage> {
     }
   }
 
-  cleanDatabase() async {
+  void cleanDatabase() async {
     final isarPath = await Config().getFilePath();
     final isarLockPath = "$isarPath.lock";
-    Config().close();
+    await Config().close();
     SP().over();
     final info = await PackageInfo.fromPlatform();
     final d = await getLibraryDir();
@@ -202,7 +202,7 @@ class _SettingPageState extends State<SettingPage> {
     }
   }
 
-  backPage() {
+  void backPage() {
     if (_isOpened != Config.instance.devlopMode) {
       Config.instance.setDevlopMode(_isOpened);
     }

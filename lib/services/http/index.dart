@@ -443,7 +443,7 @@ class Http {
     return ReponsePutUserProfile.fromJson(json);
   }
 
-  getAPI() {
+  String getAPI() {
     final api = Config().getAPIkey();
     if (api.isEmpty) {
       log.e("api key 为空");
@@ -452,7 +452,7 @@ class Http {
     return api;
   }
 
-  getMsg(int statusCode) {
+  String getMsg(int statusCode) {
     final String msg;
     switch (statusCode) {
       case 400:

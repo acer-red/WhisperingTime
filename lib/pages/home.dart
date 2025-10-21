@@ -263,12 +263,11 @@ class _HomePageState extends State<HomePage> {
 
   Widget appBarActions() {
     return IconButton(
-                    key: iconAddKey,
-                    icon: Icon(Icons.add),
-                    onPressed: () {
-                      dialogAdd(iconAddKey.currentContext!.findRenderObject()
-                          as RenderBox);
-                    });
+        key: iconAddKey,
+        icon: Icon(Icons.add),
+        onPressed: () {
+          dialogAdd(iconAddKey.currentContext!.findRenderObject() as RenderBox);
+        });
   }
 
   Widget appBarTitle() {
@@ -429,12 +428,13 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void logout() {
-    showConfirmationDialog(context, MyDialog(content: "确定退出吗？")).then((value) {
+  Future<void> logout() async {
+    showConfirmationDialog(context, MyDialog(content: "确定退出吗？"))
+        .then((value) async {
       if (!value) {
         return;
       }
-      Config().close();
+      await Config().close();
       SP().setIsAutoLogin(false);
       if (mounted) {
         Navigator.pushReplacement(
@@ -691,7 +691,7 @@ class _HomePageState extends State<HomePage> {
     if (scaffoldContext == null) {
       return;
     }
-    
+
     String? inputValue;
     showDialog<String?>(
       context: context,
@@ -715,14 +715,16 @@ class _HomePageState extends State<HomePage> {
               child: const Text('确定'),
               onPressed: () async {
                 Navigator.of(dialogContext).pop();
-                
+
                 if (inputValue == null || inputValue!.isEmpty) {
                   return;
                 }
-                
+
                 // 使用 scaffoldContext 来访问 Provider
                 if (mounted) {
-                  final ok = await Provider.of<GroupsModel>(scaffoldContext, listen: false).add(inputValue!);
+                  final ok = await Provider.of<GroupsModel>(scaffoldContext,
+                          listen: false)
+                      .add(inputValue!);
                   if (!ok) {
                     if (mounted) {
                       showErrMsg(context, "创建失败");

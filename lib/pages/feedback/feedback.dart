@@ -20,7 +20,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
     getItems();
   }
 
-  getItems() {
+  void getItems() {
     Http().getFeedbacks().then((value) {
       setState(() {
         _items = value.data;
@@ -28,7 +28,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
     });
   }
 
-  add() async {
+  void add() async {
     final isVisitor = SP().getIsVisitor();
     if (mounted) {
       if (isVisitor) {

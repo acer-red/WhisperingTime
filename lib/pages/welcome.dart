@@ -293,7 +293,7 @@ class _Welcome extends State<Welcome> {
         SP().setVisitorUID(value.id);
         SP().setIsVisitorLogged(true);
         await Config().init(newVisitorId);
-        await Config.instance.setAPIs(value.apis);
+        Config.instance.setAPIs(value.apis);
 
         if (mounted) {
           Navigator.pushReplacement(
@@ -359,7 +359,7 @@ class _Welcome extends State<Welcome> {
         SP().setIsVisitorLogged(false);
         SP().setIsAutoLogin(isAutoLogin);
         await Config().init(loginUserId); 
-        await Config.instance.setAPIs(value.apis);
+        Config.instance.setAPIs(value.apis);
 
         if (mounted) {
           Navigator.pushReplacement(
@@ -527,7 +527,7 @@ class _Welcome extends State<Welcome> {
         SP().setUID(registerUserId);
         SP().setIsVisitorLogged(false);
         await Config().init(registerUserId);
-        await Config.instance.setAPIs(value.apis);
+        Config.instance.setAPIs(value.apis);
 
         if (mounted) {
           Navigator.pushReplacement(

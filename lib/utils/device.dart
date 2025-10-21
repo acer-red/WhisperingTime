@@ -11,7 +11,7 @@ class Device {
     _build();
   }
 
-  _build() async {
+  void _build() async {
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
     if (Platform.isAndroid) {
       AndroidDeviceInfo platform = await deviceInfo.androidInfo;

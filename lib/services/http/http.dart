@@ -545,19 +545,18 @@ class ResponseGetDocs extends Basic {
     );
   }
 }
+
 class ResponseGetDoc extends Basic {
-  String  id;
+  String id;
   ResponseGetDoc({required super.err, required super.msg, required this.id});
   factory ResponseGetDoc.fromJson(Map<String, dynamic> json) {
     return ResponseGetDoc(
-      err: json['err'] as int,
-      msg: json['msg'] as String,
-      id: json['id'] != null
-          ? json['id'] as String
-          : ""
-    );
+        err: json['err'] as int,
+        msg: json['msg'] as String,
+        id: json['id'] != null ? json['id'] as String : "");
   }
 }
+
 class RequestPostDoc {
   String title;
   String content;
@@ -1003,29 +1002,27 @@ class Http {
       headers: headers,
     );
 
-  Future<ResponseGetDoc> getPreviousDoc(int id) async {
-    log.i("发送请求 获取单个印迹");
-
-    String path = "/doc/${gid!}?previous=1";
-
-    final url = URI().get(serverAddress, path);
-    final Map<String, String> headers = {
-      "Content-Type": "application/json",
-      'Authorization': getAuthorization(),
-    };
-
-    return _handleRequest<ResponseGetDoc>(
-      Method.get,
-      url,
-      (json) => ResponseGetDoc.fromJson(json),
-      headers: headers,
-    );
-  }
-
     return res;
   }
 
+  // Future<ResponseGetDoc> getPreviousDoc(int id) async {
+  //   log.i("发送请求 获取单个印迹");
 
+  //   String path = "/doc/${gid!}?previous=1";
+
+  //   final url = URI().get(serverAddress, path);
+  //   final Map<String, String> headers = {
+  //     "Content-Type": "application/json",
+  //     'Authorization': getAuthorization(),
+  //   };
+
+  //   return _handleRequest<ResponseGetDoc>(
+  //     Method.get,
+  //     url,
+  //     (json) => ResponseGetDoc.fromJson(json),
+  //     headers: headers,
+  //   );
+  // }
   
   Future<ResponsePostDoc> postDoc(RequestPostDoc req) async {
     log.i("发送请求 创建印迹");
