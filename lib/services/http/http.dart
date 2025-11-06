@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
 import 'package:whispering_time/utils/env.dart';
-import 'package:whispering_time/pages/theme/doc/setting.dart';
+import 'package:whispering_time/pages/doc/setting.dart';
 import 'package:whispering_time/utils/time.dart';
 import 'package:whispering_time/services/isar/config.dart';
 import 'base.dart';
@@ -1023,7 +1023,7 @@ class Http {
   //     headers: headers,
   //   );
   // }
-  
+
   Future<ResponsePostDoc> postDoc(RequestPostDoc req) async {
     log.i("发送请求 创建印迹");
 

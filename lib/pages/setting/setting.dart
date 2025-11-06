@@ -7,7 +7,7 @@ import 'package:whispering_time/utils/path.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:path/path.dart' as path;
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:whispering_time/pages/welcome.dart';
+import 'package:whispering_time/welcome.dart';
 
 class SettingPage extends StatefulWidget {
   @override

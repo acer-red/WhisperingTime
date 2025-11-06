@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:whispering_time/pages/theme/group/group.dart';
+import 'package:whispering_time/pages/group/group.dart';
 import 'package:whispering_time/services/http/http.dart';
 import 'package:whispering_time/utils/ui.dart';
 import 'package:provider/provider.dart';
+import 'package:whispering_time/pages/group/model.dart';
+
 class ThemeItem {
   String id;
   String name;
@@ -49,13 +51,20 @@ class _ThemePageState extends State<ThemePage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        if (widget.titems.isNotEmpty)
-            TabBar(
+        if (widget.titems.isNotEmpty) ...[
+          TabBar(
             controller: _tabController,
             isScrollable: true,
             tabAlignment: TabAlignment.start, // 左侧对齐
             padding: EdgeInsets.zero, // 去除整体左侧间距
-            indicatorColor: Theme.of(context).primaryColor,
+            indicator: UnderlineTabIndicator(
+              borderRadius: BorderRadius.circular(3), // 添加圆角
+              borderSide: BorderSide(
+                width: 3.0,
+                color: Theme.of(context).primaryColor,
+              ),
+              insets: const EdgeInsets.symmetric(horizontal: 8),
+            ),
             labelColor: Theme.of(context).primaryColor,
             unselectedLabelColor: Colors.grey,
             dividerColor: Colors.transparent,
@@ -66,16 +75,16 @@ class _ThemePageState extends State<ThemePage> with TickerProviderStateMixin {
                   .setThemeID(widget.titems[value].id);
             },
           ),
-        if (widget.titems.isNotEmpty)
-            Expanded(
+          Expanded(
             child: TabBarView(
               controller: _tabController,
               children: widget.titems
-                .map((theme) =>
-                  GroupPage(themename: theme.name, tid: theme.id))
-                .toList(),
+                  .map((theme) =>
+                      GroupPage(themename: theme.name, tid: theme.id))
+                  .toList(),
             ),
           ),
+        ]
       ],
     );
   }

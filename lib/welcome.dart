@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:whispering_time/utils/ui.dart';
-import 'package:whispering_time/pages/home.dart';
+import 'package:whispering_time/pages/home_app_bar.dart';
 import 'package:whispering_time/services/http/index.dart';
 import 'package:whispering_time/services/sp/sp.dart';
 import 'package:whispering_time/services/isar/config.dart';
@@ -28,7 +28,6 @@ class _Welcome extends State<Welcome> {
   void initState() {
     super.initState();
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -346,7 +345,7 @@ class _Welcome extends State<Welcome> {
     Http()
         .userLogin(RequestPostUserLogin(account: account, password: password))
         .then((value) async {
-          final loginUserId = value.id;
+      final loginUserId = value.id;
       if (value.isOK) {
         if (loginUserId.isEmpty) {
           if (mounted) {
@@ -358,7 +357,7 @@ class _Welcome extends State<Welcome> {
         SP().setUID(loginUserId);
         SP().setIsVisitorLogged(false);
         SP().setIsAutoLogin(isAutoLogin);
-        await Config().init(loginUserId); 
+        await Config().init(loginUserId);
         Config.instance.setAPIs(value.apis);
 
         if (mounted) {
@@ -515,7 +514,7 @@ class _Welcome extends State<Welcome> {
       ),
     )
         .then((value) async {
-          final registerUserId = value.id;
+      final registerUserId = value.id;
       if (value.isOK) {
         if (registerUserId.isEmpty) {
           if (mounted) {

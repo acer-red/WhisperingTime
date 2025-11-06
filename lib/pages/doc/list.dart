@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:whispering_time/pages/theme/doc/setting.dart';
-import 'package:whispering_time/pages/theme/group/group.dart';
+import 'package:whispering_time/pages/doc/setting.dart';
 import 'package:whispering_time/utils/env.dart';
 import 'package:whispering_time/services/http/http.dart';
 import 'package:whispering_time/services/isar/config.dart';
@@ -10,6 +9,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'dart:convert';
 import 'package:whispering_time/utils/export.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:whispering_time/pages/group/model.dart';
 
 class DocList extends StatefulWidget {
   final Group group;

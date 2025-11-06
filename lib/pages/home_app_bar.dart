@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
-import 'package:whispering_time/pages/theme/theme.dart';
-import 'package:whispering_time/pages/theme/group/group.dart';
+import 'package:whispering_time/pages/theme.dart';
 import 'package:whispering_time/pages/setting/setting.dart';
 import 'package:whispering_time/pages/feedback/feedback.dart';
-import 'package:whispering_time/pages/welcome.dart';
+import 'package:whispering_time/welcome.dart';
 import 'package:whispering_time/pages/font_manager/font_manager.dart';
 import 'package:whispering_time/services/isar/config.dart';
 import 'package:whispering_time/services/sp/sp.dart';
@@ -17,6 +16,7 @@ import 'package:whispering_time/utils/env.dart';
 import 'package:whispering_time/services/http/index.dart' as http_index;
 import 'package:whispering_time/services/http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:whispering_time/pages/group/model.dart';
 
 const double iconsize = 25;
 
@@ -642,6 +642,7 @@ class _HomePageState extends State<HomePage> {
       builder: (context) {
         return AlertDialog(
           content: TextField(
+            autofocus: true,
             onChanged: (value) {
               result = value;
             },
@@ -699,10 +700,11 @@ class _HomePageState extends State<HomePage> {
         return AlertDialog(
           title: Text("创建分组"),
           content: TextField(
+            autofocus: true,
             onChanged: (value) {
               inputValue = value;
             },
-            decoration: const InputDecoration(hintText: "请输入"),
+            decoration: const InputDecoration(hintText: "请输入分组名称"),
           ),
           actions: <Widget>[
             TextButton(
