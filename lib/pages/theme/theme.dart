@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:whispering_time/pages/group/group.dart';
-import 'package:whispering_time/services/http/http.dart';
-import 'package:whispering_time/utils/ui.dart';
 import 'package:provider/provider.dart';
 import 'package:whispering_time/pages/group/model.dart';
+import 'settings.dart';
 
 class ThemeItem {
   String id;
@@ -69,7 +68,18 @@ class _ThemePageState extends State<ThemePage> with TickerProviderStateMixin {
             unselectedLabelColor: Colors.grey,
             dividerColor: Colors.transparent,
             dividerHeight: 0,
-            tabs: widget.titems.map((theme) => Tab(text: theme.name)).toList(),
+            tabs: widget.titems
+                .asMap()
+                .entries
+                .map((entry) => Tab(
+                      child: GestureDetector(
+                        onLongPress: () {
+                          showThemeSettings(entry.key);
+                        },
+                        child: Text(entry.value.name),
+                      ),
+                    ))
+                .toList(),
             onTap: (value) {
               Provider.of<GroupsModel>(context, listen: false)
                   .setThemeID(widget.titems[value].id);
@@ -89,73 +99,29 @@ class _ThemePageState extends State<ThemePage> with TickerProviderStateMixin {
     );
   }
 
-  void rename(int index) async {
-    String? result;
-    await showDialog(
+  void showThemeSettings(int index) {
+    showModalBottomSheet(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          content: TextField(
-            enabled: true,
-            onChanged: (value) {
-              result = value;
-            },
-            decoration: InputDecoration(hintText: widget.titems[index].name),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('取消'),
-              onPressed: () {
-                Navigator.of(context).pop(); // 关闭对话框
-              },
-            ),
-            TextButton(
-              child: const Text('确定'),
-              onPressed: () {
-                Navigator.of(context).pop(result);
-              },
-            ),
-          ],
+      builder: (BuildContext modalContext) {
+        return ThemeSettings(
+          theme: widget.titems[index],
+          onRenamed: (newName) {
+            setState(() {
+              widget.titems[index].name = newName;
+            });
+          },
+          onDeleted: () {
+            setState(() {
+              widget.titems.removeAt(index);
+              _tabController.dispose();
+              _tabController = TabController(
+                length: widget.titems.length,
+                vsync: this,
+              );
+            });
+          },
         );
       },
     );
-    if (result == null) {
-      return;
-    }
-    if (result!.isEmpty) {
-      return;
-    }
-
-    final res = await Http(tid: widget.titems[index].id)
-        .putTheme(RequestPutTheme(name: result!));
-
-    if (res.isNotOK) {
-      return;
-    }
-
-    setState(() {
-      widget.titems[index].name = result!;
-      _tabController.dispose();
-      _tabController = TabController(
-          length: widget.titems.length, vsync: this, initialIndex: index);
-    });
-  }
-
-  void delete(ThemeItem item) async {
-    if (!(await showConfirmationDialog(
-        context, MyDialog(content: "是否删除？", title: "提示")))) {
-      return;
-    }
-
-    final res = await Http(tid: item.id).deleteTheme();
-
-    if (res.isNotOK) {
-      return;
-    }
-    setState(() {
-      widget.titems.remove(item);
-      _tabController.dispose();
-      _tabController = TabController(length: widget.titems.length, vsync: this);
-    });
   }
 }

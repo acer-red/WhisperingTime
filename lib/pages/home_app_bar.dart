@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
-import 'package:whispering_time/pages/theme.dart';
+import 'package:whispering_time/pages/theme/theme.dart';
 import 'package:whispering_time/pages/setting/setting.dart';
 import 'package:whispering_time/pages/feedback/feedback.dart';
 import 'package:whispering_time/welcome.dart';
@@ -621,20 +621,21 @@ class _HomePageState extends State<HomePage> {
       items: [
         PopupMenuItem(
           value: 1,
-          child: Text('添加主题'),
+          child: Text('新增主题'),
           onTap: () => dialogAddTheme(),
         ),
         PopupMenuItem(
           value: 3,
           onTap: dialogAddGroup,
           child: Text(
-            '添加分组',
+            '新增分组',
           ),
         ),
       ],
     );
   }
 
+  // 窗口: 新增主题
   void dialogAddTheme() async {
     String? result;
     await showDialog(
@@ -685,7 +686,7 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  /// 窗口: 添加分组
+  // 窗口: 新增分组
   void dialogAddGroup() {
     // 保存包含 Provider 的 context
     final scaffoldContext = scaffoldKey.currentContext;
