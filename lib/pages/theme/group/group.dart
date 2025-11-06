@@ -188,7 +188,6 @@ class _GroupPage extends State<GroupPage> with AutomaticKeepAliveClientMixin {
         itemCount: context.watch<GroupsModel>().length,
         itemBuilder: (context, index) {
           final items = context.watch<GroupsModel>().items;
-          // 修复：使用 index 而不是固定的 idx
           if (index >= items.length) return SizedBox();
 
           final item = items[index];

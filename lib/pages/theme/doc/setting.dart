@@ -93,10 +93,10 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
                     final ok = await _deleteDoc();
                     if (!ok) return;
                     if (!mounted) return;
-                       Navigator.of(context).pop({
-                          'changed': true,
-                          'deleted': true,
-                        });
+                    Navigator.of(this.context).pop({
+                      'changed': true,
+                      'deleted': true,
+                    });
                   }),
           ],
         ),
@@ -234,12 +234,11 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
     if (!mounted) return false;
 
     if (res.isNotOK) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('删除失败')),
-        );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('删除失败')),
+      );
       return false;
     }
     return true;
   }
 }
-                         

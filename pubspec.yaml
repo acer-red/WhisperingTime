@@ -1,12 +1,12 @@
 name: whispering_time
 description: A new Flutter project.
 
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 version: 0.0.1+1
 
 environment:
-  sdk: '>=2.19.4 <4.0.0'
+  sdk: ">=2.19.4 <4.0.0"
 
 dependencies:
   flutter:
@@ -36,10 +36,11 @@ dependencies:
   package_info_plus: ^9.0.0
   window_manager: ^0.5.1
   flutter_slidable: ^4.0.3
+  flutter_launcher_icons: ^0.14.4
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  
+
   flutter_lints: ^6.0.0
   isar_generator: ^3.1.0+1
   build_runner: ^2.4.13
@@ -52,4 +53,7 @@ flutter:
 flutter_launcher_icons:
   android: "launcher_icon" # Android 图标文件名 (不包含扩展名)
   ios: true
-  image_path: "assets/images/icon-512.png" # 你的主图标文件路径
+  image_path: "assets/images/icon.png"
+  macos:
+    generate: true
+    image_path: "assets/images/icon-mac.png"

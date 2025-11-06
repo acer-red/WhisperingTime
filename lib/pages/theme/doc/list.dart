@@ -163,10 +163,6 @@ class _DocListState extends State<DocList> {
                     ),
                   ),
                 ),
-                Icon(
-                  Icons.edit,
-                  color: Colors.grey[600],
-                ),
               ],
             ),
             SizedBox(height: 8),
