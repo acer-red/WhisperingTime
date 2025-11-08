@@ -2,7 +2,8 @@ package web
 
 import (
 	"fmt"
-	"modb"
+
+	"github.com/tengfei-xy/whisperingtime/engine/modb"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/tengfei-xy/go-log"
@@ -21,6 +22,9 @@ func Init(env Env) {
 	gin.SetMode(gin.ReleaseMode)
 	g := gin.Default()
 
+	// 日志中间件：打印请求体和响应体
+	g.Use(loggerMiddleware())
+
 	// 获取图片时不需要通过header来验证用户
 	RouterImageGet(g)
 
@@ -33,6 +37,7 @@ func Init(env Env) {
 	RouteGroup(g)
 	RouteDoc(g)
 	RouteImage(g)
+	RouteBGJob(g)
 
 	log.Infof("API: %s", env.FullServerAddress)
 	log.Info("启动监听...")

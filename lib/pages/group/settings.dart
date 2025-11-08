@@ -21,16 +21,19 @@ class GroupSettings extends StatefulWidget {
 class _GroupSettingsState extends State<GroupSettings> {
   late final FocusNode _textFieldFocusNode;
   final TextEditingController _textController = TextEditingController();
+  String _lastSyncedName = ''; // 保存最后一次同步到服务器的名称
+
   @override
   void initState() {
     super.initState();
     _textFieldFocusNode = FocusNode();
+    _lastSyncedName = widget.group.name;
     _textController.text = widget.group.name;
 
     // 监听焦点变化，失去焦点时自动保存
     _textFieldFocusNode.addListener(() {
       if (!_textFieldFocusNode.hasFocus) {
-        if (_textController.text != widget.group.name) {
+        if (_textController.text != _lastSyncedName) {
           rename(_textController.text);
         }
       }
@@ -39,6 +42,10 @@ class _GroupSettingsState extends State<GroupSettings> {
 
   @override
   void dispose() {
+    // 在销毁前，如果名称有变化，确保同步到服务器
+    if (_textController.text != _lastSyncedName) {
+      rename(_textController.text);
+    }
     _textFieldFocusNode.dispose();
     _textController.dispose();
     super.dispose();
@@ -65,6 +72,8 @@ class _GroupSettingsState extends State<GroupSettings> {
       if (res.isNotOK) {
         return;
       }
+      // 同步成功后，更新最后同步的名称
+      _lastSyncedName = newName;
     }
   }
 
@@ -126,17 +135,18 @@ class _GroupSettingsState extends State<GroupSettings> {
               ),
               Row(
                 children: [
-                  Text("导出"),
+                  Text(
+                    "印迹导出",
+                  ),
                   Spacer(),
                   SizedBox(
                     width: 50,
                     child: PopupMenuButton<String>(
                       icon: Icon(Icons.arrow_drop_down),
                       onSelected: (String value) {
-                        // 处理菜单项点击事件
                         switch (value) {
                           case '保存到本地':
-                            clickExport();
+                            clickExportData();
                             break;
                         }
                       },
@@ -146,7 +156,34 @@ class _GroupSettingsState extends State<GroupSettings> {
                           value: '保存到本地',
                           child: Text('保存到本地'),
                         ),
-                        // 添加其他菜单项
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Text(
+                    "数据导出", // 组
+                  ),
+                  Spacer(),
+                  SizedBox(
+                    width: 50,
+                    child: PopupMenuButton<String>(
+                      icon: Icon(Icons.arrow_drop_down),
+                      onSelected: (String value) {
+                        switch (value) {
+                          case '保存到本地':
+                            clickExportConfig();
+                            break;
+                        }
+                      },
+                      itemBuilder: (BuildContext context) =>
+                          <PopupMenuEntry<String>>[
+                        const PopupMenuItem<String>(
+                          value: '保存到本地',
+                          child: Text('保存到本地'),
+                        ),
                       ],
                     ),
                   ),
@@ -206,9 +243,8 @@ class _GroupSettingsState extends State<GroupSettings> {
     }
   }
 
-  /// 按钮：导出当前分组
-  /// 位置：在设置中
-  void clickExport() {
+  /// 按钮：导出当前分组的印迹
+  void clickExportData() {
     final gid = context.read<GroupsModel>().id;
     showDialog(
       context: context,
@@ -218,6 +254,13 @@ class _GroupSettingsState extends State<GroupSettings> {
             title: "导出当前分组", tid: widget.tid, gid: gid);
       },
     );
+  }
+
+  /// 按钮：导出当前分组的配置
+  void clickExportConfig() {
+    Http(tid: widget.tid, gid: widget.group.id)
+        .exportGroupConfig()
+        .then((configData) {});
   }
 }
 

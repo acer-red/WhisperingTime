@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:whispering_time/pages/doc/setting.dart';
 import 'package:whispering_time/utils/env.dart';
@@ -8,8 +9,9 @@ import 'package:whispering_time/utils/time.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'dart:convert';
 import 'package:whispering_time/utils/export.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:whispering_time/pages/group/model.dart';
+import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
+import 'dart:io';
 
 class DocList extends StatefulWidget {
   final Group group;
@@ -69,19 +71,8 @@ class _DocListState extends State<DocList> {
           final item = items[index];
           final isEditing = editingIndex == index;
 
-          return Slidable(
-            endActionPane: ActionPane(motion: const DrawerMotion(), children: [
-              SlidableAction(
-                  backgroundColor: Colors.transparent,
-                  foregroundColor: Theme.of(context).colorScheme.primary,
-                  icon: Icons.edit,
-                  onPressed: (context) => {toggleEdit(index)}),
-              SlidableAction(
-                  backgroundColor: Colors.transparent,
-                  foregroundColor: Theme.of(context).colorScheme.error,
-                  icon: Icons.delete,
-                  onPressed: (context) => {enterSettingPage(item)}),
-            ]),
+          return GestureDetector(
+            onLongPress: () => _showBottomMenu(context, item),
             child: Card(
               elevation: 5,
               shape: RoundedRectangleBorder(
@@ -94,6 +85,78 @@ class _DocListState extends State<DocList> {
             ),
           );
         });
+  }
+
+  // 显示底部菜单
+  void _showBottomMenu(BuildContext context, Doc item) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.settings,
+                    color: Theme.of(context).colorScheme.primary),
+                title: Text('设置'),
+                onTap: () {
+                  Navigator.pop(context);
+                  enterSettingPage(item);
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.delete,
+                    color: Theme.of(context).colorScheme.error),
+                title: Text('删除'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _confirmDelete(item);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // 确认删除对话框
+  void _confirmDelete(Doc item) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('确认删除'),
+          content: Text('确定要删除这条印迹吗？'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('取消'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                final res =
+                    await Http(gid: widget.group.id, did: item.id).deleteDoc();
+                if (res.isNotOK) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('删除失败')),
+                    );
+                  }
+                  return;
+                }
+                setState(() {
+                  items.remove(item);
+                });
+              },
+              child: Text('删除', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   // 页面: 设置页面
@@ -513,9 +576,89 @@ class _Cardx extends State<Cardx> {
       quillController = QuillController.basic();
     }
 
+    // 监听文档变化，拦截图片插入
+    quillController.document.changes.listen(_onDocumentChange);
+
     level = widget.doc.level;
     config = widget.doc.config;
     crtime = widget.doc.crtime;
+  }
+
+  // 监听文档变化，处理图片上传
+  void _onDocumentChange(DocChange event) async {
+    // 获取文档的所有内容
+    final delta = quillController.document.toDelta();
+
+    // 遍历查找图片
+    int offset = 0;
+    for (int i = 0; i < delta.length; i++) {
+      final op = delta.elementAt(i);
+
+      if (op.data is Map && (op.data as Map).containsKey('image')) {
+        final imageData = op.data as Map;
+        final imageSource = imageData['image'] as String;
+
+        // 如果是本地文件路径，则上传
+        if (imageSource.startsWith('file://') ||
+            (!imageSource.startsWith('http://') &&
+                !imageSource.startsWith('https://'))) {
+          // 去除 file:// 前缀
+          String localPath = imageSource;
+          if (localPath.startsWith('file://')) {
+            localPath = localPath.substring(7);
+          }
+
+          try {
+            // 读取图片文件
+            final file = File(localPath);
+            if (!await file.exists()) {
+              log.w('图片文件不存在: $localPath');
+              offset += (op.length ?? 1);
+              continue;
+            }
+
+            final bytes = await file.readAsBytes();
+
+            // 判断图片类型
+            IMGType imgType;
+            if (localPath.toLowerCase().endsWith('.png')) {
+              imgType = IMGType.png;
+            } else {
+              imgType = IMGType.jpg;
+            }
+
+            // 上传图片
+            final req = RequestPostImage(type: imgType, data: bytes);
+            final res = await Http(gid: widget.group.id).postImage(req);
+
+            if (res.isOK) {
+              // 删除旧的图片引用并插入文件名（不是完整URL）
+              quillController.document.delete(offset, 1);
+              quillController.document
+                  .insert(offset, BlockEmbed.image(res.name));
+
+              log.i('图片上传成功，文件名: ${res.name}');
+            } else {
+              log.e('图片上传失败: ${res.msg}');
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('图片上传失败: ${res.msg}')),
+                );
+              }
+            }
+          } catch (e) {
+            log.e('处理图片上传失败: $e');
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('图片上传失败: $e')),
+              );
+            }
+          }
+        }
+      }
+
+      offset += (op.length ?? 1);
+    }
   }
 
   @override
@@ -523,6 +666,19 @@ class _Cardx extends State<Cardx> {
     titleController.dispose();
     quillController.dispose();
     super.dispose();
+  }
+
+  // 获取自定义的嵌入构建器，自动拼接图片服务器地址
+  List<EmbedBuilder> _getCustomEmbedBuilders() {
+    return [
+      // 自定义图片构建器
+      _CustomImageEmbedBuilder(),
+      // 添加其他默认的嵌入构建器（视频等）
+      ...(kIsWeb
+              ? FlutterQuillEmbeds.editorWebBuilders()
+              : FlutterQuillEmbeds.editorBuilders())
+          .where((builder) => builder.key != 'image'),
+    ];
   }
 
   @override
@@ -539,6 +695,7 @@ class _Cardx extends State<Cardx> {
               // 标题编辑
               Expanded(
                 child: TextField(
+                  autofocus: true,
                   controller: titleController,
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   decoration: InputDecoration(
@@ -584,6 +741,7 @@ class _Cardx extends State<Cardx> {
                 color: Colors.transparent,
                 toolbarSize: 35,
                 multiRowsDisplay: false,
+                embedButtons: FlutterQuillEmbeds.toolbarButtons(),
               ),
             ),
 
@@ -604,6 +762,7 @@ class _Cardx extends State<Cardx> {
               focusNode: FocusNode(),
               scrollController: ScrollController(),
               config: QuillEditorConfig(
+                embedBuilders: _getCustomEmbedBuilders(),
                 scrollable: true,
                 autoFocus: false,
                 expands: false,
@@ -836,6 +995,73 @@ class _Cardx extends State<Cardx> {
           crtime: crtime,
         ),
       ),
+    );
+  }
+}
+
+// 自定义图片嵌入构建器，自动拼接服务器地址
+class _CustomImageEmbedBuilder extends EmbedBuilder {
+  @override
+  String get key => 'image';
+
+  @override
+  Widget build(
+    BuildContext context,
+    EmbedContext embedContext,
+  ) {
+    var imageSource = embedContext.node.value.data as String;
+
+    // 如果不是完整URL（不以http开头），则拼接服务器地址
+    if (!imageSource.startsWith('http://') &&
+        !imageSource.startsWith('https://')) {
+      final serverAddress = Config.instance.serverAddress;
+      final uid = Config.instance.uid;
+      imageSource = '$serverAddress/image/$uid/$imageSource';
+    }
+
+    // 使用默认的图片widget显示
+    return Image.network(
+      imageSource,
+      fit: BoxFit.contain,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) {
+          return child;
+        }
+        return Container(
+          padding: EdgeInsets.all(16),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded /
+                          loadingProgress.expectedTotalBytes!
+                      : null,
+                ),
+                SizedBox(height: 8),
+                Text('图片加载中...',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+              ],
+            ),
+          ),
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          padding: EdgeInsets.all(8),
+          color: Colors.grey[200],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.broken_image, size: 48, color: Colors.grey),
+              SizedBox(height: 4),
+              Text('图片加载失败',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+            ],
+          ),
+        );
+      },
     );
   }
 }

@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"strings"
 
-	sys "sys"
-
 	"github.com/gin-gonic/gin"
 	log "github.com/tengfei-xy/go-log"
 )
@@ -86,13 +84,11 @@ func msgBadRequest(msg ...string) message {
 }
 func ok(g *gin.Context) {
 	d := msgOK()
-	log.Debug3f("\n%s", sys.JsonPrettyPrint(d))
 	g.JSON(http.StatusOK, d)
 }
 
 func okData(g *gin.Context, obj any) {
 	d := msgOK().setData(obj)
-	log.Debug3f("\n%s", sys.JsonPrettyPrint(d))
 	g.JSON(http.StatusOK, d)
 }
 func okImage(g *gin.Context, data bytes.Buffer) {
@@ -115,6 +111,9 @@ func okImage(g *gin.Context, data bytes.Buffer) {
 
 func badRequest(g *gin.Context) {
 	g.AbortWithStatusJSON(http.StatusBadRequest, msgBadRequest())
+}
+func badRequestMsg(g *gin.Context, msg string) {
+	g.AbortWithStatusJSON(http.StatusBadRequest, msgBadRequest(msg))
 }
 func internalServerError(g *gin.Context) {
 	g.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalServer())

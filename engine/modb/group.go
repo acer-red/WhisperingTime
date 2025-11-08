@@ -1,29 +1,26 @@
 package modb
 
 import (
+	"bytes"
 	"context"
-	"sys"
+	"encoding/json"
+	"fmt"
+	"io"
+	"mime/multipart"
+	"os"
+	"path/filepath"
+	"time"
 
 	"github.com/tengfei-xy/go-log"
+	"github.com/tengfei-xy/whisperingtime/engine/sys"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-)
+	"go.mongodb.org/mongo-driver/mongo/gridfs"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
-type GroupConfig struct {
-	IsMulti  bool   `json:"is_multi"`
-	IsAll    bool   `json:"is_all"`
-	Levels   []bool `json:"levels"`
-	ViewType int    `json:"view_type"`
-}
-type Group struct {
-	Name     string      `json:"name" bson:"name"`
-	ID       string      `json:"id" bson:"gid"`
-	CRTime   string      `json:"crtime" bson:"crtime"`
-	UPTime   string      `json:"uptime" bson:"uptime"`
-	OverTime string      `json:"overtime" bson:"overtime"`
-	Config   GroupConfig `json:"config"`
-}
+	ml "github.com/tengfei-xy/whisperingtime/engine/model"
+)
 
 type RequestGroupPost struct {
 	Data struct {
@@ -47,8 +44,8 @@ type RequestGroupPut struct {
 	} `json:"data"`
 }
 
-func GroupsGet(toid primitive.ObjectID) ([]Group, error) {
-	var results []Group
+func GroupsGet(toid primitive.ObjectID) ([]ml.Group, error) {
+	var results []ml.Group
 
 	filter := bson.D{
 		{Key: "_toid", Value: toid},
@@ -90,7 +87,7 @@ func GroupsGet(toid primitive.ObjectID) ([]Group, error) {
 		} else {
 			log.Error("config is not bson.M")
 		}
-		results = append(results, Group{
+		results = append(results, ml.Group{
 			ID:       m["gid"].(string),
 			Name:     m["name"].(string),
 			CRTime:   m["crtime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
@@ -108,9 +105,9 @@ func GroupsGet(toid primitive.ObjectID) ([]Group, error) {
 
 	return results, nil
 }
-func GroupGet(toid primitive.ObjectID, goid primitive.ObjectID) (Group, error) {
+func GroupGet(toid primitive.ObjectID, goid primitive.ObjectID) (ml.Group, error) {
 
-	var res Group
+	var res ml.Group
 	var m bson.M
 
 	filter := bson.D{
@@ -120,7 +117,7 @@ func GroupGet(toid primitive.ObjectID, goid primitive.ObjectID) (Group, error) {
 
 	err := db.Collection("group").FindOne(context.TODO(), filter).Decode(&m)
 	if err != nil {
-		return Group{}, err
+		return ml.Group{}, err
 	}
 	res.ID = m["gid"].(string)
 	res.Name = m["name"].(string)
@@ -139,24 +136,7 @@ func GroupGet(toid primitive.ObjectID, goid primitive.ObjectID) (Group, error) {
 
 	return res, nil
 }
-func GroupGetAndDocDetail(toid primitive.ObjectID, goid primitive.ObjectID) (any, error) {
-
-	type doc struct {
-		Title     string             `json:"title" bson:"title"`
-		Content   string             `json:"content" bson:"content"`
-		PlainText string             `json:"plain_text" bson:"plain_text"`
-		Level     int                `json:"level" bson:"level"`
-		CRTime    primitive.DateTime `json:"crtime"`
-		UPTime    primitive.DateTime `json:"uptime"`
-		Config    *config            `json:"config,omitempty" bson:"config"`
-		ID        string             `json:"did" bson:"did"`
-	}
-
-	type groups struct {
-		GID  string `json:"gid" bson:"gid"`
-		Name string `json:"name" bson:"name,omitempty"` // 来自 A 集合的 name 字段
-		Docs []doc  `json:"docs" bson:"docs,omitempty"` // 关联查询到的 B 集合印迹数组
-	}
+func GroupGetAndDocDetail(toid primitive.ObjectID, goid primitive.ObjectID) (ml.GroupAndDocs, error) {
 
 	// 构建聚合管道
 	pipeline := mongo.Pipeline{
@@ -184,15 +164,15 @@ func GroupGetAndDocDetail(toid primitive.ObjectID, goid primitive.ObjectID) (any
 	cursor, err := db.Collection("group").Aggregate(context.TODO(), pipeline)
 	if err != nil {
 		log.Error(err)
-		return nil, err
+		return ml.GroupAndDocs{}, err
 	}
 	defer cursor.Close(context.TODO())
 
 	// 遍历查询结果
-	var results []groups
+	var results []ml.GroupAndDocs
 	if err := cursor.All(context.TODO(), &results); err != nil {
 		log.Error(err)
-		return nil, err
+		return ml.GroupAndDocs{}, err
 	}
 	return results[0], nil
 
@@ -285,7 +265,7 @@ func GroupCreateDefault(toid primitive.ObjectID, gd RequestThemePostDefaultGroup
 	return gid, nil
 }
 
-// 说明 删除一个分组和所有日志
+// GroupDeleteOne 删除一个分组和所有日志
 func GroupDeleteOne(toid primitive.ObjectID, goid primitive.ObjectID) error {
 	filter := bson.D{
 		{Key: "_toid", Value: toid},
@@ -297,7 +277,7 @@ func GroupDeleteOne(toid primitive.ObjectID, goid primitive.ObjectID) error {
 	return err
 }
 
-// 说明 根据goid删除一个分组
+// GroupDeleteFromGOID 根据goid删除一个分组
 func GroupDeleteFromGOID(goid primitive.ObjectID) error {
 	filter := bson.M{
 		"_id": goid,
@@ -306,11 +286,418 @@ func GroupDeleteFromGOID(goid primitive.ObjectID) error {
 	return err
 }
 
-func NewGroupConfig() GroupConfig {
-	return GroupConfig{
+// GroupExportConfig 导出分组配置
+func GroupExportConfig(uoid, toid, goid primitive.ObjectID) (string, error) {
+
+	bgjoid, taskID, err := createBGJob(uoid, JobTypeExportGroupConfig, JobPriority0, "导出分组配置")
+	if err != nil {
+		return "", err
+	}
+
+	go CountinueExportConfig(BGJobOID{
+		_ID: bgjoid,
+	}, uoid, toid, goid)
+
+	return taskID, nil
+}
+func CountinueExportConfig(id BGJobOID, uoid, toid, goid primitive.ObjectID) error {
+	id.SetJobRunning()
+	l, err := GroupGetAndDocDetail(toid, goid)
+	if err != nil {
+		id.SetError(JobError{
+			Code:    1,
+			Message: err.Error(),
+		},
+		)
+		return err
+	}
+	oids := make([]primitive.ObjectID, 0)
+	for _, doc := range l.Docs {
+		oids = append(oids, doc.OID)
+	}
+	// match := bson.D{
+	// 	{Key: "$match", Value: bson.D{
+	// 		{Key: "_id", Value: bson.M{"$in": oids}}, //fs.files的_id
+	// 		{Key: "metadata.uoid", Value: bson.M{
+	// 			"$exists": true,
+	// 			"$ne":     nil,
+	// 		}},
+	// 	}},
+	// }
+	match := bson.D{
+		{Key: "$match", Value: bson.D{
+			{Key: "_id", Value: bson.M{"$in": oids}},
+			{Key: "metadata.uoid", Value: bson.M{
+				"$exists": true,
+				"$ne":     nil,
+			}},
+		}},
+	}
+
+	// 3. 构建 $group 阶段
+	group := bson.D{
+		{Key: "$group", Value: bson.D{
+			{Key: "_id", Value: "uoid"},
+		}},
+	}
+
+	// 4. (可选) 构建 $project 阶段
+	project := bson.D{
+		{Key: "$project", Value: bson.D{
+			{Key: "_id", Value: 0},
+			{Key: "filename", Value: 1},
+			{Key: "foid", Value: "$_id"}, //添加一个新字段 "foid"，其值来源于输入的 "_id" 字段
+		}},
+	}
+	// 5. 执行聚合查询
+	pipeline := mongo.Pipeline{match, group, project}
+	cursor, err := db.Collection("fs.files").Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		log.Error(err)
+		id.SetError(JobError{
+			Code:    1,
+			Message: err.Error(),
+		},
+		)
+		return err
+	}
+	defer cursor.Close(context.TODO())
+
+	// 6. 处理结果
+	var results []bson.M
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		log.Error(err)
+		id.SetError(JobError{
+			Code:    1,
+			Message: err.Error(),
+		},
+		)
+		return err
+	}
+	base := `/users/tengfei/Documents/source/project/acer/tmp/store/`
+
+	base = filepath.Join(base, "枫迹")
+	groupName := l.Name
+
+	// 数据导出的文件名
+	outZipFilename := fmt.Sprintf("分组配置-%s-%s.zip", groupName, sys.YYYYMMDDhhmmss())
+	// 数据导出的路径
+
+	outZipPath := filepath.Join(base, outZipFilename)
+
+	log.Infof("路径:%s 输出文件名:%s ", outZipPath, outZipFilename)
+
+	configFilename := filepath.Join(base, `config.json`)
+
+	var dir string
+	// 只有在 results 不为空时才创建 images 目录并处理图片
+	if len(results) > 0 {
+		dir = filepath.Join(base, "images")
+		if err := os.MkdirAll(dir, 0777); err != nil {
+			log.Error(err)
+			id.SetError(JobError{Code: 1,
+				Message: err.Error()})
+			return err
+		}
+	}
+
+	for _, result := range results {
+		foid, _ := result["foid"].(primitive.ObjectID)
+		filename, _ := result["filename"].(string)
+		log.Infof("导出分组印迹，发现文件: %s", filename)
+
+		bucket, err := gridfs.NewBucket(db)
+		if err != nil {
+			log.Error(err)
+			id.SetError(JobError{
+				Code:    1,
+				Message: err.Error(),
+			},
+			)
+			return err
+		}
+		downloadStreamByID, err := bucket.OpenDownloadStream(foid) // 使用文件 ID 下载
+		if err != nil {
+			panic(err)
+		}
+
+		var downloadBuffer bytes.Buffer
+		if _, err := io.Copy(&downloadBuffer, downloadStreamByID); err != nil {
+
+			downloadStreamByID.Close()
+			panic(err)
+		}
+		// 将下载的文件存放在goid/下
+		filename = filepath.Join(dir, filename)
+
+		if err := os.WriteFile(filename, downloadBuffer.Bytes(), 0644); err != nil {
+			downloadStreamByID.Close()
+			log.Error(err)
+			id.SetError(JobError{
+				Code:    1,
+				Message: err.Error(),
+			},
+			)
+			return err
+		}
+		log.Infof("导出分组配置， 图片下载完成 %s", filename)
+		downloadStreamByID.Close()
+	}
+	d, err := json.Marshal(&l)
+	if err != nil {
+		log.Error(err)
+		id.SetError(JobError{
+			Code:    1,
+			Message: err.Error(),
+		})
+		return err
+	}
+	if err := os.WriteFile(configFilename, d, 0644); err != nil {
+		log.Error(err)
+		id.SetError(JobError{
+			Code:    1,
+			Message: err.Error(),
+		})
+		return err
+	}
+	log.Infof("配置写入完成 %s", configFilename)
+
+	// 如果有图片，压缩 images 目录和配置文件；否则只压缩配置文件
+	if len(results) > 0 {
+		sys.ZipDirectory(dir, outZipPath, configFilename)
+	} else {
+		sys.ZipDirectory(filepath.Dir(configFilename), outZipPath)
+	}
+
+	id.SetJobCompleted(bson.M{"filename": outZipPath})
+	log.Infof("后台任务完成 %s", id._ID.Hex())
+	return nil
+}
+func NewGroupConfig() ml.GroupConfig {
+	return ml.GroupConfig{
 		IsMulti:  false,
 		IsAll:    false,
 		Levels:   []bool{true, true, true, true, true},
 		ViewType: 0,
 	}
+}
+
+// GroupImportConfig 导入分组配置
+func GroupImportConfig(uoid, toid primitive.ObjectID, fileHeader *multipart.FileHeader) error {
+	// 创建临时目录
+	tmpDir := filepath.Join(os.TempDir(), "whisperingtime_import_"+sys.CreateUUID())
+	if err := os.MkdirAll(tmpDir, 0755); err != nil {
+		return fmt.Errorf("创建临时目录失败: %w", err)
+	}
+	defer os.RemoveAll(tmpDir) // 清理临时目录
+
+	// 保存上传的zip文件
+	zipPath := filepath.Join(tmpDir, fileHeader.Filename)
+	file, err := fileHeader.Open()
+	if err != nil {
+		return fmt.Errorf("打开上传文件失败: %w", err)
+	}
+	defer file.Close()
+
+	out, err := os.Create(zipPath)
+	if err != nil {
+		return fmt.Errorf("创建临时文件失败: %w", err)
+	}
+	defer out.Close()
+
+	if _, err := io.Copy(out, file); err != nil {
+		return fmt.Errorf("保存文件失败: %w", err)
+	}
+	out.Close() // 关闭文件以便解压
+
+	// 解压zip文件
+	extractDir := filepath.Join(tmpDir, "extracted")
+	extractedFiles, err := sys.UnzipFile(zipPath, extractDir)
+	if err != nil {
+		return fmt.Errorf("解压文件失败: %w", err)
+	}
+
+	// 从解压的文件列表中查找config.json
+	var configPath string
+	for _, filePath := range extractedFiles {
+		if filepath.Base(filePath) == "config.json" {
+			configPath = filePath
+			break
+		}
+	}
+
+	if configPath == "" {
+		return fmt.Errorf("配置文件 config.json 不存在")
+	}
+
+	// 读取并解析config.json
+	configData, err := os.ReadFile(configPath)
+	if err != nil {
+		return fmt.Errorf("读取配置文件失败: %w", err)
+	}
+
+	var groupAndDocs ml.GroupAndDocs
+	if err := json.Unmarshal(configData, &groupAndDocs); err != nil {
+		return fmt.Errorf("解析配置文件失败: %w", err)
+	}
+
+	// 开始导入数据到MongoDB
+	// 1. 创建或更新分组
+	gid := groupAndDocs.GID
+	if gid == "" {
+		gid = sys.CreateUUID()
+	}
+
+	// 检查分组是否已存在
+	filter := bson.D{
+		{Key: "_toid", Value: toid},
+		{Key: "gid", Value: gid},
+	}
+
+	var existingGroup bson.M
+	err = db.Collection("group").FindOne(context.TODO(), filter).Decode(&existingGroup)
+
+	groupData := bson.D{
+		{Key: "_toid", Value: toid},
+		{Key: "name", Value: groupAndDocs.Name},
+		{Key: "gid", Value: gid},
+		{Key: "uptime", Value: primitive.NewDateTimeFromTime(time.Now())},
+		{Key: "config", Value: groupAndDocs.Config},
+	}
+
+	if err == mongo.ErrNoDocuments {
+		// 分组不存在，创建新分组
+		forever := time.Now().Add(time.Hour * 24 * 36500) // 100年后
+		groupData = append(groupData,
+			bson.E{Key: "crtime", Value: primitive.NewDateTimeFromTime(time.Now())},
+			bson.E{Key: "overtime", Value: primitive.NewDateTimeFromTime(forever)},
+		)
+		_, err = db.Collection("group").InsertOne(context.TODO(), groupData)
+		if err != nil {
+			return fmt.Errorf("创建分组失败: %w", err)
+		}
+	} else if err != nil {
+		return fmt.Errorf("查询分组失败: %w", err)
+	} else {
+		// 分组已存在，更新分组信息
+		update := bson.M{
+			"$set": bson.M{
+				"name":   groupAndDocs.Name,
+				"uptime": primitive.NewDateTimeFromTime(time.Now()),
+				"config": groupAndDocs.Config,
+			},
+		}
+		_, err = db.Collection("group").UpdateOne(context.TODO(), filter, update)
+		if err != nil {
+			return fmt.Errorf("更新分组失败: %w", err)
+		}
+	}
+
+	// 2. 导入文档和图片
+	// 获取分组的ObjectID
+	var goidDoc bson.M
+	err = db.Collection("group").FindOne(context.TODO(), filter).Decode(&goidDoc)
+	if err != nil {
+		return fmt.Errorf("获取分组ID失败: %w", err)
+	}
+	goid := goidDoc["_id"].(primitive.ObjectID)
+
+	// 处理images目录（如果存在）
+	// 从解压的文件列表中筛选出images目录下的文件
+	var imageFiles []string
+	for _, filePath := range extractedFiles {
+		// 检查文件是否在images目录下
+		relPath, err := filepath.Rel(extractDir, filePath)
+		if err != nil {
+			continue
+		}
+		if filepath.HasPrefix(relPath, "images"+string(os.PathSeparator)) ||
+			filepath.HasPrefix(relPath, filepath.Join("images")) {
+			imageFiles = append(imageFiles, filePath)
+		}
+	}
+
+	imageMap := make(map[string]primitive.ObjectID) // 原文件名 -> 新的GridFS文件ID
+
+	if len(imageFiles) > 0 {
+		// 有图片文件，上传到GridFS
+		bucket, err := gridfs.NewBucket(db)
+		if err != nil {
+			return fmt.Errorf("创建GridFS bucket失败: %w", err)
+		}
+
+		for _, imagePath := range imageFiles {
+			imageData, err := os.ReadFile(imagePath)
+			if err != nil {
+				log.Error(fmt.Errorf("读取图片文件失败 %s: %w", imagePath, err))
+				continue
+			}
+
+			fileName := filepath.Base(imagePath)
+
+			// 上传到GridFS
+			uploadStream, err := bucket.OpenUploadStream(fileName, &options.UploadOptions{
+				Metadata: bson.M{
+					"uoid": uoid,
+				},
+			})
+			if err != nil {
+				log.Error(fmt.Errorf("创建上传流失败 %s: %w", fileName, err))
+				continue
+			}
+
+			if _, err := uploadStream.Write(imageData); err != nil {
+				uploadStream.Close()
+				log.Error(fmt.Errorf("写入图片数据失败 %s: %w", fileName, err))
+				continue
+			}
+
+			if err := uploadStream.Close(); err != nil {
+				log.Error(fmt.Errorf("关闭上传流失败 %s: %w", fileName, err))
+				continue
+			}
+
+			// 记录文件名和对应的GridFS ID
+			imageMap[fileName] = uploadStream.FileID.(primitive.ObjectID)
+			log.Infof("成功上传图片: %s -> %s", fileName, uploadStream.FileID)
+		}
+	}
+
+	// 3. 导入文档数据
+	for _, doc := range groupAndDocs.Docs {
+		// 生成新的文档ID
+		did := sys.CreateUUID()
+
+		// 处理文档内容中的图片引用
+		// 这里需要根据实际的图片引用格式来替换
+		// 假设图片引用格式为某种特定格式，需要替换为新的GridFS ID
+		content := doc.Content
+		// TODO: 根据实际情况处理图片引用的替换
+
+		docData := bson.D{
+			{Key: "_goid", Value: goid},
+			{Key: "_toid", Value: toid},
+			{Key: "did", Value: did},
+			{Key: "title", Value: doc.Title},
+			{Key: "content", Value: content},
+			{Key: "plain_text", Value: doc.PlainText},
+			{Key: "level", Value: doc.Level},
+			{Key: "crtime", Value: primitive.NewDateTimeFromTime(doc.CRTime)},
+			{Key: "uptime", Value: primitive.NewDateTimeFromTime(time.Now())},
+		}
+
+		if doc.Config != nil {
+			docData = append(docData, bson.E{Key: "config", Value: doc.Config})
+		}
+
+		_, err := db.Collection("doc").InsertOne(context.TODO(), docData)
+		if err != nil {
+			log.Error(fmt.Errorf("插入文档失败: %w", err))
+			continue
+		}
+		log.Infof("成功导入文档: %s", doc.Title)
+	}
+
+	log.Info("分组配置导入完成")
+	return nil
 }

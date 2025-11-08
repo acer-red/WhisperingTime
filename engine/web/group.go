@@ -1,7 +1,9 @@
 package web
 
 import (
-	"modb"
+	"strings"
+
+	"github.com/tengfei-xy/whisperingtime/engine/modb"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/tengfei-xy/go-log"
@@ -28,6 +30,18 @@ func RouteGroup(g *gin.Engine) {
 		c.PUT("", GroupPutID)
 		c.DELETE("", GroupIDDelete)
 	}
+	d := g.Group("/group/:tid/:gid/export_config")
+	{
+		d.Use(getTidAndGid())
+		d.POST("", GroupPostExportConfig)
+	}
+
+	e := g.Group("/group/:tid/from_config")
+	{
+		e.Use(getTid())
+		e.POST("", GroupPostImportConfig)
+	}
+
 }
 
 func GroupsGet(g *gin.Context) {
@@ -137,4 +151,48 @@ func groupGetNoDetail(g *gin.Context) {
 	}
 
 	okData(g, response)
+}
+func GroupPostExportConfig(g *gin.Context) {
+	log.Info("导出分组配置")
+	uoid := g.MustGet("uoid").(primitive.ObjectID)
+	toid := g.MustGet("toid").(primitive.ObjectID)
+	goid := g.MustGet("goid").(primitive.ObjectID)
+	taskID, err := modb.GroupExportConfig(uoid, toid, goid)
+	if err != nil {
+		internalServerError(g)
+		return
+	}
+	okData(g, map[string]interface{}{
+		"taskId": taskID,
+	})
+}
+
+func GroupPostImportConfig(g *gin.Context) {
+	log.Info("导入分组配置")
+	uoid := g.MustGet("uoid").(primitive.ObjectID)
+	toid := g.MustGet("toid").(primitive.ObjectID)
+
+	// 接收上传的文件
+	file, err := g.FormFile("file")
+	if err != nil {
+		log.Error(err)
+		badRequest(g)
+		return
+	}
+
+	// 验证文件扩展名
+	if !strings.HasSuffix(file.Filename, ".zip") {
+		log.Error("文件格式错误，不是 .zip 文件")
+		badRequestMsg(g, "文件格式错误，请上传 .zip 文件")
+		return
+	}
+
+	err = modb.GroupImportConfig(uoid, toid, file)
+	if err != nil {
+		log.Error(err)
+		badRequestMsg(g, err.Error())
+		return
+	}
+
+	ok(g)
 }

@@ -36,12 +36,20 @@ func StringtoTime(s string) time.Time {
 	if i, err := strconv.Atoi(s); err == nil {
 		return time.Unix(int64(i), 0)
 	}
-	if t, err := time.Parse("2006-01-02 15:04:05", s); err != nil {
+	t, err := time.Parse("2006-01-02 15:04:05", s)
+	if err != nil {
 		fmt.Println(err)
 		return time.Now()
-	} else {
-		return t
-
 	}
-
+	return t
+}
+func YYYYMMDDhhmmss() string {
+	t := time.Now()
+	y := t.Year()
+	m := int(t.Month())
+	d := int(t.Day())
+	hour := t.Hour()
+	min := t.Minute()
+	sec := t.Second()
+	return fmt.Sprintf("%04d%02d%02d%02d%02d%02d", y, m, d, hour, min, sec)
 }

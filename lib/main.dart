@@ -4,7 +4,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:whispering_time/welcome.dart';
-import 'package:whispering_time/pages/home_app_bar.dart';
+import 'package:whispering_time/pages/home/appbar.dart';
 import 'package:whispering_time/services/sp/sp.dart';
 import 'package:whispering_time/services/isar/config.dart';
 import 'package:window_manager/window_manager.dart';

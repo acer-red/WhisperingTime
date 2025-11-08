@@ -5,7 +5,8 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"sys"
+
+	"github.com/tengfei-xy/whisperingtime/engine/sys"
 
 	"github.com/tengfei-xy/go-log"
 	"go.mongodb.org/mongo-driver/bson"

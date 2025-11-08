@@ -2,49 +2,38 @@ package modb
 
 import (
 	"context"
-	"sys"
 	"time"
+
+	"github.com/tengfei-xy/whisperingtime/engine/sys"
 
 	"github.com/tengfei-xy/go-log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-)
 
-type config struct {
-	IsShowTool bool `json:"is_show_tool" bson:"is_show_tool"`
-}
-type Doc struct {
-	Title     string  `json:"title" bson:"title"`
-	Content   string  `json:"content" bson:"content"`
-	PlainText string  `json:"plain_text" bson:"plain_text"`
-	Level     int32   `json:"level" bson:"level"`
-	CRTime    string  `json:"crtime"`
-	UPTime    string  `json:"uptime"`
-	Config    *config `json:"config,omitempty" bson:"config"`
-	ID        string  `json:"id" bson:"did"`
-}
+	m "github.com/tengfei-xy/whisperingtime/engine/model"
+)
 
 type RequestDocPost struct {
 	Data struct {
-		Content   string  `json:"content"`
-		Title     string  `json:"title"`
-		PlainText string  `json:"plain_text"`
-		Level     int32   `json:"level"`
-		CRTime    string  `json:"crtime"`
-		Config    *config `json:"config"`
+		Content   string       `json:"content"`
+		Title     string       `json:"title"`
+		PlainText string       `json:"plain_text"`
+		Level     int32        `json:"level"`
+		CRTime    string       `json:"crtime"`
+		Config    *m.DocConfig `json:"config"`
 	} `json:"data"`
 }
 
 type RequestDocPut struct {
 	Doc struct {
-		Title     *string `json:"title,omitempty" bson:"title"`
-		Content   *string `json:"content,omitempty" bson:"content"`
-		PlainText *string `json:"plain_text,omitempty" bson:"plain_text"`
-		Level     *int32  `json:"level,omitempty" bson:"level"`
-		CRTime    *string `json:"crtime,omitempty"`
-		UPTime    *string `json:"uptime,omitempty"`
-		Config    *config `json:"config,omitempty" bson:"config"`
-		ID        *string `json:"id" bson:"did"`
+		Title     *string      `json:"title,omitempty" bson:"title"`
+		Content   *string      `json:"content,omitempty" bson:"content"`
+		PlainText *string      `json:"plain_text,omitempty" bson:"plain_text"`
+		Level     *int32       `json:"level,omitempty" bson:"level"`
+		CRTime    *string      `json:"crtime,omitempty"`
+		UPTime    *string      `json:"uptime,omitempty"`
+		Config    *m.DocConfig `json:"config,omitempty" bson:"config"`
+		ID        *string      `json:"id" bson:"did"`
 	} `json:"data"`
 }
 type DocFilter struct {
@@ -93,9 +82,9 @@ type DocFilter struct {
 
 //		return results, nil
 //	}
-func DocsGet(goid primitive.ObjectID, f DocFilter) ([]Doc, error) {
+func DocsGet(goid primitive.ObjectID, f DocFilter) ([]m.Doc, error) {
 
-	var results []Doc
+	var results []m.Doc
 
 	filter := bson.D{
 		{Key: "_goid", Value: goid},
@@ -113,23 +102,23 @@ func DocsGet(goid primitive.ObjectID, f DocFilter) ([]Doc, error) {
 	}
 
 	for cursor.Next(context.TODO()) {
-		var m bson.M
-		err := cursor.Decode(&m)
+		var doc bson.M
+		err := cursor.Decode(&doc)
 		if err != nil {
 			log.Error(err)
 			return nil, err
 		}
-		results = append(results, Doc{
-			Title:     m["title"].(string),
-			Content:   m["content"].(string),
-			PlainText: m["plain_text"].(string),
-			Level:     m["level"].(int32),
-			CRTime:    m["crtime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
-			UPTime:    m["uptime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
-			Config: &config{
-				IsShowTool: m["config"].(bson.M)["is_show_tool"].(bool),
+		results = append(results, m.Doc{
+			Title:     doc["title"].(string),
+			Content:   doc["content"].(string),
+			PlainText: doc["plain_text"].(string),
+			Level:     doc["level"].(int32),
+			CRTime:    doc["crtime"].(primitive.DateTime).Time(),
+			UPTime:    doc["uptime"].(primitive.DateTime).Time(),
+			Config: &m.DocConfig{
+				IsShowTool: doc["config"].(bson.M)["is_show_tool"].(bool),
 			},
-			ID: m["did"].(string),
+			ID: doc["did"].(string),
 		})
 	}
 

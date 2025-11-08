@@ -1,7 +1,7 @@
 package web
 
 import (
-	"modb"
+	"github.com/tengfei-xy/whisperingtime/engine/modb"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/tengfei-xy/go-log"

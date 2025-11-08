@@ -489,6 +489,26 @@ class GroupListData {
   }
 }
 
+class ResponseExportGroupConfig extends Basic {
+  ResponseExportGroupConfig({required super.err, required super.msg});
+  factory ResponseExportGroupConfig.fromJson(Map<String, dynamic> json) {
+    return ResponseExportGroupConfig(
+      err: json['err'] as int,
+      msg: json['msg'] as String,
+    );
+  }
+}
+
+class ResponseImportGroupConfig extends Basic {
+  ResponseImportGroupConfig({required super.err, required super.msg});
+  factory ResponseImportGroupConfig.fromJson(Map<String, dynamic> json) {
+    return ResponseImportGroupConfig(
+      err: json['err'] as int,
+      msg: json['msg'] as String,
+    );
+  }
+}
+
 // doc
 class Doc {
   String title;
@@ -690,6 +710,103 @@ class ResponsePostImage extends Basic {
     );
   }
   String get imageFullUrl => url;
+}
+
+// 后台任务
+class BackgroundJob {
+  final String id;
+  final String name;
+  final String jobType;
+  final String status;
+  final String createdAt;
+  final String? startedAt;
+  final String? completedAt;
+  final Map<String, dynamic>? result;
+  final JobError? error;
+  final int priority;
+  final int retryCount;
+
+  BackgroundJob({
+    required this.id,
+    required this.name,
+    required this.jobType,
+    required this.status,
+    required this.createdAt,
+    this.startedAt,
+    this.completedAt,
+    this.result,
+    this.error,
+    required this.priority,
+    required this.retryCount,
+  });
+
+  factory BackgroundJob.fromJson(Map<String, dynamic> json) {
+    return BackgroundJob(
+      id: json['_id'] ?? json['id'] ?? '',
+      name: json['name'] ?? '',
+      jobType: json['jobType'] ?? '',
+      status: json['status'] ?? '',
+      createdAt: json['createdAt'] ?? '',
+      startedAt: json['startedAt'],
+      completedAt: json['completedAt'],
+      result: json['result'] as Map<String, dynamic>?,
+      error: json['error'] != null ? JobError.fromJson(json['error']) : null,
+      priority: json['priority'] ?? 0,
+      retryCount: json['retryCount'] ?? 0,
+    );
+  }
+}
+
+class JobError {
+  final int code;
+  final String message;
+
+  JobError({
+    required this.code,
+    required this.message,
+  });
+
+  factory JobError.fromJson(Map<String, dynamic> json) {
+    return JobError(
+      code: json['code'] ?? 0,
+      message: json['message'] ?? '',
+    );
+  }
+}
+
+class ResponseGetBackgroundJobs extends Basic {
+  final List<BackgroundJob> jobs;
+
+  ResponseGetBackgroundJobs({
+    required super.err,
+    required super.msg,
+    required this.jobs,
+  });
+
+  factory ResponseGetBackgroundJobs.fromJson(Map<String, dynamic> json) {
+    return ResponseGetBackgroundJobs(
+      err: json['err'] as int,
+      msg: json['msg'] as String,
+      jobs: json['data'] != null
+          ? (json['data'] as List<dynamic>)
+              .map((item) =>
+                  BackgroundJob.fromJson(item as Map<String, dynamic>))
+              .toList()
+          : [],
+    );
+  }
+}
+
+class ResponseDownloadBackgroundJobFile extends Basic {
+  final Uint8List? data;
+  final String? filename;
+
+  ResponseDownloadBackgroundJobFile({
+    required super.err,
+    required super.msg,
+    this.data,
+    this.filename,
+  });
 }
 
 class Http {
@@ -975,6 +1092,41 @@ class Http {
         headers: headers);
   }
 
+  Future<ResponseExportGroupConfig> exportGroupConfig() async {
+    log.i("发送请求 导出分组配置");
+    String path = "/group/${tid!}/${gid!}/export_config";
+
+    final Map<String, String> headers = {
+      "Authorization": getAuthorization(),
+    };
+
+    final url = URI().get(serverAddress, path);
+    return _handleRequest<ResponseExportGroupConfig>(
+      Method.post,
+      url,
+      (json) => ResponseExportGroupConfig.fromJson(json),
+      headers: headers,
+    );
+  }
+
+  Future<ResponseImportGroupConfig> importGroupConfig(String filePath) async {
+    log.i("发送请求 导入分组配置");
+    String path = "/group/${tid!}/from_config";
+
+    final url = URI().get(serverAddress, path);
+    var request = http.MultipartRequest('POST', url);
+    request.headers['Authorization'] = getAuthorization();
+    request.files.add(await http.MultipartFile.fromPath(
+      'file',
+      filePath,
+    ));
+
+    var response = await request.send();
+    var responseBody = await response.stream.bytesToString();
+    final Map<String, dynamic> json = jsonDecode(responseBody);
+    return ResponseImportGroupConfig.fromJson(json);
+  }
+
   // doc
   Future<ResponseGetDocs> getDocs(int? year, int? month) async {
     log.i("发送请求 获取分组的日志列表");
@@ -1128,5 +1280,117 @@ class Http {
       (json) => ResponseDeleteImage.fromJson(json),
       headers: headers,
     );
+  }
+
+  // background job
+  Future<ResponseGetBackgroundJobs> getBackgroundJobs() {
+    log.i("发送请求 获取后台任务");
+    final String path = "/bgjobs";
+    final Map<String, String> headers = {
+      'Authorization': getAuthorization(),
+    };
+    final url = URI().get(serverAddress, path);
+    return _handleRequest<ResponseGetBackgroundJobs>(
+      Method.get,
+      url,
+      (json) => ResponseGetBackgroundJobs.fromJson(json),
+      headers: headers,
+    );
+  }
+
+  Future<Basic> deleteBackgroundJob(String jobId) {
+    log.i("发送请求 删除后台任务: $jobId");
+    final String path = "/bgjob/$jobId";
+    final Map<String, String> headers = {
+      'Authorization': getAuthorization(),
+    };
+    final url = URI().get(serverAddress, path);
+    return _handleRequest<Basic>(
+      Method.delete,
+      url,
+      (json) => Basic(err: json['err'] as int, msg: json['msg'] as String),
+      headers: headers,
+    );
+  }
+
+  Future<ResponseDownloadBackgroundJobFile> downloadBackgroundJobFile(
+      String jobId) async {
+    log.i("发送请求 下载后台任务文件: $jobId");
+    final String path = "/bgjob/$jobId/download";
+    final Map<String, String> headers = {
+      'Authorization': getAuthorization(),
+    };
+    final url = URI().get(serverAddress, path);
+
+    try {
+      final response = await http.get(url, headers: headers);
+
+      // 处理 404 错误（文件未找到）
+      if (response.statusCode == 404) {
+        return ResponseDownloadBackgroundJobFile(
+          err: 404,
+          msg: '文件未找到',
+        );
+      }
+
+      // 处理其他错误状态码（400, 500 等）
+      if (response.statusCode != 200) {
+        // 后端错误时返回 JSON 格式
+        try {
+          final json = jsonDecode(response.body);
+          return ResponseDownloadBackgroundJobFile(
+            err: json['err'] ?? response.statusCode,
+            msg: json['msg'] ?? '下载失败',
+          );
+        } catch (e) {
+          return ResponseDownloadBackgroundJobFile(
+            err: response.statusCode,
+            msg: '下载失败: HTTP ${response.statusCode}',
+          );
+        }
+      }
+
+      // 成功时（200），后端直接返回文件二进制数据
+      // 从响应头中获取文件名
+      String? filename;
+      final contentDisposition = response.headers['content-disposition'];
+      if (contentDisposition != null) {
+        // 优先尝试解析 RFC 2231 格式 (filename*=UTF-8''encoded_name)
+        final rfc2231Regex = RegExp(r"filename\*=UTF-8''([^;]+)");
+        final rfc2231Match = rfc2231Regex.firstMatch(contentDisposition);
+        if (rfc2231Match != null) {
+          final encodedFilename = rfc2231Match.group(1);
+          if (encodedFilename != null) {
+            try {
+              filename = Uri.decodeComponent(encodedFilename);
+            } catch (e) {
+              log.e("解码文件名失败: $e");
+            }
+          }
+        }
+
+        // 如果 RFC 2231 解析失败，尝试普通格式
+        if (filename == null) {
+          final regex = RegExp(r'filename="?([^";]+)"?');
+          final match = regex.firstMatch(contentDisposition);
+          if (match != null) {
+            filename = match.group(1)?.trim();
+          }
+        }
+      }
+
+      return ResponseDownloadBackgroundJobFile(
+        err: 0,
+        msg: 'ok',
+        data: response.bodyBytes,
+        filename: filename,
+      );
+    } catch (e) {
+      log.e("下载后台任务文件失败: $e");
+      return ResponseDownloadBackgroundJobFile(
+        err: -1,
+        msg: '网络错误: ${e.toString()}',
+      );
+    }
   }
 }

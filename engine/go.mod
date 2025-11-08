@@ -1,21 +1,13 @@
 module github.com/tengfei-xy/whisperingtime/engine
 
-go 1.22.5
-
-replace modb => ./modb
-
-replace sys => ./sys
-
-replace web => ./web
+go 1.24.0
 
 require (
-	github.com/gin-gonic/gin v1.10.0 // indirect
-	go.mongodb.org/mongo-driver v1.17.1 // indirect
-	modb v0.0.0-00010101000000-000000000000
-	web v0.0.0-00010101000000-000000000000
+	github.com/gin-gonic/gin v1.10.0
+	github.com/google/uuid v1.6.0
+	github.com/tengfei-xy/go-log v0.2.7
+	go.mongodb.org/mongo-driver v1.17.6
 )
-
-require github.com/tengfei-xy/go-log v0.2.7
 
 require (
 	github.com/bytedance/sonic v1.12.5 // indirect
@@ -29,7 +21,6 @@ require (
 	github.com/go-playground/validator/v10 v10.23.0 // indirect
 	github.com/goccy/go-json v0.10.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.17.11 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.9 // indirect
@@ -53,5 +44,4 @@ require (
 	golang.org/x/text v0.20.0 // indirect
 	google.golang.org/protobuf v1.35.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1
-	sys v0.0.0-00010101000000-000000000000 // indirect
 )

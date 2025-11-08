@@ -2,7 +2,8 @@ package modb
 
 import (
 	"context"
-	"sys"
+
+	"github.com/tengfei-xy/whisperingtime/engine/sys"
 
 	log "github.com/tengfei-xy/go-log"
 

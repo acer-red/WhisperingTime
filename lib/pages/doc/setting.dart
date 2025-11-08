@@ -20,7 +20,6 @@ class LastStateDocSetting {
   LastStateDocSetting({required this.state, this.config, this.crtime});
 }
 
-// 文档设置弹窗
 class DocSettingsDialog extends StatefulWidget {
   final String gid;
   final String? did;

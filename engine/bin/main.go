@@ -7,9 +7,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"modb"
+	"github.com/tengfei-xy/whisperingtime/engine/modb"
 
-	"web"
+	"github.com/tengfei-xy/whisperingtime/engine/web"
 
 	log "github.com/tengfei-xy/go-log"
 	"gopkg.in/yaml.v3"
@@ -36,6 +36,9 @@ type Config struct {
 		User     string `yaml:"user"`
 		Password string `yaml:"password"`
 	} `yaml:"db"`
+	Basic struct {
+		Store string `yaml:"store"`
+	}
 }
 
 var app App
@@ -64,7 +67,6 @@ func init_config() {
 	} else {
 		app.config.Web.fullAddress = fmt.Sprintf("http://%s:%d", app.config.Web.Address, app.config.Web.Port)
 	}
-
 }
 func init_log() {
 	log.SetLevelInt(app.loglevel)

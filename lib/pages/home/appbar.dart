@@ -1,22 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:path/path.dart' as path;
 import 'package:whispering_time/pages/theme/theme.dart';
-import 'package:whispering_time/pages/setting/setting.dart';
-import 'package:whispering_time/pages/feedback/feedback.dart';
-import 'package:whispering_time/welcome.dart';
-import 'package:whispering_time/pages/font_manager/font_manager.dart';
-import 'package:whispering_time/services/isar/config.dart';
-import 'package:whispering_time/services/sp/sp.dart';
+import 'package:whispering_time/pages/home/drawer.dart';
 import 'package:whispering_time/services/isar/font.dart';
+import 'package:whispering_time/services/isar/config.dart';
 import 'package:whispering_time/utils/ui.dart';
-import 'package:whispering_time/utils/export.dart';
-import 'package:whispering_time/services/http/base.dart';
 import 'package:whispering_time/utils/env.dart';
+import 'package:whispering_time/services/http/base.dart';
 import 'package:whispering_time/services/http/index.dart' as http_index;
 import 'package:whispering_time/services/http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:whispering_time/pages/group/model.dart';
+import 'package:file_picker/file_picker.dart';
 
 const double iconsize = 25;
 
@@ -28,12 +22,10 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   GlobalKey<ScaffoldState> scaffoldKey = GlobalKey();
   GlobalKey iconAddKey = GlobalKey();
-  bool isEdit = false;
   late Future<UserBasicInfo> _userInfoFuture;
   late Future<void> _initFontFuture;
   late Future<List<ThemeItem>> _initThemeFuture;
   bool _fontInitScheduled = false;
-  TextEditingController nicknameController = TextEditingController();
   UserBasicInfo userinfo = UserBasicInfo(
       email: "",
       profile:
@@ -52,7 +44,6 @@ class _HomePageState extends State<HomePage> {
 
     setState(() {
       userinfo = UserBasicInfo(email: value.email, profile: value.profile);
-      nicknameController.text = userinfo.profile.nickname;
     });
     return userinfo;
   }
@@ -120,101 +111,14 @@ class _HomePageState extends State<HomePage> {
               padding: const EdgeInsets.all(10),
               child: appBarAvator(),
             )),
-        drawer: Drawer(
-          width: 220,
-          child: Padding(
-            padding:
-                const EdgeInsets.only(top: 15, left: 20, right: 15, bottom: 20),
-            child: Column(
-              spacing: 5,
-              children: <Widget>[
-                settingAvator(),
-                SizedBox(height: 5),
-                Divider(
-                  height: 1,
-                  endIndent: 150,
-                  indent: 20,
-                ),
-                SizedBox(height: 2),
-                PopupMenuItem(
-                  child: Row(
-                    spacing: 10,
-                    children: [
-                      Icon(Icons.settings),
-                      Text("设置"),
-                    ],
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => SettingPage(),
-                      ),
-                    );
-                  },
-                ),
-                PopupMenuItem(
-                  child: Row(
-                    spacing: 10,
-                    children: [Icon(Icons.download), Text("导出")],
-                  ),
-                  onTap: () {
-                    showDialog(
-                      context: context,
-                      barrierDismissible: true,
-                      builder: (BuildContext context) {
-                        return Export(ResourceType.theme, title: "导出所有印迹数据");
-                      },
-                    );
-                  },
-                ),
-                PopupMenuItem(
-                  child: Row(
-                    spacing: 10,
-                    children: [Icon(Icons.font_download), Text("字体")],
-                  ),
-                  onTap: () {
-                    showDialog(
-                      context: context,
-                      barrierDismissible: true,
-                      builder: (BuildContext context) {
-                        return FontManager();
-                      },
-                    );
-                  },
-                ),
-                PopupMenuItem(
-                  child: Row(
-                    spacing: 10,
-                    children: [
-                      Icon(Icons.chat),
-                      Text("反馈"),
-                    ],
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => FeedbackPage(),
-                      ),
-                    );
-                  },
-                ),
-                Spacer(),
-                PopupMenuItem(
-                    child: Row(
-                      spacing: 10,
-                      children: [
-                        Icon(Icons.exit_to_app),
-                        Text('退出'),
-                      ],
-                    ),
-                    onTap: () {
-                      logout();
-                    }),
-              ],
-            ),
-          ),
+        drawer: HomeDrawer(
+          userInfoFuture: _userInfoFuture,
+          userinfo: userinfo,
+          onUserInfoUpdate: () {
+            setState(() {
+              _userInfoFuture = init();
+            });
+          },
         ),
         body: SafeArea(
           child: Column(
@@ -283,104 +187,33 @@ class _HomePageState extends State<HomePage> {
           return const CircularProgressIndicator();
         }
         if (snapshot.hasError) {
-          return const Text("Error loading user info");
-        }
-        // nicknameText(snapshot.data?.profile.nickname ?? ""),
-
-        return SizedBox(
-          width: 30,
-          height: 30,
-          child: avatarIcon(() {
-            scaffoldKey.currentState!.openDrawer();
-          }),
-        );
-      },
-    );
-  }
-
-  Widget settingAvator() {
-    return FutureBuilder<UserBasicInfo>(
-      future: _userInfoFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const CircularProgressIndicator();
-        }
-        if (snapshot.hasError) {
-          return const Text("Error loading user info");
-        }
-
-        return Row(
-          children: [
-            SizedBox(
-              width: 10,
-              height: 60,
-            ),
-            SizedBox(
-              height: 35,
-              width: 35,
-              child: avatarIcon(() {
-                updateAvatar();
-              }),
-            ),
-            SizedBox(width: 20),
-            nicknameText(snapshot.data?.profile.nickname ?? ""),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget nicknameText(String nickname) {
-    return isEdit
-        ? TextField(
-            controller: nicknameController,
-            decoration: InputDecoration(),
-            onSubmitted: (value) => editDone(value),
-          )
-        : Text(
-            nickname,
-            style: TextStyle(letterSpacing: 2.0),
+          return const CircleAvatar(
+            radius: 15,
+            child: Icon(Icons.person, size: 20),
           );
-  }
+        }
 
-  Widget avatarIcon(Function onTap) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () => onTap(),
-        child: FutureBuilder<UserBasicInfo>(
-          future: _userInfoFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const CircularProgressIndicator();
-            }
-            if (snapshot.hasError) {
-              return const CircleAvatar(
-                radius: iconsize,
-                child: Icon(Icons.person),
-              );
-            }
-
-            final avatarUrl = snapshot.data?.profile.avatar.url;
-            return CircleAvatar(
-              radius: iconsize,
-              backgroundImage:
-                  (avatarUrl != null && avatarUrl.isNotEmpty && !isEdit)
-                      ? NetworkImage(
-                          "${HTTPConfig.indexServerAddress}$avatarUrl",
-                        )
-                      : null,
-              child: isEdit
-                  ? const Icon(
-                      Icons.upload,
+        final avatarUrl = snapshot.data?.profile.avatar.url;
+        return MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: () {
+              scaffoldKey.currentState!.openDrawer();
+            },
+            child: CircleAvatar(
+              radius: 15,
+              backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
+                  ? NetworkImage(
+                      "${HTTPConfig.indexServerAddress}$avatarUrl",
                     )
-                  : avatarUrl == null
-                      ? const Icon(Icons.person)
-                      : null,
-            );
-          },
-        ),
-      ),
+                  : null,
+              child: avatarUrl == null || avatarUrl.isEmpty
+                  ? const Icon(Icons.person, size: 20)
+                  : null,
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -419,140 +252,6 @@ class _HomePageState extends State<HomePage> {
     //   _tabController.dispose();
     //   _tabController = TabController(length: _titems.length, vsync: this);
     // });
-  }
-
-  void editDone(String nickname) {
-    updateNickname(nickname);
-    setState(() {
-      isEdit = false;
-    });
-  }
-
-  Future<void> logout() async {
-    showConfirmationDialog(context, MyDialog(content: "确定退出吗？"))
-        .then((value) async {
-      if (!value) {
-        return;
-      }
-      await Config().close();
-      SP().setIsAutoLogin(false);
-      if (mounted) {
-        Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => Welcome(),
-            ));
-      }
-    });
-  }
-
-  void watchAvatar() {
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        opaque: false,
-        pageBuilder: (BuildContext context, Animation<double> animation,
-            Animation<double> secondaryAnimation) {
-          return GestureDetector(
-            onTap: () {
-              Navigator.pop(context);
-            },
-            child: Container(
-              color: Colors.black54,
-              child: Center(
-                child: FutureBuilder<UserBasicInfo>(
-                  future: _userInfoFuture,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const CircularProgressIndicator();
-                    }
-                    if (snapshot.hasError) {
-                      return const Icon(
-                        Icons.error,
-                        size: 100,
-                        color: Colors.white,
-                      );
-                    }
-
-                    final avatarUrl = snapshot.data?.profile.avatar.url;
-                    return avatarUrl != null
-                        ? Image.network(
-                            "${HTTPConfig.indexServerAddress}$avatarUrl",
-                            fit: BoxFit.contain,
-                          )
-                        : const Icon(
-                            Icons.person,
-                            size: 100,
-                            color: Colors.white,
-                          );
-                  },
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  void updateAvatar() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-    if (image == null) {
-      return;
-    }
-    final String ext = path.extension(image.path).toLowerCase();
-    final bytes = await image.readAsBytes();
-    switch (ext) {
-      case '.png':
-      case '.jpg':
-      case '.jpeg':
-        break;
-      default:
-        showErrMsg(context, "不支持的图片格式: $ext");
-        return;
-    }
-
-    http_index.RequestPutUserProfile req =
-        http_index.RequestPutUserProfile(bytes: bytes, ext: ext);
-
-    http_index.Http().userProfile(req).then((value) {
-      if (value.isNotOK) {
-        if (mounted) {
-          showErrMsg(context, "上传失败");
-        }
-        return;
-      }
-      if (mounted) {
-        showSuccessMsg(context, "上传成功");
-      }
-      setState(() {
-        userinfo.profile.avatar.url = value.url!;
-      });
-    });
-  }
-
-  void updateNickname(String value) {
-    if (value == userinfo.profile.nickname) {
-      return;
-    }
-    http_index.RequestPutUserProfile req =
-        http_index.RequestPutUserProfile(nickname: value);
-
-    http_index.Http().userProfile(req).then((onValue) {
-      if (onValue.isNotOK) {
-        if (mounted) {
-          showErrMsg(context, "上传失败");
-        }
-        return;
-      }
-      if (mounted) {
-        showSuccessMsg(context, "上传成功");
-      }
-      setState(() {
-        userinfo.profile.nickname = value;
-      });
-    });
   }
 
   Future<void> initAppFont() async {
@@ -709,9 +408,10 @@ class _HomePageState extends State<HomePage> {
           ),
           actions: <Widget>[
             TextButton(
-              child: const Text('取消'),
-              onPressed: () {
-                Navigator.of(dialogContext).pop(); // 关闭对话框
+              child: const Text('从本地导入'),
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+                await _importGroupConfig(scaffoldContext);
               },
             ),
             TextButton(
@@ -740,5 +440,70 @@ class _HomePageState extends State<HomePage> {
         );
       },
     );
+  }
+
+  // 导入分组配置
+  Future<void> _importGroupConfig(BuildContext scaffoldContext) async {
+    try {
+      // 使用 file_picker 选择文件
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['zip'],
+        allowMultiple: false,
+      );
+
+      if (result == null || result.files.isEmpty) {
+        // 用户取消选择
+        return;
+      }
+
+      final file = result.files.first;
+
+      // 验证文件扩展名
+      if (!file.name.endsWith('.zip')) {
+        if (mounted) {
+          Msg.diy(context, "文件格式错误，请选择 .zip 文件");
+        }
+        return;
+      }
+
+      // 检查文件路径是否存在
+      if (file.path == null) {
+        if (mounted) {
+          Msg.diy(context, "无法读取文件");
+        }
+        return;
+      }
+
+      // 获取当前主题ID
+      final groupsModel =
+          Provider.of<GroupsModel>(scaffoldContext, listen: false);
+      final tid = groupsModel.tid;
+
+      if (tid.isEmpty) {
+        if (mounted) {
+          Msg.diy(context, "请先选择主题");
+        }
+        return;
+      }
+
+      // 上传文件到后端 - 注意这里使用一个临时的gid，后端会忽略它
+      final res =
+          await http.Http(tid: tid, gid: "temp").importGroupConfig(file.path!);
+
+      if (mounted) {
+        if (res.isOK) {
+          Msg.diy(context, "导入成功");
+          // 刷新分组数据
+          await groupsModel.get();
+        } else {
+          Msg.diy(context, res.msg);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Msg.diy(context, "导入失败: $e");
+      }
+    }
   }
 }
