@@ -332,7 +332,7 @@ class _TaskManagerPageState extends State<TaskManagerPage> {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: iconColor.withOpacity(0.1),
+        color: iconColor.withValues(alpha: .1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Icon(iconData, color: iconColor, size: 24),

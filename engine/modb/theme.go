@@ -19,21 +19,21 @@ type Theme struct {
 
 type RequestThemePut struct {
 	Data struct {
-		Name   string `json:"name"`
-		UPTime string `json:"uptime"`
+		Name     string `json:"name"`
+		UpdateAt string `json:"updateAt"`
 	} `json:"data" `
 }
 
 type RequestThemePostDefaultGroup struct {
 	Name     string `json:"name"`
-	CRTime   string `json:"crtime"`
+	CreateAt string `json:"createAt"`
 	OverTime string `json:"overtime"`
 }
 
 type RequestThemePost struct {
 	Data struct {
 		Name         string                       `json:"name"`
-		CRTime       string                       `json:"crtime"`
+		CreateAt     string                       `json:"createAt"`
 		DefaultGroup RequestThemePostDefaultGroup `json:"default_group"`
 	} `json:"data" `
 }
@@ -49,6 +49,7 @@ func ThemesGet(uoid primitive.ObjectID) ([]Theme, error) {
 
 	cursor, err := db.Collection("theme").Find(context.TODO(), filter)
 	if err != nil {
+		log.Error(err)
 		return nil, err
 	}
 
@@ -56,12 +57,16 @@ func ThemesGet(uoid primitive.ObjectID) ([]Theme, error) {
 		var result Theme
 		err := cursor.Decode(&result)
 		if err != nil {
+			log.Error(err)
+
 			return nil, err
 		}
 		results = append(results, result)
 	}
 
 	if err := cursor.Err(); err != nil {
+		log.Error(err)
+
 		return nil, err
 	}
 
@@ -130,8 +135,8 @@ func ThemesGetAndDocs(uoid primitive.ObjectID, has_id bool) (any, error) {
 		Did       string             `json:"did" bson:"did"`
 		PlainText string             `json:"plain_text" bson:"plain_text"`
 		Title     string             `json:"title" bson:"title"`
-		CRTime    primitive.DateTime `json:"crtime" bson:"crtime"`
-		UPTime    primitive.DateTime `json:"uptime" bson:"uptime"`
+		CreateAt  primitive.DateTime `json:"createAt" bson:"createAt"`
+		UpdateAt  primitive.DateTime `json:"updateAt" bson:"updateAt"`
 		Level     int                `json:"level" bson:"level"`
 	}
 	type group struct {
@@ -184,8 +189,8 @@ func ThemesGetAndDocs(uoid primitive.ObjectID, has_id bool) (any, error) {
 									{Key: "did", Value: "$$doc.did"},
 									{Key: "plain_text", Value: "$$doc.plain_text"},
 									{Key: "title", Value: "$$doc.title"},
-									{Key: "crtime", Value: "$$doc.crtime"},
-									{Key: "uptime", Value: "$$doc.uptime"},
+									{Key: "createAt", Value: "$$doc.createAt"},
+									{Key: "updateAt", Value: "$$doc.updateAt"},
 									{Key: "level", Value: "$$doc.level"},
 								}},
 							}},
@@ -270,8 +275,8 @@ func ThemesGetAndDocsDetail(uoid primitive.ObjectID, has_id bool) (any, error) {
 	// 					title: "$$doc.title",
 	// 				    content: "$$doc.content",
 	// 				    level: "$$doc.level",
-	// 				    crtime: "$$doc.crtime",
-	// 				    uptime: "$$doc.uptime"
+	// 				    createAt: "$$doc.createAt",
+	// 				    updateAt: "$$doc.updateAt"
 	// 				  }
 	// 				}
 	// 			  }
@@ -288,8 +293,8 @@ func ThemesGetAndDocsDetail(uoid primitive.ObjectID, has_id bool) (any, error) {
 		PlainText string             `json:"plain_text" bson:"plain_text"`
 		Content   string             `json:"content" bson:"content"`
 		Level     int                `json:"level" bson:"level"`
-		CRTime    primitive.DateTime `json:"crtime" bson:"crtime"`
-		UPTime    primitive.DateTime `json:"uptime" bson:"uptime"`
+		CreateAt  primitive.DateTime `json:"createAt" bson:"createAt"`
+		UpdateAt  primitive.DateTime `json:"updateAt" bson:"updateAt"`
 		Title     string             `json:"title" bson:"title"`
 	}
 	type group struct {
@@ -344,8 +349,8 @@ func ThemesGetAndDocsDetail(uoid primitive.ObjectID, has_id bool) (any, error) {
 									{Key: "title", Value: "$$doc.title"},
 									{Key: "content", Value: "$$doc.content"},
 									{Key: "level", Value: "$$doc.level"},
-									{Key: "crtime", Value: "$$doc.crtime"},
-									{Key: "uptime", Value: "$$doc.uptime"},
+									{Key: "createAt", Value: "$$doc.createAt"},
+									{Key: "updateAt", Value: "$$doc.updateAt"},
 								}},
 							}},
 						}},
@@ -377,7 +382,7 @@ func ThemeCreate(uoid primitive.ObjectID, req *RequestThemePost) (primitive.Obje
 	theme := bson.D{
 		{Key: "_uid", Value: uoid},
 		{Key: "name", Value: req.Data.Name},
-		{Key: "crtime", Value: sys.StringtoTime(req.Data.CRTime)},
+		{Key: "createAt", Value: sys.StringtoTime(req.Data.CreateAt)},
 		{Key: "tid", Value: tid},
 	}
 	ret, err := db.Collection("theme").InsertOne(context.TODO(), theme)

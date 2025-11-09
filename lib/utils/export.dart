@@ -17,18 +17,18 @@ class ExportData {
   String title;
   String plainText;
   int level;
-  DateTime crtime;
+  DateTime createAt;
 
   String get levelString => Level.string(level);
-  String get crtimeString => DateFormat('yyyy-MM-dd HH:mm').format(crtime);
-  // String get uptimeString =>DateFormat('yyyy-MM-dd HH:mm').format(uptime);
+  String get createAtString => DateFormat('yyyy-MM-dd HH:mm').format(createAt);
+  // String get updateAtString =>DateFormat('yyyy-MM-dd HH:mm').format(updateAt);
 
   ExportData({
     required this.content,
     required this.title,
     required this.plainText,
     required this.level,
-    required this.crtime,
+    required this.createAt,
   });
 }
 
@@ -370,7 +370,7 @@ class TXT {
             yield "分类: ${theme.name}/${group.name}\n";
             yield "主题: ${doc.title}\n";
             yield "印迹分级: ${doc.levelString}\n";
-            yield "创建时间: ${doc.crtimeString}\n";
+            yield "创建时间: ${doc.createAtString}\n";
             yield doc.plainText;
             yield "\n\n\n\n------------------------------------------------------------\n";
           }
@@ -422,7 +422,7 @@ class TXT {
                 content: "",
                 plainText: doc.plainText,
                 level: doc.level,
-                crtime: doc.crtime),
+                createAt: doc.createAt),
             savePath: savePath);
       } catch (e) {
         log.e('写入TXT失败失败: $e');
@@ -458,7 +458,7 @@ class TXT {
         yield "分类: ${res.data.name}\n";
         yield "主题: ${doc.title}\n";
         yield "印迹分级: ${doc.levelString}\n";
-        yield "创建时间: ${doc.crtimeString}\n";
+        yield "创建时间: ${doc.createAtString}\n";
         yield doc.plainText;
         yield "\n\n\n\n------------------------------------------------------------\n";
       }
@@ -552,7 +552,7 @@ class PDF {
                     content: doc.content,
                     plainText: "",
                     level: doc.level,
-                    crtime: doc.crtime),
+                    createAt: doc.createAt),
                 savePath: savePath);
           } catch (e) {
             log.e('写入PDF失败失败: $e');
@@ -617,7 +617,7 @@ class PDF {
                             font: font,
                             color: PdfColor.fromInt(Colors.grey.hashCode),
                             fontWeight: pw.FontWeight.normal)),
-                    pw.Text("创建时间: ${doc.crtimeString}",
+                    pw.Text("创建时间: ${doc.createAtString}",
                         style: pw.TextStyle(
                             fontSize: mainBodyFontSize,
                             font: font,
@@ -773,7 +773,7 @@ class PDF {
                 content: doc.content,
                 plainText: "",
                 level: doc.level,
-                crtime: doc.crtime),
+                createAt: doc.createAt),
             savePath: savePath);
       } catch (e) {
         log.e('写入PDF失败失败: $e');
@@ -841,7 +841,7 @@ class PDF {
                     font: font,
                     color: PdfColor.fromInt(Colors.grey.hashCode),
                     fontWeight: pw.FontWeight.normal)),
-            pw.Text("创建时间: ${doc.crtimeString}",
+            pw.Text("创建时间: ${doc.createAtString}",
                 style: pw.TextStyle(
                     fontSize: mainBodyFontSize,
                     font: font,
@@ -1080,7 +1080,7 @@ class PDF {
                   font: font,
                   color: PdfColor.fromInt(Colors.grey.hashCode),
                   fontWeight: pw.FontWeight.normal)),
-          pw.Text("创建时间: ${doc.crtimeString}",
+          pw.Text("创建时间: ${doc.createAtString}",
               style: pw.TextStyle(
                   fontSize: fontsize,
                   font: font,

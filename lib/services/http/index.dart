@@ -93,7 +93,7 @@ class RequestPostUserRegisterVisitor {
 class ReponseGetUserInfo extends Basic {
   final String username;
   final String email;
-  final String crtime;
+  final String createAt;
   final Profile profile;
 
   ReponseGetUserInfo({
@@ -101,7 +101,7 @@ class ReponseGetUserInfo extends Basic {
     required super.msg,
     required this.username,
     required this.email,
-    required this.crtime,
+    required this.createAt,
     required this.profile,
   });
   factory ReponseGetUserInfo.fromJson(Map<String, dynamic> g) {
@@ -110,7 +110,7 @@ class ReponseGetUserInfo extends Basic {
       msg: g['msg'],
       username: g['data'] != null ? g['data']['username'] : '',
       email: g['data'] != null ? g['data']['email'] : '',
-      crtime: g['data'] != null ? g['data']['crtime'] : '',
+      createAt: g['data'] != null ? g['data']['createAt'] : '',
       profile: g['data'] != null && g['data']['profile'] != null
           ? Profile.fromJson(g['data']['profile'])
           : Profile(nickname: '', avatar: Avatar(name: "", url: "url")),
@@ -148,8 +148,8 @@ class FeedBack {
   final String? deviceFile;
   final List<String>? images;
 
-  final String crtime;
-  final String uptime;
+  final String createAt;
+  final String updateAt;
 
   FeedBack({
     required this.fbid,
@@ -157,8 +157,8 @@ class FeedBack {
     required this.title,
     required this.content,
     required this.isPublic,
-    required this.crtime,
-    required this.uptime,
+    required this.createAt,
+    required this.updateAt,
     this.deviceFile,
     this.images,
   });
@@ -173,8 +173,8 @@ class FeedBack {
       images: json['images'] != null
           ? (json['images'] as List<dynamic>).map((e) => e as String).toList()
           : null,
-      crtime: json['crtime'] as String,
-      uptime: json['uptime'] as String,
+      createAt: json['createAt'] as String,
+      updateAt: json['updateAt'] as String,
     );
   }
 }

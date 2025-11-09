@@ -15,21 +15,21 @@ class DocConfigration {
 
 class LastStateDocSetting {
   LastState state;
-  DateTime? crtime;
+  DateTime? createAt;
   DocConfigration? config;
-  LastStateDocSetting({required this.state, this.config, this.crtime});
+  LastStateDocSetting({required this.state, this.config, this.createAt});
 }
 
 class DocSettingsDialog extends StatefulWidget {
   final String gid;
   final String? did;
   final DocConfigration config;
-  final DateTime crtime;
+  final DateTime createAt;
 
   DocSettingsDialog({
     required this.gid,
     required this.did,
-    required this.crtime,
+    required this.createAt,
     required this.config,
   });
 
@@ -39,14 +39,14 @@ class DocSettingsDialog extends StatefulWidget {
 
 class _DocSettingsDialogState extends State<DocSettingsDialog> {
   late bool isShowTool;
-  late DateTime crtime;
+  late DateTime createAt;
   bool isChanged = false;
 
   @override
   void initState() {
     super.initState();
     isShowTool = widget.config.isShowTool ?? false;
-    crtime = widget.crtime;
+    createAt = widget.createAt;
   }
 
   @override
@@ -63,9 +63,9 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
               leading: Icon(Icons.access_time),
               title: Text('创建时间'),
               trailing: TextButton(
-                onPressed: () => _setCRTime(),
+                onPressed: () => _setCreateTime(),
                 child: Text(
-                  Time.string(crtime),
+                  Time.string(createAt),
                   style: TextStyle(fontSize: 14),
                 ),
               ),
@@ -109,7 +109,7 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
           onPressed: () {
             Navigator.of(context).pop({
               'changed': isChanged,
-              'crtime': crtime,
+              'createAt': createAt,
               'config': DocConfigration(isShowTool: isShowTool),
             });
           },
@@ -141,36 +141,36 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
   }
 
   // 设置创建时间
-  void _setCRTime() async {
+  void _setCreateTime() async {
     DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: crtime,
+      initialDate: createAt,
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
       locale: const Locale('zh'),
     );
 
-    pickedDate ??= crtime;
+    pickedDate ??= createAt;
 
     if (!mounted) return;
 
     TimeOfDay? pickedTime = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.fromDateTime(crtime),
+      initialTime: TimeOfDay.fromDateTime(createAt),
     );
 
-    DateTime newCrtime;
+    DateTime newCreateAt;
     if (pickedTime == null) {
-      newCrtime = DateTime(
+      newCreateAt = DateTime(
         pickedDate.year,
         pickedDate.month,
         pickedDate.day,
-        crtime.hour,
-        crtime.minute,
+        createAt.hour,
+        createAt.minute,
         0,
       );
     } else {
-      newCrtime = DateTime(
+      newCreateAt = DateTime(
         pickedDate.year,
         pickedDate.month,
         pickedDate.day,
@@ -180,20 +180,20 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
       );
     }
 
-    if (crtime == newCrtime) {
+    if (createAt == newCreateAt) {
       return;
     }
 
     isChanged = true;
 
     setState(() {
-      crtime = newCrtime;
+      createAt = newCreateAt;
     });
 
     // 如果文档已保存，立即更新到服务器
     if (widget.did != null) {
       final res = await Http(gid: widget.gid, did: widget.did)
-          .putDoc(RequestPutDoc(crtime: newCrtime));
+          .putDoc(RequestPutDoc(createAt: newCreateAt));
       if (res.isNotOK) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

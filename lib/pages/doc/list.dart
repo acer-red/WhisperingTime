@@ -52,8 +52,8 @@ class _DocListState extends State<DocList> {
       content: '',
       plainText: '',
       level: getSelectLevel(),
-      crtime: DateTime.now(),
-      uptime: DateTime.now(),
+      createAt: DateTime.now(),
+      updateAt: DateTime.now(),
       config: DocConfigration(isShowTool: Config.instance.defaultShowTool),
     );
 
@@ -141,7 +141,7 @@ class _DocListState extends State<DocList> {
                     await Http(gid: widget.group.id, did: item.id).deleteDoc();
                 if (res.isNotOK) {
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    ScaffoldMessenger.of(this.context).showSnackBar(
                       SnackBar(content: Text('删除失败')),
                     );
                   }
@@ -167,11 +167,11 @@ class _DocListState extends State<DocList> {
             builder: (context) => DocSettingsDialog(
                 gid: widget.group.id,
                 did: item.id,
-                crtime: item.crtime,
+                createAt: item.createAt,
                 config: item.config)));
     switch (ret.state) {
       case LastState.change:
-        RequestPutDoc req = RequestPutDoc(crtime: ret.crtime);
+        RequestPutDoc req = RequestPutDoc(createAt: ret.createAt);
         req.config = ret.config;
         final res = await Http(gid: widget.group.id, did: item.id).putDoc(req);
         if (res.isNotOK) {
@@ -180,8 +180,8 @@ class _DocListState extends State<DocList> {
         }
 
         setState(() {
-          if (ret.crtime != null) {
-            item.crtime = ret.crtime!;
+          if (ret.createAt != null) {
+            item.createAt = ret.createAt!;
           }
           if (ret.config != null) {
             item.config = ret.config!;
@@ -253,7 +253,7 @@ class _DocListState extends State<DocList> {
                       style:
                           TextStyle(fontSize: 12, color: Colors.grey.shade600)),
                   Text(
-                    Time.string(item.crtime),
+                    Time.string(item.createAt),
                     style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                   ),
                 ],
@@ -468,7 +468,7 @@ class _DocListState extends State<DocList> {
 
                   for (int i = 0; i < items.length; i++) {
                     if (index - firstWeekdayOfMonth + 2 ==
-                        items[i].crtime.day) {
+                        items[i].createAt.day) {
                       return grid(istoday, dayNumber, i);
                     }
                   }
@@ -504,8 +504,8 @@ class _DocListState extends State<DocList> {
   }
 
   int compareDocs(Doc a, Doc b) {
-    DateTime aTime = a.crtime;
-    DateTime bTime = b.crtime;
+    DateTime aTime = a.createAt;
+    DateTime bTime = b.createAt;
     return aTime.compareTo(bTime);
   }
 
@@ -558,7 +558,7 @@ class _Cardx extends State<Cardx> {
   late QuillController quillController;
   late int level;
   late DocConfigration config;
-  late DateTime crtime;
+  late DateTime createAt;
   bool isLevelSelected = true;
 
   @override
@@ -581,7 +581,7 @@ class _Cardx extends State<Cardx> {
 
     level = widget.doc.level;
     config = widget.doc.config;
-    crtime = widget.doc.crtime;
+    createAt = widget.doc.createAt;
   }
 
   // 监听文档变化，处理图片上传
@@ -907,7 +907,7 @@ class _Cardx extends State<Cardx> {
         plainText: plainText,
         title: titleController.text,
         level: level,
-        crtime: crtime,
+        createAt: createAt,
         config: config,
       );
       final ret = await Http(gid: widget.group.id).postDoc(req);
@@ -929,8 +929,8 @@ class _Cardx extends State<Cardx> {
       content: content,
       plainText: plainText,
       level: level,
-      crtime: crtime,
-      uptime: DateTime.now(),
+      createAt: createAt,
+      updateAt: DateTime.now(),
       config: config,
     );
 
@@ -944,7 +944,7 @@ class _Cardx extends State<Cardx> {
       builder: (context) => DocSettingsDialog(
         gid: widget.group.id,
         did: widget.doc.id.isEmpty ? null : widget.doc.id,
-        crtime: crtime,
+        createAt: createAt,
         config: config,
       ),
     );
@@ -959,7 +959,7 @@ class _Cardx extends State<Cardx> {
       // 如果有修改
       if (result['changed'] == true) {
         if (widget.doc.id.isNotEmpty) {
-          RequestPutDoc req = RequestPutDoc(crtime: result['crtime']);
+          RequestPutDoc req = RequestPutDoc(createAt: result['createAt']);
           req.config = result['config'];
           final res =
               await Http(gid: widget.group.id, did: widget.doc.id).putDoc(req);
@@ -969,8 +969,8 @@ class _Cardx extends State<Cardx> {
         }
 
         setState(() {
-          if (result['crtime'] != null) {
-            crtime = result['crtime'];
+          if (result['createAt'] != null) {
+            createAt = result['createAt'];
           }
           if (result['config'] != null) {
             config = result['config'];
@@ -992,7 +992,7 @@ class _Cardx extends State<Cardx> {
           title: titleController.text,
           plainText: quillController.document.toPlainText(),
           level: level,
-          crtime: crtime,
+          createAt: createAt,
         ),
       ),
     );

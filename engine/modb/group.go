@@ -25,21 +25,21 @@ import (
 type RequestGroupPost struct {
 	Data struct {
 		Name     string `json:"name"`
-		CRTime   string `json:"crtime"`
-		UPTime   string `json:"uptime"`
+		CreateAt string `json:"createAt"`
+		UpdateAt string `json:"updateAt"`
 		OverTime string `json:"overtime"`
 	} `json:"data"`
 }
 type RequestGroupPut struct {
 	Data struct {
 		Name     *string `json:"name"`
-		UPTime   *string `json:"uptime"`
+		UpdateAt *string `json:"updateAt"`
 		OverTime *string `json:"overtime"`
 		Config   *struct {
-			IsMulti  *bool   `json:"is_multi"`
-			IsAll    *bool   `json:"is_all"`
-			Levels   *[]bool `json:"levels"`
-			ViewType *int    `json:"view_type"`
+			Is_multi  *bool   `json:"is_multi"`
+			Is_all    *bool   `json:"is_all"`
+			Levels    *[]bool `json:"levels"`
+			View_type *int    `json:"view_type"`
 		} `json:"config"`
 	} `json:"data"`
 }
@@ -69,10 +69,10 @@ func GroupsGet(toid primitive.ObjectID) ([]ml.Group, error) {
 		if ms, ok := m["config"].(bson.M); ok {
 
 			if ret, o := ms["is_multi"].(bool); o {
-				config.IsMulti = ret
+				config.Is_multi = ret
 			}
 			if ret, o := ms["is_all"].(bool); o {
-				config.IsAll = ret
+				config.Is_all = ret
 			}
 			if ret, o := ms["levels"].(primitive.A); o {
 				if len(ret) == 5 {
@@ -81,7 +81,7 @@ func GroupsGet(toid primitive.ObjectID) ([]ml.Group, error) {
 			}
 
 			if ret, o := ms["view_type"].(int); o {
-				config.ViewType = ret
+				config.View_type = ret
 			}
 
 		} else {
@@ -90,8 +90,8 @@ func GroupsGet(toid primitive.ObjectID) ([]ml.Group, error) {
 		results = append(results, ml.Group{
 			ID:       m["gid"].(string),
 			Name:     m["name"].(string),
-			CRTime:   m["crtime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
-			UPTime:   m["uptime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
+			CreateAt: m["createAt"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
+			UpdateAt: m["updateAt"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
 			OverTime: m["overtime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
 			Config:   config,
 		})
@@ -121,17 +121,17 @@ func GroupGet(toid primitive.ObjectID, goid primitive.ObjectID) (ml.Group, error
 	}
 	res.ID = m["gid"].(string)
 	res.Name = m["name"].(string)
-	res.CRTime = m["crtime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05")
-	res.UPTime = m["uptime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05")
+	res.CreateAt = m["createAt"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05")
+	res.UpdateAt = m["updateAt"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05")
 	res.OverTime = m["overtime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05")
 
 	res.Config = NewGroupConfig()
 
 	if config, ok := m["config"].(bson.M); ok {
-		res.Config.IsMulti = config["is_multi"].(bool)
-		res.Config.IsAll = config["is_all"].(bool)
+		res.Config.Is_multi = config["is_multi"].(bool)
+		res.Config.Is_all = config["is_all"].(bool)
 		res.Config.Levels = config["levels"].([]bool)
-		res.Config.ViewType = config["view_type"].(int)
+		res.Config.View_type = config["view_type"].(int)
 	}
 
 	return res, nil
@@ -183,8 +183,8 @@ func GroupPost(toid primitive.ObjectID, req *RequestGroupPost) (string, error) {
 	data := bson.D{
 		{Key: "_toid", Value: toid},
 		{Key: "name", Value: req.Data.Name},
-		{Key: "crtime", Value: sys.StringtoTime(req.Data.CRTime)},
-		{Key: "uptime", Value: sys.StringtoTime(req.Data.UPTime)},
+		{Key: "createAt", Value: sys.StringtoTime(req.Data.CreateAt)},
+		{Key: "updateAt", Value: sys.StringtoTime(req.Data.UpdateAt)},
 		{Key: "overtime", Value: sys.StringtoTime(req.Data.OverTime)},
 		{Key: "gid", Value: gid},
 		{Key: "config", Value: bson.D{{Key: "levels", Value: NewGroupConfig()}}},
@@ -210,8 +210,8 @@ func GroupPut(toid primitive.ObjectID, goid primitive.ObjectID, req *RequestGrou
 		m["name"] = (*req).Data.Name
 	}
 
-	if (*req).Data.UPTime != nil {
-		m["uptime"] = sys.StringtoTime(*(*req).Data.UPTime)
+	if (*req).Data.UpdateAt != nil {
+		m["updateAt"] = sys.StringtoTime(*(*req).Data.UpdateAt)
 	}
 
 	if (*req).Data.OverTime != nil {
@@ -219,17 +219,17 @@ func GroupPut(toid primitive.ObjectID, goid primitive.ObjectID, req *RequestGrou
 	}
 	if req.Data.Config != nil {
 
-		if req.Data.Config.IsMulti != nil {
-			m["config.is_multi"] = req.Data.Config.IsMulti
+		if req.Data.Config.Is_multi != nil {
+			m["config.is_multi"] = req.Data.Config.Is_multi
 		}
-		if req.Data.Config.IsAll != nil {
-			m["config.is_all"] = req.Data.Config.IsAll
+		if req.Data.Config.Is_all != nil {
+			m["config.is_all"] = req.Data.Config.Is_all
 		}
 		if req.Data.Config.Levels != nil {
 			m["config.levels"] = req.Data.Config.Levels
 		}
-		if req.Data.Config.ViewType != nil {
-			m["config.view_type"] = req.Data.Config.ViewType
+		if req.Data.Config.View_type != nil {
+			m["config.view_type"] = req.Data.Config.View_type
 		}
 	}
 
@@ -250,8 +250,8 @@ func GroupCreateDefault(toid primitive.ObjectID, gd RequestThemePostDefaultGroup
 		{Key: "_toid", Value: toid},
 		{Key: "name", Value: gd.Name},
 		{Key: "gid", Value: gid},
-		{Key: "crtime", Value: sys.StringtoTime(gd.CRTime)},
-		{Key: "uptime", Value: sys.StringtoTime(gd.CRTime)},
+		{Key: "createAt", Value: sys.StringtoTime(gd.CreateAt)},
+		{Key: "updateAt", Value: sys.StringtoTime(gd.CreateAt)},
 		{Key: "overtime", Value: sys.StringtoTime(gd.OverTime)},
 		{Key: "default", Value: true},
 		{Key: "config", Value: NewGroupConfig()},
@@ -475,10 +475,10 @@ func CountinueExportConfig(id BGJobOID, uoid, toid, goid primitive.ObjectID) err
 }
 func NewGroupConfig() ml.GroupConfig {
 	return ml.GroupConfig{
-		IsMulti:  false,
-		IsAll:    false,
-		Levels:   []bool{true, true, true, true, true},
-		ViewType: 0,
+		Is_multi:  false,
+		Is_all:    false,
+		Levels:    []bool{true, true, true, true, true},
+		View_type: 0,
 	}
 }
 
@@ -561,7 +561,7 @@ func GroupImportConfig(uoid, toid primitive.ObjectID, fileHeader *multipart.File
 		{Key: "_toid", Value: toid},
 		{Key: "name", Value: groupAndDocs.Name},
 		{Key: "gid", Value: gid},
-		{Key: "uptime", Value: primitive.NewDateTimeFromTime(time.Now())},
+		{Key: "updateAt", Value: primitive.NewDateTimeFromTime(time.Now())},
 		{Key: "config", Value: groupAndDocs.Config},
 	}
 
@@ -569,7 +569,7 @@ func GroupImportConfig(uoid, toid primitive.ObjectID, fileHeader *multipart.File
 		// 分组不存在，创建新分组
 		forever := time.Now().Add(time.Hour * 24 * 36500) // 100年后
 		groupData = append(groupData,
-			bson.E{Key: "crtime", Value: primitive.NewDateTimeFromTime(time.Now())},
+			bson.E{Key: "createAt", Value: primitive.NewDateTimeFromTime(time.Now())},
 			bson.E{Key: "overtime", Value: primitive.NewDateTimeFromTime(forever)},
 		)
 		_, err = db.Collection("group").InsertOne(context.TODO(), groupData)
@@ -582,9 +582,9 @@ func GroupImportConfig(uoid, toid primitive.ObjectID, fileHeader *multipart.File
 		// 分组已存在，更新分组信息
 		update := bson.M{
 			"$set": bson.M{
-				"name":   groupAndDocs.Name,
-				"uptime": primitive.NewDateTimeFromTime(time.Now()),
-				"config": groupAndDocs.Config,
+				"name":     groupAndDocs.Name,
+				"updateAt": primitive.NewDateTimeFromTime(time.Now()),
+				"config":   groupAndDocs.Config,
 			},
 		}
 		_, err = db.Collection("group").UpdateOne(context.TODO(), filter, update)
@@ -682,8 +682,8 @@ func GroupImportConfig(uoid, toid primitive.ObjectID, fileHeader *multipart.File
 			{Key: "content", Value: content},
 			{Key: "plain_text", Value: doc.PlainText},
 			{Key: "level", Value: doc.Level},
-			{Key: "crtime", Value: primitive.NewDateTimeFromTime(doc.CRTime)},
-			{Key: "uptime", Value: primitive.NewDateTimeFromTime(time.Now())},
+			{Key: "createAt", Value: primitive.NewDateTimeFromTime(doc.CreateAt)},
+			{Key: "updateAt", Value: primitive.NewDateTimeFromTime(time.Now())},
 		}
 
 		if doc.Config != nil {

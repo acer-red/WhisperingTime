@@ -12,8 +12,8 @@ type Doc struct {
 	Content   string             `json:"content" bson:"content"`
 	PlainText string             `json:"plain_text" bson:"plain_text"`
 	Level     int32              `json:"level" bson:"level"`
-	CRTime    time.Time          `json:"crtime" bson:"crtime"`
-	UPTime    time.Time          `json:"uptime" bson:"uptime"`
+	CreateAt  time.Time          `json:"createAt" bson:"createAt"`
+	UpdateAt  time.Time          `json:"updateAt" bson:"updateAt"`
 	Config    *DocConfig         `json:"config,omitempty" bson:"config"`
 	ID        string             `json:"id" bson:"did"`
 	OID       primitive.ObjectID `json:"-" bson:"_id"`
@@ -23,13 +23,13 @@ type Doc struct {
 func (d Doc) MarshalJSON() ([]byte, error) {
 	type Alias Doc
 	return json.Marshal(&struct {
-		CRTime string `json:"crtime"`
-		UPTime string `json:"uptime"`
+		CreateAt string `json:"createAt"`
+		UpdateAt string `json:"updateAt"`
 		*Alias
 	}{
-		CRTime: d.CRTime.Format("2006-01-02 15:04:05"),
-		UPTime: d.UPTime.Format("2006-01-02 15:04:05"),
-		Alias:  (*Alias)(&d),
+		CreateAt: d.CreateAt.Format("2006-01-02 15:04:05"),
+		UpdateAt: d.UpdateAt.Format("2006-01-02 15:04:05"),
+		Alias:    (*Alias)(&d),
 	})
 }
 
@@ -37,8 +37,8 @@ func (d Doc) MarshalJSON() ([]byte, error) {
 func (d *Doc) UnmarshalJSON(data []byte) error {
 	type Alias Doc
 	aux := &struct {
-		CRTime string `json:"crtime"`
-		UPTime string `json:"uptime"`
+		CreateAt string `json:"createAt"`
+		UpdateAt string `json:"updateAt"`
 		*Alias
 	}{
 		Alias: (*Alias)(d),
@@ -49,17 +49,17 @@ func (d *Doc) UnmarshalJSON(data []byte) error {
 	}
 
 	// 解析时间字符串
-	crtime, err := time.Parse("2006-01-02 15:04:05", aux.CRTime)
+	createAt, err := time.Parse("2006-01-02 15:04:05", aux.CreateAt)
 	if err != nil {
 		return err
 	}
-	uptime, err := time.Parse("2006-01-02 15:04:05", aux.UPTime)
+	updateAt, err := time.Parse("2006-01-02 15:04:05", aux.UpdateAt)
 	if err != nil {
 		return err
 	}
 
-	d.CRTime = crtime
-	d.UPTime = uptime
+	d.CreateAt = createAt
+	d.UpdateAt = updateAt
 
 	return nil
 }
@@ -67,8 +67,8 @@ func (d *Doc) UnmarshalJSON(data []byte) error {
 type Group struct {
 	Name     string      `json:"name" bson:"name"`
 	ID       string      `json:"id" bson:"gid"`
-	CRTime   string      `json:"crtime" bson:"crtime"`
-	UPTime   string      `json:"uptime" bson:"uptime"`
+	CreateAt string      `json:"createAt" bson:"createAt"`
+	UpdateAt string      `json:"updateAt" bson:"updateAt"`
 	OverTime string      `json:"overtime" bson:"overtime"`
 	Config   GroupConfig `json:"config"`
 }
@@ -77,16 +77,16 @@ type GroupAndDocs struct {
 	Name     string      `json:"name" bson:"name,omitempty"` // 来自 A 集合的 name 字段
 	Docs     []Doc       `json:"docs" bson:"docs,omitempty"` // 关联查询到的 B 集合印迹数组
 	Default  bool        `json:"default" bson:"default,omitempty"`
-	CRTime   string      `json:"crtime" bson:"crtime"`
-	UPTime   string      `json:"uptime" bson:"uptime"`
+	CreateAt string      `json:"createAt" bson:"createAt"`
+	UpdateAt string      `json:"updateAt" bson:"updateAt"`
 	OverTime bool        `json:"over_time" bson:"over_time"`
 	Config   GroupConfig `json:"group_config" bson:"group_config"`
 }
 type GroupConfig struct {
-	IsMulti  bool   `json:"is_multi" bson:"is_multi"`
-	IsAll    bool   `json:"is_all" bson:"is_all"`
-	Levels   []bool `json:"levels" bson:"levels"`
-	ViewType int    `json:"view_type" bson:"view_type"`
+	Is_multi  bool   `json:"is_multi" bson:"is_multi"`
+	Is_all    bool   `json:"is_all" bson:"is_all"`
+	Levels    []bool `json:"levels" bson:"levels"`
+	View_type int    `json:"view_type" bson:"view_type"`
 }
 
 type DocConfig struct {

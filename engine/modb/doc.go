@@ -19,7 +19,7 @@ type RequestDocPost struct {
 		Title     string       `json:"title"`
 		PlainText string       `json:"plain_text"`
 		Level     int32        `json:"level"`
-		CRTime    string       `json:"crtime"`
+		CreateAt  string       `json:"createAt"`
 		Config    *m.DocConfig `json:"config"`
 	} `json:"data"`
 }
@@ -30,8 +30,8 @@ type RequestDocPut struct {
 		Content   *string      `json:"content,omitempty" bson:"content"`
 		PlainText *string      `json:"plain_text,omitempty" bson:"plain_text"`
 		Level     *int32       `json:"level,omitempty" bson:"level"`
-		CRTime    *string      `json:"crtime,omitempty"`
-		UPTime    *string      `json:"uptime,omitempty"`
+		CreateAt  *string      `json:"createAt,omitempty"`
+		UpdateAt  *string      `json:"updateAt,omitempty"`
 		Config    *m.DocConfig `json:"config,omitempty" bson:"config"`
 		ID        *string      `json:"id" bson:"did"`
 	} `json:"data"`
@@ -90,7 +90,7 @@ func DocsGet(goid primitive.ObjectID, f DocFilter) ([]m.Doc, error) {
 		{Key: "_goid", Value: goid},
 	}
 	if f.Year != 0 && f.Month != 0 {
-		filter = append(filter, bson.E{Key: "crtime", Value: bson.M{
+		filter = append(filter, bson.E{Key: "createAt", Value: bson.M{
 			"$gte": time.Date(f.Year, time.Month(f.Month), 1, 0, 0, 0, 0, time.Local),
 			"$lt":  time.Date(f.Year, time.Month(f.Month+1), 1, 0, 0, 0, 0, time.Local),
 		}})
@@ -113,8 +113,8 @@ func DocsGet(goid primitive.ObjectID, f DocFilter) ([]m.Doc, error) {
 			Content:   doc["content"].(string),
 			PlainText: doc["plain_text"].(string),
 			Level:     doc["level"].(int32),
-			CRTime:    doc["crtime"].(primitive.DateTime).Time(),
-			UPTime:    doc["uptime"].(primitive.DateTime).Time(),
+			CreateAt:  doc["createAt"].(primitive.DateTime).Time(),
+			UpdateAt:  doc["updateAt"].(primitive.DateTime).Time(),
 			Config: &m.DocConfig{
 				IsShowTool: doc["config"].(bson.M)["is_show_tool"].(bool),
 			},
@@ -139,8 +139,8 @@ func DocPost(goid primitive.ObjectID, req *RequestDocPost) (string, error) {
 		{Key: "content", Value: (*req).Data.Content},
 		{Key: "plain_text", Value: (*req).Data.PlainText},
 		{Key: "level", Value: (*req).Data.Level},
-		{Key: "crtime", Value: sys.StringtoTime((*req).Data.CRTime)},
-		{Key: "uptime", Value: sys.StringtoTime((*req).Data.CRTime)},
+		{Key: "createAt", Value: sys.StringtoTime((*req).Data.CreateAt)},
+		{Key: "updateAt", Value: sys.StringtoTime((*req).Data.CreateAt)},
 		{Key: "config", Value: (*req).Data.Config},
 	}
 
@@ -169,12 +169,12 @@ func DocPut(goid primitive.ObjectID, doid primitive.ObjectID, req *RequestDocPut
 		m["title"] = (*req).Doc.Title
 	}
 
-	if (*req).Doc.CRTime != nil {
-		m["crtime"] = sys.StringtoTime(*(*req).Doc.CRTime)
+	if (*req).Doc.CreateAt != nil {
+		m["createAt"] = sys.StringtoTime(*(*req).Doc.CreateAt)
 	}
 
-	if (*req).Doc.UPTime != nil {
-		m["uptime"] = sys.StringtoTime(*(*req).Doc.UPTime)
+	if (*req).Doc.UpdateAt != nil {
+		m["updateAt"] = sys.StringtoTime(*(*req).Doc.UpdateAt)
 	}
 
 	if (*req).Doc.Title != nil {

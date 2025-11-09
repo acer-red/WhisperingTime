@@ -119,9 +119,9 @@ class DDoc {
   final String title;
   final String content;
   final int level;
-  final DateTime crtime;
-  final DateTime uptime;
-  String get crtimeString => DateFormat('yyyy-MM-dd HH:mm').format(crtime);
+  final DateTime createAt;
+  final DateTime updateAt;
+  String get createAtString => DateFormat('yyyy-MM-dd HH:mm').format(createAt);
   String get levelString => Level.string(level);
   DDoc({
     required this.id,
@@ -129,8 +129,8 @@ class DDoc {
     required this.title,
     required this.content,
     required this.level,
-    required this.crtime,
-    required this.uptime,
+    required this.createAt,
+    required this.updateAt,
   });
 
   factory DDoc.fromJson(Map<String, dynamic> json) {
@@ -140,8 +140,8 @@ class DDoc {
       title: json['title'] as String,
       content: json['content'] as String,
       level: json['level'] as int,
-      crtime: Time.stringToTimeHasT(json['crtime'] as String),
-      uptime: Time.stringToTimeHasT(json['uptime'] as String),
+      createAt: Time.stringToTimeHasT(json['createAt'] as String),
+      updateAt: Time.stringToTimeHasT(json['updateAt'] as String),
     );
   }
 }
@@ -195,17 +195,17 @@ class XDoc {
   final String plainText;
   final String title;
   final int level;
-  final DateTime crtime;
-  final DateTime uptime;
-  String get crtimeString => DateFormat('yyyy-MM-dd HH:mm').format(crtime);
+  final DateTime createAt;
+  final DateTime updateAt;
+  String get createAtString => DateFormat('yyyy-MM-dd HH:mm').format(createAt);
   String get levelString => Level.string(level);
   XDoc({
     required this.did,
     required this.plainText,
     required this.title,
     required this.level,
-    required this.crtime,
-    required this.uptime,
+    required this.createAt,
+    required this.updateAt,
   });
 
   factory XDoc.fromJson(Map<String, dynamic> json) {
@@ -214,8 +214,8 @@ class XDoc {
       plainText: json['plain_text'] as String,
       title: json['title'] as String,
       level: json['level'] as int,
-      crtime: Time.stringToTimeHasT(json['crtime'] as String),
-      uptime: Time.stringToTimeHasT(json['uptime'] as String),
+      createAt: Time.stringToTimeHasT(json['createAt'] as String),
+      updateAt: Time.stringToTimeHasT(json['updateAt'] as String),
     );
   }
 }
@@ -224,7 +224,7 @@ class RequestPutTheme {
   String name;
   RequestPutTheme({required this.name});
   Map<String, dynamic> toJson() =>
-      {'name': name, 'uptime': Time.nowTimestampString()};
+      {'name': name, 'updateAt': Time.nowTimestampString()};
 }
 
 class ResponsePutTheme extends Basic {
@@ -242,7 +242,7 @@ class RequestPostThemeDefaultGroup {
   RequestPostThemeDefaultGroup({required this.name});
   Map<String, dynamic> toJson() => {
         'name': name,
-        'crtime': Time.nowTimestampString(),
+        'createAt': Time.nowTimestampString(),
         'overtime': Time.toTimestampString(Time.getForver())
       };
 }
@@ -253,7 +253,7 @@ class RequestPostTheme {
 
   Map<String, dynamic> toJson() => {
         'name': name,
-        'crtime': Time.nowTimestampString(),
+        'createAt': Time.nowTimestampString(),
         'default_group':
             RequestPostThemeDefaultGroup(name: defaultGroupName).toJson()
       };
@@ -413,7 +413,7 @@ class RequestPutGroup {
   GroupConfigNULL? config;
   RequestPutGroup({this.name, this.overtime, this.config});
   Map<String, dynamic> toJson() {
-    Map<String, dynamic> data = {'uptime': Time.nowTimestampString()};
+    Map<String, dynamic> data = {'updateAt': Time.nowTimestampString()};
 
     if (name != null) {
       print("更新分组名:$name");
@@ -438,8 +438,8 @@ class RequestPostGroup {
   RequestPostGroup({required this.name});
   Map<String, dynamic> toJson() => {
         'name': name,
-        'crtime': Time.nowTimestampString(),
-        'uptime': Time.nowTimestampString(),
+        'createAt': Time.nowTimestampString(),
+        'updateAt': Time.nowTimestampString(),
         'overtime': Time.toTimestampString(overtime)
       };
 }
@@ -457,16 +457,16 @@ class ResponseDeleteGroup extends Basic {
 class GroupListData {
   String name;
   String id;
-  DateTime crtime;
-  DateTime uptime;
+  DateTime createAt;
+  DateTime updateAt;
   DateTime overtime;
   GroupConfig config;
   GroupListData({
     required this.name,
     required this.id,
-    required this.crtime,
+    required this.createAt,
     required this.overtime,
-    required this.uptime,
+    required this.updateAt,
     required this.config,
   });
 
@@ -474,16 +474,16 @@ class GroupListData {
     return GroupListData(
       name: json['name'] as String,
       id: json['id'] as String,
-      crtime: Time.stringToTime(json['crtime'] as String),
-      uptime: Time.stringToTime(json['uptime'] as String),
+      createAt: Time.stringToTime(json['createAt'] as String),
+      updateAt: Time.stringToTime(json['updateAt'] as String),
       overtime: Time.stringToTime(json['overtime'] as String),
       config: GroupConfig(
-        isMulti: json['config']['is_multi'] as bool,
-        isAll: json['config']['is_all'] as bool,
+        isMulti: json['config']['isMulti'] as bool,
+        isAll: json['config']['isAll'] as bool,
         levels: (json['config']['levels'] as List<dynamic>)
             .map((e) => e as bool)
             .toList(),
-        viewType: json['config']['view_type'] as int,
+        viewType: json['config']['viewType'] as int,
       ),
     );
   }
@@ -515,22 +515,22 @@ class Doc {
   String content;
   String plainText;
   int level;
-  DateTime crtime;
-  DateTime uptime;
+  DateTime createAt;
+  DateTime updateAt;
   DocConfigration config;
   String id;
-  int get day => crtime.day;
+  int get day => createAt.day;
   String get levelString => Level.string(level);
-  String get crtimeString => DateFormat('yyyy-MM-dd HH:mm').format(crtime);
-  String get uptimeString => DateFormat('yyyy-MM-dd HH:mm').format(uptime);
+  String get createAtString => DateFormat('yyyy-MM-dd HH:mm').format(createAt);
+  String get updateAtString => DateFormat('yyyy-MM-dd HH:mm').format(updateAt);
   late bool isSearch;
   Doc({
     required this.title,
     required this.content,
     required this.plainText,
     required this.level,
-    required this.crtime,
-    required this.uptime,
+    required this.createAt,
+    required this.updateAt,
     required this.config,
     required this.id,
   });
@@ -541,8 +541,8 @@ class Doc {
       content: json['content'] as String,
       plainText: json['plain_text'] as String,
       level: json['level'] as int,
-      crtime: Time.stringToTime(json['crtime'] as String),
-      uptime: Time.stringToTime(json['uptime'] as String),
+      createAt: Time.stringToTime(json['createAt'] as String),
+      updateAt: Time.stringToTime(json['updateAt'] as String),
       config:
           DocConfigration(isShowTool: json['config']['is_show_tool'] as bool),
       id: json['id'] as String,
@@ -581,14 +581,14 @@ class RequestPostDoc {
   String title;
   String content;
   String plainText;
-  DateTime crtime;
+  DateTime createAt;
   int level;
   DocConfigration config;
   RequestPostDoc(
       {required this.content,
       required this.title,
       required this.plainText,
-      required this.crtime,
+      required this.createAt,
       required this.level,
       required this.config});
 
@@ -597,7 +597,7 @@ class RequestPostDoc {
         'content': content,
         'plain_text': plainText,
         'level': level,
-        'crtime': Time.toTimestampString(crtime),
+        'createAt': Time.toTimestampString(createAt),
         'config': config.toJson(),
       };
 }
@@ -619,19 +619,19 @@ class RequestPutDoc {
   String? title;
   String? plainText;
   int? level;
-  DateTime? crtime;
+  DateTime? createAt;
   DocConfigration? config;
-  DateTime get uptime => DateTime.now();
+  DateTime get updateAt => DateTime.now();
   RequestPutDoc(
       {this.title,
       this.content,
       this.plainText,
       this.level,
-      this.crtime,
+      this.createAt,
       this.config});
 
   Map<String, dynamic> toJson() {
-    Map<String, dynamic> data = {'uptime': Time.toTimestampString(uptime)};
+    Map<String, dynamic> data = {'updateAt': Time.toTimestampString(updateAt)};
 
     if (content != null) {
       data['content'] = content;
@@ -642,8 +642,8 @@ class RequestPutDoc {
       data['title'] = title;
     }
 
-    if (crtime != null) {
-      data['crtime'] = Time.toTimestampString(crtime!);
+    if (createAt != null) {
+      data['createAt'] = Time.toTimestampString(createAt!);
     }
 
     if (level != null) {
