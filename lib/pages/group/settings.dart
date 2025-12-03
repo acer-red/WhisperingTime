@@ -287,8 +287,8 @@ class _FreezeSwitchTileState extends State<FreezeSwitchTile> {
   @override
   void initState() {
     super.initState();
-    status = widget.item.getOverTimeStatus();
-    isFreezed = !widget.item.isNotEnterOverTime();
+    status = widget.item.getoverAtStatus();
+    isFreezed = !widget.item.isNotEnteroverAt();
   }
 
   @override
@@ -322,14 +322,14 @@ class _FreezeSwitchTileState extends State<FreezeSwitchTile> {
 
         final time = Time.getOverDay();
         final res = await Http(tid: tid, gid: id)
-            .putGroup(RequestPutGroup(overtime: time));
+            .putGroup(RequestPutGroup(overAt: time));
 
         if (res.isNotOK) {
           return;
         }
 
         if (mounted) {
-          groupsModel.setOvertime(time);
+          groupsModel.setoverAt(time);
           setState(() {
             isFreezed = true;
             status = 1;
@@ -344,7 +344,7 @@ class _FreezeSwitchTileState extends State<FreezeSwitchTile> {
     return SwitchListTile(
       contentPadding: EdgeInsets.zero,
       title: const Text('定格'),
-      subtitle: Text("进入缓冲期,定格时间:${widget.item.overtime.toString()}"),
+      subtitle: Text("进入缓冲期,定格时间:${widget.item.overAt.toString()}"),
       value: isFreezed,
       onChanged: (bool value) async {
         final groupsModel = Provider.of<GroupsModel>(context, listen: false);
@@ -353,14 +353,14 @@ class _FreezeSwitchTileState extends State<FreezeSwitchTile> {
 
         final time = Time.getForver();
         final res = await Http(tid: tid, gid: id)
-            .putGroup(RequestPutGroup(overtime: time));
+            .putGroup(RequestPutGroup(overAt: time));
 
         if (res.isNotOK) {
           return;
         }
 
         if (mounted) {
-          groupsModel.setOvertime(time);
+          groupsModel.setoverAt(time);
           setState(() {
             isFreezed = false;
             status = 0;
@@ -375,7 +375,7 @@ class _FreezeSwitchTileState extends State<FreezeSwitchTile> {
     return SwitchListTile(
       contentPadding: EdgeInsets.zero,
       title: const Text('定格'),
-      subtitle: Text("已定格于${widget.item.overtime.toString()}"),
+      subtitle: Text("已定格于${widget.item.overAt.toString()}"),
       value: true,
       onChanged: null,
     );

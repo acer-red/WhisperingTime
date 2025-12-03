@@ -84,12 +84,12 @@ class UserBasicInfo {
 
 class API {
   String key;
-  String extime;
-  API({required this.key, required this.extime});
+  String expiresAt;
+  API({required this.key, required this.expiresAt});
   factory API.fromJson(Map<String, dynamic> g) {
     return API(
       key: g['apikey'],
-      extime: g['extime'],
+      expiresAt: g['expiresAt'],
     );
   }
 }

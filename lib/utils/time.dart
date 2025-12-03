@@ -42,12 +42,12 @@ class Time {
   }
 
   // 定格时间设置
-  static Duration getOverTime() {
+  static Duration getoverAt() {
     return const Duration(days: 7);
   }
 
   static DateTime getOverDay() {
-    return DateTime.now().add(Time.getOverTime());
+    return DateTime.now().add(Time.getoverAt());
   }
 
   static Future<DateTime?> datePacker(BuildContext context) {

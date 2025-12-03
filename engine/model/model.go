@@ -69,7 +69,7 @@ type Group struct {
 	ID       string      `json:"id" bson:"gid"`
 	CreateAt string      `json:"createAt" bson:"createAt"`
 	UpdateAt string      `json:"updateAt" bson:"updateAt"`
-	OverTime string      `json:"overtime" bson:"overtime"`
+	OverAt   string      `json:"overAt" bson:"overAt"`
 	Config   GroupConfig `json:"config"`
 }
 type GroupAndDocs struct {
@@ -79,7 +79,7 @@ type GroupAndDocs struct {
 	Default  bool        `json:"default" bson:"default,omitempty"`
 	CreateAt string      `json:"createAt" bson:"createAt"`
 	UpdateAt string      `json:"updateAt" bson:"updateAt"`
-	OverTime bool        `json:"over_time" bson:"over_time"`
+	OverAt   string      `json:"overAt" bson:"overAt"`
 	Config   GroupConfig `json:"group_config" bson:"group_config"`
 }
 type GroupConfig struct {

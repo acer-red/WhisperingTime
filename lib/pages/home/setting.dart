@@ -20,6 +20,7 @@ class _SettingPageState extends State<SettingPage> {
   String isarurl = '';
   bool visualNoneTitle = Config.instance.visualNoneTitle;
   bool defaultShowTool = Config.instance.defaultShowTool;
+  bool keepAnimationWhenLostFocus = Config.instance.keepAnimationWhenLostFocus;
 
   @override
   void initState() {
@@ -74,6 +75,16 @@ class _SettingPageState extends State<SettingPage> {
                   setState(() {
                     defaultShowTool = value;
                     Config.instance.setDefaultShowTool(value);
+                  });
+                },
+              ),
+              SwitchListTile(
+                title: const Text('失去焦点保持动画'),
+                value: keepAnimationWhenLostFocus,
+                onChanged: (bool value) {
+                  setState(() {
+                    keepAnimationWhenLostFocus = value;
+                    Config.instance.setKeepAnimationWhenLostFocus(value);
                   });
                 },
               ),

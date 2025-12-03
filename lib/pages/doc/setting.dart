@@ -2,16 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:whispering_time/services/http/http.dart';
 import 'package:whispering_time/utils/time.dart';
 import 'package:whispering_time/utils/env.dart';
-
-class DocConfigration {
-  bool? isShowTool;
-  DocConfigration({this.isShowTool});
-  Map<String, dynamic> toJson() {
-    return {
-      'is_show_tool': isShowTool,
-    };
-  }
-}
+import 'package:whispering_time/pages/doc/model.dart';
 
 class LastStateDocSetting {
   LastState state;

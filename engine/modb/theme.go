@@ -27,7 +27,7 @@ type RequestThemePut struct {
 type RequestThemePostDefaultGroup struct {
 	Name     string `json:"name"`
 	CreateAt string `json:"createAt"`
-	OverTime string `json:"overtime"`
+	OverAt   string `json:"overAt"`
 }
 
 type RequestThemePost struct {

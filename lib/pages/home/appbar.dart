@@ -410,7 +410,6 @@ class _HomePageState extends State<HomePage> {
             TextButton(
               child: const Text('从本地导入'),
               onPressed: () async {
-                Navigator.of(dialogContext).pop();
                 await _importGroupConfig(scaffoldContext);
               },
             ),

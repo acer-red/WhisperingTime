@@ -41,47 +41,6 @@ type DocFilter struct {
 	Month int `json:"month"`
 }
 
-// func DocsGet(goid primitive.ObjectID,DocFilter f) ([]Doc, error) {
-// 	var results []Doc
-
-// 	filter := bson.D{
-// 		{Key: "_goid", Value: goid},
-// 	}
-
-// 	cursor, err := db.Collection("doc").Find(context.TODO(), filter)
-// 	if err != nil {
-// 		log.Error(err)
-// 		return nil, err
-// 	}
-
-// 	for cursor.Next(context.TODO()) {
-// 		var m bson.M
-// 		err := cursor.Decode(&m)
-// 		if err != nil {
-// 			log.Error(err)
-// 			return nil, err
-// 		}
-// 		results = append(results, Doc{
-// 			Title:     m["title"].(string),
-// 			Content:   m["content"].(string),
-// 			PlainText: m["plain_text"].(string),
-// 			Level:     m["level"].(int32),
-// 			CRTime:    m["crtime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
-// 			UPTime:    m["uptime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
-// 			Config: &config{
-// 				IsShowTool: m["config"].(bson.M)["is_show_tool"].(bool),
-// 			},
-// 			ID: m["did"].(string),
-// 		})
-// 	}
-
-// 	if err := cursor.Err(); err != nil {
-// 		log.Error(err)
-// 		return nil, err
-// 	}
-
-//		return results, nil
-//	}
 func DocsGet(goid primitive.ObjectID, f DocFilter) ([]m.Doc, error) {
 
 	var results []m.Doc

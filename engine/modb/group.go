@@ -27,14 +27,14 @@ type RequestGroupPost struct {
 		Name     string `json:"name"`
 		CreateAt string `json:"createAt"`
 		UpdateAt string `json:"updateAt"`
-		OverTime string `json:"overtime"`
+		OverAt   string `json:"overAt"`
 	} `json:"data"`
 }
 type RequestGroupPut struct {
 	Data struct {
 		Name     *string `json:"name"`
 		UpdateAt *string `json:"updateAt"`
-		OverTime *string `json:"overtime"`
+		OverAt   *string `json:"overAt"`
 		Config   *struct {
 			Is_multi  *bool   `json:"is_multi"`
 			Is_all    *bool   `json:"is_all"`
@@ -92,7 +92,7 @@ func GroupsGet(toid primitive.ObjectID) ([]ml.Group, error) {
 			Name:     m["name"].(string),
 			CreateAt: m["createAt"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
 			UpdateAt: m["updateAt"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
-			OverTime: m["overtime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
+			OverAt:   m["overAt"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
 			Config:   config,
 		})
 	}
@@ -123,7 +123,7 @@ func GroupGet(toid primitive.ObjectID, goid primitive.ObjectID) (ml.Group, error
 	res.Name = m["name"].(string)
 	res.CreateAt = m["createAt"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05")
 	res.UpdateAt = m["updateAt"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05")
-	res.OverTime = m["overtime"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05")
+	res.OverAt = m["overAt"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05")
 
 	res.Config = NewGroupConfig()
 
@@ -185,7 +185,7 @@ func GroupPost(toid primitive.ObjectID, req *RequestGroupPost) (string, error) {
 		{Key: "name", Value: req.Data.Name},
 		{Key: "createAt", Value: sys.StringtoTime(req.Data.CreateAt)},
 		{Key: "updateAt", Value: sys.StringtoTime(req.Data.UpdateAt)},
-		{Key: "overtime", Value: sys.StringtoTime(req.Data.OverTime)},
+		{Key: "overAt", Value: sys.StringtoTime(req.Data.OverAt)},
 		{Key: "gid", Value: gid},
 		{Key: "config", Value: bson.D{{Key: "levels", Value: NewGroupConfig()}}},
 	}
@@ -214,8 +214,8 @@ func GroupPut(toid primitive.ObjectID, goid primitive.ObjectID, req *RequestGrou
 		m["updateAt"] = sys.StringtoTime(*(*req).Data.UpdateAt)
 	}
 
-	if (*req).Data.OverTime != nil {
-		m["overtime"] = sys.StringtoTime(*(*req).Data.OverTime)
+	if (*req).Data.OverAt != nil {
+		m["overAt"] = sys.StringtoTime(*(*req).Data.OverAt)
 	}
 	if req.Data.Config != nil {
 
@@ -252,7 +252,7 @@ func GroupCreateDefault(toid primitive.ObjectID, gd RequestThemePostDefaultGroup
 		{Key: "gid", Value: gid},
 		{Key: "createAt", Value: sys.StringtoTime(gd.CreateAt)},
 		{Key: "updateAt", Value: sys.StringtoTime(gd.CreateAt)},
-		{Key: "overtime", Value: sys.StringtoTime(gd.OverTime)},
+		{Key: "overAt", Value: sys.StringtoTime(gd.OverAt)},
 		{Key: "default", Value: true},
 		{Key: "config", Value: NewGroupConfig()},
 	}
@@ -570,7 +570,7 @@ func GroupImportConfig(uoid, toid primitive.ObjectID, fileHeader *multipart.File
 		forever := time.Now().Add(time.Hour * 24 * 36500) // 100年后
 		groupData = append(groupData,
 			bson.E{Key: "createAt", Value: primitive.NewDateTimeFromTime(time.Now())},
-			bson.E{Key: "overtime", Value: primitive.NewDateTimeFromTime(forever)},
+			bson.E{Key: "overAt", Value: primitive.NewDateTimeFromTime(forever)},
 		)
 		_, err = db.Collection("group").InsertOne(context.TODO(), groupData)
 		if err != nil {

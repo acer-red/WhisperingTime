@@ -5,36 +5,35 @@ import 'package:whispering_time/utils/time.dart';
 class Group {
   String name;
   String id;
-  DateTime overtime;
+  DateTime overAt;
   GroupConfig config;
 
   Group(
       {required this.name,
       required this.id,
-      required this.overtime,
+      required this.overAt,
       required this.config});
 
-  // 判断当前时间是否在overtime的之内
+  // 判断当前时间是否在overAt的之内
   bool isBufTime() {
     DateTime now = DateTime.now();
-    return now.isBefore(overtime) &&
-        now.isBefore(overtime.add(Time.getOverTime()));
+    return now.isBefore(overAt) && now.isBefore(overAt.add(Time.getoverAt()));
   }
 
-  // 判断当前时间是否在overtime之后
-  bool isEnterOverTime() {
-    return DateTime.now().isAfter(overtime);
+  // 判断当前时间是否在overAt之后
+  bool isEnteroverAt() {
+    return DateTime.now().isAfter(overAt);
   }
 
-  // 判断当前时间是否在overtime之前
-  bool isNotEnterOverTime() {
-    DateTime oneDayBefore = overtime.subtract(Time.getOverTime());
+  // 判断当前时间是否在overAt之前
+  bool isNotEnteroverAt() {
+    DateTime oneDayBefore = overAt.subtract(Time.getoverAt());
     return DateTime.now().isBefore(oneDayBefore);
   }
 
-  int getOverTimeStatus() {
+  int getoverAtStatus() {
     // 顺序不能修改
-    if (isNotEnterOverTime()) {
+    if (isNotEnteroverAt()) {
       return 0;
     }
     if (isBufTime()) {
@@ -44,7 +43,7 @@ class Group {
   }
 
   bool isFreezedOrBuf() {
-    return getOverTimeStatus() != 0;
+    return getoverAtStatus() != 0;
   }
 }
 
@@ -71,8 +70,8 @@ class GroupsModel with ChangeNotifier {
     }
 
     items = res.data
-        .map((l) => Group(
-            name: l.name, id: l.id, overtime: l.overtime, config: l.config))
+        .map((l) =>
+            Group(name: l.name, id: l.id, overAt: l.overAt, config: l.config))
         .toList();
 
     // 确保 idx 在有效范围内
@@ -106,8 +105,8 @@ class GroupsModel with ChangeNotifier {
     if (res.isNotOK) {
       return false;
     }
-    items.add(Group(
-        name: req.name, id: res.id, overtime: req.overtime, config: config));
+    items.add(
+        Group(name: req.name, id: res.id, overAt: req.overAt, config: config));
     idx = items.length - 1; // 新增后将 idx 设置为最后一个
     notifyListeners();
     return true;
@@ -127,9 +126,9 @@ class GroupsModel with ChangeNotifier {
     }
   }
 
-  void setOvertime(DateTime overtime) {
+  void setoverAt(DateTime overAt) {
     if (items.isNotEmpty && idx < items.length) {
-      items[idx].overtime = overtime;
+      items[idx].overAt = overAt;
       notifyListeners();
     }
   }

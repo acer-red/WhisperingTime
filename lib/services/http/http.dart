@@ -5,10 +5,10 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
 import 'package:whispering_time/utils/env.dart';
-import 'package:whispering_time/pages/doc/setting.dart';
 import 'package:whispering_time/utils/time.dart';
 import 'package:whispering_time/services/isar/config.dart';
 import 'base.dart';
+import 'package:whispering_time/pages/doc/model.dart';
 
 // theme
 class ResponseGetThemes extends Basic {
@@ -243,7 +243,7 @@ class RequestPostThemeDefaultGroup {
   Map<String, dynamic> toJson() => {
         'name': name,
         'createAt': Time.nowTimestampString(),
-        'overtime': Time.toTimestampString(Time.getForver())
+        'overAt': Time.toTimestampString(Time.getForver())
       };
 }
 
@@ -409,9 +409,9 @@ class ResponsePutGroup extends Basic {
 
 class RequestPutGroup {
   String? name;
-  DateTime? overtime;
+  DateTime? overAt;
   GroupConfigNULL? config;
-  RequestPutGroup({this.name, this.overtime, this.config});
+  RequestPutGroup({this.name, this.overAt, this.config});
   Map<String, dynamic> toJson() {
     Map<String, dynamic> data = {'updateAt': Time.nowTimestampString()};
 
@@ -419,9 +419,9 @@ class RequestPutGroup {
       print("更新分组名:$name");
       data['name'] = name!;
     }
-    if (overtime != null) {
-      print("更新定格时间,$overtime");
-      data['overtime'] = Time.toTimestampString(overtime!);
+    if (overAt != null) {
+      print("更新定格时间,$overAt");
+      data['overAt'] = Time.toTimestampString(overAt!);
     }
     if (config != null) {
       print("更新分组配置选项");
@@ -433,14 +433,14 @@ class RequestPutGroup {
 
 class RequestPostGroup {
   String name;
-  DateTime overtime = Time.getForver();
+  DateTime overAt = Time.getForver();
 
   RequestPostGroup({required this.name});
   Map<String, dynamic> toJson() => {
         'name': name,
         'createAt': Time.nowTimestampString(),
         'updateAt': Time.nowTimestampString(),
-        'overtime': Time.toTimestampString(overtime)
+        'overAt': Time.toTimestampString(overAt)
       };
 }
 
@@ -459,13 +459,13 @@ class GroupListData {
   String id;
   DateTime createAt;
   DateTime updateAt;
-  DateTime overtime;
+  DateTime overAt;
   GroupConfig config;
   GroupListData({
     required this.name,
     required this.id,
     required this.createAt,
-    required this.overtime,
+    required this.overAt,
     required this.updateAt,
     required this.config,
   });
@@ -476,14 +476,14 @@ class GroupListData {
       id: json['id'] as String,
       createAt: Time.stringToTime(json['createAt'] as String),
       updateAt: Time.stringToTime(json['updateAt'] as String),
-      overtime: Time.stringToTime(json['overtime'] as String),
+      overAt: Time.stringToTime(json['overAt'] as String),
       config: GroupConfig(
-        isMulti: json['config']['isMulti'] as bool,
-        isAll: json['config']['isAll'] as bool,
+        isMulti: json['config']['is_multi'] as bool,
+        isAll: json['config']['is_all'] as bool,
         levels: (json['config']['levels'] as List<dynamic>)
             .map((e) => e as bool)
             .toList(),
-        viewType: json['config']['viewType'] as int,
+        viewType: json['config']['view_type'] as int,
       ),
     );
   }
@@ -510,45 +510,6 @@ class ResponseImportGroupConfig extends Basic {
 }
 
 // doc
-class Doc {
-  String title;
-  String content;
-  String plainText;
-  int level;
-  DateTime createAt;
-  DateTime updateAt;
-  DocConfigration config;
-  String id;
-  int get day => createAt.day;
-  String get levelString => Level.string(level);
-  String get createAtString => DateFormat('yyyy-MM-dd HH:mm').format(createAt);
-  String get updateAtString => DateFormat('yyyy-MM-dd HH:mm').format(updateAt);
-  late bool isSearch;
-  Doc({
-    required this.title,
-    required this.content,
-    required this.plainText,
-    required this.level,
-    required this.createAt,
-    required this.updateAt,
-    required this.config,
-    required this.id,
-  });
-
-  factory Doc.fromJson(Map<String, dynamic> json) {
-    return Doc(
-      title: json['title'] as String,
-      content: json['content'] as String,
-      plainText: json['plain_text'] as String,
-      level: json['level'] as int,
-      createAt: Time.stringToTime(json['createAt'] as String),
-      updateAt: Time.stringToTime(json['updateAt'] as String),
-      config:
-          DocConfigration(isShowTool: json['config']['is_show_tool'] as bool),
-      id: json['id'] as String,
-    );
-  }
-}
 
 class ResponseGetDocs extends Basic {
   List<Doc> data;

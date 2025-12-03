@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:whispering_time/pages/doc/setting.dart';
+import 'package:whispering_time/pages/doc/scene.dart';
 import 'package:whispering_time/utils/env.dart';
 import 'package:whispering_time/services/http/http.dart';
 import 'package:whispering_time/services/isar/config.dart';
@@ -10,8 +11,10 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'dart:convert';
 import 'package:whispering_time/utils/export.dart';
 import 'package:whispering_time/pages/group/model.dart';
+import 'package:whispering_time/pages/doc/model.dart';
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'dart:io';
+import 'package:flutter/services.dart';
 
 class DocList extends StatefulWidget {
   final Group group;
@@ -39,13 +42,39 @@ class _DocListState extends State<DocList> {
       appBar:
           AppBar(title: Text(widget.group.name), centerTitle: true, actions: [
         IconButton(icon: Icon(Icons.add), onPressed: () => createNewDoc()),
+        IconButton(onPressed: () => playDocPage(), icon: Icon(Icons.play_arrow))
       ]),
       body: screenCard(),
     );
   }
 
+  void playDocPage() {
+    const Duration tim = Duration(milliseconds: 800);
+    Navigator.push(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (context, a, b) {
+            return ScenePage(
+              docs: items,
+              group: widget.group,
+            );
+          },
+          transitionDuration: tim,
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(
+              opacity: animation,
+              child: child,
+            );
+          },
+        ));
+  }
+
   // 创建新文档
   void createNewDoc() {
+    // 防止重复创建空文档
+    if (items.isNotEmpty && items[0].id.isEmpty && editingIndex == 0) {
+      return;
+    }
     Doc newDoc = Doc(
       id: '',
       title: '',
@@ -556,6 +585,7 @@ class Cardx extends StatefulWidget {
 class _Cardx extends State<Cardx> {
   late TextEditingController titleController;
   late QuillController quillController;
+  late FocusNode _focusNode;
   late int level;
   late DocConfigration config;
   late DateTime createAt;
@@ -564,6 +594,7 @@ class _Cardx extends State<Cardx> {
   @override
   void initState() {
     super.initState();
+    _focusNode = FocusNode();
     titleController = TextEditingController(text: widget.doc.title);
 
     // 初始化富文本编辑器
@@ -661,10 +692,32 @@ class _Cardx extends State<Cardx> {
     }
   }
 
+  void _handlePaste() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    if (data != null && data.text != null) {
+      final text = data.text!;
+      final selection = quillController.selection;
+      if (!selection.isValid) {
+        return;
+      }
+      quillController.replaceText(
+        selection.start,
+        selection.end - selection.start,
+        text,
+        null,
+      );
+      quillController.updateSelection(
+        TextSelection.collapsed(offset: selection.start + text.length),
+        ChangeSource.local,
+      );
+    }
+  }
+
   @override
   void dispose() {
     titleController.dispose();
     quillController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -757,16 +810,24 @@ class _Cardx extends State<Cardx> {
                     border: Border.all(color: Colors.grey[300]!),
                     borderRadius: BorderRadius.circular(8),
                   ),
-            child: QuillEditor(
-              controller: quillController,
-              focusNode: FocusNode(),
-              scrollController: ScrollController(),
-              config: QuillEditorConfig(
-                embedBuilders: _getCustomEmbedBuilders(),
-                scrollable: true,
-                autoFocus: false,
-                expands: false,
-                padding: EdgeInsets.all(12),
+            child: CallbackShortcuts(
+              bindings: {
+                const SingleActivator(LogicalKeyboardKey.keyV, meta: true):
+                    _handlePaste,
+                const SingleActivator(LogicalKeyboardKey.keyV, control: true):
+                    _handlePaste,
+              },
+              child: QuillEditor(
+                controller: quillController,
+                focusNode: _focusNode,
+                scrollController: ScrollController(),
+                config: QuillEditorConfig(
+                  embedBuilders: _getCustomEmbedBuilders(),
+                  scrollable: true,
+                  autoFocus: false,
+                  expands: false,
+                  padding: EdgeInsets.all(12),
+                ),
               ),
             ),
           ),
@@ -999,7 +1060,6 @@ class _Cardx extends State<Cardx> {
   }
 }
 
-// 自定义图片嵌入构建器，自动拼接服务器地址
 class _CustomImageEmbedBuilder extends EmbedBuilder {
   @override
   String get key => 'image';

@@ -33,18 +33,23 @@ const ConfigSchema = CollectionSchema(
       name: r'devlopMode',
       type: IsarType.bool,
     ),
-    r'serverAddress': PropertySchema(
+    r'keepAnimationWhenLostFocus': PropertySchema(
       id: 3,
+      name: r'keepAnimationWhenLostFocus',
+      type: IsarType.bool,
+    ),
+    r'serverAddress': PropertySchema(
+      id: 4,
       name: r'serverAddress',
       type: IsarType.string,
     ),
     r'uid': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'uid',
       type: IsarType.string,
     ),
     r'visualNoneTitle': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'visualNoneTitle',
       type: IsarType.bool,
     )
@@ -96,9 +101,10 @@ void _configSerialize(
   );
   writer.writeBool(offsets[1], object.defaultShowTool);
   writer.writeBool(offsets[2], object.devlopMode);
-  writer.writeString(offsets[3], object.serverAddress);
-  writer.writeString(offsets[4], object.uid);
-  writer.writeBool(offsets[5], object.visualNoneTitle);
+  writer.writeBool(offsets[3], object.keepAnimationWhenLostFocus);
+  writer.writeString(offsets[4], object.serverAddress);
+  writer.writeString(offsets[5], object.uid);
+  writer.writeBool(offsets[6], object.visualNoneTitle);
 }
 
 Config _configDeserialize(
@@ -118,9 +124,10 @@ Config _configDeserialize(
   object.defaultShowTool = reader.readBool(offsets[1]);
   object.devlopMode = reader.readBool(offsets[2]);
   object.id = id;
-  object.serverAddress = reader.readString(offsets[3]);
-  object.uid = reader.readString(offsets[4]);
-  object.visualNoneTitle = reader.readBool(offsets[5]);
+  object.keepAnimationWhenLostFocus = reader.readBool(offsets[3]);
+  object.serverAddress = reader.readString(offsets[4]);
+  object.uid = reader.readString(offsets[5]);
+  object.visualNoneTitle = reader.readBool(offsets[6]);
   return object;
 }
 
@@ -144,10 +151,12 @@ P _configDeserializeProp<P>(
     case 2:
       return (reader.readBool(offset)) as P;
     case 3:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 4:
       return (reader.readString(offset)) as P;
     case 5:
+      return (reader.readString(offset)) as P;
+    case 6:
       return (reader.readBool(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -394,6 +403,16 @@ extension ConfigQueryFilter on QueryBuilder<Config, Config, QFilterCondition> {
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Config, Config, QAfterFilterCondition>
+      keepAnimationWhenLostFocusEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'keepAnimationWhenLostFocus',
+        value: value,
       ));
     });
   }
@@ -704,6 +723,20 @@ extension ConfigQuerySortBy on QueryBuilder<Config, Config, QSortBy> {
     });
   }
 
+  QueryBuilder<Config, Config, QAfterSortBy>
+      sortByKeepAnimationWhenLostFocus() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'keepAnimationWhenLostFocus', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Config, Config, QAfterSortBy>
+      sortByKeepAnimationWhenLostFocusDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'keepAnimationWhenLostFocus', Sort.desc);
+    });
+  }
+
   QueryBuilder<Config, Config, QAfterSortBy> sortByServerAddress() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'serverAddress', Sort.asc);
@@ -778,6 +811,20 @@ extension ConfigQuerySortThenBy on QueryBuilder<Config, Config, QSortThenBy> {
     });
   }
 
+  QueryBuilder<Config, Config, QAfterSortBy>
+      thenByKeepAnimationWhenLostFocus() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'keepAnimationWhenLostFocus', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Config, Config, QAfterSortBy>
+      thenByKeepAnimationWhenLostFocusDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'keepAnimationWhenLostFocus', Sort.desc);
+    });
+  }
+
   QueryBuilder<Config, Config, QAfterSortBy> thenByServerAddress() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'serverAddress', Sort.asc);
@@ -828,6 +875,13 @@ extension ConfigQueryWhereDistinct on QueryBuilder<Config, Config, QDistinct> {
     });
   }
 
+  QueryBuilder<Config, Config, QDistinct>
+      distinctByKeepAnimationWhenLostFocus() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'keepAnimationWhenLostFocus');
+    });
+  }
+
   QueryBuilder<Config, Config, QDistinct> distinctByServerAddress(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -875,6 +929,13 @@ extension ConfigQueryProperty on QueryBuilder<Config, Config, QQueryProperty> {
     });
   }
 
+  QueryBuilder<Config, bool, QQueryOperations>
+      keepAnimationWhenLostFocusProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'keepAnimationWhenLostFocus');
+    });
+  }
+
   QueryBuilder<Config, String, QQueryOperations> serverAddressProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'serverAddress');
@@ -905,9 +966,9 @@ const APIsarSchema = Schema(
   name: r'APIsar',
   id: -6201739561409360728,
   properties: {
-    r'extime': PropertySchema(
+    r'expiresAt': PropertySchema(
       id: 0,
-      name: r'extime',
+      name: r'expiresAt',
       type: IsarType.string,
     ),
     r'key': PropertySchema(
@@ -929,7 +990,7 @@ int _aPIsarEstimateSize(
 ) {
   var bytesCount = offsets.last;
   {
-    final value = object.extime;
+    final value = object.expiresAt;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
     }
@@ -949,7 +1010,7 @@ void _aPIsarSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeString(offsets[0], object.extime);
+  writer.writeString(offsets[0], object.expiresAt);
   writer.writeString(offsets[1], object.key);
 }
 
@@ -960,7 +1021,7 @@ APIsar _aPIsarDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = APIsar(
-    extime: reader.readStringOrNull(offsets[0]),
+    expiresAt: reader.readStringOrNull(offsets[0]),
     key: reader.readStringOrNull(offsets[1]),
   );
   return object;
@@ -983,36 +1044,36 @@ P _aPIsarDeserializeProp<P>(
 }
 
 extension APIsarQueryFilter on QueryBuilder<APIsar, APIsar, QFilterCondition> {
-  QueryBuilder<APIsar, APIsar, QAfterFilterCondition> extimeIsNull() {
+  QueryBuilder<APIsar, APIsar, QAfterFilterCondition> expiresAtIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'extime',
+        property: r'expiresAt',
       ));
     });
   }
 
-  QueryBuilder<APIsar, APIsar, QAfterFilterCondition> extimeIsNotNull() {
+  QueryBuilder<APIsar, APIsar, QAfterFilterCondition> expiresAtIsNotNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'extime',
+        property: r'expiresAt',
       ));
     });
   }
 
-  QueryBuilder<APIsar, APIsar, QAfterFilterCondition> extimeEqualTo(
+  QueryBuilder<APIsar, APIsar, QAfterFilterCondition> expiresAtEqualTo(
     String? value, {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'extime',
+        property: r'expiresAt',
         value: value,
         caseSensitive: caseSensitive,
       ));
     });
   }
 
-  QueryBuilder<APIsar, APIsar, QAfterFilterCondition> extimeGreaterThan(
+  QueryBuilder<APIsar, APIsar, QAfterFilterCondition> expiresAtGreaterThan(
     String? value, {
     bool include = false,
     bool caseSensitive = true,
@@ -1020,14 +1081,14 @@ extension APIsarQueryFilter on QueryBuilder<APIsar, APIsar, QFilterCondition> {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         include: include,
-        property: r'extime',
+        property: r'expiresAt',
         value: value,
         caseSensitive: caseSensitive,
       ));
     });
   }
 
-  QueryBuilder<APIsar, APIsar, QAfterFilterCondition> extimeLessThan(
+  QueryBuilder<APIsar, APIsar, QAfterFilterCondition> expiresAtLessThan(
     String? value, {
     bool include = false,
     bool caseSensitive = true,
@@ -1035,14 +1096,14 @@ extension APIsarQueryFilter on QueryBuilder<APIsar, APIsar, QFilterCondition> {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.lessThan(
         include: include,
-        property: r'extime',
+        property: r'expiresAt',
         value: value,
         caseSensitive: caseSensitive,
       ));
     });
   }
 
-  QueryBuilder<APIsar, APIsar, QAfterFilterCondition> extimeBetween(
+  QueryBuilder<APIsar, APIsar, QAfterFilterCondition> expiresAtBetween(
     String? lower,
     String? upper, {
     bool includeLower = true,
@@ -1051,7 +1112,7 @@ extension APIsarQueryFilter on QueryBuilder<APIsar, APIsar, QFilterCondition> {
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
-        property: r'extime',
+        property: r'expiresAt',
         lower: lower,
         includeLower: includeLower,
         upper: upper,
@@ -1061,69 +1122,69 @@ extension APIsarQueryFilter on QueryBuilder<APIsar, APIsar, QFilterCondition> {
     });
   }
 
-  QueryBuilder<APIsar, APIsar, QAfterFilterCondition> extimeStartsWith(
+  QueryBuilder<APIsar, APIsar, QAfterFilterCondition> expiresAtStartsWith(
     String value, {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'extime',
+        property: r'expiresAt',
         value: value,
         caseSensitive: caseSensitive,
       ));
     });
   }
 
-  QueryBuilder<APIsar, APIsar, QAfterFilterCondition> extimeEndsWith(
+  QueryBuilder<APIsar, APIsar, QAfterFilterCondition> expiresAtEndsWith(
     String value, {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'extime',
+        property: r'expiresAt',
         value: value,
         caseSensitive: caseSensitive,
       ));
     });
   }
 
-  QueryBuilder<APIsar, APIsar, QAfterFilterCondition> extimeContains(
+  QueryBuilder<APIsar, APIsar, QAfterFilterCondition> expiresAtContains(
       String value,
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.contains(
-        property: r'extime',
+        property: r'expiresAt',
         value: value,
         caseSensitive: caseSensitive,
       ));
     });
   }
 
-  QueryBuilder<APIsar, APIsar, QAfterFilterCondition> extimeMatches(
+  QueryBuilder<APIsar, APIsar, QAfterFilterCondition> expiresAtMatches(
       String pattern,
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.matches(
-        property: r'extime',
+        property: r'expiresAt',
         wildcard: pattern,
         caseSensitive: caseSensitive,
       ));
     });
   }
 
-  QueryBuilder<APIsar, APIsar, QAfterFilterCondition> extimeIsEmpty() {
+  QueryBuilder<APIsar, APIsar, QAfterFilterCondition> expiresAtIsEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'extime',
+        property: r'expiresAt',
         value: '',
       ));
     });
   }
 
-  QueryBuilder<APIsar, APIsar, QAfterFilterCondition> extimeIsNotEmpty() {
+  QueryBuilder<APIsar, APIsar, QAfterFilterCondition> expiresAtIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'extime',
+        property: r'expiresAt',
         value: '',
       ));
     });

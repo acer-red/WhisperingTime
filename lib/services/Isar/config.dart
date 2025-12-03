@@ -24,6 +24,7 @@ class Config {
   bool devlopMode = false;
   bool visualNoneTitle = false;
   bool defaultShowTool = false;
+  bool keepAnimationWhenLostFocus = !(Platform.isAndroid || Platform.isIOS);
   List<APIsar> apis = [];
 
   static Config? _instance; // 静态实例缓存
@@ -133,6 +134,14 @@ class Config {
     });
   }
 
+  void setKeepAnimationWhenLostFocus(bool b) async {
+    print("更新配置 失去焦点保持动画 $b");
+    instance.keepAnimationWhenLostFocus = b;
+    await isar.writeTxn(() async {
+      await isar.configs.put(this);
+    });
+  }
+
   void setServerAddress(String str) async {
     print("更新配置 服务器地址 $str");
     instance.serverAddress = str;
@@ -144,7 +153,7 @@ class Config {
   void setAPIs(List<API> apis) async {
     print("更新配置API列表 ");
     instance.apis =
-        apis.map((e) => APIsar(key: e.key, extime: e.extime)).toList();
+        apis.map((e) => APIsar(key: e.key, expiresAt: e.expiresAt)).toList();
     await isar.writeTxn(() async {
       await isar.configs.put(this);
     });
@@ -161,12 +170,12 @@ class Config {
 @embedded
 class APIsar {
   String? key;
-  String? extime;
-  APIsar({this.key, this.extime});
+  String? expiresAt;
+  APIsar({this.key, this.expiresAt});
   factory APIsar.fromJson(Map<String, dynamic> g) {
     return APIsar(
       key: g['apikey'],
-      extime: g['extime'],
+      expiresAt: g['expiresAt'],
     );
   }
 }
