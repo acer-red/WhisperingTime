@@ -9,7 +9,7 @@ import 'package:whispering_time/services/http/base.dart';
 import 'package:whispering_time/services/http/index.dart' as http_index;
 import 'package:whispering_time/services/http/http.dart' as http;
 import 'package:provider/provider.dart';
-import 'package:whispering_time/pages/group/model.dart';
+import 'package:whispering_time/pages/group/manager.dart';
 import 'package:file_picker/file_picker.dart';
 
 const double iconsize = 25;
@@ -96,7 +96,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget body() {
     return ChangeNotifierProvider(
-      create: (context) => GroupsModel(),
+      create: (context) => GroupsManager(),
       child: Scaffold(
         key: scaffoldKey,
         appBar: AppBar(
@@ -148,7 +148,7 @@ class _HomePageState extends State<HomePage> {
                         if (themes.isNotEmpty) {
                           WidgetsBinding.instance.addPostFrameCallback((_) {
                             if (mounted) {
-                              Provider.of<GroupsModel>(context, listen: false)
+                              Provider.of<GroupsManager>(context, listen: false)
                                   .setThemeID(themes.first.id);
                             }
                           });
@@ -424,7 +424,7 @@ class _HomePageState extends State<HomePage> {
 
                 // 使用 scaffoldContext 来访问 Provider
                 if (mounted) {
-                  final ok = await Provider.of<GroupsModel>(scaffoldContext,
+                  final ok = await Provider.of<GroupsManager>(scaffoldContext,
                           listen: false)
                       .add(inputValue!);
                   if (!ok) {
@@ -475,9 +475,8 @@ class _HomePageState extends State<HomePage> {
       }
 
       // 获取当前主题ID
-      final groupsModel =
-          Provider.of<GroupsModel>(scaffoldContext, listen: false);
-      final tid = groupsModel.tid;
+      final groups = Provider.of<GroupsManager>(scaffoldContext, listen: false);
+      final tid = groups.tid;
 
       if (tid.isEmpty) {
         if (mounted) {
@@ -494,7 +493,7 @@ class _HomePageState extends State<HomePage> {
         if (res.isOK) {
           Msg.diy(context, "导入成功");
           // 刷新分组数据
-          await groupsModel.get();
+          await groups.get();
         } else {
           Msg.diy(context, res.msg);
         }

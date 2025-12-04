@@ -9,6 +9,7 @@ import 'package:whispering_time/utils/time.dart';
 import 'package:whispering_time/services/isar/config.dart';
 import 'base.dart';
 import 'package:whispering_time/pages/doc/model.dart';
+import 'package:whispering_time/pages/group/model.dart';
 
 // theme
 class ResponseGetThemes extends Basic {
@@ -328,41 +329,6 @@ class GroupConfigNULL {
   }
 }
 
-class GroupConfig {
-  bool isMulti;
-  bool isAll;
-  List<bool> levels = [];
-  int viewType;
-  int sortType;
-  GroupConfig(
-      {required this.isMulti,
-      required this.isAll,
-      required this.levels,
-      required this.viewType,
-      required this.sortType});
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = {};
-    data['is_multi'] = isMulti;
-    data['is_all'] = isAll;
-    if (levels.isNotEmpty) {
-      data['levels'] = levels;
-    }
-    data['view_type'] = viewType;
-    data['sort_type'] = sortType;
-    return data;
-  }
-
-  static GroupConfig getDefault() {
-    return GroupConfig(
-        isAll: false,
-        isMulti: false,
-        levels: [true, false, false, false, false],
-        viewType: 0,
-        sortType: 0);
-  }
-}
-
 class ResponseGetGroupAndDocDetail extends Basic {
   DGroup data;
   ResponseGetGroupAndDocDetail(
@@ -556,7 +522,7 @@ class RequestPostDoc {
   String plainText;
   DateTime createAt;
   int level;
-  DocConfigration config;
+  DocConfig config;
   RequestPostDoc(
       {required this.content,
       required this.title,
@@ -593,7 +559,7 @@ class RequestPutDoc {
   String? plainText;
   int? level;
   DateTime? createAt;
-  DocConfigration? config;
+  DocConfig? config;
   DateTime get updateAt => DateTime.now();
   RequestPutDoc(
       {this.title,

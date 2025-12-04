@@ -9,7 +9,7 @@ class Doc {
   int level;
   DateTime createAt;
   DateTime updateAt;
-  DocConfigration config;
+  DocConfig config;
   String id;
   int get day => createAt.day;
   String get levelString => Level.string(level);
@@ -35,16 +35,15 @@ class Doc {
       level: json['level'] as int,
       createAt: Time.stringToTime(json['createAt'] as String),
       updateAt: Time.stringToTime(json['updateAt'] as String),
-      config:
-          DocConfigration(isShowTool: json['config']['is_show_tool'] as bool),
+      config: DocConfig(isShowTool: json['config']['is_show_tool'] as bool),
       id: json['id'] as String,
     );
   }
 }
 
-class DocConfigration {
+class DocConfig {
   bool? isShowTool;
-  DocConfigration({this.isShowTool});
+  DocConfig({this.isShowTool});
   Map<String, dynamic> toJson() {
     return {
       'is_show_tool': isShowTool,

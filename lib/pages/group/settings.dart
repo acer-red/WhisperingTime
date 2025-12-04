@@ -5,6 +5,7 @@ import 'package:whispering_time/utils/ui.dart';
 import 'package:whispering_time/utils/time.dart';
 import 'package:whispering_time/utils/export.dart';
 import 'model.dart';
+import 'manager.dart';
 
 class GroupSettings extends StatefulWidget {
   final Group group;
@@ -58,11 +59,11 @@ class _GroupSettingsState extends State<GroupSettings> {
       return;
     }
 
-    final groupsModel = context.read<GroupsModel>();
-    final tid = groupsModel.tid;
-    final id = groupsModel.id;
+    final Groups = context.read<GroupsManager>();
+    final tid = Groups.tid;
+    final id = Groups.id;
     if (mounted) {
-      groupsModel.setName(newName);
+      Groups.setName(newName);
     }
 
     if (ishttp) {
@@ -213,10 +214,10 @@ class _GroupSettingsState extends State<GroupSettings> {
   /// 按钮：删除分组
   /// 位置：在设置中
   void clickDeleteGroup() async {
-    final length = context.read<GroupsModel>().length;
-    final id = context.read<GroupsModel>().id;
-    final tid = context.read<GroupsModel>().tid;
-    final idx = context.read<GroupsModel>().idx;
+    final length = context.read<GroupsManager>().length;
+    final id = context.read<GroupsManager>().id;
+    final tid = context.read<GroupsManager>().tid;
+    final idx = context.read<GroupsManager>().idx;
 
     if (length == 1) {
       Msg.diy(context, "无法删除，请保留至少一个项目。");
@@ -237,7 +238,7 @@ class _GroupSettingsState extends State<GroupSettings> {
       // setState(() {
       // });
 
-      context.read<GroupsModel>().removeAt(idx);
+      context.read<GroupsManager>().removeAt(idx);
 
       Navigator.of(context).pop();
     }
@@ -245,7 +246,7 @@ class _GroupSettingsState extends State<GroupSettings> {
 
   /// 按钮：导出当前分组的印迹
   void clickExportData() {
-    final gid = context.read<GroupsModel>().id;
+    final gid = context.read<GroupsManager>().id;
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -316,9 +317,9 @@ class _FreezeSwitchTileState extends State<FreezeSwitchTile> {
       ),
       value: isFreezed,
       onChanged: (bool value) async {
-        final groupsModel = Provider.of<GroupsModel>(context, listen: false);
-        final tid = groupsModel.tid;
-        final id = groupsModel.id;
+        final groups = Provider.of<GroupsManager>(context, listen: false);
+        final tid = groups.tid;
+        final id = groups.id;
 
         final time = Time.getOverDay();
         final res = await Http(tid: tid, gid: id)
@@ -329,7 +330,7 @@ class _FreezeSwitchTileState extends State<FreezeSwitchTile> {
         }
 
         if (mounted) {
-          groupsModel.setoverAt(time);
+          groups.setoverAt(time);
           setState(() {
             isFreezed = true;
             status = 1;
@@ -347,9 +348,9 @@ class _FreezeSwitchTileState extends State<FreezeSwitchTile> {
       subtitle: Text("进入缓冲期,定格时间:${widget.item.overAt.toString()}"),
       value: isFreezed,
       onChanged: (bool value) async {
-        final groupsModel = Provider.of<GroupsModel>(context, listen: false);
-        final tid = groupsModel.tid;
-        final id = groupsModel.id;
+        final groups = Provider.of<GroupsManager>(context, listen: false);
+        final tid = groups.tid;
+        final id = groups.id;
 
         final time = Time.getForver();
         final res = await Http(tid: tid, gid: id)
@@ -360,7 +361,7 @@ class _FreezeSwitchTileState extends State<FreezeSwitchTile> {
         }
 
         if (mounted) {
-          groupsModel.setoverAt(time);
+          groups.setoverAt(time);
           setState(() {
             isFreezed = false;
             status = 0;

@@ -11,8 +11,10 @@ import 'package:whispering_time/utils/time.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'dart:convert';
 import 'package:whispering_time/utils/export.dart';
+import 'package:whispering_time/utils/picker_wheel.dart';
 import 'package:whispering_time/pages/group/model.dart';
 import 'package:whispering_time/pages/doc/model.dart';
+import 'package:whispering_time/pages/doc/manager.dart';
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'dart:io';
 import 'package:flutter/services.dart';
@@ -28,16 +30,26 @@ class DocList extends StatefulWidget {
 }
 
 class _DocListState extends State<DocList> {
-  List<Doc> items = <Doc>[];
-  List<Doc> _allFetchedDocs = <Doc>[];
+  late DocsManager docsManager;
+
   DateTime pickedDate = DateTime.now();
   int? editingIndex; // 当前正在编辑的Card索引
 
   @override
   void initState() {
-    getDocs();
     super.initState();
+    docsManager = DocsManager(widget.group.id);
+    docsManager.addListener(() {
+      if (mounted) setState(() {});
+    });
+    docsManager.fetchDocs(config: widget.group.config);
     log.d(widget.group.toString());
+  }
+
+  @override
+  void dispose() {
+    docsManager.dispose();
+    super.dispose();
   }
 
   @override
@@ -98,12 +110,7 @@ class _DocListState extends State<DocList> {
       if (levels != null) widget.group.config.levels = levels;
 
       // Re-sort or re-filter items
-      if (sortType != null) {
-        items.sort(compareDocs);
-      }
-      if (levels != null) {
-        _filterAndSortDocs();
-      }
+      docsManager.filterAndSort(widget.group.config);
     });
 
     if (saveToServer) {
@@ -131,7 +138,7 @@ class _DocListState extends State<DocList> {
         PageRouteBuilder(
           pageBuilder: (context, a, b) {
             return ScenePage(
-              docs: items,
+              docs: docsManager.items,
               group: widget.group,
             );
           },
@@ -148,7 +155,9 @@ class _DocListState extends State<DocList> {
   // 创建新文档
   void createNewDoc() {
     // 防止重复创建空文档
-    if (items.isNotEmpty && items[0].id.isEmpty && editingIndex == 0) {
+    if (docsManager.items.isNotEmpty &&
+        docsManager.items[0].id.isEmpty &&
+        editingIndex == 0) {
       return;
     }
     Doc newDoc = Doc(
@@ -159,12 +168,11 @@ class _DocListState extends State<DocList> {
       level: getSelectLevel(),
       createAt: DateTime.now(),
       updateAt: DateTime.now(),
-      config: DocConfigration(isShowTool: Config.instance.defaultShowTool),
+      config: DocConfig(isShowTool: Config.instance.defaultShowTool),
     );
 
     setState(() {
-      items.insert(0, newDoc);
-      _allFetchedDocs.insert(0, newDoc);
+      docsManager.insertDoc(newDoc);
       editingIndex = 0;
     });
   }
@@ -172,9 +180,9 @@ class _DocListState extends State<DocList> {
   // UI: 主体内容-卡片模式
   Widget screenCard() {
     return ListView.builder(
-        itemCount: items.length,
+        itemCount: docsManager.items.length,
         itemBuilder: (context, index) {
-          final item = items[index];
+          final item = docsManager.items[index];
           final isEditing = editingIndex == index;
 
           return GestureDetector(
@@ -254,8 +262,7 @@ class _DocListState extends State<DocList> {
                   return;
                 }
                 setState(() {
-                  items.remove(item);
-                  _allFetchedDocs.removeWhere((d) => d.id == item.id);
+                  docsManager.removeDoc(item);
                 });
               },
               child: Text('删除', style: TextStyle(color: Colors.red)),
@@ -280,8 +287,7 @@ class _DocListState extends State<DocList> {
 
     if (result['deleted'] == true) {
       setState(() {
-        items.remove(item);
-        _allFetchedDocs.removeWhere((d) => d.id == item.id);
+        docsManager.removeDoc(item);
       });
       return;
     }
@@ -385,26 +391,8 @@ class _DocListState extends State<DocList> {
   void handleDocUpdate(int index, Doc updatedDoc) {
     setState(() {
       // Sync _allFetchedDocs
-      Doc oldDoc = items[index];
-      int allIndex = _allFetchedDocs.indexOf(oldDoc);
-      if (allIndex != -1) {
-        _allFetchedDocs[allIndex] = updatedDoc;
-      } else {
-        if (oldDoc.id.isNotEmpty) {
-          allIndex = _allFetchedDocs.indexWhere((d) => d.id == oldDoc.id);
-          if (allIndex != -1) {
-            _allFetchedDocs[allIndex] = updatedDoc;
-          }
-        }
-      }
-
-      // 如果不符合选中的级别筛选，则删除
-      if (!isContainSelectLevel(updatedDoc.level)) {
-        items.removeAt(index);
-      } else {
-        items[index] = updatedDoc;
-        items.sort(compareDocs);
-      }
+      Doc oldDoc = docsManager.items[index];
+      docsManager.updateDoc(oldDoc, updatedDoc, widget.group.config);
       editingIndex = null;
     });
   }
@@ -412,9 +400,8 @@ class _DocListState extends State<DocList> {
   // 处理文档删除
   void handleDocDelete(int index) {
     setState(() {
-      Doc doc = items[index];
-      items.removeAt(index);
-      _allFetchedDocs.remove(doc);
+      Doc doc = docsManager.items[index];
+      docsManager.removeDoc(doc);
       editingIndex = null;
     });
   }
@@ -423,10 +410,9 @@ class _DocListState extends State<DocList> {
   void handleDocCancel(int index) {
     setState(() {
       // 如果是空ID的新文档，取消时删除
-      if (items[index].id.isEmpty) {
-        Doc doc = items[index];
-        items.removeAt(index);
-        _allFetchedDocs.remove(doc);
+      if (docsManager.items[index].id.isEmpty) {
+        Doc doc = docsManager.items[index];
+        docsManager.removeDocFromItemsAndAll(doc);
       }
       editingIndex = null;
     });
@@ -467,16 +453,24 @@ class _DocListState extends State<DocList> {
       }
     }
 
-    chooseDate() async {
-      DateTime? d = await Time.datePacker(context);
-      if (d == null) {
-        return;
-      }
-
-      setState(() {
-        pickedDate = d;
-      });
-      getDocs(year: pickedDate.year, month: pickedDate.month);
+    chooseDate() {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return Dialog(
+            child: _DatePickerBottomSheet(
+              docsManager: docsManager,
+              initialDate: pickedDate,
+              onConfirm: (DateTime date) {
+                setState(() {
+                  pickedDate = date;
+                });
+                getDocs(year: date.year, month: date.month);
+              },
+            ),
+          );
+        },
+      );
     }
 
     Widget dateTitle() {
@@ -588,9 +582,9 @@ class _DocListState extends State<DocList> {
                       pickedDate.month == DateTime.now().month &&
                       pickedDate.year == DateTime.now().year;
 
-                  for (int i = 0; i < items.length; i++) {
+                  for (int i = 0; i < docsManager.items.length; i++) {
                     if (index - firstWeekdayOfMonth + 2 ==
-                        items[i].createAt.day) {
+                        docsManager.items[i].createAt.day) {
                       return grid(istoday, dayNumber, i);
                     }
                   }
@@ -606,43 +600,8 @@ class _DocListState extends State<DocList> {
 
   /// 功能：更新当前分组下的印迹列表
   void getDocs({int? year, int? month}) async {
-    final ret = await Http(gid: widget.group.id).getDocs(year, month);
-    _allFetchedDocs = ret.data;
-    setState(() {
-      _filterAndSortDocs();
-    });
-  }
-
-  void _filterAndSortDocs() {
-    if (items.isNotEmpty) {
-      items.clear();
-    }
-    if (isNoSelectLevel()) {
-      return;
-    }
-
-    for (Doc doc in _allFetchedDocs) {
-      if (isContainSelectLevel(doc.level)) {
-        items.add(doc);
-      }
-    }
-    items.sort(compareDocs);
-  }
-
-  int compareDocs(Doc a, Doc b) {
-    if (widget.group.config.sortType == 1) {
-      return a.updateAt.compareTo(b.updateAt);
-    }
-    return a.createAt.compareTo(b.createAt);
-  }
-
-  bool isNoSelectLevel() {
-    for (bool one in widget.group.config.levels) {
-      if (one) {
-        return false;
-      }
-    }
-    return true;
+    docsManager.fetchDocs(
+        year: year, month: month, config: widget.group.config);
   }
 
   int getSelectLevel() {
@@ -654,10 +613,6 @@ class _DocListState extends State<DocList> {
       }
     }
     return 0;
-  }
-
-  bool isContainSelectLevel(int i) {
-    return widget.group.config.levels[i];
   }
 }
 
@@ -807,7 +762,7 @@ class _Cardx extends State<Cardx> {
   late QuillController quillController;
   late FocusNode _focusNode;
   late int level;
-  late DocConfigration config;
+  late DocConfig config;
   late DateTime createAt;
   bool isLevelSelected = true;
 
@@ -1342,6 +1297,137 @@ class _CustomImageEmbedBuilder extends EmbedBuilder {
           ),
         );
       },
+    );
+  }
+}
+
+class _DatePickerBottomSheet extends StatefulWidget {
+  final DocsManager docsManager;
+  final DateTime initialDate;
+  final ValueChanged<DateTime> onConfirm;
+
+  const _DatePickerBottomSheet({
+    Key? key,
+    required this.docsManager,
+    required this.initialDate,
+    required this.onConfirm,
+  }) : super(key: key);
+
+  @override
+  _DatePickerBottomSheetState createState() => _DatePickerBottomSheetState();
+}
+
+class _DatePickerBottomSheetState extends State<_DatePickerBottomSheet> {
+  late int selectedYear;
+  late int selectedMonth;
+  late List<int> years;
+  late List<int> months;
+  late FixedExtentScrollController yearController;
+  late FixedExtentScrollController monthController;
+
+  @override
+  void initState() {
+    super.initState();
+    selectedYear = widget.initialDate.year;
+    selectedMonth = widget.initialDate.month;
+
+    years = widget.docsManager.getAvailableYears();
+    if (years.isEmpty) {
+      years = [DateTime.now().year];
+    }
+    if (!years.contains(selectedYear)) {
+      selectedYear = years.first;
+    }
+
+    _updateMonths();
+
+    yearController = FixedExtentScrollController(
+        initialItem: years.indexOf(selectedYear) != -1
+            ? years.indexOf(selectedYear)
+            : 0);
+    monthController = FixedExtentScrollController(
+        initialItem: months.indexOf(selectedMonth) != -1
+            ? months.indexOf(selectedMonth)
+            : 0);
+  }
+
+  void _updateMonths() {
+    List<String> monthStrs = widget.docsManager.getAvailableMonth(selectedYear);
+    months = monthStrs.map((e) => int.parse(e)).toList();
+    if (months.isEmpty) {
+      months = [1];
+    }
+    if (!months.contains(selectedMonth)) {
+      selectedMonth = months.first;
+    }
+  }
+
+  @override
+  void dispose() {
+    yearController.dispose();
+    monthController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 300,
+      padding: EdgeInsets.all(16),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('取消'),
+              ),
+              TextButton(
+                onPressed: () {
+                  widget.onConfirm(DateTime(selectedYear, selectedMonth));
+                  Navigator.pop(context);
+                },
+                child: Text('确定'),
+              ),
+            ],
+          ),
+          Expanded(
+            child: Row(
+              children: [
+                YearPickerWheel(
+                  selectedYear: selectedYear,
+                  years: years,
+                  controller: yearController,
+                  onYearChanged: (year) {
+                    setState(() {
+                      selectedYear = year;
+                      _updateMonths();
+                      // Reset month controller if needed or jump to new index
+                      if (months.contains(selectedMonth)) {
+                        monthController
+                            .jumpToItem(months.indexOf(selectedMonth));
+                      } else {
+                        monthController.jumpToItem(0);
+                      }
+                    });
+                  },
+                ),
+                MonthPickerWheel(
+                  selectedMonth: selectedMonth,
+                  months: months,
+                  controller: monthController,
+                  onMonthChanged: (month) {
+                    setState(() {
+                      selectedMonth = month;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

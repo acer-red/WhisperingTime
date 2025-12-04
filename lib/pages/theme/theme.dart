@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:whispering_time/pages/group/group.dart';
+import 'package:whispering_time/pages/group/browser.dart';
 import 'package:provider/provider.dart';
-import 'package:whispering_time/pages/group/model.dart';
+import 'package:whispering_time/pages/group/manager.dart';
 import 'settings.dart';
 
 class ThemeItem {
@@ -81,7 +81,7 @@ class _ThemePageState extends State<ThemePage> with TickerProviderStateMixin {
                     ))
                 .toList(),
             onTap: (value) {
-              Provider.of<GroupsModel>(context, listen: false)
+              Provider.of<GroupsManager>(context, listen: false)
                   .setThemeID(widget.titems[value].id);
             },
           ),

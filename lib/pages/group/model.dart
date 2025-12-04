@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:whispering_time/services/http/http.dart';
 import 'package:whispering_time/utils/time.dart';
 
 class Group {
@@ -52,98 +50,37 @@ class Group {
   }
 }
 
-class GroupsModel with ChangeNotifier {
-  String tid = '';
-  List<Group> items = [];
-  int get length => items.length;
-  int idx = 0;
-  final config = GroupConfig(
-      isAll: false,
-      isMulti: false,
-      levels: [true, true, true, true, true],
-      viewType: 0,
-      sortType: 0);
-  // 添加边界检查的安全 getter
-  String get name => items.isNotEmpty ? items[idx].name : '';
-  Group? get item => items.isNotEmpty ? items[idx] : null;
-  String get id => items.isNotEmpty ? items[idx].id : '';
+class GroupConfig {
+  bool isMulti;
+  bool isAll;
+  List<bool> levels = [];
+  int viewType;
+  int sortType;
+  GroupConfig(
+      {required this.isMulti,
+      required this.isAll,
+      required this.levels,
+      required this.viewType,
+      required this.sortType});
 
-  Future<bool> get() async {
-    final res = await Http(tid: tid).getGroups();
-    // 修复逻辑：应该检查 isEmpty，并更新 items
-    if (res.isNotOK || res.data.isEmpty) {
-      return false;
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = {};
+    data['is_multi'] = isMulti;
+    data['is_all'] = isAll;
+    if (levels.isNotEmpty) {
+      data['levels'] = levels;
     }
-
-    items = res.data
-        .map((l) =>
-            Group(name: l.name, id: l.id, overAt: l.overAt, config: l.config))
-        .toList();
-
-    // 确保 idx 在有效范围内
-    if (idx >= items.length) {
-      idx = items.length - 1;
-    }
-    if (idx < 0) {
-      idx = 0;
-    }
-
-    notifyListeners();
-    return true;
+    data['view_type'] = viewType;
+    data['sort_type'] = sortType;
+    return data;
   }
 
-  void setThemeID(String id) {
-    tid = id;
-    notifyListeners();
-    get();
-  }
-
-  void setName(String name) {
-    if (items.isNotEmpty && idx < items.length) {
-      items[idx].name = name;
-      notifyListeners();
-    }
-  }
-
-  Future<bool> add(String name) async {
-    final req = RequestPostGroup(name: name);
-    final res = await Http(tid: tid).postGroup(req);
-    if (res.isNotOK) {
-      return false;
-    }
-    items.add(
-        Group(name: req.name, id: res.id, overAt: req.overAt, config: config));
-    idx = items.length - 1; // 新增后将 idx 设置为最后一个
-    notifyListeners();
-    return true;
-  }
-
-  void removeAt(int index) {
-    if (index >= 0 && index < items.length) {
-      items.removeAt(index);
-      // 调整 idx 避免越界
-      if (idx >= items.length && items.isNotEmpty) {
-        idx = items.length - 1;
-      }
-      if (items.isEmpty) {
-        idx = 0;
-      }
-      notifyListeners();
-    }
-  }
-
-  void setoverAt(DateTime overAt) {
-    if (items.isNotEmpty && idx < items.length) {
-      items[idx].overAt = overAt;
-      notifyListeners();
-    }
-  }
-
-  // 添加设置当前索引的方法
-  void setIndex(int index) {
-    if (index >= 0 && index < items.length) {
-      idx = index;
-      notifyListeners();
-    }
+  static GroupConfig getDefault() {
+    return GroupConfig(
+        isAll: false,
+        isMulti: false,
+        levels: [true, false, false, false, false],
+        viewType: 0,
+        sortType: 0);
   }
 }

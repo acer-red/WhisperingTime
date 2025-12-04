@@ -7,14 +7,14 @@ import 'package:whispering_time/pages/doc/model.dart';
 class LastStateDocSetting {
   LastState state;
   DateTime? createAt;
-  DocConfigration? config;
+  DocConfig? config;
   LastStateDocSetting({required this.state, this.config, this.createAt});
 }
 
 class DocSettingsDialog extends StatefulWidget {
   final String gid;
   final String? did;
-  final DocConfigration config;
+  final DocConfig config;
   final DateTime createAt;
 
   DocSettingsDialog({
@@ -101,7 +101,7 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
             Navigator.of(context).pop({
               'changed': isChanged,
               'createAt': createAt,
-              'config': DocConfigration(isShowTool: isShowTool),
+              'config': DocConfig(isShowTool: isShowTool),
             });
           },
           child: Text('确定'),
@@ -115,7 +115,7 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
     isChanged = true;
     if (widget.did != null) {
       final res = await Http(gid: widget.gid, did: widget.did)
-          .putDoc(RequestPutDoc(config: DocConfigration(isShowTool: value)));
+          .putDoc(RequestPutDoc(config: DocConfig(isShowTool: value)));
       if (res.isNotOK) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
