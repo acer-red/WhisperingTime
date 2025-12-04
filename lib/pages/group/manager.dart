@@ -94,4 +94,8 @@ class GroupsManager with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  void updateConfig() {
+    notifyListeners();
+  }
 }

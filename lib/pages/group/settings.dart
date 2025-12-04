@@ -59,11 +59,11 @@ class _GroupSettingsState extends State<GroupSettings> {
       return;
     }
 
-    final Groups = context.read<GroupsManager>();
-    final tid = Groups.tid;
-    final id = Groups.id;
+    final groups = context.read<GroupsManager>();
+    final tid = groups.tid;
+    final id = groups.id;
     if (mounted) {
-      Groups.setName(newName);
+      groups.setName(newName);
     }
 
     if (ishttp) {

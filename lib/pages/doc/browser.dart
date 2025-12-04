@@ -18,6 +18,8 @@ import 'package:whispering_time/pages/doc/manager.dart';
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'dart:io';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:whispering_time/pages/group/manager.dart';
 
 class DocList extends StatefulWidget {
   final Group group;
@@ -129,6 +131,9 @@ class _DocListState extends State<DocList> {
       isAll: widget.group.config.isAll,
     );
     await Http(tid: widget.tid, gid: widget.group.id).putGroup(req);
+    if (mounted) {
+      Provider.of<GroupsManager>(context, listen: false).updateConfig();
+    }
   }
 
   void playDocPage() {
@@ -458,7 +463,7 @@ class _DocListState extends State<DocList> {
         context: context,
         builder: (BuildContext context) {
           return Dialog(
-            child: _DatePickerBottomSheet(
+            child: _DatePickerDialog(
               docsManager: docsManager,
               initialDate: pickedDate,
               onConfirm: (DateTime date) {
@@ -623,12 +628,11 @@ class _FilterBottomSheet extends StatefulWidget {
   final Function(int, int, List<bool>) onChanged;
 
   const _FilterBottomSheet({
-    Key? key,
     required this.initialViewType,
     required this.initialSortType,
     required this.initialLevels,
     required this.onChanged,
-  }) : super(key: key);
+  });
 
   @override
   _FilterBottomSheetState createState() => _FilterBottomSheetState();
@@ -1301,23 +1305,22 @@ class _CustomImageEmbedBuilder extends EmbedBuilder {
   }
 }
 
-class _DatePickerBottomSheet extends StatefulWidget {
+class _DatePickerDialog extends StatefulWidget {
   final DocsManager docsManager;
   final DateTime initialDate;
   final ValueChanged<DateTime> onConfirm;
 
-  const _DatePickerBottomSheet({
-    Key? key,
+  const _DatePickerDialog({
     required this.docsManager,
     required this.initialDate,
     required this.onConfirm,
-  }) : super(key: key);
+  });
 
   @override
-  _DatePickerBottomSheetState createState() => _DatePickerBottomSheetState();
+  _DatePickerDialogState createState() => _DatePickerDialogState();
 }
 
-class _DatePickerBottomSheetState extends State<_DatePickerBottomSheet> {
+class _DatePickerDialogState extends State<_DatePickerDialog> {
   late int selectedYear;
   late int selectedMonth;
   late List<int> years;
@@ -1342,13 +1345,11 @@ class _DatePickerBottomSheetState extends State<_DatePickerBottomSheet> {
     _updateMonths();
 
     yearController = FixedExtentScrollController(
-        initialItem: years.indexOf(selectedYear) != -1
-            ? years.indexOf(selectedYear)
-            : 0);
+        initialItem:
+            years.contains(selectedYear) ? years.indexOf(selectedYear) : 0);
     monthController = FixedExtentScrollController(
-        initialItem: months.indexOf(selectedMonth) != -1
-            ? months.indexOf(selectedMonth)
-            : 0);
+        initialItem:
+            months.contains(selectedMonth) ? months.indexOf(selectedMonth) : 0);
   }
 
   void _updateMonths() {
