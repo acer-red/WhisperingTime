@@ -443,6 +443,9 @@ class _HomePageState extends State<HomePage> {
 
   // 导入分组配置
   Future<void> _importGroupConfig(BuildContext scaffoldContext) async {
+    // 提前获取 GroupsManager，避免跨越异步间隙使用 context
+    final groups = Provider.of<GroupsManager>(scaffoldContext, listen: false);
+
     try {
       // 使用 file_picker 选择文件
       final result = await FilePicker.platform.pickFiles(
@@ -475,7 +478,6 @@ class _HomePageState extends State<HomePage> {
       }
 
       // 获取当前主题ID
-      final groups = Provider.of<GroupsManager>(scaffoldContext, listen: false);
       final tid = groups.tid;
 
       if (tid.isEmpty) {
@@ -489,14 +491,14 @@ class _HomePageState extends State<HomePage> {
       final res =
           await http.Http(tid: tid, gid: "temp").importGroupConfig(file.path!);
 
-      if (mounted) {
-        if (res.isOK) {
-          Msg.diy(context, "导入成功");
-          // 刷新分组数据
-          await groups.get();
-        } else {
-          Msg.diy(context, res.msg);
-        }
+      if (!mounted) return;
+
+      if (res.isOK) {
+        Msg.diy(context, "导入成功");
+        // 刷新分组数据
+        await groups.get();
+      } else {
+        Msg.diy(context, res.msg);
       }
     } catch (e) {
       if (mounted) {

@@ -303,41 +303,41 @@ class _TaskManagerPageState extends State<TaskManagerPage> {
     );
   }
 
-  Widget _buildStatusIcon(String status) {
-    IconData iconData;
-    Color iconColor;
+  // Widget _buildStatusIcon(String status) {
+  //   IconData iconData;
+  //   Color iconColor;
 
-    switch (status.toLowerCase()) {
-      case 'pending':
-        iconData = Icons.schedule;
-        iconColor = Colors.orange;
-        break;
-      case 'running':
-        iconData = Icons.sync;
-        iconColor = Colors.blue;
-        break;
-      case 'completed':
-        iconData = Icons.check_circle;
-        iconColor = Colors.green;
-        break;
-      case 'failed':
-        iconData = Icons.error;
-        iconColor = Colors.red;
-        break;
-      default:
-        iconData = Icons.help_outline;
-        iconColor = Colors.grey;
-    }
+  //   switch (status.toLowerCase()) {
+  //     case 'pending':
+  //       iconData = Icons.schedule;
+  //       iconColor = Colors.orange;
+  //       break;
+  //     case 'running':
+  //       iconData = Icons.sync;
+  //       iconColor = Colors.blue;
+  //       break;
+  //     case 'completed':
+  //       iconData = Icons.check_circle;
+  //       iconColor = Colors.green;
+  //       break;
+  //     case 'failed':
+  //       iconData = Icons.error;
+  //       iconColor = Colors.red;
+  //       break;
+  //     default:
+  //       iconData = Icons.help_outline;
+  //       iconColor = Colors.grey;
+  //   }
 
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: iconColor.withValues(alpha: .1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Icon(iconData, color: iconColor, size: 24),
-    );
-  }
+  //   return Container(
+  //     padding: const EdgeInsets.all(8),
+  //     decoration: BoxDecoration(
+  //       color: iconColor.withValues(alpha: .1),
+  //       borderRadius: BorderRadius.circular(8),
+  //     ),
+  //     child: Icon(iconData, color: iconColor, size: 24),
+  //   );
+  // }
 
   String _getJobTypeDisplay(String jobType) {
     switch (jobType) {
@@ -349,7 +349,6 @@ class _TaskManagerPageState extends State<TaskManagerPage> {
   }
 
   Future<void> _retryJob(BackgroundJob job) async {
-    // TODO: 实现重试逻辑，需要后端提供重试接口
     if (mounted) {
       showSuccessMsg(context, '重试功能开发中...');
     }
