@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
+import 'package:collection/collection.dart';
 import 'package:whispering_time/pages/home/setting.dart';
 import 'package:whispering_time/pages/feedback/feedback.dart';
 import 'package:whispering_time/pages/font_manager/font_manager.dart';
@@ -12,6 +13,7 @@ import 'package:whispering_time/utils/export.dart';
 import 'package:whispering_time/utils/env.dart';
 import 'package:whispering_time/services/http/base.dart';
 import 'package:whispering_time/services/http/index.dart' as http_index;
+import 'package:whispering_time/services/http/http.dart' as http_api;
 import 'package:whispering_time/welcome.dart';
 
 const double iconsize = 25;
@@ -70,6 +72,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
             _buildSettingsMenuItem(),
             _buildTaskManagerMenuItem(),
             _buildExportMenuItem(),
+            _buildConfigBackupMenuItem(),
             _buildFontMenuItem(),
             _buildFeedbackMenuItem(),
             Spacer(),
@@ -212,7 +215,25 @@ class _HomeDrawerState extends State<HomeDrawer> {
           context: context,
           barrierDismissible: true,
           builder: (BuildContext context) {
-            return Export(ResourceType.theme, title: "导出所有印迹数据");
+            return Export(ResourceType.theme);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildConfigBackupMenuItem() {
+    return PopupMenuItem(
+      child: Row(
+        spacing: 10,
+        children: [Icon(Icons.settings_backup_restore), Text("配置备份")],
+      ),
+      onTap: () {
+        showDialog(
+          context: context,
+          barrierDismissible: true,
+          builder: (BuildContext context) {
+            return const ConfigBackupDialog();
           },
         );
       },
@@ -351,5 +372,161 @@ class _HomeDrawerState extends State<HomeDrawer> {
       }
       widget.onUserInfoUpdate();
     });
+  }
+}
+
+class ConfigBackupDialog extends StatefulWidget {
+  const ConfigBackupDialog({super.key});
+
+  @override
+  State<ConfigBackupDialog> createState() => _ConfigBackupDialogState();
+}
+
+class _ConfigBackupDialogState extends State<ConfigBackupDialog> {
+  List<http_api.XTheme> _themes = [];
+  String? _selectedTid;
+  String? _selectedGid;
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    final res = await http_api.Http().getThemesAndDoc();
+    if (!mounted) {
+      return;
+    }
+    if (res.isNotOK || res.data.isEmpty) {
+      setState(() {
+        _loading = false;
+        _error = '暂无可备份的分组';
+      });
+      return;
+    }
+
+    setState(() {
+      _themes = res.data;
+      _selectedTid = _themes.first.tid;
+      _selectedGid = _themes.first.groups.isNotEmpty
+          ? _themes.first.groups.first.gid
+          : null;
+      _loading = false;
+    });
+  }
+
+  List<http_api.XGroup> _groupsForTheme(String? tid) {
+    return _themes.firstWhereOrNull((theme) => theme.tid == tid)?.groups ??
+        const <http_api.XGroup>[];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('配置备份'),
+      content: SizedBox(
+        width: 360,
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? Center(child: Text(_error!))
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('选择主题'),
+                      const SizedBox(height: 8),
+                      DropdownButton<String>(
+                        isExpanded: true,
+                        value: _selectedTid,
+                        items: _themes
+                            .map((theme) => DropdownMenuItem<String>(
+                                  value: theme.tid,
+                                  child: Text(theme.name),
+                                ))
+                            .toList(),
+                        onChanged: (value) {
+                          if (value == null) {
+                            return;
+                          }
+                          setState(() {
+                            _selectedTid = value;
+                            final groups = _groupsForTheme(value);
+                            _selectedGid =
+                                groups.isNotEmpty ? groups.first.gid : null;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      const Text('选择分组'),
+                      const SizedBox(height: 8),
+                      DropdownButton<String>(
+                        isExpanded: true,
+                        value: _selectedGid,
+                        items: _groupsForTheme(_selectedTid)
+                            .map((group) => DropdownMenuItem<String>(
+                                  value: group.gid,
+                                  child: Text(group.name),
+                                ))
+                            .toList(),
+                        onChanged: (value) {
+                          if (value == null) {
+                            return;
+                          }
+                          setState(() {
+                            _selectedGid = value;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+      ),
+      actions: _loading
+          ? null
+          : [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('取消'),
+              ),
+              ElevatedButton(
+                onPressed: _selectedTid == null || _selectedGid == null
+                    ? null
+                    : _export,
+                child: const Text('备份'),
+              ),
+            ],
+    );
+  }
+
+  Future<void> _export() async {
+    if (_selectedTid == null || _selectedGid == null) {
+      _showSnack('请选择分组');
+      return;
+    }
+
+    final res = await http_api.Http(tid: _selectedTid, gid: _selectedGid)
+        .exportGroupConfig();
+    if (!mounted) {
+      return;
+    }
+    if (res.isNotOK) {
+      showErrMsg(context, res.msg);
+      return;
+    }
+
+    showSuccessMsg(context, '配置备份已生成');
+    Navigator.of(context).pop();
+  }
+
+  void _showSnack(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 }

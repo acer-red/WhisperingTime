@@ -71,7 +71,7 @@ class _EditPageState extends State<EditPage> {
     _autoSaveTimer?.cancel();
     _autoSaveTimer = Timer(const Duration(seconds: 10), () {
       if (mounted && !_isEditingTitle) {
-        _handleSave();
+        save();
       }
     });
   }
@@ -156,7 +156,7 @@ class _EditPageState extends State<EditPage> {
     }
   }
 
-  void _handlePaste() async {
+  void paste() async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
     if (data != null && data.text != null) {
       final text = data.text!;
@@ -200,7 +200,7 @@ class _EditPageState extends State<EditPage> {
       );
 
       if (result == true) {
-        await _handleSave();
+        await save();
       }
 
       if (result != null) {
@@ -214,7 +214,7 @@ class _EditPageState extends State<EditPage> {
       }
       return;
     }
-    await _handleSave();
+    await save();
     if (!mounted) return;
     setState(() {
       _canPop = true;
@@ -264,7 +264,7 @@ class _EditPageState extends State<EditPage> {
                     border: InputBorder.none,
                   ),
                   onSubmitted: (_) {
-                    _handleSave();
+                    save();
                     setState(() {
                       _isEditingTitle = false;
                     });
@@ -292,7 +292,7 @@ class _EditPageState extends State<EditPage> {
               IconButton(
                 icon: Icon(Icons.check),
                 onPressed: () {
-                  _handleSave();
+                  save();
                   setState(() {
                     _isEditingTitle = false;
                   });
@@ -303,9 +303,9 @@ class _EditPageState extends State<EditPage> {
               PopupMenuButton<String>(
                 onSelected: (value) {
                   if (value == 'settings') {
-                    _handleSettings();
+                    settings();
                   } else if (value == 'export') {
-                    _handleExport();
+                    export();
                   }
                 },
                 itemBuilder: (BuildContext context) {
@@ -385,9 +385,9 @@ class _EditPageState extends State<EditPage> {
                   child: CallbackShortcuts(
                     bindings: {
                       const SingleActivator(LogicalKeyboardKey.keyV,
-                          meta: true): _handlePaste,
+                          meta: true): paste,
                       const SingleActivator(LogicalKeyboardKey.keyV,
-                          control: true): _handlePaste,
+                          control: true): paste,
                     },
                     child: QuillEditor(
                       controller: quillController,
@@ -452,7 +452,7 @@ class _EditPageState extends State<EditPage> {
   }
 
   // 保存文档
-  Future<void> _handleSave() async {
+  Future<void> save() async {
     String content = jsonEncode(quillController.document.toDelta().toJson());
     String plainText = quillController.document.toPlainText();
 
@@ -535,7 +535,7 @@ class _EditPageState extends State<EditPage> {
   }
 
   // 打开设置弹窗
-  void _handleSettings() async {
+  void settings() async {
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => DocSettingsDialog(
@@ -578,12 +578,13 @@ class _EditPageState extends State<EditPage> {
   }
 
   // 导出文档
-  void _handleExport() {
+  void export() {
     showDialog(
       context: context,
       builder: (context) => Export(
         ResourceType.doc,
-        title: "导出印迹",
+        gid: widget.group.id,
+        did: widget.doc.id,
         doc: ExportData(
           content: jsonEncode(quillController.document.toDelta().toJson()),
           title: titleController.text,

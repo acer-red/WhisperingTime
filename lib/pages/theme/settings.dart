@@ -180,7 +180,6 @@ class _ThemeSettingsState extends State<ThemeSettings> {
       builder: (BuildContext context) {
         return Export(
           ResourceType.theme,
-          title: "导出当前主题",
           tid: widget.theme.id,
         );
       },

@@ -134,65 +134,15 @@ class _GroupSettingsState extends State<GroupSettings> {
                   }
                 },
               ),
-              Row(
-                children: [
-                  Text(
-                    "印迹导出",
-                  ),
-                  Spacer(),
-                  SizedBox(
-                    width: 50,
-                    child: PopupMenuButton<String>(
-                      icon: Icon(Icons.arrow_drop_down),
-                      onSelected: (String value) {
-                        switch (value) {
-                          case '保存到本地':
-                            clickExportData();
-                            break;
-                        }
-                      },
-                      itemBuilder: (BuildContext context) =>
-                          <PopupMenuEntry<String>>[
-                        const PopupMenuItem<String>(
-                          value: '保存到本地',
-                          child: Text('保存到本地'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  Text(
-                    "数据导出", // 组
-                  ),
-                  Spacer(),
-                  SizedBox(
-                    width: 50,
-                    child: PopupMenuButton<String>(
-                      icon: Icon(Icons.arrow_drop_down),
-                      onSelected: (String value) {
-                        switch (value) {
-                          case '保存到本地':
-                            clickExportConfig();
-                            break;
-                        }
-                      },
-                      itemBuilder: (BuildContext context) =>
-                          <PopupMenuEntry<String>>[
-                        const PopupMenuItem<String>(
-                          value: '保存到本地',
-                          child: Text('保存到本地'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+
               Spacer(),
               Row(
                 children: [
+                  TextButton.icon(
+                    onPressed: () => clickExportData(),
+                    icon: Icon(Icons.download),
+                    label: Text("导出"),
+                  ),
                   Spacer(),
                   TextButton.icon(
                     onPressed: () => clickDeleteGroup(),
@@ -251,8 +201,7 @@ class _GroupSettingsState extends State<GroupSettings> {
       context: context,
       barrierDismissible: true,
       builder: (BuildContext context) {
-        return Export(ResourceType.group,
-            title: "导出当前分组", tid: widget.tid, gid: gid);
+        return Export(ResourceType.group, tid: widget.tid, gid: gid);
       },
     );
   }
