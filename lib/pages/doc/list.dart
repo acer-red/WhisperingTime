@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:whispering_time/pages/doc/setting.dart';
 import 'package:whispering_time/pages/doc/scene.dart';
 import 'package:whispering_time/utils/env.dart';
+import 'package:whispering_time/utils/ui.dart';
 import 'package:whispering_time/services/http/http.dart';
 import 'package:whispering_time/services/isar/config.dart';
 import 'package:intl/intl.dart';
@@ -18,8 +19,9 @@ import 'package:flutter/services.dart';
 
 class DocList extends StatefulWidget {
   final Group group;
+  final String tid;
 
-  DocList({required this.group});
+  DocList({required this.group, required this.tid});
 
   @override
   State createState() => _DocListState();
@@ -27,6 +29,7 @@ class DocList extends StatefulWidget {
 
 class _DocListState extends State<DocList> {
   List<Doc> items = <Doc>[];
+  List<Doc> _allFetchedDocs = <Doc>[];
   DateTime pickedDate = DateTime.now();
   int? editingIndex; // 当前正在编辑的Card索引
 
@@ -34,6 +37,7 @@ class _DocListState extends State<DocList> {
   void initState() {
     getDocs();
     super.initState();
+    log.d(widget.group.toString());
   }
 
   @override
@@ -42,10 +46,82 @@ class _DocListState extends State<DocList> {
       appBar:
           AppBar(title: Text(widget.group.name), centerTitle: true, actions: [
         IconButton(icon: Icon(Icons.add), onPressed: () => createNewDoc()),
-        IconButton(onPressed: () => playDocPage(), icon: Icon(Icons.play_arrow))
+        IconButton(
+            onPressed: () => playDocPage(), icon: Icon(Icons.play_arrow)),
+        IconButton(
+            icon: Icon(Icons.swap_horiz),
+            onPressed: () => _showBottomMenuOfDocList(context)),
       ]),
-      body: screenCard(),
+      body: widget.group.config.viewType == 1 ? screenCalendar() : screenCard(),
     );
+  }
+
+  void _showBottomMenuOfDocList(BuildContext context) {
+    // 记录初始状态
+    final initialViewType = widget.group.config.viewType;
+    final initialSortType = widget.group.config.sortType;
+    final initialLevels = List<bool>.from(widget.group.config.levels);
+
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return _FilterBottomSheet(
+          initialViewType: widget.group.config.viewType,
+          initialSortType: widget.group.config.sortType,
+          initialLevels: widget.group.config.levels,
+          onChanged: (v, s, l) {
+            _updateConfig(
+                viewType: v, sortType: s, levels: l, saveToServer: false);
+          },
+        );
+      },
+    ).whenComplete(() {
+      // 比较是否有变化，如果有则更新
+      bool isLevelsChanged =
+          !listEquals(initialLevels, widget.group.config.levels);
+      if (initialViewType != widget.group.config.viewType ||
+          initialSortType != widget.group.config.sortType ||
+          isLevelsChanged) {
+        _syncConfigToServer();
+      }
+    });
+  }
+
+  void _updateConfig(
+      {int? viewType,
+      int? sortType,
+      List<bool>? levels,
+      bool saveToServer = true}) async {
+    setState(() {
+      if (viewType != null) widget.group.config.viewType = viewType;
+      if (sortType != null) widget.group.config.sortType = sortType;
+      if (levels != null) widget.group.config.levels = levels;
+
+      // Re-sort or re-filter items
+      if (sortType != null) {
+        items.sort(compareDocs);
+      }
+      if (levels != null) {
+        _filterAndSortDocs();
+      }
+    });
+
+    if (saveToServer) {
+      _syncConfigToServer();
+    }
+  }
+
+  void _syncConfigToServer() async {
+    // Save to server
+    RequestPutGroup req = RequestPutGroup();
+    req.config = GroupConfigNULL(
+      viewType: widget.group.config.viewType,
+      sortType: widget.group.config.sortType,
+      levels: widget.group.config.levels,
+      isMulti: widget.group.config.isMulti,
+      isAll: widget.group.config.isAll,
+    );
+    await Http(tid: widget.tid, gid: widget.group.id).putGroup(req);
   }
 
   void playDocPage() {
@@ -88,6 +164,7 @@ class _DocListState extends State<DocList> {
 
     setState(() {
       items.insert(0, newDoc);
+      _allFetchedDocs.insert(0, newDoc);
       editingIndex = 0;
     });
   }
@@ -101,7 +178,7 @@ class _DocListState extends State<DocList> {
           final isEditing = editingIndex == index;
 
           return GestureDetector(
-            onLongPress: () => _showBottomMenu(context, item),
+            onLongPress: () => _showBottomMenuOfDoc(context, item),
             child: Card(
               elevation: 5,
               shape: RoundedRectangleBorder(
@@ -116,8 +193,8 @@ class _DocListState extends State<DocList> {
         });
   }
 
-  // 显示底部菜单
-  void _showBottomMenu(BuildContext context, Doc item) {
+  // 显示单个文档底部菜单
+  void _showBottomMenuOfDoc(BuildContext context, Doc item) {
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
@@ -131,7 +208,7 @@ class _DocListState extends State<DocList> {
                 title: Text('设置'),
                 onTap: () {
                   Navigator.pop(context);
-                  enterSettingPage(item);
+                  enterSettingDialog(item);
                 },
               ),
               ListTile(
@@ -178,6 +255,7 @@ class _DocListState extends State<DocList> {
                 }
                 setState(() {
                   items.remove(item);
+                  _allFetchedDocs.removeWhere((d) => d.id == item.id);
                 });
               },
               child: Text('删除', style: TextStyle(color: Colors.red)),
@@ -188,43 +266,35 @@ class _DocListState extends State<DocList> {
     );
   }
 
-  // 页面: 设置页面
-  void enterSettingPage(Doc item) async {
-    final LastStateDocSetting ret = await Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) => DocSettingsDialog(
-                gid: widget.group.id,
-                did: item.id,
-                createAt: item.createAt,
-                config: item.config)));
-    switch (ret.state) {
-      case LastState.change:
-        RequestPutDoc req = RequestPutDoc(createAt: ret.createAt);
-        req.config = ret.config;
-        final res = await Http(gid: widget.group.id, did: item.id).putDoc(req);
-        if (res.isNotOK) {
-          print("更新配置错误");
-          break;
-        }
+  // 打开设置对话框
+  void enterSettingDialog(Doc item) async {
+    final result = await showDialog<Map<String, dynamic>>(
+        context: context,
+        builder: (context) => DocSettingsDialog(
+            gid: widget.group.id,
+            did: item.id,
+            createAt: item.createAt,
+            config: item.config));
 
-        setState(() {
-          if (ret.createAt != null) {
-            item.createAt = ret.createAt!;
-          }
-          if (ret.config != null) {
-            item.config = ret.config!;
-          }
-        });
-        break;
-      case LastState.delete:
-        print("返回并删除印迹");
-        setState(() {
-          items.remove(item);
-        });
-        break;
-      default:
-        break;
+    if (result == null) return;
+
+    if (result['deleted'] == true) {
+      setState(() {
+        items.remove(item);
+        _allFetchedDocs.removeWhere((d) => d.id == item.id);
+      });
+      return;
+    }
+
+    if (result['changed'] == true) {
+      setState(() {
+        if (result['createAt'] != null) {
+          item.createAt = result['createAt'];
+        }
+        if (result['config'] != null) {
+          item.config = result['config'];
+        }
+      });
     }
   }
 
@@ -314,6 +384,20 @@ class _DocListState extends State<DocList> {
 
   void handleDocUpdate(int index, Doc updatedDoc) {
     setState(() {
+      // Sync _allFetchedDocs
+      Doc oldDoc = items[index];
+      int allIndex = _allFetchedDocs.indexOf(oldDoc);
+      if (allIndex != -1) {
+        _allFetchedDocs[allIndex] = updatedDoc;
+      } else {
+        if (oldDoc.id.isNotEmpty) {
+          allIndex = _allFetchedDocs.indexWhere((d) => d.id == oldDoc.id);
+          if (allIndex != -1) {
+            _allFetchedDocs[allIndex] = updatedDoc;
+          }
+        }
+      }
+
       // 如果不符合选中的级别筛选，则删除
       if (!isContainSelectLevel(updatedDoc.level)) {
         items.removeAt(index);
@@ -328,7 +412,9 @@ class _DocListState extends State<DocList> {
   // 处理文档删除
   void handleDocDelete(int index) {
     setState(() {
+      Doc doc = items[index];
       items.removeAt(index);
+      _allFetchedDocs.remove(doc);
       editingIndex = null;
     });
   }
@@ -338,7 +424,9 @@ class _DocListState extends State<DocList> {
     setState(() {
       // 如果是空ID的新文档，取消时删除
       if (items[index].id.isEmpty) {
+        Doc doc = items[index];
         items.removeAt(index);
+        _allFetchedDocs.remove(doc);
       }
       editingIndex = null;
     });
@@ -439,8 +527,13 @@ class _DocListState extends State<DocList> {
                   "$dayNumber",
                   style: TextStyle(
                       fontSize: 18,
-                      color: istoday ? Colors.blue : Colors.black,
+                      color: istoday ? Colors.blue : Colors.grey,
                       fontWeight: istoday ? FontWeight.w700 : FontWeight.w400),
+                ),
+                Icon(
+                  Icons.star_rounded,
+                  size: 10,
+                  color: Colors.transparent,
                 ),
               ],
             ),
@@ -514,28 +607,33 @@ class _DocListState extends State<DocList> {
   /// 功能：更新当前分组下的印迹列表
   void getDocs({int? year, int? month}) async {
     final ret = await Http(gid: widget.group.id).getDocs(year, month);
+    _allFetchedDocs = ret.data;
     setState(() {
-      if (items.isNotEmpty) {
-        items.clear();
-      }
-      if (isNoSelectLevel()) {
-        items.clear();
-        return;
-      }
-
-      for (Doc doc in ret.data) {
-        if (isContainSelectLevel(doc.level)) {
-          items.add(doc);
-        }
-      }
-      items.sort(compareDocs);
+      _filterAndSortDocs();
     });
   }
 
+  void _filterAndSortDocs() {
+    if (items.isNotEmpty) {
+      items.clear();
+    }
+    if (isNoSelectLevel()) {
+      return;
+    }
+
+    for (Doc doc in _allFetchedDocs) {
+      if (isContainSelectLevel(doc.level)) {
+        items.add(doc);
+      }
+    }
+    items.sort(compareDocs);
+  }
+
   int compareDocs(Doc a, Doc b) {
-    DateTime aTime = a.createAt;
-    DateTime bTime = b.createAt;
-    return aTime.compareTo(bTime);
+    if (widget.group.config.sortType == 1) {
+      return a.updateAt.compareTo(b.updateAt);
+    }
+    return a.createAt.compareTo(b.createAt);
   }
 
   bool isNoSelectLevel() {
@@ -560,6 +658,128 @@ class _DocListState extends State<DocList> {
 
   bool isContainSelectLevel(int i) {
     return widget.group.config.levels[i];
+  }
+}
+
+class _FilterBottomSheet extends StatefulWidget {
+  final int initialViewType;
+  final int initialSortType;
+  final List<bool> initialLevels;
+  final Function(int, int, List<bool>) onChanged;
+
+  const _FilterBottomSheet({
+    Key? key,
+    required this.initialViewType,
+    required this.initialSortType,
+    required this.initialLevels,
+    required this.onChanged,
+  }) : super(key: key);
+
+  @override
+  _FilterBottomSheetState createState() => _FilterBottomSheetState();
+}
+
+class _FilterBottomSheetState extends State<_FilterBottomSheet> {
+  late int viewType;
+  late int sortType;
+  late List<bool> levels;
+
+  @override
+  void initState() {
+    super.initState();
+    viewType = widget.initialViewType;
+    sortType = widget.initialSortType;
+    levels = List.from(widget.initialLevels);
+  }
+
+  void _updateState(VoidCallback fn) {
+    setState(fn);
+    widget.onChanged(viewType, sortType, levels);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(height: 10),
+          ShortGreyLine(),
+          SizedBox(height: 10),
+          // View Mode
+          ListTile(
+            title: Text('显示模式'),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ChoiceChip(
+                  label: Text('卡片'),
+                  selected: viewType == 0,
+                  onSelected: (bool selected) {
+                    if (selected) {
+                      _updateState(() => viewType = 0);
+                    }
+                  },
+                ),
+                SizedBox(width: 8),
+                ChoiceChip(
+                  label: Text('日历'),
+                  selected: viewType == 1,
+                  onSelected: (bool selected) {
+                    if (selected) {
+                      _updateState(() => viewType = 1);
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          // Sort Mode
+          ListTile(
+            title: Text('排序模式'),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ChoiceChip(
+                  label: Text('创建时间'),
+                  selected: sortType == 0,
+                  onSelected: (bool selected) {
+                    if (selected) {
+                      _updateState(() => sortType = 0);
+                    }
+                  },
+                ),
+                SizedBox(width: 8),
+                ChoiceChip(
+                  label: Text('更新时间'),
+                  selected: sortType == 1,
+                  onSelected: (bool selected) {
+                    if (selected) {
+                      _updateState(() => sortType = 1);
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          // Level Selection
+          ExpansionTile(
+            title: Text('分级筛选'),
+            children: List.generate(Level.l.length, (index) {
+              return CheckboxListTile(
+                title: Text(Level.l[index]),
+                value: levels[index],
+                onChanged: (bool? value) {
+                  if (value != null) {
+                    _updateState(() => levels[index] = value);
+                  }
+                },
+              );
+            }),
+          ),
+        ],
+      ),
+    );
   }
 }
 

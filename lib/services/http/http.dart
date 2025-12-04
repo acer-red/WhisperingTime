@@ -300,7 +300,9 @@ class GroupConfigNULL {
   bool? isAll;
   List<bool>? levels = [];
   int? viewType;
-  GroupConfigNULL({this.isMulti, this.isAll, this.levels, this.viewType});
+  int? sortType;
+  GroupConfigNULL(
+      {this.isMulti, this.isAll, this.levels, this.viewType, this.sortType});
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = {};
@@ -318,6 +320,9 @@ class GroupConfigNULL {
     if (viewType != null) {
       data['view_type'] = viewType;
     }
+    if (sortType != null) {
+      data['sort_type'] = sortType;
+    }
 
     return data;
   }
@@ -328,11 +333,13 @@ class GroupConfig {
   bool isAll;
   List<bool> levels = [];
   int viewType;
+  int sortType;
   GroupConfig(
       {required this.isMulti,
       required this.isAll,
       required this.levels,
-      required this.viewType});
+      required this.viewType,
+      required this.sortType});
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = {};
@@ -342,6 +349,7 @@ class GroupConfig {
       data['levels'] = levels;
     }
     data['view_type'] = viewType;
+    data['sort_type'] = sortType;
     return data;
   }
 
@@ -350,7 +358,8 @@ class GroupConfig {
         isAll: false,
         isMulti: false,
         levels: [true, false, false, false, false],
-        viewType: 0);
+        viewType: 0,
+        sortType: 0);
   }
 }
 
@@ -484,6 +493,9 @@ class GroupListData {
             .map((e) => e as bool)
             .toList(),
         viewType: json['config']['view_type'] as int,
+        sortType: json['config']['sort_type'] != null
+            ? json['config']['sort_type'] as int
+            : 0,
       ),
     );
   }
@@ -816,6 +828,7 @@ class Http {
     }
 
     try {
+      log.d("响应数据: ${response.body}");
       final Map<String, dynamic> g = jsonDecode(response.body);
       return fromJson(g);
     } catch (e) {

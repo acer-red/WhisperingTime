@@ -87,6 +87,7 @@ type GroupConfig struct {
 	Is_all    bool   `json:"is_all" bson:"is_all"`
 	Levels    []bool `json:"levels" bson:"levels"`
 	View_type int    `json:"view_type" bson:"view_type"`
+	Sort_type int    `json:"sort_type" bson:"sort_type"`
 }
 
 type DocConfig struct {

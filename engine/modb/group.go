@@ -40,6 +40,7 @@ type RequestGroupPut struct {
 			Is_all    *bool   `json:"is_all"`
 			Levels    *[]bool `json:"levels"`
 			View_type *int    `json:"view_type"`
+			Sort_type *int    `json:"sort_type"`
 		} `json:"config"`
 	} `json:"data"`
 }
@@ -82,6 +83,9 @@ func GroupsGet(toid primitive.ObjectID) ([]ml.Group, error) {
 
 			if ret, o := ms["view_type"].(int); o {
 				config.View_type = ret
+			}
+			if ret, o := ms["sort_type"].(int); o {
+				config.Sort_type = ret
 			}
 
 		} else {
@@ -132,6 +136,9 @@ func GroupGet(toid primitive.ObjectID, goid primitive.ObjectID) (ml.Group, error
 		res.Config.Is_all = config["is_all"].(bool)
 		res.Config.Levels = config["levels"].([]bool)
 		res.Config.View_type = config["view_type"].(int)
+		if val, ok := config["sort_type"].(int); ok {
+			res.Config.Sort_type = val
+		}
 	}
 
 	return res, nil
@@ -230,6 +237,9 @@ func GroupPut(toid primitive.ObjectID, goid primitive.ObjectID, req *RequestGrou
 		}
 		if req.Data.Config.View_type != nil {
 			m["config.view_type"] = req.Data.Config.View_type
+		}
+		if req.Data.Config.Sort_type != nil {
+			m["config.sort_type"] = req.Data.Config.Sort_type
 		}
 	}
 
@@ -475,10 +485,11 @@ func CountinueExportConfig(id BGJobOID, uoid, toid, goid primitive.ObjectID) err
 }
 func NewGroupConfig() ml.GroupConfig {
 	return ml.GroupConfig{
+		Levels:    []bool{true, true, true, true, true},
 		Is_multi:  false,
 		Is_all:    false,
-		Levels:    []bool{true, true, true, true, true},
 		View_type: 0,
+		Sort_type: 0,
 	}
 }
 

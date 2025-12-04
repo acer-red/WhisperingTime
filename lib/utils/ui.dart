@@ -105,3 +105,23 @@ void showSuccessMsg(BuildContext context, String msg) {
     ),
   );
 }
+
+class ShortGreyLine extends StatelessWidget {
+  const ShortGreyLine({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        width: 80,
+        height: 5,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade400,
+          borderRadius: BorderRadius.circular(5),
+        ),
+      ),
+    );
+  }
+}

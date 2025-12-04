@@ -45,6 +45,11 @@ class Group {
   bool isFreezedOrBuf() {
     return getoverAtStatus() != 0;
   }
+
+  @override
+  String toString() {
+    return "Group - id: $id, name: $name, overAt: $overAt, config: viewType=${config.viewType}, isAll=${config.isAll}, isMulti=${config.isMulti}, levels=${config.levels}";
+  }
 }
 
 class GroupsModel with ChangeNotifier {
@@ -56,7 +61,8 @@ class GroupsModel with ChangeNotifier {
       isAll: false,
       isMulti: false,
       levels: [true, true, true, true, true],
-      viewType: 0);
+      viewType: 0,
+      sortType: 0);
   // 添加边界检查的安全 getter
   String get name => items.isNotEmpty ? items[idx].name : '';
   Group? get item => items.isNotEmpty ? items[idx] : null;

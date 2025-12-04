@@ -89,7 +89,8 @@ class _GroupPage extends State<GroupPage> with AutomaticKeepAliveClientMixin {
                 Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => DocList(group: item)));
+                        builder: (context) =>
+                            DocList(group: item, tid: widget.tid)));
               },
               child: Container(alignment: Alignment.center, child: Text(name)),
             ),

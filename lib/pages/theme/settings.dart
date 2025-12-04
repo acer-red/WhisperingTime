@@ -78,16 +78,7 @@ class _ThemeSettingsState extends State<ThemeSettings> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(
-                child: Container(
-                  width: 80,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade400,
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                ),
-              ),
+              ShortGreyLine(),
               const SizedBox(height: 16),
 
               // 重命名部分
