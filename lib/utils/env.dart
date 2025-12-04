@@ -38,7 +38,7 @@ const String defaultGroupName = "默认分组";
 
 var log = Logger(
   printer: PrettyPrinter(
-    methodCount: 2, // 设置调用堆栈层级为1
+    methodCount: 4,
   ),
 );
 

@@ -331,6 +331,12 @@ class TXT {
 
           try {
             await file.writeAsString(doc.plainText);
+            try {
+              await file.setLastModified(doc.createAt);
+              await file.setLastAccessed(doc.createAt);
+            } catch (e) {
+              print('修改时间出错: $e');
+            }
           } catch (e) {
             print('写入TXT时出错: $e');
             return;
@@ -407,7 +413,7 @@ class TXT {
       // 文件名: DGroup.name/DDoc.title
       // 文件内容: DGroup.name/DDoc.content
       final String savePath =
-          '$selectedDirectory/枫迹/$currentDate/${res.data.docs}';
+          '$selectedDirectory/枫迹/$currentDate/${res.data.name}';
       print("目录:$savePath,title:${doc.title}");
       try {
         await Directory(savePath).create(recursive: true);
@@ -489,6 +495,12 @@ class TXT {
         "${savePath!}/${doc.title.isEmpty ? "无题" : doc.title}.txt";
     File file = File(fileName);
     await file.writeAsString(doc.plainText);
+    try {
+      await file.setLastModified(doc.createAt);
+      await file.setLastAccessed(doc.createAt);
+    } catch (e) {
+      print('修改时间出错: $e');
+    }
     print("保存成功：$fileName");
   }
 
@@ -1202,6 +1214,12 @@ class PDF {
 
     File file = File(savePath);
     await file.writeAsBytes(await pdf.save());
+    try {
+      await file.setLastModified(doc.createAt);
+      await file.setLastAccessed(doc.createAt);
+    } catch (e) {
+      print('修改时间出错: $e');
+    }
 
     print('PDF文件已保存：${file.path}');
   }

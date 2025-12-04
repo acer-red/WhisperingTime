@@ -115,7 +115,7 @@ class DGroup {
 }
 
 class DDoc {
-  final String id;
+  // final String id;
   final String plainText;
   final String title;
   final String content;
@@ -125,7 +125,7 @@ class DDoc {
   String get createAtString => DateFormat('yyyy-MM-dd HH:mm').format(createAt);
   String get levelString => Level.string(level);
   DDoc({
-    required this.id,
+    // required this.id,
     required this.plainText,
     required this.title,
     required this.content,
@@ -136,13 +136,13 @@ class DDoc {
 
   factory DDoc.fromJson(Map<String, dynamic> json) {
     return DDoc(
-      id: json['did'] as String,
-      plainText: json['plain_text'] as String,
+      // id: json['did'] as String,
+      plainText: json['plain_text'] == null ? '' : json['plain_text'] as String,
       title: json['title'] as String,
       content: json['content'] as String,
       level: json['level'] as int,
-      createAt: Time.stringToTimeHasT(json['createAt'] as String),
-      updateAt: Time.stringToTimeHasT(json['updateAt'] as String),
+      createAt: DateTime.parse(json['createAt'] as String),
+      updateAt: DateTime.parse(json['updateAt'] as String),
     );
   }
 }
@@ -212,7 +212,7 @@ class XDoc {
   factory XDoc.fromJson(Map<String, dynamic> json) {
     return XDoc(
       did: json['did'] as String,
-      plainText: json['plain_text'] as String,
+      plainText: json['plain_text'] == null ? '' : json['plain_text'] as String,
       title: json['title'] as String,
       level: json['level'] as int,
       createAt: Time.stringToTimeHasT(json['createAt'] as String),
@@ -794,11 +794,11 @@ class Http {
     }
 
     try {
-      log.d("响应数据: ${response.body}");
       final Map<String, dynamic> g = jsonDecode(response.body);
       return fromJson(g);
     } catch (e) {
-      log.e("解析数据失败 \n${response.body}\n${e.toString()}");
+      log.e("解析数据失败 \n${response.body}\n${e.toString()}",
+          stackTrace: StackTrace.current);
       return fromJson({'err': 1, 'msg': ''});
     }
   }
