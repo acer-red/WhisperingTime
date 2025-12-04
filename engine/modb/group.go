@@ -483,6 +483,196 @@ func CountinueExportConfig(id BGJobOID, uoid, toid, goid primitive.ObjectID) err
 	log.Infof("后台任务完成 %s", id._ID.Hex())
 	return nil
 }
+
+// ExportAllThemesConfig 导出当前用户的全部主题和分组配置
+func ExportAllThemesConfig(uoid primitive.ObjectID) (string, error) {
+
+	bgjoid, taskID, err := createBGJob(uoid, JobTypeExportAllConfig, JobPriority0, "导出全部主题配置")
+	if err != nil {
+		return "", err
+	}
+
+	go continueExportAllThemesConfig(BGJobOID{
+		_ID: bgjoid,
+	}, uoid)
+
+	return taskID, nil
+}
+
+type themeExport struct {
+	Tid    string             `json:"tid" bson:"tid"`
+	Name   string             `json:"name" bson:"name"`
+	Groups []ml.GroupAndDocs  `json:"groups"`
+	OID    primitive.ObjectID `json:"-" bson:"_id"`
+}
+
+func loadAllThemesWithGroups(uoid primitive.ObjectID) ([]themeExport, []primitive.ObjectID, error) {
+	ctx := context.TODO()
+	cursor, err := db.Collection("theme").Find(ctx, bson.M{"_uid": uoid})
+	if err != nil {
+		return nil, nil, err
+	}
+	defer cursor.Close(ctx)
+
+	themes := make([]themeExport, 0)
+	docIDs := make([]primitive.ObjectID, 0)
+	docIDSet := make(map[primitive.ObjectID]struct{})
+
+	for cursor.Next(ctx) {
+		var t themeExport
+		if err := cursor.Decode(&t); err != nil {
+			return nil, nil, err
+		}
+
+		goids, err := GetGOIDsFromTOID(t.OID)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		for _, goid := range goids {
+			group, err := GroupGetAndDocDetail(t.OID, goid)
+			if err != nil {
+				return nil, nil, err
+			}
+			t.Groups = append(t.Groups, group)
+			for _, doc := range group.Docs {
+				if doc.OID.IsZero() {
+					continue
+				}
+				if _, ok := docIDSet[doc.OID]; ok {
+					continue
+				}
+				docIDSet[doc.OID] = struct{}{}
+				docIDs = append(docIDs, doc.OID)
+			}
+		}
+
+		themes = append(themes, t)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, nil, err
+	}
+
+	return themes, docIDs, nil
+}
+
+func continueExportAllThemesConfig(id BGJobOID, uoid primitive.ObjectID) error {
+	id.SetJobRunning()
+
+	themes, docIDs, err := loadAllThemesWithGroups(uoid)
+	if err != nil {
+		id.SetError(JobError{Code: 1, Message: err.Error()})
+		return err
+	}
+
+	if len(themes) == 0 {
+		err = fmt.Errorf("没有可导出的主题")
+		id.SetError(JobError{Code: 1, Message: err.Error()})
+		return err
+	}
+
+	base := `/users/tengfei/Documents/source/project/acer/tmp/store/`
+
+	base = filepath.Join(base, "枫迹")
+	if err := os.MkdirAll(base, 0777); err != nil {
+		id.SetError(JobError{Code: 1, Message: err.Error()})
+		return err
+	}
+
+	workdir := filepath.Join(base, "export_all_"+sys.CreateUUID())
+	if err := os.MkdirAll(workdir, 0777); err != nil {
+		id.SetError(JobError{Code: 1, Message: err.Error()})
+		return err
+	}
+	defer os.RemoveAll(workdir)
+
+	configFilename := filepath.Join(workdir, `config.json`)
+
+	if len(docIDs) > 0 {
+		if err := exportImagesForDocs(docIDs, workdir); err != nil {
+			id.SetError(JobError{Code: 1, Message: err.Error()})
+			return err
+		}
+	}
+
+	data, err := json.Marshal(&themes)
+	if err != nil {
+		id.SetError(JobError{Code: 1, Message: err.Error()})
+		return err
+	}
+
+	if err := os.WriteFile(configFilename, data, 0644); err != nil {
+		id.SetError(JobError{Code: 1, Message: err.Error()})
+		return err
+	}
+
+	outZipFilename := fmt.Sprintf("全部主题配置-%s.zip", sys.YYYYMMDDhhmmss())
+	outZipPath := filepath.Join(base, outZipFilename)
+
+	sys.ZipDirectory(workdir, outZipPath)
+
+	id.SetJobCompleted(bson.M{"filename": outZipPath})
+	log.Infof("后台任务完成 %s", id._ID.Hex())
+	return nil
+}
+
+func exportImagesForDocs(docIDs []primitive.ObjectID, workdir string) error {
+	ctx := context.TODO()
+	filter := bson.M{
+		"_id":           bson.M{"$in": docIDs},
+		"metadata.uoid": bson.M{"$exists": true, "$ne": nil},
+	}
+
+	cursor, err := db.Collection("fs.files").Find(ctx, filter)
+	if err != nil {
+		return err
+	}
+	defer cursor.Close(ctx)
+
+	imagesDir := filepath.Join(workdir, "images")
+	if err := os.MkdirAll(imagesDir, 0777); err != nil {
+		return err
+	}
+
+	bucket, err := gridfs.NewBucket(db)
+	if err != nil {
+		return err
+	}
+
+	for cursor.Next(ctx) {
+		var file struct {
+			ID       primitive.ObjectID `bson:"_id"`
+			Filename string             `bson:"filename"`
+		}
+		if err := cursor.Decode(&file); err != nil {
+			return err
+		}
+
+		downloadStream, err := bucket.OpenDownloadStream(file.ID)
+		if err != nil {
+			return err
+		}
+
+		var buf bytes.Buffer
+		if _, err := io.Copy(&buf, downloadStream); err != nil {
+			downloadStream.Close()
+			return err
+		}
+		if err := downloadStream.Close(); err != nil {
+			return err
+		}
+
+		imagePath := filepath.Join(imagesDir, file.Filename)
+		if err := os.WriteFile(imagePath, buf.Bytes(), 0644); err != nil {
+			return err
+		}
+		log.Infof("导出图片: %s", imagePath)
+	}
+
+	return cursor.Err()
+}
+
 func NewGroupConfig() ml.GroupConfig {
 	return ml.GroupConfig{
 		Levels:    []bool{true, true, true, true, true},

@@ -38,6 +38,7 @@ dependencies:
   flutter_slidable: ^4.0.3
   flutter_launcher_icons: ^0.14.4
   collection: ^1.19.1
+  archive: ^3.6.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -13,6 +13,10 @@ func RouteTheme(g *gin.Engine) {
 	{
 		a.GET("", ThemesGet)
 	}
+	d := g.Group("/themes/export_config")
+	{
+		d.POST("", ThemesExportConfig)
+	}
 	b := g.Group("/theme")
 	{
 		b.POST("", ThemePost)
@@ -125,4 +129,19 @@ func ThemeIDDelete(g *gin.Context) {
 		return
 	}
 	ok(g)
+}
+
+func ThemesExportConfig(g *gin.Context) {
+	log.Info("导出全部主题配置")
+	uoid := g.MustGet("uoid").(primitive.ObjectID)
+
+	taskID, err := modb.ExportAllThemesConfig(uoid)
+	if err != nil {
+		internalServerError(g)
+		return
+	}
+
+	okData(g, map[string]interface{}{
+		"taskId": taskID,
+	})
 }

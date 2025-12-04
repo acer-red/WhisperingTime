@@ -13,6 +13,7 @@ import (
 
 const (
 	JobTypeExportGroupConfig = "ExportGroupConfig"
+	JobTypeExportAllConfig   = "ExportAllConfig"
 )
 
 // 定义任务状态的常量，这是最佳实践

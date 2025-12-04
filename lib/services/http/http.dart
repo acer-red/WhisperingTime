@@ -477,6 +477,16 @@ class ResponseExportGroupConfig extends Basic {
   }
 }
 
+class ResponseExportAllConfig extends Basic {
+  ResponseExportAllConfig({required super.err, required super.msg});
+  factory ResponseExportAllConfig.fromJson(Map<String, dynamic> json) {
+    return ResponseExportAllConfig(
+      err: json['err'] as int,
+      msg: json['msg'] as String,
+    );
+  }
+}
+
 class ResponseImportGroupConfig extends Basic {
   ResponseImportGroupConfig({required super.err, required super.msg});
   factory ResponseImportGroupConfig.fromJson(Map<String, dynamic> json) {
@@ -1045,6 +1055,23 @@ class Http {
       Method.post,
       url,
       (json) => ResponseExportGroupConfig.fromJson(json),
+      headers: headers,
+    );
+  }
+
+  Future<ResponseExportAllConfig> exportAllConfig() async {
+    log.i("发送请求 导出全部主题配置");
+    const String path = "/themes/export_config";
+
+    final Map<String, String> headers = {
+      "Authorization": getAuthorization(),
+    };
+
+    final url = URI().get(serverAddress, path);
+    return _handleRequest<ResponseExportAllConfig>(
+      Method.post,
+      url,
+      (json) => ResponseExportAllConfig.fromJson(json),
       headers: headers,
     );
   }
