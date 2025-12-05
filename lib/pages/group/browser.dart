@@ -24,6 +24,16 @@ class _GroupPage extends State<GroupPage> with AutomaticKeepAliveClientMixin {
   bool get wantKeepAlive => true;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<GroupsManager>().fetchForTheme(widget.tid);
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     super.build(context);
     return Padding(
@@ -35,9 +45,9 @@ class _GroupPage extends State<GroupPage> with AutomaticKeepAliveClientMixin {
           crossAxisSpacing: 10.0,
           mainAxisSpacing: 10.0,
         ),
-        itemCount: context.watch<GroupsManager>().length,
+        itemCount: context.watch<GroupsManager>().getLength(widget.tid),
         itemBuilder: (context, index) {
-          final items = context.watch<GroupsManager>().items;
+          final items = context.watch<GroupsManager>().getItems(widget.tid);
           if (index >= items.length) return SizedBox();
 
           final item = items[index];

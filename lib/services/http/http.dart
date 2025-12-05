@@ -240,11 +240,14 @@ class ResponsePutTheme extends Basic {
 
 class RequestPostThemeDefaultGroup {
   String name;
-  RequestPostThemeDefaultGroup({required this.name});
+  int autoFreezeDays;
+  RequestPostThemeDefaultGroup({required this.name, this.autoFreezeDays = 30});
   Map<String, dynamic> toJson() => {
         'name': name,
         'createAt': Time.nowTimestampString(),
-        'overAt': Time.toTimestampString(Time.getForver())
+        'config': {
+          'auto_freeze_days': autoFreezeDays,
+        }
       };
 }
 
@@ -302,8 +305,14 @@ class GroupConfigNULL {
   List<bool>? levels = [];
   int? viewType;
   int? sortType;
+  int? autoFreezeDays;
   GroupConfigNULL(
-      {this.isMulti, this.isAll, this.levels, this.viewType, this.sortType});
+      {this.isMulti,
+      this.isAll,
+      this.levels,
+      this.viewType,
+      this.sortType,
+      this.autoFreezeDays});
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = {};
@@ -323,6 +332,9 @@ class GroupConfigNULL {
     }
     if (sortType != null) {
       data['sort_type'] = sortType;
+    }
+    if (autoFreezeDays != null) {
+      data['auto_freeze_days'] = autoFreezeDays;
     }
 
     return data;
@@ -384,23 +396,20 @@ class ResponsePutGroup extends Basic {
 
 class RequestPutGroup {
   String? name;
-  DateTime? overAt;
   GroupConfigNULL? config;
-  RequestPutGroup({this.name, this.overAt, this.config});
+  DateTime? overAt;
+  RequestPutGroup({this.name, this.config, this.overAt});
   Map<String, dynamic> toJson() {
-    Map<String, dynamic> data = {'updateAt': Time.nowTimestampString()};
+    final Map<String, dynamic> data = {'updateAt': Time.nowTimestampString()};
 
     if (name != null) {
-      print("更新分组名:$name");
       data['name'] = name!;
     }
-    if (overAt != null) {
-      print("更新定格时间,$overAt");
-      data['overAt'] = Time.toTimestampString(overAt!);
-    }
     if (config != null) {
-      print("更新分组配置选项");
       data['config'] = config!.toJson();
+    }
+    if (overAt != null) {
+      data['overAt'] = Time.toTimestampString(overAt!);
     }
     return data;
   }
@@ -408,14 +417,16 @@ class RequestPutGroup {
 
 class RequestPostGroup {
   String name;
-  DateTime overAt = Time.getForver();
+  int autoFreezeDays;
 
-  RequestPostGroup({required this.name});
+  RequestPostGroup({required this.name, this.autoFreezeDays = 30});
   Map<String, dynamic> toJson() => {
         'name': name,
         'createAt': Time.nowTimestampString(),
         'updateAt': Time.nowTimestampString(),
-        'overAt': Time.toTimestampString(overAt)
+        'config': {
+          'auto_freeze_days': autoFreezeDays,
+        }
       };
 }
 
@@ -434,14 +445,14 @@ class GroupListData {
   String id;
   DateTime createAt;
   DateTime updateAt;
-  DateTime overAt;
+  DateTime? overAt;
   GroupConfig config;
   GroupListData({
     required this.name,
     required this.id,
     required this.createAt,
-    required this.overAt,
     required this.updateAt,
+    required this.overAt,
     required this.config,
   });
 
@@ -451,7 +462,9 @@ class GroupListData {
       id: json['id'] as String,
       createAt: Time.stringToTime(json['createAt'] as String),
       updateAt: Time.stringToTime(json['updateAt'] as String),
-      overAt: Time.stringToTime(json['overAt'] as String),
+      overAt: json['overAt'] != null && (json['overAt'] as String).isNotEmpty
+          ? Time.stringToTime(json['overAt'] as String)
+          : null,
       config: GroupConfig(
         isMulti: json['config']['is_multi'] as bool,
         isAll: json['config']['is_all'] as bool,
@@ -462,6 +475,9 @@ class GroupListData {
         sortType: json['config']['sort_type'] != null
             ? json['config']['sort_type'] as int
             : 0,
+        autoFreezeDays: json['config']['auto_freeze_days'] != null
+            ? json['config']['auto_freeze_days'] as int
+            : 30,
       ),
     );
   }

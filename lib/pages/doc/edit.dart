@@ -8,11 +8,13 @@ import 'dart:io';
 import 'dart:async';
 import 'package:whispering_time/pages/doc/model.dart';
 import 'package:whispering_time/pages/group/model.dart';
+import 'package:whispering_time/pages/group/manager.dart';
 import 'package:whispering_time/services/http/http.dart';
 import 'package:whispering_time/services/isar/config.dart';
 import 'package:whispering_time/utils/export.dart';
 import 'package:whispering_time/pages/doc/setting.dart';
 import 'package:whispering_time/utils/env.dart';
+import 'package:provider/provider.dart';
 
 class EditPage extends StatefulWidget {
   final Doc doc;
@@ -65,6 +67,9 @@ class _EditPageState extends State<EditPage> {
     level = widget.doc.level;
     config = widget.doc.config;
     createAt = widget.doc.createAt;
+
+    // For brand new docs, jump directly into title editing for clarity.
+    _isEditingTitle = widget.doc.id.isEmpty;
   }
 
   void _startAutoSaveTimer() {
@@ -74,6 +79,17 @@ class _EditPageState extends State<EditPage> {
         save();
       }
     });
+  }
+
+  void _touchGroupActivity({bool exitBuffer = true}) {
+    if (!mounted) return;
+    context
+        .read<GroupsManager>()
+        .touch(gid: widget.group.id, exitBuffer: exitBuffer);
+    widget.group.updateAt = DateTime.now();
+    if (exitBuffer && widget.group.isManualBufTime()) {
+      widget.group.overAt = null;
+    }
   }
 
   // 监听文档变化，处理图片上传
@@ -272,7 +288,8 @@ class _EditPageState extends State<EditPage> {
                 )
               : GestureDetector(
                   onTap: () {
-                    if (!widget.group.isFreezedOrBuf()) {
+                    if (!widget.group.isFreezedOrBuf() ||
+                        widget.doc.id.isEmpty) {
                       setState(() {
                         _isEditingTitle = true;
                       });
@@ -349,8 +366,10 @@ class _EditPageState extends State<EditPage> {
                 children: [
                   // 分级选择按钮
                   TextButton(
-                    onPressed:
-                        widget.group.isFreezedOrBuf() ? null : _showLevelDialog,
+                    onPressed: widget.group.isFreezedOrBuf() &&
+                            widget.doc.id.isNotEmpty
+                        ? null
+                        : _showLevelDialog,
                     style: TextButton.styleFrom(
                       padding:
                           EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -455,6 +474,7 @@ class _EditPageState extends State<EditPage> {
   Future<void> save() async {
     String content = jsonEncode(quillController.document.toDelta().toJson());
     String plainText = quillController.document.toPlainText();
+    bool persisted = false;
 
     // 如果有ID，更新文档
     if (widget.doc.id.isNotEmpty) {
@@ -486,6 +506,7 @@ class _EditPageState extends State<EditPage> {
           }
           return;
         }
+        persisted = true;
         // Update local doc state
         widget.doc.content = content;
         widget.doc.plainText = plainText;
@@ -511,6 +532,7 @@ class _EditPageState extends State<EditPage> {
         }
         return;
       }
+      persisted = true;
       widget.doc.id = ret.id;
       // Update local doc state
       widget.doc.content = content;
@@ -531,6 +553,10 @@ class _EditPageState extends State<EditPage> {
       config: config,
     );
 
+    if (persisted) {
+      _touchGroupActivity();
+    }
+
     widget.onSave(updatedDoc);
   }
 
@@ -549,7 +575,11 @@ class _EditPageState extends State<EditPage> {
     if (result != null) {
       // 如果删除了文档
       if (result['deleted'] == true) {
+        _touchGroupActivity();
         widget.onDelete();
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
         return;
       }
 
@@ -563,6 +593,8 @@ class _EditPageState extends State<EditPage> {
           if (res.isNotOK) {
             return;
           }
+
+          _touchGroupActivity();
         }
 
         setState(() {

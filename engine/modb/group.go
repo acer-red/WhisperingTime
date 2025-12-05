@@ -27,7 +27,9 @@ type RequestGroupPost struct {
 		Name     string `json:"name"`
 		CreateAt string `json:"createAt"`
 		UpdateAt string `json:"updateAt"`
-		OverAt   string `json:"overAt"`
+		Config   *struct {
+			AutoFreezeDays *int `json:"auto_freeze_days"`
+		} `json:"config"`
 	} `json:"data"`
 }
 type RequestGroupPut struct {
@@ -36,11 +38,12 @@ type RequestGroupPut struct {
 		UpdateAt *string `json:"updateAt"`
 		OverAt   *string `json:"overAt"`
 		Config   *struct {
-			Is_multi  *bool   `json:"is_multi"`
-			Is_all    *bool   `json:"is_all"`
-			Levels    *[]bool `json:"levels"`
-			View_type *int    `json:"view_type"`
-			Sort_type *int    `json:"sort_type"`
+			Is_multi       *bool   `json:"is_multi"`
+			Is_all         *bool   `json:"is_all"`
+			Levels         *[]bool `json:"levels"`
+			View_type      *int    `json:"view_type"`
+			Sort_type      *int    `json:"sort_type"`
+			AutoFreezeDays *int    `json:"auto_freeze_days"`
 		} `json:"config"`
 	} `json:"data"`
 }
@@ -81,22 +84,33 @@ func GroupsGet(toid primitive.ObjectID) ([]ml.Group, error) {
 				}
 			}
 
-			if ret, o := ms["view_type"].(int); o {
+			if ret, o := toInt(ms["view_type"]); o {
 				config.View_type = ret
 			}
-			if ret, o := ms["sort_type"].(int); o {
+			if ret, o := toInt(ms["sort_type"]); o {
 				config.Sort_type = ret
+			}
+			if ret, o := toInt(ms["auto_freeze_days"]); o {
+				config.AutoFreezeDays = ret
 			}
 
 		} else {
 			log.Error("config is not bson.M")
 		}
+		var overAt string
+		switch val := m["overAt"].(type) {
+		case primitive.DateTime:
+			overAt = val.Time().Format("2006-01-02 15:04:05")
+		case time.Time:
+			overAt = val.Format("2006-01-02 15:04:05")
+		}
+
 		results = append(results, ml.Group{
 			ID:       m["gid"].(string),
 			Name:     m["name"].(string),
 			CreateAt: m["createAt"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
 			UpdateAt: m["updateAt"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
-			OverAt:   m["overAt"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
+			OverAt:   overAt,
 			Config:   config,
 		})
 	}
@@ -127,7 +141,9 @@ func GroupGet(toid primitive.ObjectID, goid primitive.ObjectID) (ml.Group, error
 	res.Name = m["name"].(string)
 	res.CreateAt = m["createAt"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05")
 	res.UpdateAt = m["updateAt"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05")
-	res.OverAt = m["overAt"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05")
+	if val, ok := m["overAt"].(primitive.DateTime); ok {
+		res.OverAt = val.Time().Format("2006-01-02 15:04:05")
+	}
 
 	res.Config = NewGroupConfig()
 
@@ -135,9 +151,14 @@ func GroupGet(toid primitive.ObjectID, goid primitive.ObjectID) (ml.Group, error
 		res.Config.Is_multi = config["is_multi"].(bool)
 		res.Config.Is_all = config["is_all"].(bool)
 		res.Config.Levels = config["levels"].([]bool)
-		res.Config.View_type = config["view_type"].(int)
-		if val, ok := config["sort_type"].(int); ok {
+		if val, ok := toInt(config["view_type"]); ok {
+			res.Config.View_type = val
+		}
+		if val, ok := toInt(config["sort_type"]); ok {
 			res.Config.Sort_type = val
+		}
+		if val, ok := toInt(config["auto_freeze_days"]); ok {
+			res.Config.AutoFreezeDays = val
 		}
 	}
 
@@ -192,9 +213,8 @@ func GroupPost(toid primitive.ObjectID, req *RequestGroupPost) (string, error) {
 		{Key: "name", Value: req.Data.Name},
 		{Key: "createAt", Value: sys.StringtoTime(req.Data.CreateAt)},
 		{Key: "updateAt", Value: sys.StringtoTime(req.Data.UpdateAt)},
-		{Key: "overAt", Value: sys.StringtoTime(req.Data.OverAt)},
 		{Key: "gid", Value: gid},
-		{Key: "config", Value: bson.D{{Key: "levels", Value: NewGroupConfig()}}},
+		{Key: "config", Value: buildConfig(req.Data.Config)},
 	}
 
 	_, err := db.Collection("group").InsertOne(context.TODO(), data)
@@ -217,13 +237,10 @@ func GroupPut(toid primitive.ObjectID, goid primitive.ObjectID, req *RequestGrou
 		m["name"] = (*req).Data.Name
 	}
 
-	if (*req).Data.UpdateAt != nil {
-		m["updateAt"] = sys.StringtoTime(*(*req).Data.UpdateAt)
-	}
-
 	if (*req).Data.OverAt != nil {
 		m["overAt"] = sys.StringtoTime(*(*req).Data.OverAt)
 	}
+
 	if req.Data.Config != nil {
 
 		if req.Data.Config.Is_multi != nil {
@@ -241,30 +258,38 @@ func GroupPut(toid primitive.ObjectID, goid primitive.ObjectID, req *RequestGrou
 		if req.Data.Config.Sort_type != nil {
 			m["config.sort_type"] = req.Data.Config.Sort_type
 		}
+		if req.Data.Config.AutoFreezeDays != nil {
+			m["config.auto_freeze_days"] = req.Data.Config.AutoFreezeDays
+		}
 	}
 
-	_, err := db.Collection("group").UpdateOne(
-		context.TODO(),
-		filter,
-		bson.M{
-			"$set": m,
-		},
-		nil,
-	)
-	return err
+	if len(m) > 0 {
+		if _, err := db.Collection("group").UpdateOne(
+			context.TODO(),
+			filter,
+			bson.M{
+				"$set": m,
+			},
+			nil,
+		); err != nil {
+			return err
+		}
+	}
+
+	return refreshGroupUpdateAt(goid, req.Data.OverAt == nil)
 }
 func GroupCreateDefault(toid primitive.ObjectID, gd RequestThemePostDefaultGroup) (string, error) {
 
 	gid := sys.CreateUUID()
+	config := buildConfig(gd.Config)
 	data := bson.D{
 		{Key: "_toid", Value: toid},
 		{Key: "name", Value: gd.Name},
 		{Key: "gid", Value: gid},
 		{Key: "createAt", Value: sys.StringtoTime(gd.CreateAt)},
 		{Key: "updateAt", Value: sys.StringtoTime(gd.CreateAt)},
-		{Key: "overAt", Value: sys.StringtoTime(gd.OverAt)},
 		{Key: "default", Value: true},
-		{Key: "config", Value: NewGroupConfig()},
+		{Key: "config", Value: config},
 	}
 
 	_, err := db.Collection("group").InsertOne(context.TODO(), data)
@@ -675,12 +700,67 @@ func exportImagesForDocs(docIDs []primitive.ObjectID, workdir string) error {
 
 func NewGroupConfig() ml.GroupConfig {
 	return ml.GroupConfig{
-		Levels:    []bool{true, true, true, true, true},
-		Is_multi:  false,
-		Is_all:    false,
-		View_type: 0,
-		Sort_type: 0,
+		Levels:         []bool{true, true, true, true, true},
+		Is_multi:       false,
+		Is_all:         false,
+		View_type:      0,
+		Sort_type:      0,
+		AutoFreezeDays: 30,
 	}
+}
+
+func buildConfig(cfg *struct {
+	AutoFreezeDays *int `json:"auto_freeze_days"`
+}) ml.GroupConfig {
+	config := NewGroupConfig()
+	if cfg != nil && cfg.AutoFreezeDays != nil {
+		config.AutoFreezeDays = *cfg.AutoFreezeDays
+	}
+	return config
+}
+
+func toInt(v any) (int, bool) {
+	switch val := v.(type) {
+	case int:
+		return val, true
+	case int32:
+		return int(val), true
+	case int64:
+		return int(val), true
+	case float64:
+		return int(val), true
+	default:
+		return 0, false
+	}
+}
+
+// refreshGroupUpdateAt bumps updateAt and optionally clears manual buffer state when it is still active.
+func refreshGroupUpdateAt(goid primitive.ObjectID, clearBuffer bool) error {
+	filter := bson.M{"_id": goid}
+
+	update := bson.M{
+		"$set": bson.M{
+			"updateAt": primitive.NewDateTimeFromTime(time.Now()),
+		},
+	}
+
+	if clearBuffer {
+		var g struct {
+			OverAt *primitive.DateTime `bson:"overAt"`
+		}
+		if err := db.Collection("group").FindOne(context.TODO(), filter).Decode(&g); err != nil {
+			if err == mongo.ErrNoDocuments {
+				return nil
+			}
+			return err
+		}
+		if g.OverAt != nil && g.OverAt.Time().After(time.Now()) {
+			update["$unset"] = bson.M{"overAt": ""}
+		}
+	}
+
+	_, err := db.Collection("group").UpdateOne(context.TODO(), filter, update)
+	return err
 }
 
 // GroupImportConfig 导入分组配置
@@ -768,10 +848,8 @@ func GroupImportConfig(uoid, toid primitive.ObjectID, fileHeader *multipart.File
 
 	if err == mongo.ErrNoDocuments {
 		// 分组不存在，创建新分组
-		forever := time.Now().Add(time.Hour * 24 * 36500) // 100年后
 		groupData = append(groupData,
 			bson.E{Key: "createAt", Value: primitive.NewDateTimeFromTime(time.Now())},
-			bson.E{Key: "overAt", Value: primitive.NewDateTimeFromTime(forever)},
 		)
 		_, err = db.Collection("group").InsertOne(context.TODO(), groupData)
 		if err != nil {

@@ -132,7 +132,9 @@ class _DocListState extends State<DocList> {
     );
     await Http(tid: widget.tid, gid: widget.group.id).putGroup(req);
     if (mounted) {
-      Provider.of<GroupsManager>(context, listen: false).updateConfig();
+      final groups = Provider.of<GroupsManager>(context, listen: false);
+      groups.updateConfig();
+      groups.touch(gid: widget.group.id);
     }
   }
 
@@ -159,12 +161,6 @@ class _DocListState extends State<DocList> {
 
   // 创建新文档
   void createNewDoc() {
-    // 防止重复创建空文档
-    if (docsManager.items.isNotEmpty &&
-        docsManager.items[0].id.isEmpty &&
-        expandedIndex == 0) {
-      return;
-    }
     Doc newDoc = Doc(
       id: '',
       title: '',
@@ -176,10 +172,26 @@ class _DocListState extends State<DocList> {
       config: DocConfig(isShowTool: Config.instance.defaultShowTool),
     );
 
-    setState(() {
-      docsManager.insertDoc(newDoc);
-      expandedIndex = 0;
-    });
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditPage(
+          doc: newDoc,
+          group: widget.group,
+          onSave: (updatedDoc) {
+            setState(() {
+              docsManager.insertDoc(updatedDoc);
+            });
+          },
+          onDelete: () {
+            // setState(() {
+            //   docsManager.removeDoc(item);
+            //   expandedIndex = null;
+            // });
+          },
+        ),
+      ),
+    );
   }
 
   // UI: 主体内容-卡片模式

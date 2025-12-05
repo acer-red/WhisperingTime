@@ -69,7 +69,7 @@ type Group struct {
 	ID       string      `json:"id" bson:"gid"`
 	CreateAt string      `json:"createAt" bson:"createAt"`
 	UpdateAt string      `json:"updateAt" bson:"updateAt"`
-	OverAt   string      `json:"overAt" bson:"overAt"`
+	OverAt   string      `json:"overAt,omitempty" bson:"overAt,omitempty"`
 	Config   GroupConfig `json:"config"`
 }
 type GroupAndDocs struct {
@@ -79,15 +79,16 @@ type GroupAndDocs struct {
 	Default  bool        `json:"default" bson:"default,omitempty"`
 	CreateAt string      `json:"createAt" bson:"createAt"`
 	UpdateAt string      `json:"updateAt" bson:"updateAt"`
-	OverAt   string      `json:"overAt" bson:"overAt"`
+	OverAt   string      `json:"overAt,omitempty" bson:"overAt,omitempty"`
 	Config   GroupConfig `json:"group_config" bson:"group_config"`
 }
 type GroupConfig struct {
-	Is_multi  bool   `json:"is_multi" bson:"is_multi"`
-	Is_all    bool   `json:"is_all" bson:"is_all"`
-	Levels    []bool `json:"levels" bson:"levels"`
-	View_type int    `json:"view_type" bson:"view_type"`
-	Sort_type int    `json:"sort_type" bson:"sort_type"`
+	Is_multi       bool   `json:"is_multi" bson:"is_multi"`
+	Is_all         bool   `json:"is_all" bson:"is_all"`
+	Levels         []bool `json:"levels" bson:"levels"`
+	View_type      int    `json:"view_type" bson:"view_type"`
+	Sort_type      int    `json:"sort_type" bson:"sort_type"`
+	AutoFreezeDays int    `json:"auto_freeze_days" bson:"auto_freeze_days"`
 }
 
 type DocConfig struct {

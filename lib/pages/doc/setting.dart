@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:whispering_time/pages/group/manager.dart';
 import 'package:whispering_time/services/http/http.dart';
 import 'package:whispering_time/utils/time.dart';
 import 'package:whispering_time/utils/env.dart';
@@ -32,6 +34,11 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
   late bool isShowTool;
   late DateTime createAt;
   bool isChanged = false;
+
+  void _touchGroup() {
+    if (!mounted) return;
+    context.read<GroupsManager>().touch(gid: widget.gid);
+  }
 
   @override
   void initState() {
@@ -124,6 +131,8 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
         }
         return;
       }
+
+      _touchGroup();
     }
 
     setState(() {
@@ -193,6 +202,8 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
         }
         return;
       }
+
+      _touchGroup();
     }
   }
 
@@ -229,6 +240,8 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
       );
       return false;
     }
+
+    _touchGroup();
     return true;
   }
 }

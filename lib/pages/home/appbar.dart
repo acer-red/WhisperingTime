@@ -393,117 +393,105 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
+    final nameController = TextEditingController();
     String? inputValue;
+    int freezeDays = 30;
+    int step = 0;
+
     showDialog<String?>(
       context: context,
       builder: (dialogContext) {
-        return AlertDialog(
-          title: Text("创建分组"),
-          content: TextField(
-            autofocus: true,
-            onChanged: (value) {
-              inputValue = value;
-            },
-            decoration: const InputDecoration(hintText: "请输入分组名称"),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('从本地导入'),
-              onPressed: () async {
-                await _importGroupConfig(scaffoldContext);
-              },
-            ),
-            TextButton(
-              child: const Text('确定'),
-              onPressed: () async {
-                Navigator.of(dialogContext).pop();
-
-                if (inputValue == null || inputValue!.isEmpty) {
-                  return;
-                }
-
-                // 使用 scaffoldContext 来访问 Provider
-                if (mounted) {
-                  final ok = await Provider.of<GroupsManager>(scaffoldContext,
-                          listen: false)
-                      .add(inputValue!);
-                  if (!ok) {
-                    if (mounted) {
-                      showErrMsg(context, "创建失败");
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text(step == 0 ? "创建分组" : "选择自动定格时间"),
+              content: step == 0
+                  ? TextField(
+                      controller: nameController,
+                      autofocus: true,
+                      onChanged: (value) {
+                        inputValue = value;
+                      },
+                      decoration: const InputDecoration(hintText: "请输入分组名称"),
+                    )
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text("若在选定时间未操作，自动进入定格缓冲期。"),
+                        const SizedBox(height: 6),
+                        ...[7, 30, 60, 90].map(
+                          (days) => RadioListTile<int>(
+                            title: Text("$days天"),
+                            value: days,
+                            groupValue: freezeDays,
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() {
+                                  freezeDays = value;
+                                });
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+              actions: <Widget>[
+                if (step == 1)
+                  TextButton(
+                    child: const Text('上一步'),
+                    onPressed: () {
+                      setState(() {
+                        step = 0;
+                      });
+                    },
+                  ),
+                TextButton(
+                  child: Text(step == 0 ? '下一步' : '确定'),
+                  onPressed: () async {
+                    if (step == 0) {
+                      final name = (inputValue ?? nameController.text).trim();
+                      if (name.isEmpty) {
+                        showErrMsg(context, "请输入分组名称");
+                        return;
+                      }
+                      inputValue = name;
+                      setState(() {
+                        step = 1;
+                      });
+                      return;
                     }
-                  }
-                }
-              },
-            ),
-          ],
+
+                    final name = (inputValue ?? nameController.text).trim();
+                    if (name.isEmpty) {
+                      showErrMsg(context, "请输入分组名称");
+                      return;
+                    }
+
+                    // 使用 scaffoldContext 来访问 Provider
+                    if (mounted) {
+                      final ok = await Provider.of<GroupsManager>(
+                              scaffoldContext,
+                              listen: false)
+                          .add(name, freezeDays: freezeDays);
+                      if (!ok) {
+                        if (mounted) {
+                          showErrMsg(context, "创建失败");
+                        }
+                        return;
+                      }
+                    }
+
+                    if (mounted) {
+                      Navigator.of(dialogContext).pop();
+                    }
+                  },
+                ),
+              ],
+            );
+          },
         );
       },
     );
-  }
-
-  // 导入分组配置
-  Future<void> _importGroupConfig(BuildContext scaffoldContext) async {
-    // 提前获取 GroupsManager，避免跨越异步间隙使用 context
-    final groups = Provider.of<GroupsManager>(scaffoldContext, listen: false);
-
-    try {
-      // 使用 file_picker 选择文件
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['zip'],
-        allowMultiple: false,
-      );
-
-      if (result == null || result.files.isEmpty) {
-        // 用户取消选择
-        return;
-      }
-
-      final file = result.files.first;
-
-      // 验证文件扩展名
-      if (!file.name.endsWith('.zip')) {
-        if (mounted) {
-          Msg.diy(context, "文件格式错误，请选择 .zip 文件");
-        }
-        return;
-      }
-
-      // 检查文件路径是否存在
-      if (file.path == null) {
-        if (mounted) {
-          Msg.diy(context, "无法读取文件");
-        }
-        return;
-      }
-
-      // 获取当前主题ID
-      final tid = groups.tid;
-
-      if (tid.isEmpty) {
-        if (mounted) {
-          Msg.diy(context, "请先选择主题");
-        }
-        return;
-      }
-
-      // 上传文件到后端 - 注意这里使用一个临时的gid，后端会忽略它
-      final res =
-          await http.Http(tid: tid, gid: "temp").importGroupConfig(file.path!);
-
-      if (!mounted) return;
-
-      if (res.isOK) {
-        Msg.diy(context, "导入成功");
-        // 刷新分组数据
-        await groups.get();
-      } else {
-        Msg.diy(context, res.msg);
-      }
-    } catch (e) {
-      if (mounted) {
-        Msg.diy(context, "导入失败: $e");
-      }
-    }
   }
 }

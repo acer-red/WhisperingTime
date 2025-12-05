@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:whispering_time/services/http/http.dart';
 import 'package:whispering_time/utils/ui.dart';
-import 'package:whispering_time/utils/time.dart';
 import 'package:whispering_time/utils/export.dart';
+import 'package:whispering_time/utils/time.dart';
 import 'model.dart';
 import 'manager.dart';
 
@@ -22,7 +22,7 @@ class GroupSettings extends StatefulWidget {
 class _GroupSettingsState extends State<GroupSettings> {
   late final FocusNode _textFieldFocusNode;
   final TextEditingController _textController = TextEditingController();
-  String _lastSyncedName = ''; // 保存最后一次同步到服务器的名称
+  String _lastSyncedName = '';
 
   @override
   void initState() {
@@ -73,6 +73,7 @@ class _GroupSettingsState extends State<GroupSettings> {
       if (res.isNotOK) {
         return;
       }
+      groups.touch();
       // 同步成功后，更新最后同步的名称
       _lastSyncedName = newName;
     }
@@ -115,10 +116,6 @@ class _GroupSettingsState extends State<GroupSettings> {
                       onChanged: (value) {
                         rename(_textController.text, ishttp: false);
                       },
-
-                      // onChanged: (value) {
-                      //   rename(_textController.text);
-                      // },
                     ),
                   ),
                 ],
@@ -185,11 +182,7 @@ class _GroupSettingsState extends State<GroupSettings> {
     }
 
     if (mounted) {
-      // setState(() {
-      // });
-
       context.read<GroupsManager>().removeAt(idx);
-
       Navigator.of(context).pop();
     }
   }
@@ -218,13 +211,9 @@ class _GroupSettingsState extends State<GroupSettings> {
 /// 根据分组的定格状态显示不同的开关和说明
 class FreezeSwitchTile extends StatefulWidget {
   final Group item;
-  final Function(int status, bool isFreezed) onFreezeChanged;
-
-  const FreezeSwitchTile({
-    super.key,
-    required this.item,
-    required this.onFreezeChanged,
-  });
+  final void Function(int status, bool isFreezed) onFreezeChanged;
+  const FreezeSwitchTile(
+      {super.key, required this.item, required this.onFreezeChanged});
 
   @override
   State<FreezeSwitchTile> createState() => _FreezeSwitchTileState();
@@ -232,13 +221,28 @@ class FreezeSwitchTile extends StatefulWidget {
 
 class _FreezeSwitchTileState extends State<FreezeSwitchTile> {
   late int status;
-  late bool isFreezed;
+  late bool isManual;
+  bool _isProcessing = false;
 
   @override
   void initState() {
     super.initState();
+    _refreshStatus();
+  }
+
+  @override
+  void didUpdateWidget(covariant FreezeSwitchTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.item != widget.item ||
+        oldWidget.item.overAt != widget.item.overAt ||
+        oldWidget.item.updateAt != widget.item.updateAt) {
+      setState(_refreshStatus);
+    }
+  }
+
+  void _refreshStatus() {
     status = widget.item.getoverAtStatus();
-    isFreezed = !widget.item.isNotEnteroverAt();
+    isManual = widget.item.isManualBufTime() || widget.item.isManualFreezed();
   }
 
   @override
@@ -246,14 +250,47 @@ class _FreezeSwitchTileState extends State<FreezeSwitchTile> {
     return IndexedStack(
       index: status,
       children: [
-        // 未定格，未进入缓冲期
         _buildNotFreezedTile(),
-        // 未定格，进入缓冲期
         _buildBufferPeriodTile(),
-        // 已定格
         _buildFreezedTile(),
       ],
     );
+  }
+
+  Future<void> _handleToggle(bool value) async {
+    final prevStatus = status;
+    final prevManual = isManual;
+    final groups = Provider.of<GroupsManager>(context, listen: false);
+    final tid = groups.tid;
+    final id = groups.id;
+    final time = value ? Time.getOverDay() : Time.getForver();
+
+    setState(() {
+      _isProcessing = true;
+      status = value ? 1 : (widget.item.isAutoBufTime() ? 1 : 0);
+      isManual = value;
+    });
+
+    final res =
+        await Http(tid: tid, gid: id).putGroup(RequestPutGroup(overAt: time));
+
+    if (res.isNotOK || !mounted) {
+      setState(() {
+        status = prevStatus;
+        isManual = prevManual;
+        _isProcessing = false;
+      });
+      return;
+    }
+
+    groups.setoverAt(time);
+    groups.touch(exitBuffer: false);
+    setState(() {
+      status = value ? 1 : (widget.item.isAutoBufTime() ? 1 : 0);
+      isManual = value;
+      _isProcessing = false;
+    });
+    widget.onFreezeChanged(status, status != 0);
   }
 
   Widget _buildNotFreezedTile() {
@@ -264,68 +301,35 @@ class _FreezeSwitchTileState extends State<FreezeSwitchTile> {
         "定格后无法编辑，仅供回顾。7天内可取消。",
         style: TextStyle(fontSize: 12),
       ),
-      value: isFreezed,
-      onChanged: (bool value) async {
-        final groups = Provider.of<GroupsManager>(context, listen: false);
-        final tid = groups.tid;
-        final id = groups.id;
-
-        final time = Time.getOverDay();
-        final res = await Http(tid: tid, gid: id)
-            .putGroup(RequestPutGroup(overAt: time));
-
-        if (res.isNotOK) {
-          return;
-        }
-
-        if (mounted) {
-          groups.setoverAt(time);
-          setState(() {
-            isFreezed = true;
-            status = 1;
-          });
-          widget.onFreezeChanged(status, isFreezed);
-        }
-      },
+      value: isManual,
+      onChanged: _isProcessing ? null : (bool value) => _handleToggle(value),
     );
   }
 
   Widget _buildBufferPeriodTile() {
+    final isAuto = widget.item.isAutoBufTime() && !isManual;
+    final subtitle = isAuto
+        ? "进入7天定格缓冲期,缓冲期内若无任何更新动作，则定格此分组"
+        : "已进入缓冲期,定格时间:${widget.item.overAt?.toString() ?? ''}";
     return SwitchListTile(
       contentPadding: EdgeInsets.zero,
       title: const Text('定格'),
-      subtitle: Text("进入缓冲期,定格时间:${widget.item.overAt.toString()}"),
-      value: isFreezed,
-      onChanged: (bool value) async {
-        final groups = Provider.of<GroupsManager>(context, listen: false);
-        final tid = groups.tid;
-        final id = groups.id;
-
-        final time = Time.getForver();
-        final res = await Http(tid: tid, gid: id)
-            .putGroup(RequestPutGroup(overAt: time));
-
-        if (res.isNotOK) {
-          return;
-        }
-
-        if (mounted) {
-          groups.setoverAt(time);
-          setState(() {
-            isFreezed = false;
-            status = 0;
-          });
-          widget.onFreezeChanged(status, isFreezed);
-        }
-      },
+      subtitle: Text(subtitle),
+      value: isManual,
+      onChanged: _isProcessing ? null : (bool value) => _handleToggle(value),
     );
   }
 
   Widget _buildFreezedTile() {
+    final isAuto = !isManual;
+    final frozenTime = isAuto
+        ? widget.item.updateAt
+            .add(Duration(days: widget.item.config.autoFreezeDays))
+        : widget.item.overAt;
     return SwitchListTile(
       contentPadding: EdgeInsets.zero,
       title: const Text('定格'),
-      subtitle: Text("已定格于${widget.item.overAt.toString()}"),
+      subtitle: Text("已定格于${frozenTime.toString()}"),
       value: true,
       onChanged: null,
     );

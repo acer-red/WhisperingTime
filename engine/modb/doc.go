@@ -108,7 +108,11 @@ func DocPost(goid primitive.ObjectID, req *RequestDocPost) (string, error) {
 		return "", err
 	}
 
-	return did, err
+	if err := refreshGroupUpdateAt(goid, true); err != nil {
+		return "", err
+	}
+
+	return did, nil
 }
 func DocPut(goid primitive.ObjectID, doid primitive.ObjectID, req *RequestDocPut) error {
 
@@ -158,7 +162,11 @@ func DocPut(goid primitive.ObjectID, doid primitive.ObjectID, req *RequestDocPut
 		},
 		nil,
 	)
-	return err
+	if err != nil {
+		return err
+	}
+
+	return refreshGroupUpdateAt(goid, true)
 }
 func DocDelete(goid primitive.ObjectID, doid primitive.ObjectID) error {
 	filter := bson.M{
@@ -169,7 +177,11 @@ func DocDelete(goid primitive.ObjectID, doid primitive.ObjectID) error {
 		filter,
 		nil,
 	)
-	return err
+	if err != nil {
+		return err
+	}
+
+	return refreshGroupUpdateAt(goid, true)
 }
 
 // 根据goid删除所有印迹

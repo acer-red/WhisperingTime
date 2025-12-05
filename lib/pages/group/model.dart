@@ -3,50 +3,62 @@ import 'package:whispering_time/utils/time.dart';
 class Group {
   String name;
   String id;
-  DateTime overAt;
   GroupConfig config;
+  DateTime updateAt;
+  DateTime? overAt;
 
   Group(
       {required this.name,
       required this.id,
-      required this.overAt,
-      required this.config});
-
-  // 判断当前时间是否在overAt的之内
-  bool isBufTime() {
-    DateTime now = DateTime.now();
-    return now.isBefore(overAt) && now.isBefore(overAt.add(Time.getoverAt()));
-  }
-
-  // 判断当前时间是否在overAt之后
-  bool isEnteroverAt() {
-    return DateTime.now().isAfter(overAt);
-  }
-
-  // 判断当前时间是否在overAt之前
-  bool isNotEnteroverAt() {
-    DateTime oneDayBefore = overAt.subtract(Time.getoverAt());
-    return DateTime.now().isBefore(oneDayBefore);
-  }
-
-  int getoverAtStatus() {
-    // 顺序不能修改
-    if (isNotEnteroverAt()) {
-      return 0;
-    }
-    if (isBufTime()) {
-      return 1;
-    }
-    return 2;
-  }
-
-  bool isFreezedOrBuf() {
-    return getoverAtStatus() != 0;
-  }
+      required this.config,
+      required this.updateAt,
+      required this.overAt});
 
   @override
   String toString() {
-    return "Group - id: $id, name: $name, overAt: $overAt, config: viewType=${config.viewType}, isAll=${config.isAll}, isMulti=${config.isMulti}, levels=${config.levels}";
+    return "Group - id: $id, name: $name, config: viewType=${config.viewType}, isAll=${config.isAll}, isMulti=${config.isMulti}, levels=${config.levels}, autoFreezeDays=${config.autoFreezeDays}";
+  }
+
+  bool isFreezedOrBuf() => getoverAtStatus() != 0;
+
+  int getoverAtStatus() {
+    if (isManualFreezed()) {
+      return 2;
+    }
+    if (isManualBufTime()) {
+      return 1;
+    }
+    if (isAutoBufTime()) {
+      return 1;
+    }
+    // 自动定格期已到
+    return DateTime.now()
+            .isAfter(updateAt.add(Duration(days: config.autoFreezeDays)))
+        ? 2
+        : 0;
+  }
+
+  bool isManualBufTime() {
+    final now = DateTime.now();
+    return hasManualMark() && now.isBefore(overAt!);
+  }
+
+  bool isManualFreezed() {
+    final now = DateTime.now();
+    return hasManualMark() && now.isAfter(overAt!);
+  }
+
+  bool isAutoBufTime() {
+    final autoDeadline = updateAt.add(Duration(days: config.autoFreezeDays));
+    return autoDeadline.isAfter(DateTime.now());
+  }
+
+  bool hasManualMark() {
+    return overAt != null && overAt!.isBefore(Time.getForver());
+  }
+
+  bool isNotEnteroverAt() {
+    return getoverAtStatus() == 0;
   }
 }
 
@@ -56,12 +68,14 @@ class GroupConfig {
   List<bool> levels = [];
   int viewType;
   int sortType;
+  int autoFreezeDays;
   GroupConfig(
       {required this.isMulti,
       required this.isAll,
       required this.levels,
       required this.viewType,
-      required this.sortType});
+      required this.sortType,
+      required this.autoFreezeDays});
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = {};
@@ -72,6 +86,7 @@ class GroupConfig {
     }
     data['view_type'] = viewType;
     data['sort_type'] = sortType;
+    data['auto_freeze_days'] = autoFreezeDays;
     return data;
   }
 
@@ -81,6 +96,7 @@ class GroupConfig {
         isMulti: false,
         levels: [true, false, false, false, false],
         viewType: 0,
-        sortType: 0);
+        sortType: 0,
+        autoFreezeDays: 30);
   }
 }

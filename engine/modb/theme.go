@@ -27,7 +27,9 @@ type RequestThemePut struct {
 type RequestThemePostDefaultGroup struct {
 	Name     string `json:"name"`
 	CreateAt string `json:"createAt"`
-	OverAt   string `json:"overAt"`
+	Config   *struct {
+		AutoFreezeDays *int `json:"auto_freeze_days"`
+	} `json:"config"`
 }
 
 type RequestThemePost struct {
