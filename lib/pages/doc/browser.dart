@@ -4,7 +4,7 @@ import 'package:whispering_time/pages/doc/setting.dart';
 import 'package:whispering_time/pages/doc/scene.dart';
 import 'package:whispering_time/utils/env.dart';
 import 'package:whispering_time/utils/ui.dart';
-import 'package:whispering_time/services/http/http.dart';
+import 'package:whispering_time/services/grpc/grpc.dart';
 import 'package:whispering_time/services/isar/config.dart';
 import 'package:intl/intl.dart';
 import 'package:whispering_time/utils/time.dart';
@@ -171,26 +171,28 @@ class _DocListState extends State<DocList> {
       updateAt: DateTime.now(),
       config: DocConfig(isShowTool: Config.instance.defaultShowTool),
     );
-
+    final groupsManager = context.read<GroupsManager>();
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => EditPage(
-          doc: newDoc,
-          group: widget.group,
-          onSave: (updatedDoc) {
-            setState(() {
-              docsManager.insertDoc(updatedDoc);
-            });
-          },
-          onDelete: () {
-            // setState(() {
-            //   docsManager.removeDoc(item);
-            //   expandedIndex = null;
-            // });
-          },
-        ),
-      ),
+          builder: (context) => ChangeNotifierProvider.value(
+                value: groupsManager,
+                child: EditPage(
+                  doc: newDoc,
+                  group: widget.group,
+                  onSave: (updatedDoc) {
+                    setState(() {
+                      docsManager.insertDoc(updatedDoc);
+                    });
+                  },
+                  onDelete: () {
+                    // setState(() {
+                    //   docsManager.removeDoc(item);
+                    //   expandedIndex = null;
+                    // });
+                  },
+                ),
+              )),
     );
   }
 
@@ -201,6 +203,7 @@ class _DocListState extends State<DocList> {
         itemBuilder: (context, index) {
           final item = docsManager.items[index];
           final isExpanded = expandedIndex == index;
+          log.d(item.toJson());
 
           return GestureDetector(
             child: Card(
@@ -219,17 +222,21 @@ class _DocListState extends State<DocList> {
 
   // 打开设置对话框
   void enterSettingDialog(Doc item) async {
+    final groupsManager = context.read<GroupsManager>();
+
     final result = await showDialog<Map<String, dynamic>>(
         context: context,
-        builder: (context) => DocSettingsDialog(
-            gid: widget.group.id,
-            did: item.id,
-            createAt: item.createAt,
-            config: item.config));
-
+        builder: (context) => ChangeNotifierProvider.value(
+            value: groupsManager,
+            child: DocSettingsDialog(
+                gid: widget.group.id,
+                did: item.id,
+                createAt: item.createAt,
+                config: item.config)));
     if (result == null) return;
 
     if (result['deleted'] == true) {
+      expandedIndex = null;
       setState(() {
         docsManager.removeDoc(item);
       });
@@ -432,25 +439,29 @@ class _DocListState extends State<DocList> {
 
   // 跳转到编辑页面
   void _navigateToEditPage(int index, Doc item) {
+    final groupsManager = context.read<GroupsManager>();
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => EditPage(
-          doc: item,
-          group: widget.group,
-          onSave: (updatedDoc) {
-            setState(() {
-              // 更新列表中的文档
-              Doc oldDoc = docsManager.items[index];
-              docsManager.updateDoc(oldDoc, updatedDoc, widget.group.config);
-            });
-          },
-          onDelete: () {
-            setState(() {
-              docsManager.removeDoc(item);
-              expandedIndex = null;
-            });
-          },
+        builder: (context) => ChangeNotifierProvider.value(
+          value: groupsManager,
+          child: EditPage(
+            doc: item,
+            group: widget.group,
+            onSave: (updatedDoc) {
+              setState(() {
+                // 更新列表中的文档
+                Doc oldDoc = docsManager.items[index];
+                docsManager.updateDoc(oldDoc, updatedDoc, widget.group.config);
+              });
+            },
+            onDelete: () {
+              setState(() {
+                docsManager.removeDoc(item);
+                expandedIndex = null;
+              });
+            },
+          ),
         ),
       ),
     );

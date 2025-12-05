@@ -1,0 +1,779 @@
+package grpcserver
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"mime/multipart"
+	"os"
+	"path/filepath"
+	"time"
+
+	log "github.com/tengfei-xy/go-log"
+	"github.com/tengfei-xy/whisperingtime/engine/modb"
+	m "github.com/tengfei-xy/whisperingtime/engine/model"
+	"github.com/tengfei-xy/whisperingtime/engine/pb"
+	"github.com/tengfei-xy/whisperingtime/engine/sys"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
+)
+
+// Service aggregates all RPC handlers.
+type Service struct {
+	pb.UnimplementedThemeServiceServer
+	pb.UnimplementedGroupServiceServer
+	pb.UnimplementedDocServiceServer
+	pb.UnimplementedImageServiceServer
+	pb.UnimplementedBackgroundJobServiceServer
+
+	publicHTTPBase string
+}
+
+// helpers
+func ts(t time.Time) int64 { return t.Unix() }
+
+func toGroupConfig(cfg m.GroupConfig) *pb.GroupConfig {
+	return &pb.GroupConfig{
+		IsMulti:        cfg.Is_multi,
+		IsAll:          cfg.Is_all,
+		Levels:         cfg.Levels,
+		ViewType:       int32(cfg.View_type),
+		SortType:       int32(cfg.Sort_type),
+		AutoFreezeDays: int32(cfg.AutoFreezeDays),
+	}
+}
+
+func fromGroupConfig(cfg *pb.GroupConfig) *m.GroupConfig {
+	if cfg == nil {
+		return nil
+	}
+	return &m.GroupConfig{
+		Is_multi:       cfg.GetIsMulti(),
+		Is_all:         cfg.GetIsAll(),
+		Levels:         cfg.GetLevels(),
+		View_type:      int(cfg.GetViewType()),
+		Sort_type:      int(cfg.GetSortType()),
+		AutoFreezeDays: int(cfg.GetAutoFreezeDays()),
+	}
+}
+
+// ThemeService
+func (s *Service) ListThemes(ctx context.Context, req *pb.ListThemesRequest) (*pb.ListThemesResponse, error) {
+	log.Infof("[grpc] ListThemes uid=%s includeDocs=%v includeDetail=%v", getUID(ctx), req.GetIncludeDocs(), req.GetIncludeDetail())
+	uoid := getUOID(ctx)
+	if uoid == primitive.NilObjectID {
+		return &pb.ListThemesResponse{Err: 1, Msg: "unauthenticated"}, nil
+	}
+
+	// no docs
+	if !req.GetIncludeDocs() && !req.GetIncludeDetail() {
+		themes, err := modb.ThemesGet(uoid)
+		if err != nil {
+			return &pb.ListThemesResponse{Err: 1, Msg: err.Error()}, nil
+		}
+		res := make([]*pb.ThemeDetail, 0, len(themes))
+		for _, t := range themes {
+			res = append(res, &pb.ThemeDetail{Id: t.ID, Name: t.Name})
+		}
+		return &pb.ListThemesResponse{Err: 0, Msg: "ok", Themes: res}, nil
+	}
+
+	if req.GetIncludeDetail() {
+		raw, err := modb.ThemesGetAndDocsDetail(uoid, false)
+		if err != nil {
+			return &pb.ListThemesResponse{Err: 1, Msg: err.Error()}, nil
+		}
+		var items []struct {
+			Tid       string `json:"tid"`
+			ThemeName string `json:"theme_name"`
+			Groups    []struct {
+				Gid  string `json:"gid"`
+				Name string `json:"name"`
+				Docs []struct {
+					Did       string             `json:"did"`
+					PlainText string             `json:"plain_text"`
+					Content   string             `json:"content"`
+					Level     int32              `json:"level"`
+					CreateAt  primitive.DateTime `json:"createAt"`
+					UpdateAt  primitive.DateTime `json:"updateAt"`
+					Title     string             `json:"title"`
+				} `json:"docs"`
+			} `json:"groups"`
+		}
+		b, _ := json.Marshal(raw)
+		_ = json.Unmarshal(b, &items)
+		res := make([]*pb.ThemeDetail, 0, len(items))
+		for _, t := range items {
+			td := &pb.ThemeDetail{Id: t.Tid, Name: t.ThemeName}
+			for _, g := range t.Groups {
+				gd := &pb.GroupDetail{Id: g.Gid, Name: g.Name}
+				for _, d := range g.Docs {
+					gd.Docs = append(gd.Docs, &pb.DocDetail{
+						Id:        d.Did,
+						Title:     d.Title,
+						PlainText: d.PlainText,
+						Content:   d.Content,
+						Level:     d.Level,
+						CreateAt:  d.CreateAt.Time().Unix(),
+						UpdateAt:  d.UpdateAt.Time().Unix(),
+					})
+				}
+				td.Groups = append(td.Groups, gd)
+			}
+			res = append(res, td)
+		}
+		return &pb.ListThemesResponse{Err: 0, Msg: "ok", Themes: res}, nil
+	}
+
+	// include docs summary
+	raw, err := modb.ThemesGetAndDocs(uoid, false)
+	if err != nil {
+		return &pb.ListThemesResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	var items []struct {
+		Tid       string `json:"tid"`
+		ThemeName string `json:"theme_name"`
+		Groups    []struct {
+			Gid  string `json:"gid"`
+			Name string `json:"name"`
+			Docs []struct {
+				Did       string             `json:"did"`
+				PlainText string             `json:"plain_text"`
+				Title     string             `json:"title"`
+				Level     int32              `json:"level"`
+				CreateAt  primitive.DateTime `json:"createAt"`
+				UpdateAt  primitive.DateTime `json:"updateAt"`
+			} `json:"docs"`
+		} `json:"groups"`
+	}
+	b, _ := json.Marshal(raw)
+	_ = json.Unmarshal(b, &items)
+	res := make([]*pb.ThemeDetail, 0, len(items))
+	for _, t := range items {
+		td := &pb.ThemeDetail{Id: t.Tid, Name: t.ThemeName}
+		for _, g := range t.Groups {
+			gd := &pb.GroupDetail{Id: g.Gid, Name: g.Name}
+			for _, d := range g.Docs {
+				gd.Docs = append(gd.Docs, &pb.DocDetail{
+					Id:        d.Did,
+					Title:     d.Title,
+					PlainText: d.PlainText,
+					Level:     d.Level,
+					CreateAt:  d.CreateAt.Time().Unix(),
+					UpdateAt:  d.UpdateAt.Time().Unix(),
+				})
+			}
+			td.Groups = append(td.Groups, gd)
+		}
+		res = append(res, td)
+	}
+	return &pb.ListThemesResponse{Err: 0, Msg: "ok", Themes: res}, nil
+}
+
+func (s *Service) CreateTheme(ctx context.Context, req *pb.CreateThemeRequest) (*pb.CreateThemeResponse, error) {
+	log.Infof("[grpc] CreateTheme uid=%s name=%s", getUID(ctx), req.GetName())
+	uoid := getUOID(ctx)
+	if uoid == primitive.NilObjectID {
+		return &pb.CreateThemeResponse{Err: 1, Msg: "unauthenticated"}, nil
+	}
+
+	r := modb.RequestThemePost{}
+	r.Data.Name = req.GetName()
+	r.Data.CreateAt = nowString()
+	r.Data.DefaultGroup.Name = "默认分组"
+	def := 30
+	r.Data.DefaultGroup.CreateAt = nowString()
+	r.Data.DefaultGroup.Config = &struct {
+		AutoFreezeDays *int `json:"auto_freeze_days"`
+	}{AutoFreezeDays: &def}
+
+	toid, tid, err := modb.ThemeCreate(uoid, &r)
+	if err != nil {
+		return &pb.CreateThemeResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	if _, err := modb.GroupCreateDefault(toid, r.Data.DefaultGroup); err != nil {
+		return &pb.CreateThemeResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	return &pb.CreateThemeResponse{Err: 0, Msg: "ok", Id: tid}, nil
+}
+
+func (s *Service) UpdateTheme(ctx context.Context, req *pb.UpdateThemeRequest) (*pb.BasicResponse, error) {
+	log.Infof("[grpc] UpdateTheme uid=%s id=%s", getUID(ctx), req.GetId())
+	toid, err := modb.GetTOIDFromTID(req.GetId())
+	if err != nil {
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	r := modb.RequestThemePut{}
+	r.Data.Name = req.GetName()
+	r.Data.UpdateAt = nowString()
+	if err := modb.ThemeUpdate(toid, &r); err != nil {
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	return &pb.BasicResponse{Err: 0, Msg: "ok"}, nil
+}
+
+func (s *Service) DeleteTheme(ctx context.Context, req *pb.DeleteThemeRequest) (*pb.BasicResponse, error) {
+	log.Infof("[grpc] DeleteTheme uid=%s id=%s", getUID(ctx), req.GetId())
+	toid, err := modb.GetTOIDFromTID(req.GetId())
+	if err != nil {
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	if err := modb.ThemeDelete(toid); err != nil {
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	return &pb.BasicResponse{Err: 0, Msg: "ok"}, nil
+}
+
+func (s *Service) ExportAllConfig(ctx context.Context, _ *pb.ExportAllConfigRequest) (*pb.BasicResponse, error) {
+	log.Infof("[grpc] ExportAllConfig uid=%s", getUID(ctx))
+	uoid := getUOID(ctx)
+	if uoid == primitive.NilObjectID {
+		return &pb.BasicResponse{Err: 1, Msg: "unauthenticated"}, nil
+	}
+	taskID, err := modb.ExportAllThemesConfig(uoid)
+	if err != nil {
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	return &pb.BasicResponse{Err: 0, Msg: taskID}, nil
+}
+
+// GroupService
+func (s *Service) ListGroups(ctx context.Context, req *pb.ListGroupsRequest) (*pb.ListGroupsResponse, error) {
+	log.Infof("[grpc] ListGroups uid=%s themeId=%s", getUID(ctx), req.GetThemeId())
+	toid, err := modb.GetTOIDFromTID(req.GetThemeId())
+	if err != nil {
+		return &pb.ListGroupsResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	groups, err := modb.GroupsGet(toid)
+	if err != nil {
+		return &pb.ListGroupsResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	res := make([]*pb.GroupSummary, 0, len(groups))
+	for _, g := range groups {
+		var over int64
+		if g.OverAt != "" {
+			over = sys.StringtoTime(g.OverAt).Unix()
+		}
+		res = append(res, &pb.GroupSummary{
+			Id:       g.ID,
+			Name:     g.Name,
+			CreateAt: sys.StringtoTime(g.CreateAt).Unix(),
+			UpdateAt: sys.StringtoTime(g.UpdateAt).Unix(),
+			OverAt:   over,
+			Config:   toGroupConfig(g.Config),
+		})
+	}
+	return &pb.ListGroupsResponse{Err: 0, Msg: "ok", Groups: res}, nil
+}
+
+func (s *Service) GetGroup(ctx context.Context, req *pb.GetGroupRequest) (*pb.GetGroupResponse, error) {
+	log.Infof("[grpc] GetGroup uid=%s themeId=%s groupId=%s includeDocs=%v includeDetail=%v", getUID(ctx), req.GetThemeId(), req.GetGroupId(), req.GetIncludeDocs(), req.GetIncludeDetail())
+	toid, err := modb.GetTOIDFromTID(req.GetThemeId())
+	if err != nil {
+		return &pb.GetGroupResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	goid, err := modb.GetGOIDFromGID(req.GetGroupId())
+	if err != nil {
+		return &pb.GetGroupResponse{Err: 1, Msg: err.Error()}, nil
+	}
+
+	if req.GetIncludeDetail() || req.GetIncludeDocs() {
+		g, err := modb.GroupGetAndDocDetail(toid, goid)
+		if err != nil {
+			return &pb.GetGroupResponse{Err: 1, Msg: err.Error()}, nil
+		}
+		gd := &pb.GroupDetail{Id: g.GID, Name: g.Name, Config: toGroupConfig(g.Config)}
+		for _, d := range g.Docs {
+			gd.Docs = append(gd.Docs, &pb.DocDetail{
+				Id:        d.ID,
+				Title:     d.Title,
+				PlainText: d.PlainText,
+				Content:   d.Content,
+				Level:     d.Level,
+				CreateAt:  d.CreateAt.Unix(),
+				UpdateAt:  d.UpdateAt.Unix(),
+			})
+		}
+		return &pb.GetGroupResponse{Err: 0, Msg: "ok", Group: gd}, nil
+	}
+
+	g, err := modb.GroupGet(toid, goid)
+	if err != nil {
+		return &pb.GetGroupResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	gd := &pb.GroupDetail{Id: g.ID, Name: g.Name, Config: toGroupConfig(g.Config)}
+	return &pb.GetGroupResponse{Err: 0, Msg: "ok", Group: gd}, nil
+}
+
+func (s *Service) CreateGroup(ctx context.Context, req *pb.CreateGroupRequest) (*pb.CreateGroupResponse, error) {
+	log.Infof("[grpc] CreateGroup uid=%s themeId=%s name=%s", getUID(ctx), req.GetThemeId(), req.GetName())
+	toid, err := modb.GetTOIDFromTID(req.GetThemeId())
+	if err != nil {
+		return &pb.CreateGroupResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	r := modb.RequestGroupPost{}
+	r.Data.Name = req.GetName()
+	r.Data.CreateAt = nowString()
+	r.Data.UpdateAt = nowString()
+	r.Data.Config = &struct {
+		AutoFreezeDays *int `json:"auto_freeze_days"`
+	}{AutoFreezeDays: intPtr(int(req.GetAutoFreezeDays()))}
+
+	gid, err := modb.GroupPost(toid, &r)
+	if err != nil {
+		return &pb.CreateGroupResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	return &pb.CreateGroupResponse{Err: 0, Msg: "ok", Id: gid}, nil
+}
+
+func (s *Service) UpdateGroup(ctx context.Context, req *pb.UpdateGroupRequest) (*pb.BasicResponse, error) {
+	log.Infof("[grpc] UpdateGroup uid=%s themeId=%s groupId=%s", getUID(ctx), req.GetThemeId(), req.GetGroupId())
+	toid, err := modb.GetTOIDFromTID(req.GetThemeId())
+	if err != nil {
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	goid, err := modb.GetGOIDFromGID(req.GetGroupId())
+	if err != nil {
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+
+	r := modb.RequestGroupPut{}
+	r.Data.UpdateAt = strPtr(nowString())
+	if req.Name != "" {
+		r.Data.Name = strPtr(req.GetName())
+	}
+	if req.OverAt != 0 {
+		t := time.Unix(req.GetOverAt(), 0).Format("2006-01-02 15:04:05")
+		r.Data.OverAt = &t
+	}
+	if cfg := req.GetConfig(); cfg != nil {
+		r.Data.Config = &struct {
+			Is_multi       *bool   `json:"is_multi"`
+			Is_all         *bool   `json:"is_all"`
+			Levels         *[]bool `json:"levels"`
+			View_type      *int    `json:"view_type"`
+			Sort_type      *int    `json:"sort_type"`
+			AutoFreezeDays *int    `json:"auto_freeze_days"`
+		}{}
+		r.Data.Config.Is_multi = boolPtr(cfg.GetIsMulti())
+		r.Data.Config.Is_all = boolPtr(cfg.GetIsAll())
+		lv := cfg.GetLevels()
+		r.Data.Config.Levels = &lv
+		vt := int(cfg.GetViewType())
+		st := int(cfg.GetSortType())
+		af := int(cfg.GetAutoFreezeDays())
+		r.Data.Config.View_type = &vt
+		r.Data.Config.Sort_type = &st
+		r.Data.Config.AutoFreezeDays = &af
+	}
+
+	if err := modb.GroupPut(toid, goid, &r); err != nil {
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	return &pb.BasicResponse{Err: 0, Msg: "ok"}, nil
+}
+
+func (s *Service) DeleteGroup(ctx context.Context, req *pb.DeleteGroupRequest) (*pb.BasicResponse, error) {
+	log.Infof("[grpc] DeleteGroup uid=%s themeId=%s groupId=%s", getUID(ctx), req.GetThemeId(), req.GetGroupId())
+	toid, err := modb.GetTOIDFromTID(req.GetThemeId())
+	if err != nil {
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	goid, err := modb.GetGOIDFromGID(req.GetGroupId())
+	if err != nil {
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	if err := modb.GroupDeleteOne(toid, goid); err != nil {
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	return &pb.BasicResponse{Err: 0, Msg: "ok"}, nil
+}
+
+func (s *Service) ExportGroupConfig(ctx context.Context, req *pb.ExportGroupConfigRequest) (*pb.BasicResponse, error) {
+	log.Infof("[grpc] ExportGroupConfig uid=%s themeId=%s groupId=%s", getUID(ctx), req.GetThemeId(), req.GetGroupId())
+	uoid := getUOID(ctx)
+	toid, err := modb.GetTOIDFromTID(req.GetThemeId())
+	if err != nil {
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	goid, err := modb.GetGOIDFromGID(req.GetGroupId())
+	if err != nil {
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	taskID, err := modb.GroupExportConfig(uoid, toid, goid)
+	if err != nil {
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	return &pb.BasicResponse{Err: 0, Msg: taskID}, nil
+}
+
+// ImportGroupConfig: client streaming bytes
+func (s *Service) ImportGroupConfig(stream pb.GroupService_ImportGroupConfigServer) error {
+	ctx := stream.Context()
+	log.Infof("[grpc] ImportGroupConfig uid=%s", getUID(ctx))
+	toidVal, err := metadataParam(stream, "theme_id")
+	if err != nil {
+		return status.Error(codes.InvalidArgument, err.Error())
+	}
+	toid, err := modb.GetTOIDFromTID(toidVal)
+	if err != nil {
+		return status.Error(codes.InvalidArgument, err.Error())
+	}
+	uoid := getUOID(ctx)
+	if uoid == primitive.NilObjectID {
+		return status.Error(codes.Unauthenticated, "unauthenticated")
+	}
+
+	var buf bytes.Buffer
+	for {
+		chunk, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		buf.Write(chunk.GetData())
+	}
+
+	// Build multipart FileHeader from buffered bytes
+	mwBody := &bytes.Buffer{}
+	mw := multipart.NewWriter(mwBody)
+	part, err := mw.CreateFormFile("file", fmt.Sprintf("group-%s.zip", toid.Hex()))
+	if err != nil {
+		return err
+	}
+	if _, err := part.Write(buf.Bytes()); err != nil {
+		return err
+	}
+	if err := mw.Close(); err != nil {
+		return err
+	}
+
+	mr := multipart.NewReader(bytes.NewReader(mwBody.Bytes()), mw.Boundary())
+	form, err := mr.ReadForm(32 << 20)
+	if err != nil {
+		return err
+	}
+	files := form.File["file"]
+	if len(files) == 0 {
+		return status.Error(codes.InvalidArgument, "missing file")
+	}
+	fh := files[0]
+
+	if err := modb.GroupImportConfig(uoid, toid, fh); err != nil {
+		return err
+	}
+	log.Infof("[grpc] ImportGroupConfig uid=%s themeId=%s size=%d bytes", getUID(ctx), toid.Hex(), buf.Len())
+	return stream.SendAndClose(&pb.ImportGroupConfigResponse{Err: 0, Msg: "ok"})
+}
+
+// DocService
+func (s *Service) ListDocs(ctx context.Context, req *pb.ListDocsRequest) (*pb.ListDocsResponse, error) {
+	log.Infof("[grpc] ListDocs uid=%s groupId=%s year=%d month=%d", getUID(ctx), req.GetGroupId(), req.GetYear(), req.GetMonth())
+	goid, err := modb.GetGOIDFromGID(req.GetGroupId())
+	if err != nil {
+		return &pb.ListDocsResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	docs, err := modb.DocsGet(goid, modb.DocFilter{Year: int(req.GetYear()), Month: int(req.GetMonth())})
+	if err != nil {
+		return &pb.ListDocsResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	res := make([]*pb.DocSummary, 0, len(docs))
+	for _, d := range docs {
+		res = append(res, &pb.DocSummary{
+			Id:        d.ID,
+			Title:     d.Title,
+			PlainText: d.PlainText,
+			Level:     d.Level,
+			CreateAt:  d.CreateAt.Unix(),
+			UpdateAt:  d.UpdateAt.Unix(),
+		})
+	}
+	return &pb.ListDocsResponse{Err: 0, Msg: "ok", Docs: res}, nil
+}
+
+func (s *Service) CreateDoc(ctx context.Context, req *pb.CreateDocRequest) (*pb.CreateDocResponse, error) {
+	log.Infof("[grpc] CreateDoc uid=%s groupId=%s title=%s", getUID(ctx), req.GetGroupId(), req.GetTitle())
+	goid, err := modb.GetGOIDFromGID(req.GetGroupId())
+	if err != nil {
+		return &pb.CreateDocResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	r := modb.RequestDocPost{}
+	r.Data.Title = req.GetTitle()
+	r.Data.Content = req.GetContent()
+	r.Data.PlainText = req.GetPlainText()
+	r.Data.Level = req.GetLevel()
+	r.Data.CreateAt = fmt.Sprintf("%d", req.GetCreateAt())
+	r.Data.Config = &m.DocConfig{IsShowTool: true}
+
+	did, err := modb.DocPost(goid, &r)
+	if err != nil {
+		return &pb.CreateDocResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	return &pb.CreateDocResponse{Err: 0, Msg: "ok", Id: did}, nil
+}
+
+func (s *Service) UpdateDoc(ctx context.Context, req *pb.UpdateDocRequest) (*pb.BasicResponse, error) {
+	log.Infof("[grpc] UpdateDoc uid=%s groupId=%s docId=%s", getUID(ctx), req.GetGroupId(), req.GetDocId())
+	goid, err := modb.GetGOIDFromGID(req.GetGroupId())
+	if err != nil {
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	doid, err := modb.GetDOIDFromGOIDAndDID(goid, req.GetDocId())
+	if err != nil {
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+
+	r := modb.RequestDocPut{}
+	if req.Title != "" {
+		r.Doc.Title = strPtr(req.GetTitle())
+	}
+	if req.Content != "" {
+		r.Doc.Content = strPtr(req.GetContent())
+		r.Doc.PlainText = strPtr(req.GetPlainText())
+	}
+	if req.Level != 0 {
+		lvl := req.GetLevel()
+		r.Doc.Level = &lvl
+	}
+	if req.CreateAt != 0 {
+		t := fmt.Sprintf("%d", req.GetCreateAt())
+		r.Doc.CreateAt = &t
+	}
+	upd := time.Now().Format("2006-01-02 15:04:05")
+	r.Doc.UpdateAt = &upd
+
+	if err := modb.DocPut(goid, doid, &r); err != nil {
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	return &pb.BasicResponse{Err: 0, Msg: "ok"}, nil
+}
+
+func (s *Service) DeleteDoc(ctx context.Context, req *pb.DeleteDocRequest) (*pb.BasicResponse, error) {
+	log.Infof("[grpc] DeleteDoc uid=%s groupId=%s docId=%s", getUID(ctx), req.GetGroupId(), req.GetDocId())
+	goid, err := modb.GetGOIDFromGID(req.GetGroupId())
+	if err != nil {
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	doid, err := modb.GetDOIDFromGOIDAndDID(goid, req.GetDocId())
+	if err != nil {
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	if err := modb.DocDelete(goid, doid); err != nil {
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	return &pb.BasicResponse{Err: 0, Msg: "ok"}, nil
+}
+
+// ImageService
+func (s *Service) UploadImage(stream pb.ImageService_UploadImageServer) error {
+	ctx := stream.Context()
+	uid := getUID(ctx)
+	uoid := getUOID(ctx)
+	log.Infof("[grpc] UploadImage start uid=%s", uid)
+	if uid == "" || uoid == primitive.NilObjectID {
+		return status.Error(codes.Unauthenticated, "unauthenticated")
+	}
+
+	var mime string
+	var data bytes.Buffer
+
+	first := true
+	for {
+		chunk, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		if first {
+			mime = chunk.GetMime()
+			first = false
+		}
+		data.Write(chunk.GetData())
+	}
+
+	if mime == "" {
+		mime = "image/png"
+	}
+	name := fmt.Sprintf("%s.%s", sys.CreateUUID(), mimeExt(mime))
+	if err := modb.ImageCreate(name, data.Bytes(), uoid); err != nil {
+		return err
+	}
+	url := fmt.Sprintf("%s/image/%s/%s", s.publicHTTPBase, uid, name)
+	log.Infof("[grpc] UploadImage done uid=%s name=%s mime=%s size=%d bytes", uid, name, mime, data.Len())
+	return stream.SendAndClose(&pb.UploadImageResponse{Err: 0, Msg: "ok", Name: name, Url: url})
+}
+
+func (s *Service) DeleteImage(ctx context.Context, req *pb.DeleteImageRequest) (*pb.BasicResponse, error) {
+	log.Infof("[grpc] DeleteImage uid=%s name=%s", getUID(ctx), req.GetName())
+	if err := modb.ImageDelete(req.GetName()); err != nil {
+		if err == sys.ErrNoFound {
+			return &pb.BasicResponse{Err: 404, Msg: "not found"}, nil
+		}
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	return &pb.BasicResponse{Err: 0, Msg: "ok"}, nil
+}
+
+// BackgroundJobService
+func (s *Service) ListJobs(ctx context.Context, _ *pb.ListBackgroundJobsRequest) (*pb.ListBackgroundJobsResponse, error) {
+	log.Infof("[grpc] ListJobs uid=%s", getUID(ctx))
+	uoid := getUOID(ctx)
+	jobs, err := modb.BGJobsGet(uoid)
+	if err != nil {
+		return &pb.ListBackgroundJobsResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	res := make([]*pb.BackgroundJob, 0, len(jobs))
+	for _, j := range jobs {
+		res = append(res, &pb.BackgroundJob{
+			Id:          j.ID,
+			Name:        j.Name,
+			JobType:     j.JobType,
+			Status:      j.Status,
+			CreatedAt:   j.CreatedAt.Format(time.RFC3339),
+			StartedAt:   timePtrToString(j.StartedAt),
+			CompletedAt: timePtrToString(j.CompletedAt),
+			Priority:    int32(j.Priority),
+			RetryCount:  int32(j.RetryCount),
+			ResultJson:  toJSON(j.Result),
+			ErrorJson:   toJSON(j.Error),
+		})
+	}
+	return &pb.ListBackgroundJobsResponse{Err: 0, Msg: "ok", Jobs: res}, nil
+}
+
+func (s *Service) GetJob(ctx context.Context, req *pb.GetBackgroundJobRequest) (*pb.BackgroundJob, error) {
+	log.Infof("[grpc] GetJob uid=%s id=%s", getUID(ctx), req.GetId())
+	uoid := getUOID(ctx)
+	bgjoid, err := modb.GetBGJOIDFromBGJID(req.GetId())
+	if err != nil {
+		return nil, status.Error(codes.NotFound, err.Error())
+	}
+	job, err := modb.BGJobGet(uoid, bgjoid)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &pb.BackgroundJob{
+		Id:          job.ID,
+		Name:        job.Name,
+		JobType:     job.JobType,
+		Status:      job.Status,
+		CreatedAt:   job.CreatedAt.Format(time.RFC3339),
+		StartedAt:   timePtrToString(job.StartedAt),
+		CompletedAt: timePtrToString(job.CompletedAt),
+		Priority:    int32(job.Priority),
+		RetryCount:  int32(job.RetryCount),
+		ResultJson:  toJSON(job.Result),
+		ErrorJson:   toJSON(job.Error),
+	}, nil
+}
+
+func (s *Service) DeleteJob(ctx context.Context, req *pb.DeleteBackgroundJobRequest) (*pb.BasicResponse, error) {
+	log.Infof("[grpc] DeleteJob uid=%s id=%s", getUID(ctx), req.GetId())
+	uoid := getUOID(ctx)
+	bgjoid, err := modb.GetBGJOIDFromBGJID(req.GetId())
+	if err != nil {
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	if err := modb.BGJobDelete(uoid, bgjoid); err != nil {
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	return &pb.BasicResponse{Err: 0, Msg: "ok"}, nil
+}
+
+func (s *Service) DownloadJobFile(ctx context.Context, req *pb.DownloadBackgroundJobFileRequest) (*pb.DownloadBackgroundJobFileResponse, error) {
+	log.Infof("[grpc] DownloadJobFile uid=%s id=%s", getUID(ctx), req.GetId())
+	uoid := getUOID(ctx)
+	bgjoid, err := modb.GetBGJOIDFromBGJID(req.GetId())
+	if err != nil {
+		return &pb.DownloadBackgroundJobFileResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	job, err := modb.BGJobGet(uoid, bgjoid)
+	if err != nil {
+		return &pb.DownloadBackgroundJobFileResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	if job.Status != modb.JobStatusCompleted {
+		return &pb.DownloadBackgroundJobFileResponse{Err: 400, Msg: "任务未完成"}, nil
+	}
+	var filePath string
+	if job.Payload != nil {
+		if filename, ok := job.Payload["filename"].(string); ok {
+			filePath = filename
+		}
+	}
+	if filePath == "" {
+		return &pb.DownloadBackgroundJobFileResponse{Err: 404, Msg: "文件未找到"}, nil
+	}
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return &pb.DownloadBackgroundJobFileResponse{Err: 404, Msg: err.Error()}, nil
+	}
+	return &pb.DownloadBackgroundJobFileResponse{Err: 0, Msg: "ok", Data: data, Filename: filepath.Base(filePath)}, nil
+}
+
+// helpers
+func intPtr(v int) *int       { return &v }
+func boolPtr(v bool) *bool    { return &v }
+func strPtr(v string) *string { return &v }
+
+func mimeExt(m string) string {
+	switch m {
+	case "image/jpeg":
+		return "jpg"
+	case "image/png":
+		return "png"
+	default:
+		return "bin"
+	}
+}
+
+func toJSON(v interface{}) string {
+	if v == nil {
+		return ""
+	}
+	b, _ := json.Marshal(v)
+	return string(b)
+}
+
+func nowString() string {
+	return time.Now().Format("2006-01-02 15:04:05")
+}
+
+func timePtrToString(t *time.Time) string {
+	if t == nil {
+		return ""
+	}
+	return t.Format(time.RFC3339)
+}
+
+// fakeFile is a minimal adapter to satisfy modb.GroupImportConfig signature.
+type fakeFile struct {
+	filename string
+}
+
+func (f *fakeFile) Filename() string { return filepath.Base(f.filename) }
+
+func (f *fakeFile) Open() (multipart.File, error) {
+	return os.Open(f.filename)
+}
+
+// metadataParam pulls a param from incoming metadata.
+func metadataParam(stream grpc.ServerStream, key string) (string, error) {
+	md, ok := metadata.FromIncomingContext(stream.Context())
+	if !ok {
+		return "", fmt.Errorf("missing metadata")
+	}
+	vals := md.Get(key)
+	if len(vals) == 0 {
+		return "", fmt.Errorf("missing %s", key)
+	}
+	return vals[0], nil
+}

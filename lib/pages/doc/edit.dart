@@ -9,7 +9,7 @@ import 'dart:async';
 import 'package:whispering_time/pages/doc/model.dart';
 import 'package:whispering_time/pages/group/model.dart';
 import 'package:whispering_time/pages/group/manager.dart';
-import 'package:whispering_time/services/http/http.dart';
+import 'package:whispering_time/services/grpc/grpc.dart';
 import 'package:whispering_time/services/isar/config.dart';
 import 'package:whispering_time/utils/export.dart';
 import 'package:whispering_time/pages/doc/setting.dart';
@@ -562,15 +562,19 @@ class _EditPageState extends State<EditPage> {
 
   // 打开设置弹窗
   void settings() async {
+    final groupsManager = context.read<GroupsManager>();
+
     final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (context) => DocSettingsDialog(
-        gid: widget.group.id,
-        did: widget.doc.id.isEmpty ? null : widget.doc.id,
-        createAt: createAt,
-        config: config,
-      ),
-    );
+        context: context,
+        builder: (context) => ChangeNotifierProvider.value(
+              value: groupsManager,
+              child: DocSettingsDialog(
+                gid: widget.group.id,
+                did: widget.doc.id.isEmpty ? null : widget.doc.id,
+                createAt: createAt,
+                config: config,
+              ),
+            ));
 
     if (result != null) {
       // 如果删除了文档

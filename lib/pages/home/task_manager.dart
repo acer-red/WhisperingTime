@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:whispering_time/services/http/http.dart';
+import 'package:whispering_time/services/grpc/grpc.dart';
 import 'package:whispering_time/utils/ui.dart';
 
 class TaskManagerPage extends StatefulWidget {

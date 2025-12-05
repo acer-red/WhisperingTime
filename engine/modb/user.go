@@ -54,3 +54,27 @@ func ExistUser() gin.HandlerFunc {
 		log.Infof("新用户 uid=%s", uid)
 	}
 }
+
+// EnsureUser finds uid and returns its object id, creating a user if missing.
+func EnsureUser(uid string) (primitive.ObjectID, error) {
+	ctx := context.TODO()
+	identified := bson.D{{Key: "uid", Value: uid}}
+
+	count, err := db.Collection("user").CountDocuments(ctx, identified)
+	if err != nil {
+		return primitive.NilObjectID, err
+	}
+
+	if count > 0 {
+		return GetUOIDFromUID(uid)
+	}
+
+	ret, err := db.Collection("user").InsertOne(ctx, identified)
+	if err != nil {
+		return primitive.NilObjectID, err
+	}
+
+	uoid := ret.InsertedID.(primitive.ObjectID)
+	log.Infof("新用户 uid=%s", uid)
+	return uoid, nil
+}

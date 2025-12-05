@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:whispering_time/pages/doc/model.dart';
 import 'package:whispering_time/pages/group/model.dart';
-import 'package:whispering_time/services/http/http.dart';
+import 'package:whispering_time/services/grpc/grpc.dart';
 
 class DocsManager extends ChangeNotifier {
   final String groupId;

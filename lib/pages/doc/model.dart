@@ -39,6 +39,20 @@ class Doc {
       id: json['id'] as String,
     );
   }
+  String toJson() {
+    return '''
+    {
+      "title": "$title",
+      "content": "$content",
+      "plain_text": "$plainText",
+      "level": $level,
+      "createAt": "$createAtString",
+      "updateAt": "$updateAtString",
+      "config": ${config.toJson()},
+      "id": "$id"
+    }
+    ''';
+  }
 }
 
 class DocConfig {

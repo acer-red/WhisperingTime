@@ -6,7 +6,7 @@ import 'package:archive/archive.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
-import 'package:whispering_time/services/http/http.dart';
+import 'package:whispering_time/services/grpc/grpc.dart';
 import 'package:whispering_time/utils/path.dart';
 import 'package:whispering_time/utils/ui.dart';
 

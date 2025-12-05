@@ -1,9 +1,9 @@
-web:
+grpc:
   address: "127.0.0.1" # or domain
   ssl_enable: false
   crt_file: ./server.crt
   key_file: ./server.key
-  port: 13341
+  port: 50001
 
 db: # mongo
   address: ""

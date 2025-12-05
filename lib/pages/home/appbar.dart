@@ -7,7 +7,7 @@ import 'package:whispering_time/utils/ui.dart';
 import 'package:whispering_time/utils/env.dart';
 import 'package:whispering_time/services/http/base.dart';
 import 'package:whispering_time/services/http/index.dart' as http_index;
-import 'package:whispering_time/services/http/http.dart' as http;
+import 'package:whispering_time/services/grpc/grpc.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:whispering_time/pages/group/manager.dart';
 import 'package:file_picker/file_picker.dart';

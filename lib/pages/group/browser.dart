@@ -88,12 +88,14 @@ class _GroupPage extends State<GroupPage> with AutomaticKeepAliveClientMixin {
               borderRadius: BorderRadius.circular(20),
               onTap: () {
                 // 设置当前选中的索引
-                context.read<GroupsManager>().setIndex(index);
+                final groupsManager = context.read<GroupsManager>();
+                groupsManager.setIndex(index);
                 Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) =>
-                            DocList(group: item, tid: widget.tid)));
+                        builder: (context) => ChangeNotifierProvider.value(
+                            value: groupsManager,
+                            child: DocList(group: item, tid: widget.tid))));
               },
               child: Container(alignment: Alignment.center, child: Text(name)),
             ),

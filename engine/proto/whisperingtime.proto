@@ -1,0 +1,200 @@
+syntax = "proto3";
+
+package whisperingtime;
+
+option go_package = "github.com/tengfei-xy/whisperingtime/engine/grpc/pb";
+option java_multiple_files = true;
+option java_package = "dev.whisperingtime.grpc";
+
+message BasicResponse {
+  int32 err = 1;
+  string msg = 2;
+}
+
+message Empty {}
+
+// Theme models
+message ThemeSummary {
+  string id = 1;
+  string name = 2;
+}
+
+message GroupConfig {
+  bool is_multi = 1;
+  bool is_all = 2;
+  repeated bool levels = 3;
+  int32 view_type = 4;
+  int32 sort_type = 5;
+  int32 auto_freeze_days = 6;
+}
+
+message GroupSummary {
+  string id = 1;
+  string name = 2;
+  int64 create_at = 3;
+  int64 update_at = 4;
+  int64 over_at = 5;
+  GroupConfig config = 6;
+}
+
+message DocSummary {
+  string id = 1;
+  string title = 2;
+  string plain_text = 3;
+  int32 level = 4;
+  int64 create_at = 5;
+  int64 update_at = 6;
+}
+
+message DocDetail {
+  string id = 1;
+  string title = 2;
+  string plain_text = 3;
+  string content = 4;
+  int32 level = 5;
+  int64 create_at = 6;
+  int64 update_at = 7;
+}
+
+message GroupDetail {
+  string id = 1;
+  string name = 2;
+  GroupConfig config = 3;
+  repeated DocDetail docs = 4;
+}
+
+message ThemeDetail {
+  string id = 1;
+  string name = 2;
+  repeated GroupDetail groups = 3;
+}
+
+// Theme service
+message ListThemesRequest {
+  bool include_docs = 1;   // if true, include doc list per group (summary)
+  bool include_detail = 2; // if true, include full doc detail per group
+}
+
+message ListThemesResponse {
+  int32 err = 1;
+  string msg = 2;
+  repeated ThemeDetail themes = 3;
+}
+
+message CreateThemeRequest { string name = 1; }
+message CreateThemeResponse { int32 err = 1; string msg = 2; string id = 3; }
+message UpdateThemeRequest { string id = 1; string name = 2; }
+message DeleteThemeRequest { string id = 1; }
+message ExportAllConfigRequest {}
+
+service ThemeService {
+  rpc ListThemes(ListThemesRequest) returns (ListThemesResponse);
+  rpc CreateTheme(CreateThemeRequest) returns (CreateThemeResponse);
+  rpc UpdateTheme(UpdateThemeRequest) returns (BasicResponse);
+  rpc DeleteTheme(DeleteThemeRequest) returns (BasicResponse);
+  rpc ExportAllConfig(ExportAllConfigRequest) returns (BasicResponse);
+}
+
+// Group service
+message ListGroupsRequest { string theme_id = 1; }
+message ListGroupsResponse { int32 err = 1; string msg = 2; repeated GroupSummary groups = 3; }
+
+message GetGroupRequest { string theme_id = 1; string group_id = 2; bool include_docs = 3; bool include_detail = 4; }
+message GetGroupResponse { int32 err = 1; string msg = 2; GroupDetail group = 3; }
+
+message CreateGroupRequest { string theme_id = 1; string name = 2; int32 auto_freeze_days = 3; }
+message CreateGroupResponse { int32 err = 1; string msg = 2; string id = 3; }
+message UpdateGroupRequest { string theme_id = 1; string group_id = 2; string name = 3; GroupConfig config = 4; int64 over_at = 5; }
+message DeleteGroupRequest { string theme_id = 1; string group_id = 2; }
+message ExportGroupConfigRequest { string theme_id = 1; string group_id = 2; }
+message ImportGroupConfigResponse { int32 err = 1; string msg = 2; }
+
+service GroupService {
+  rpc ListGroups(ListGroupsRequest) returns (ListGroupsResponse);
+  rpc GetGroup(GetGroupRequest) returns (GetGroupResponse);
+  rpc CreateGroup(CreateGroupRequest) returns (CreateGroupResponse);
+  rpc UpdateGroup(UpdateGroupRequest) returns (BasicResponse);
+  rpc DeleteGroup(DeleteGroupRequest) returns (BasicResponse);
+  rpc ExportGroupConfig(ExportGroupConfigRequest) returns (BasicResponse);
+  // Client streaming upload of config zip
+  rpc ImportGroupConfig(stream BytesChunk) returns (ImportGroupConfigResponse);
+}
+
+// Doc service
+message ListDocsRequest { string group_id = 1; int32 year = 2; int32 month = 3; }
+message ListDocsResponse { int32 err = 1; string msg = 2; repeated DocSummary docs = 3; }
+message CreateDocRequest {
+  string group_id = 1;
+  string title = 2;
+  string content = 3;
+  string plain_text = 4;
+  int32 level = 5;
+  int64 create_at = 6;
+}
+message CreateDocResponse { int32 err = 1; string msg = 2; string id = 3; }
+message UpdateDocRequest {
+  string group_id = 1;
+  string doc_id = 2;
+  string title = 3;
+  string content = 4;
+  string plain_text = 5;
+  int32 level = 6;
+  int64 create_at = 7;
+}
+message DeleteDocRequest { string group_id = 1; string doc_id = 2; }
+
+service DocService {
+  rpc ListDocs(ListDocsRequest) returns (ListDocsResponse);
+  rpc CreateDoc(CreateDocRequest) returns (CreateDocResponse);
+  rpc UpdateDoc(UpdateDocRequest) returns (BasicResponse);
+  rpc DeleteDoc(DeleteDocRequest) returns (BasicResponse);
+}
+
+// Image service
+message UploadImageResponse { int32 err = 1; string msg = 2; string name = 3; string url = 4; }
+message DeleteImageRequest { string name = 1; }
+
+service ImageService {
+  // Client streaming upload: send BytesChunk with metadata in first chunk header
+  rpc UploadImage(stream ImageUploadChunk) returns (UploadImageResponse);
+  rpc DeleteImage(DeleteImageRequest) returns (BasicResponse);
+}
+
+message ImageUploadChunk {
+  string user_id = 1; // uid
+  string mime = 2;    // image/png or image/jpeg
+  bytes data = 3;
+}
+
+// Background job service
+message BackgroundJob {
+  string id = 1;
+  string name = 2;
+  string job_type = 3;
+  string status = 4;
+  string created_at = 5;
+  string started_at = 6;
+  string completed_at = 7;
+  int32 priority = 8;
+  int32 retry_count = 9;
+  string result_json = 10;
+  string error_json = 11;
+}
+
+message ListBackgroundJobsRequest {}
+message ListBackgroundJobsResponse { int32 err = 1; string msg = 2; repeated BackgroundJob jobs = 3; }
+message GetBackgroundJobRequest { string id = 1; }
+message DeleteBackgroundJobRequest { string id = 1; }
+message DownloadBackgroundJobFileRequest { string id = 1; }
+message DownloadBackgroundJobFileResponse { int32 err = 1; string msg = 2; bytes data = 3; string filename = 4; }
+
+service BackgroundJobService {
+  rpc ListJobs(ListBackgroundJobsRequest) returns (ListBackgroundJobsResponse);
+  rpc GetJob(GetBackgroundJobRequest) returns (BackgroundJob);
+  rpc DeleteJob(DeleteBackgroundJobRequest) returns (BasicResponse);
+  // Per requirement: return bytes (not streaming) for job download
+  rpc DownloadJobFile(DownloadBackgroundJobFileRequest) returns (DownloadBackgroundJobFileResponse);
+}
+
+// Shared chunk message for client streaming uploads
+message BytesChunk { bytes data = 1; }

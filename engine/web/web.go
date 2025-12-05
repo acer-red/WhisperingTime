@@ -6,7 +6,6 @@ import (
 	"github.com/tengfei-xy/whisperingtime/engine/modb"
 
 	"github.com/gin-gonic/gin"
-	log "github.com/tengfei-xy/go-log"
 )
 
 type Env struct {
@@ -39,19 +38,16 @@ func Init(env Env) {
 	RouteImage(g)
 	RouteBGJob(g)
 
-	log.Infof("API: %s", env.FullServerAddress)
-	log.Info("启动监听...")
-
 	if env.SslEnable {
 		err := g.RunTLS(fmt.Sprintf(":%d", env.Port), env.CrtFile, env.KeyFile)
 		if err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 		return
 	} else {
 		err := g.Run(fmt.Sprintf(":%d", env.Port))
 		if err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 

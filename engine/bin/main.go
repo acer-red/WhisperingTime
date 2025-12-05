@@ -7,9 +7,9 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/tengfei-xy/whisperingtime/engine/grpcserver"
+	"github.com/tengfei-xy/whisperingtime/engine/minio"
 	"github.com/tengfei-xy/whisperingtime/engine/modb"
-
-	"github.com/tengfei-xy/whisperingtime/engine/web"
 
 	log "github.com/tengfei-xy/go-log"
 	"gopkg.in/yaml.v3"
@@ -29,6 +29,18 @@ type Config struct {
 		Port        int    `yaml:"port"`
 		fullAddress string
 	} `yaml:"web"`
+	Grpc struct {
+		Address     string `yaml:"address"`
+		Port        int    `yaml:"port"`
+		fullAddress string
+	} `yaml:"grpc"`
+	Minio struct {
+		Endpoint        string `yaml:"endpoint"`
+		AccessKeyID     string `yaml:"access_key_id"`
+		SecretAccessKey string `yaml:"secret_access_key"`
+		BucketName      string `yaml:"bucket_name"`
+	} `yaml:"minio"`
+
 	DB struct {
 		Address  string `yaml:"address"`
 		Database string `yaml:"database"`
@@ -49,7 +61,6 @@ func init_flag() {
 	flag.Parse()
 }
 func init_config() {
-	// 读取配置文件
 	f, err := os.ReadFile(app.configpath)
 	if err != nil {
 		log.Fatal(err)
@@ -66,6 +77,13 @@ func init_config() {
 		app.config.Web.fullAddress = fmt.Sprintf("https://%s:%d", app.config.Web.Address, app.config.Web.Port)
 	} else {
 		app.config.Web.fullAddress = fmt.Sprintf("http://%s:%d", app.config.Web.Address, app.config.Web.Port)
+	}
+
+	if app.config.Grpc.Port <= 0 {
+		app.config.Grpc.Port = 50051
+	}
+	if app.config.Grpc.Address == "" {
+		app.config.Grpc.Address = app.config.Web.Address
 	}
 }
 func init_log() {
@@ -88,15 +106,36 @@ func init_mongo() {
 	}
 	log.Infof("mongo连接成功!!")
 }
-
-func init_web() {
-	web.Init(web.Env{
-		FullServerAddress: app.config.Web.fullAddress,
-		SslEnable:         app.config.Web.SslEnable,
-		CrtFile:           app.config.Web.CrtFile,
-		KeyFile:           app.config.Web.KeyFile,
-		Port:              app.config.Web.Port,
+func init_minio() {
+	log.Infof("minio连接中...")
+	minio.Start(minio.Config{
+		Endpoint:        app.config.Minio.Endpoint,
+		AccessKeyID:     app.config.Minio.AccessKeyID,
+		SecretAccessKey: app.config.Minio.SecretAccessKey,
+		BucketName:      app.config.Minio.BucketName,
+		UseSSL:          false,
 	})
+	log.Infof("minio连接成功!!")
+}
+
+// func init_web() {
+// 	web.Init(web.Env{
+// 		FullServerAddress: app.config.Web.fullAddress,
+// 		SslEnable:         app.config.Web.SslEnable,
+// 		CrtFile:           app.config.Web.CrtFile,
+// 		KeyFile:           app.config.Web.KeyFile,
+// 		Port:              app.config.Web.Port,
+// 	})
+// }
+
+func init_grpc() {
+	if err := grpcserver.Start(grpcserver.Config{
+		Address:        app.config.Grpc.Address,
+		Port:           app.config.Grpc.Port,
+		PublicHTTPBase: app.config.Grpc.fullAddress,
+	}); err != nil {
+		log.Fatal(err)
+	}
 }
 func quit() {
 	// 创建一个通道来接收信号通知
@@ -122,7 +161,9 @@ func main() {
 	init_config()
 	init_log()
 	init_mongo()
+	init_minio()
 	go quit()
-	init_web()
+	// init_web()
+	init_grpc()
 
 }

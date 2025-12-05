@@ -19,6 +19,7 @@ class Config {
 
   String uid = '';
   String serverAddress = 'http://127.0.0.1:13341';
+  int grpcPort = 50051;
   static const String fontHubServerAddress = "https://fonthub.acer.red";
   static const String indexServerAddress = "https://acer.red";
   bool devlopMode = false;

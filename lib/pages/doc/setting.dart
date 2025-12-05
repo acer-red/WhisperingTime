@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:whispering_time/pages/group/manager.dart';
-import 'package:whispering_time/services/http/http.dart';
+import 'package:whispering_time/services/grpc/grpc.dart';
 import 'package:whispering_time/utils/time.dart';
 import 'package:whispering_time/utils/env.dart';
 import 'package:whispering_time/pages/doc/model.dart';
@@ -91,7 +91,7 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
                     if (!ok) return;
                     if (!mounted) return;
                     Navigator.of(this.context).pop({
-                      'changed': true,
+                      'changed': false,
                       'deleted': true,
                     });
                   }),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:whispering_time/pages/group/model.dart';
-import 'package:whispering_time/services/http/http.dart';
+import 'package:whispering_time/services/grpc/grpc.dart';
 
 class GroupsManager with ChangeNotifier {
   String tid = '';

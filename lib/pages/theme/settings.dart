@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:whispering_time/services/http/http.dart';
+import 'package:whispering_time/services/grpc/grpc.dart';
 import 'package:whispering_time/utils/ui.dart';
 import 'package:whispering_time/utils/export.dart';
 import 'browser.dart';

@@ -1,15 +1,55 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:grpc/grpc.dart';
+import 'package:fixnum/fixnum.dart';
+import 'package:whispering_time/grpc_generated/whisperingtime.pbgrpc.dart'
+    as pb;
 
 import 'package:whispering_time/utils/env.dart';
 import 'package:whispering_time/utils/time.dart';
 import 'package:whispering_time/services/isar/config.dart';
-import 'base.dart';
+import '../http/base.dart';
 import 'package:whispering_time/pages/doc/model.dart';
 import 'package:whispering_time/pages/group/model.dart';
+
+class _Grpc {
+  ClientChannel? _channel;
+  late pb.ThemeServiceClient theme;
+  late pb.GroupServiceClient group;
+  late pb.DocServiceClient doc;
+  late pb.ImageServiceClient image;
+  late pb.BackgroundJobServiceClient job;
+
+  static final _Grpc instance = _Grpc._internal();
+  _Grpc._internal();
+
+  Future<void> _ensureReady() async {
+    if (_channel != null) return;
+    final cfg = Config.instance;
+    final uri = Uri.parse(cfg.serverAddress);
+    final host = uri.host.isEmpty ? cfg.serverAddress : uri.host;
+    final port = uri.port == 0 ? 50051 : uri.port;
+
+    _channel = ClientChannel(
+      host,
+      port: port,
+      options: const ChannelOptions(credentials: ChannelCredentials.insecure()),
+    );
+    theme = pb.ThemeServiceClient(_channel!);
+    group = pb.GroupServiceClient(_channel!);
+    doc = pb.DocServiceClient(_channel!);
+    image = pb.ImageServiceClient(_channel!);
+    job = pb.BackgroundJobServiceClient(_channel!);
+  }
+
+  CallOptions get _authOptions => CallOptions(metadata: {
+        'authorization': Http.basicAuthorization(),
+      });
+}
 
 // theme
 class ResponseGetThemes extends Basic {
@@ -784,6 +824,12 @@ class Http {
 
   Http({this.content, this.tid, this.gid, this.did});
 
+  static String basicAuthorization() {
+    final credentials = '${Config.instance.uid}:';
+    return 'Basic ${base64Encode(utf8.encode(credentials))}';
+  }
+
+  // ignore: unused_element
   Future<T> _handleRequest<T>(
       Method method, Uri u, Function(Map<String, dynamic>) fromJson,
       {Map<String, dynamic>? data, Map<String, String>? headers}) async {
@@ -836,308 +882,302 @@ class Http {
 
   // theme
   Future<ResponseGetThemes> getthemes() async {
-    log.i("发送请求 获取主题列表");
-    const String path = "/themes";
-
-    final Map<String, String> headers = {
-      'Authorization': getAuthorization(),
-    };
-    final url = URI().get(serverAddress, path);
-
-    return _handleRequest<ResponseGetThemes>(
-        Method.get, url, (json) => ResponseGetThemes.fromJson(json),
-        headers: headers);
+    log.i("发送请求 获取主题列表(gRPC)");
+    await _Grpc.instance._ensureReady();
+    final resp = await _Grpc.instance.theme.listThemes(
+      pb.ListThemesRequest(),
+      options: _Grpc.instance._authOptions,
+    );
+    final data =
+        resp.themes.map((e) => ThemeListData(name: e.name, id: e.id)).toList();
+    return ResponseGetThemes(err: resp.err, msg: resp.msg, data: data);
   }
 
   Future<ResponseGetThemesAndDataX> getThemesAndDoc() async {
-    log.i("发送请求 获取主题列表和印迹");
-
-    const String path = "/themes";
-    const Map<String, String> param = {
-      "doc": "1",
-    };
-    final Map<String, String> headers = {
-      'Authorization': getAuthorization(),
-    };
-    final url = URI().get(serverAddress, path, param: param);
-
-    return _handleRequest<ResponseGetThemesAndDataX>(
-        Method.get, url, (json) => ResponseGetThemesAndDataX.fromJson(json),
-        headers: headers);
+    log.i("发送请求 获取主题列表和印迹(gRPC)");
+    await _Grpc.instance._ensureReady();
+    final resp = await _Grpc.instance.theme.listThemes(
+      pb.ListThemesRequest(includeDocs: true),
+      options: _Grpc.instance._authOptions,
+    );
+    final data = resp.themes
+        .map((t) => XTheme(
+              tid: t.id,
+              name: t.name,
+              groups: t.groups
+                  .map((g) => XGroup(
+                        gid: g.id,
+                        name: g.name,
+                        docs: g.docs
+                            .map((d) => XDoc(
+                                  did: d.id,
+                                  plainText: d.plainText,
+                                  title: d.title,
+                                  level: d.level,
+                                  createAt: DateTime.fromMillisecondsSinceEpoch(
+                                      d.createAt.toInt() * 1000),
+                                  updateAt: DateTime.fromMillisecondsSinceEpoch(
+                                      d.updateAt.toInt() * 1000),
+                                ))
+                            .toList(),
+                      ))
+                  .toList(),
+            ))
+        .toList();
+    return ResponseGetThemesAndDataX(err: resp.err, msg: resp.msg, data: data);
   }
 
   Future<ResponseGetThemesAndDataD> getThemesAndDocDetail() async {
-    log.i("发送请求 获取主题列表和印迹（详细数据）");
-
-    const String path = "/themes";
-    const Map<String, String> param = {
-      "doc": "1",
-      "detail": "1",
-    };
-    final Map<String, String> headers = {
-      'Authorization': getAuthorization(),
-    };
-    final url = URI().get(serverAddress, path, param: param);
-
-    return _handleRequest<ResponseGetThemesAndDataD>(
-        Method.get, url, (json) => ResponseGetThemesAndDataD.fromJson(json),
-        headers: headers);
+    log.i("发送请求 获取主题列表和印迹（详细数据）(gRPC)");
+    await _Grpc.instance._ensureReady();
+    final resp = await _Grpc.instance.theme.listThemes(
+      pb.ListThemesRequest(includeDocs: true, includeDetail: true),
+      options: _Grpc.instance._authOptions,
+    );
+    final data = resp.themes
+        .map((t) => DTheme(
+              tid: t.id,
+              name: t.name,
+              groups: t.groups
+                  .map((g) => DGroup(
+                        gid: g.id,
+                        name: g.name,
+                        docs: g.docs
+                            .map((d) => DDoc(
+                                  plainText: d.plainText,
+                                  title: d.title,
+                                  content: d.content,
+                                  level: d.level,
+                                  createAt: DateTime.fromMillisecondsSinceEpoch(
+                                      d.createAt.toInt() * 1000),
+                                  updateAt: DateTime.fromMillisecondsSinceEpoch(
+                                      d.updateAt.toInt() * 1000),
+                                ))
+                            .toList(),
+                      ))
+                  .toList(),
+            ))
+        .toList();
+    return ResponseGetThemesAndDataD(err: resp.err, msg: resp.msg, data: data);
   }
 
   Future<ResponsePostTheme> postTheme(RequestPostTheme req) async {
-    log.i("发送请求 创建主题");
-    String path = "/theme";
-
-    final Map<String, dynamic> data = {
-      'data': req.toJson(),
-    };
-    final Map<String, String> headers = {
-      "Content-Type": "application/json",
-      'Authorization': getAuthorization(),
-    };
-    final url = URI().get(serverAddress, path);
-
-    return _handleRequest<ResponsePostTheme>(
-      Method.post,
-      url,
-      (json) => ResponsePostTheme.fromJson(json),
-      data: data,
-      headers: headers,
+    log.i("发送请求 创建主题(gRPC)");
+    await _Grpc.instance._ensureReady();
+    final resp = await _Grpc.instance.theme.createTheme(
+      pb.CreateThemeRequest(name: req.name),
+      options: _Grpc.instance._authOptions,
     );
+    return ResponsePostTheme(err: resp.err, msg: resp.msg, id: resp.id);
   }
 
   Future<ResponsePutTheme> putTheme(RequestPutTheme req) async {
-    log.i("发送请求 更新主题");
-    String path = "/theme/${tid!}";
-
-    final Map<String, dynamic> data = {
-      'data': req.toJson(),
-    };
-    final Map<String, String> headers = {
-      "Content-Type": "application/json",
-      'Authorization': getAuthorization(),
-    };
-    final url = URI().get(serverAddress, path);
-
-    return _handleRequest<ResponsePutTheme>(
-      Method.put,
-      url,
-      (json) => ResponsePutTheme.fromJson(json),
-      data: data,
-      headers: headers,
+    log.i("发送请求 更新主题(gRPC)");
+    await _Grpc.instance._ensureReady();
+    final resp = await _Grpc.instance.theme.updateTheme(
+      pb.UpdateThemeRequest(id: tid!, name: req.name),
+      options: _Grpc.instance._authOptions,
     );
+    return ResponsePutTheme(err: resp.err, msg: resp.msg);
   }
 
   Future<ResponseDeleteTheme> deleteTheme() async {
-    log.i("发送请求 删除主题");
-    String path = "/theme/${tid!}";
-
-    final Map<String, String> headers = {
-      "Content-Type": "application/json",
-      'Authorization': getAuthorization(),
-    };
-    final url = URI().get(serverAddress, path);
-    return _handleRequest<ResponseDeleteTheme>(
-        Method.delete, url, (json) => ResponseDeleteTheme.fromJson(json),
-        headers: headers);
+    log.i("发送请求 删除主题(gRPC)");
+    await _Grpc.instance._ensureReady();
+    final resp = await _Grpc.instance.theme.deleteTheme(
+      pb.DeleteThemeRequest(id: tid!),
+      options: _Grpc.instance._authOptions,
+    );
+    return ResponseDeleteTheme(err: resp.err, msg: resp.msg);
   }
 
   // group
   Future<ResponseGetGroup> getGroups() async {
-    log.i("发送请求 获取所有分组");
-
-    String path = "/groups/${tid!}";
-
-    if (tid == null) {
-      log.e('缺少tid');
-    }
-
-    final Map<String, String> headers = {
-      "Content-Type": "application/json",
-      'Authorization': getAuthorization(),
-    };
-
-    final url = URI().get(serverAddress, path);
-
-    return _handleRequest<ResponseGetGroup>(
-        Method.get, url, (json) => ResponseGetGroup.fromJson(json),
-        headers: headers);
+    log.i("发送请求 获取所有分组(gRPC)");
+    await _Grpc.instance._ensureReady();
+    final resp = await _Grpc.instance.group.listGroups(
+      pb.ListGroupsRequest(themeId: tid!),
+      options: _Grpc.instance._authOptions,
+    );
+    return ResponseGetGroup(
+        err: resp.err,
+        msg: resp.msg,
+        data: resp.groups
+            .map((g) => GroupListData(
+                  name: g.name,
+                  id: g.id,
+                  createAt: DateTime.fromMillisecondsSinceEpoch(
+                      g.createAt.toInt() * 1000),
+                  updateAt: DateTime.fromMillisecondsSinceEpoch(
+                      g.updateAt.toInt() * 1000),
+                  overAt: g.overAt == 0
+                      ? null
+                      : DateTime.fromMillisecondsSinceEpoch(
+                          g.overAt.toInt() * 1000),
+                  config: GroupConfig(
+                    isMulti: g.config.isMulti,
+                    isAll: g.config.isAll,
+                    levels: g.config.levels,
+                    viewType: g.config.viewType,
+                    sortType: g.config.sortType,
+                    autoFreezeDays: g.config.autoFreezeDays,
+                  ),
+                ))
+            .toList());
   }
 
   Future<ResponseGetGroupAndDocDetail> getGroupAndDocDetail() async {
-    log.i("发送请求 获取所有分组和印迹（详细数据）");
-
-    String path = "/group/${tid!}/${gid!}";
-
-    if (tid == null) {
-      log.e('缺少tid');
-    }
-
-    final Map<String, String> headers = {
-      "Content-Type": "application/json",
-      'Authorization': getAuthorization(),
-    };
-    final Map<String, String> param = {
-      "doc": "1",
-      "detail": "1",
-    };
-    final url = URI().get(serverAddress, path, param: param);
-
-    return _handleRequest<ResponseGetGroupAndDocDetail>(
-        Method.get, url, (json) => ResponseGetGroupAndDocDetail.fromJson(json),
-        headers: headers);
+    log.i("发送请求 获取所有分组和印迹（详细数据）(gRPC)");
+    await _Grpc.instance._ensureReady();
+    final resp = await _Grpc.instance.group.getGroup(
+      pb.GetGroupRequest(
+        themeId: tid!,
+        groupId: gid!,
+        includeDocs: true,
+        includeDetail: true,
+      ),
+      options: _Grpc.instance._authOptions,
+    );
+    final g = resp.group;
+    final data = DGroup(
+      gid: g.id,
+      name: g.name,
+      docs: g.docs
+          .map((d) => DDoc(
+                plainText: d.plainText,
+                title: d.title,
+                content: d.content,
+                level: d.level,
+                createAt: DateTime.fromMillisecondsSinceEpoch(
+                    d.createAt.toInt() * 1000),
+                updateAt: DateTime.fromMillisecondsSinceEpoch(
+                    d.updateAt.toInt() * 1000),
+              ))
+          .toList(),
+    );
+    return ResponseGetGroupAndDocDetail(
+        err: resp.err, msg: resp.msg, data: data);
   }
 
   Future<ResponsePostGroup> postGroup(RequestPostGroup req) async {
-    log.i("发送请求 创建分组");
-    String path = "/group/${tid!}";
-
-    if (tid == null) {
-      log.e('缺少tid');
-    }
-
-    final Map<String, dynamic> data = {
-      'data': req.toJson(),
-    };
-    final Map<String, String> headers = {
-      "Content-Type": "application/json",
-      "Authorization": getAuthorization(),
-    };
-    final url = URI().get(serverAddress, path);
-
-    return _handleRequest<ResponsePostGroup>(
-      Method.post,
-      url,
-      (json) => ResponsePostGroup.fromJson(json),
-      data: data,
-      headers: headers,
+    log.i("发送请求 创建分组(gRPC)");
+    await _Grpc.instance._ensureReady();
+    final resp = await _Grpc.instance.group.createGroup(
+      pb.CreateGroupRequest(
+        themeId: tid!,
+        name: req.name,
+        autoFreezeDays: req.autoFreezeDays,
+      ),
+      options: _Grpc.instance._authOptions,
     );
+    return ResponsePostGroup(err: resp.err, msg: resp.msg, id: resp.id);
   }
 
   Future<ResponsePutGroup> putGroup(RequestPutGroup req) async {
-    log.i("发送请求 更新分组");
+    log.i("发送请求 更新分组(gRPC)");
     if (tid == null || gid == null) {
       log.e('缺少参数');
     }
-
-    String path = "/group/${tid!}/${gid!}";
-
-    final Map<String, dynamic> data = {
-      'data': req.toJson(),
-    };
-    final Map<String, String> headers = {
-      "Content-Type": "application/json",
-      "Authorization": getAuthorization(),
-    };
-    final url = URI().get(serverAddress, path);
-
-    return _handleRequest<ResponsePutGroup>(
-      Method.put,
-      url,
-      (json) => ResponsePutGroup.fromJson(json),
-      data: data,
-      headers: headers,
+    await _Grpc.instance._ensureReady();
+    pb.GroupConfig? cfg;
+    if (req.config != null) {
+      cfg = pb.GroupConfig(
+        isMulti: req.config!.isMulti,
+        isAll: req.config!.isAll,
+        levels: req.config!.levels ?? [],
+        viewType: req.config!.viewType,
+        sortType: req.config!.sortType,
+        autoFreezeDays: req.config!.autoFreezeDays,
+      );
+    }
+    final resp = await _Grpc.instance.group.updateGroup(
+      pb.UpdateGroupRequest(
+        themeId: tid!,
+        groupId: gid!,
+        name: req.name,
+        config: cfg,
+        overAt: req.overAt != null
+            ? Int64(req.overAt!.millisecondsSinceEpoch ~/ 1000)
+            : Int64.ZERO,
+      ),
+      options: _Grpc.instance._authOptions,
     );
+    return ResponsePutGroup(err: resp.err, msg: resp.msg);
   }
 
   Future<ResponseDeleteGroup> deleteGroup() async {
-    log.i("发送请求 删除分组");
-    if (tid == null || gid == null) {
-      log.e('缺少参数');
-    }
-
-    String path = "/group/${tid!}/${gid!}";
-
-    final Map<String, String> headers = {
-      "Authorization": getAuthorization(),
-    };
-
-    final url = URI().get(serverAddress, path);
-    return _handleRequest<ResponseDeleteGroup>(
-        Method.delete, url, (json) => ResponseDeleteGroup.fromJson(json),
-        headers: headers);
+    log.i("发送请求 删除分组(gRPC)");
+    await _Grpc.instance._ensureReady();
+    final resp = await _Grpc.instance.group.deleteGroup(
+      pb.DeleteGroupRequest(themeId: tid!, groupId: gid!),
+      options: _Grpc.instance._authOptions,
+    );
+    return ResponseDeleteGroup(err: resp.err, msg: resp.msg);
   }
 
   Future<ResponseExportGroupConfig> exportGroupConfig() async {
-    log.i("发送请求 导出分组配置");
-    String path = "/group/${tid!}/${gid!}/export_config";
-
-    final Map<String, String> headers = {
-      "Authorization": getAuthorization(),
-    };
-
-    final url = URI().get(serverAddress, path);
-    return _handleRequest<ResponseExportGroupConfig>(
-      Method.post,
-      url,
-      (json) => ResponseExportGroupConfig.fromJson(json),
-      headers: headers,
+    log.i("发送请求 导出分组配置(gRPC)");
+    await _Grpc.instance._ensureReady();
+    final resp = await _Grpc.instance.group.exportGroupConfig(
+      pb.ExportGroupConfigRequest(themeId: tid!, groupId: gid!),
+      options: _Grpc.instance._authOptions,
     );
+    return ResponseExportGroupConfig(err: resp.err, msg: resp.msg);
   }
 
   Future<ResponseExportAllConfig> exportAllConfig() async {
-    log.i("发送请求 导出全部主题配置");
-    const String path = "/themes/export_config";
-
-    final Map<String, String> headers = {
-      "Authorization": getAuthorization(),
-    };
-
-    final url = URI().get(serverAddress, path);
-    return _handleRequest<ResponseExportAllConfig>(
-      Method.post,
-      url,
-      (json) => ResponseExportAllConfig.fromJson(json),
-      headers: headers,
+    log.i("发送请求 导出全部主题配置(gRPC)");
+    await _Grpc.instance._ensureReady();
+    final resp = await _Grpc.instance.theme.exportAllConfig(
+      pb.ExportAllConfigRequest(),
+      options: _Grpc.instance._authOptions,
     );
+    return ResponseExportAllConfig(err: resp.err, msg: resp.msg);
   }
 
   Future<ResponseImportGroupConfig> importGroupConfig(String filePath) async {
-    log.i("发送请求 导入分组配置");
-    String path = "/group/${tid!}/from_config";
-
-    final url = URI().get(serverAddress, path);
-    var request = http.MultipartRequest('POST', url);
-    request.headers['Authorization'] = getAuthorization();
-    request.files.add(await http.MultipartFile.fromPath(
-      'file',
-      filePath,
-    ));
-
-    var response = await request.send();
-    var responseBody = await response.stream.bytesToString();
-    final Map<String, dynamic> json = jsonDecode(responseBody);
-    return ResponseImportGroupConfig.fromJson(json);
+    log.i("发送请求 导入分组配置(gRPC)");
+    await _Grpc.instance._ensureReady();
+    final fileBytes = await File(filePath).readAsBytes();
+    final resp = await _Grpc.instance.group.importGroupConfig(
+      Stream.value(pb.BytesChunk(data: fileBytes)),
+      options: CallOptions(
+        metadata: {
+          'authorization': Http.basicAuthorization(),
+          'theme_id': tid!,
+        },
+      ),
+    );
+    return ResponseImportGroupConfig(err: resp.err, msg: resp.msg);
   }
 
   // doc
   Future<ResponseGetDocs> getDocs(int? year, int? month) async {
-    log.i("发送请求 获取分组的日志列表");
-
-    String path = "/docs/${gid!}";
-    Map<String, String> param = {};
-    if (year != null) {
-      param["year"] = year.toString();
-    }
-    if (month != null) {
-      param["month"] = month.toString();
-    }
-
-    final url =
-        URI().get(serverAddress, path, param: param.isEmpty ? null : param);
-    final Map<String, String> headers = {
-      "Content-Type": "application/json",
-      'Authorization': getAuthorization(),
-    };
-
-    final res = await _handleRequest<ResponseGetDocs>(
-      Method.get,
-      url,
-      (json) => ResponseGetDocs.fromJson(json),
-      headers: headers,
+    log.i("发送请求 获取分组的日志列表(gRPC)");
+    await _Grpc.instance._ensureReady();
+    final resp = await _Grpc.instance.doc.listDocs(
+      pb.ListDocsRequest(
+        groupId: gid!,
+        year: year ?? 0,
+        month: month ?? 0,
+      ),
+      options: _Grpc.instance._authOptions,
     );
-
-    return res;
+    final docs = resp.docs
+        .map((d) => Doc(
+              title: d.title,
+              content: d.plainText,
+              plainText: d.plainText,
+              level: d.level,
+              createAt: DateTime.fromMillisecondsSinceEpoch(
+                  d.createAt.toInt() * 1000),
+              updateAt: DateTime.fromMillisecondsSinceEpoch(
+                  d.updateAt.toInt() * 1000),
+              config: DocConfig(isShowTool: true),
+              id: d.id,
+            ))
+        .toList();
+    return ResponseGetDocs(err: resp.err, msg: resp.msg, data: docs);
   }
 
   // Future<ResponseGetDoc> getPreviousDoc(int id) async {
@@ -1160,220 +1200,155 @@ class Http {
   // }
 
   Future<ResponsePostDoc> postDoc(RequestPostDoc req) async {
-    log.i("发送请求 创建印迹");
-
-    String path = "/doc/${gid!}";
-
-    final Map<String, dynamic> data = {
-      'data': req.toJson(),
-    };
-    final Map<String, String> headers = {
-      "Content-Type": "application/json",
-      'Authorization': getAuthorization(),
-    };
-    final url = URI().get(serverAddress, path);
-    return _handleRequest<ResponsePostDoc>(
-      Method.post,
-      url,
-      (json) => ResponsePostDoc.fromJson(json),
-      data: data,
-      headers: headers,
+    log.i("发送请求 创建印迹(gRPC)");
+    await _Grpc.instance._ensureReady();
+    final resp = await _Grpc.instance.doc.createDoc(
+      pb.CreateDocRequest(
+        groupId: gid!,
+        title: req.title,
+        content: req.content,
+        plainText: req.plainText,
+        level: req.level,
+        createAt: Int64(req.createAt.millisecondsSinceEpoch ~/ 1000),
+      ),
+      options: _Grpc.instance._authOptions,
     );
+    return ResponsePostDoc(err: resp.err, msg: resp.msg, id: resp.id);
   }
 
   Future<ResponsePutDoc> putDoc(RequestPutDoc req) async {
-    log.i("发送请求 更新印迹");
-
-    String path = "/doc/${gid!}/${did!}";
-
-    final Map<String, dynamic> data = {
-      'data': req.toJson(),
-    };
-    final Map<String, String> headers = {
-      "Content-Type": "application/json",
-      'Authorization': getAuthorization(),
-    };
-    final url = URI().get(serverAddress, path);
-    return _handleRequest<ResponsePutDoc>(
-      Method.put,
-      url,
-      (json) => ResponsePutDoc.fromJson(json),
-      data: data,
-      headers: headers,
+    log.i("发送请求 更新印迹(gRPC)");
+    await _Grpc.instance._ensureReady();
+    final resp = await _Grpc.instance.doc.updateDoc(
+      pb.UpdateDocRequest(
+        groupId: gid!,
+        docId: did!,
+        title: req.title ?? "",
+        content: req.content ?? "",
+        plainText: req.plainText ?? "",
+        level: req.level ?? 0,
+        createAt: req.createAt != null
+            ? Int64(req.createAt!.millisecondsSinceEpoch ~/ 1000)
+            : Int64.ZERO,
+      ),
+      options: _Grpc.instance._authOptions,
     );
+    return ResponsePutDoc(err: resp.err, msg: resp.msg);
   }
 
   Future<ResponseDeleteDoc> deleteDoc() async {
-    log.i("发送请求 删除印迹");
-    String path = "/doc/${gid!}/${did!}";
-    final Map<String, String> headers = {
-      'Authorization': getAuthorization(),
-    };
-    final url = URI().get(
-      serverAddress,
-      path,
+    log.i("发送请求 删除印迹(gRPC)");
+    await _Grpc.instance._ensureReady();
+    final resp = await _Grpc.instance.doc.deleteDoc(
+      pb.DeleteDocRequest(groupId: gid!, docId: did!),
+      options: _Grpc.instance._authOptions,
     );
-    return _handleRequest<ResponseDeleteDoc>(
-      Method.delete,
-      url,
-      (json) => ResponseDeleteDoc.fromJson(json),
-      headers: headers,
-    );
+    return ResponseDeleteDoc(err: resp.err, msg: resp.msg);
   }
 
   // image
   Future<ResponsePostImage> postImage(RequestPostImage req) async {
-    log.i("发送请求 上传印迹图片");
-
-    String path = "/image";
-    final String mine;
+    log.i("发送请求 上传印迹图片(gRPC)");
+    await _Grpc.instance._ensureReady();
+    final String mime;
     switch (req.type) {
       case IMGType.jpg:
-        mine = "image/jpeg";
+        mime = "image/jpeg";
         break;
       case IMGType.png:
-        mine = "image/png";
+        mime = "image/png";
         break;
     }
-    final url = URI().get(serverAddress, path);
-    final Map<String, String> headers = {
-      'Authorization': getAuthorization(),
-      "Content-Type": mine,
-    };
-
-    http.Response response =
-        await http.post(url, headers: headers, body: req.data);
-
-    return ResponsePostImage.fromJson(jsonDecode(response.body));
+    final resp = await _Grpc.instance.image.uploadImage(
+      Stream.value(pb.ImageUploadChunk(
+        userId: Config.instance.uid,
+        mime: mime,
+        data: req.data,
+      )),
+      options: _Grpc.instance._authOptions,
+    );
+    return ResponsePostImage(
+        err: resp.err, msg: resp.msg, name: resp.name, url: resp.url);
   }
 
   Future<ResponseDeleteImage> deleteImage(String name) async {
-    log.i("发送请求 删除印迹图片");
-    String path = "/image/$name";
-    final Map<String, String> headers = {
-      'Authorization': getAuthorization(),
-    };
-    final url = URI().get(
-      serverAddress,
-      path,
+    log.i("发送请求 删除印迹图片(gRPC)");
+    await _Grpc.instance._ensureReady();
+    final resp = await _Grpc.instance.image.deleteImage(
+      pb.DeleteImageRequest(name: name),
+      options: _Grpc.instance._authOptions,
     );
-    return _handleRequest<ResponseDeleteImage>(
-      Method.delete,
-      url,
-      (json) => ResponseDeleteImage.fromJson(json),
-      headers: headers,
-    );
+    return ResponseDeleteImage(err: resp.err, msg: resp.msg);
   }
 
   // background job
   Future<ResponseGetBackgroundJobs> getBackgroundJobs() {
-    log.i("发送请求 获取后台任务");
-    final String path = "/bgjobs";
-    final Map<String, String> headers = {
-      'Authorization': getAuthorization(),
-    };
-    final url = URI().get(serverAddress, path);
-    return _handleRequest<ResponseGetBackgroundJobs>(
-      Method.get,
-      url,
-      (json) => ResponseGetBackgroundJobs.fromJson(json),
-      headers: headers,
-    );
+    log.i("发送请求 获取后台任务(gRPC)");
+    return _Grpc.instance._ensureReady().then((_) async {
+      final resp = await _Grpc.instance.job.listJobs(
+        pb.ListBackgroundJobsRequest(),
+        options: _Grpc.instance._authOptions,
+      );
+      final jobs = resp.jobs.map((j) {
+        Map<String, dynamic>? result;
+        JobError? error;
+        if (j.resultJson.isNotEmpty) {
+          try {
+            result = jsonDecode(j.resultJson) as Map<String, dynamic>;
+          } catch (_) {}
+        }
+        if (j.errorJson.isNotEmpty) {
+          try {
+            final errMap = jsonDecode(j.errorJson) as Map<String, dynamic>;
+            error = JobError(
+              code: errMap['code'] ?? 0,
+              message: errMap['message'] ?? '',
+            );
+          } catch (_) {}
+        }
+        return BackgroundJob(
+          id: j.id,
+          name: j.name,
+          jobType: j.jobType,
+          status: j.status,
+          createdAt: j.createdAt,
+          startedAt: j.startedAt.isEmpty ? null : j.startedAt,
+          completedAt: j.completedAt.isEmpty ? null : j.completedAt,
+          result: result,
+          error: error,
+          priority: j.priority,
+          retryCount: j.retryCount,
+        );
+      }).toList();
+      return ResponseGetBackgroundJobs(
+          err: resp.err, msg: resp.msg, jobs: jobs);
+    });
   }
 
   Future<Basic> deleteBackgroundJob(String jobId) {
-    log.i("发送请求 删除后台任务: $jobId");
-    final String path = "/bgjob/$jobId";
-    final Map<String, String> headers = {
-      'Authorization': getAuthorization(),
-    };
-    final url = URI().get(serverAddress, path);
-    return _handleRequest<Basic>(
-      Method.delete,
-      url,
-      (json) => Basic(err: json['err'] as int, msg: json['msg'] as String),
-      headers: headers,
-    );
+    log.i("发送请求 删除后台任务(gRPC): $jobId");
+    return _Grpc.instance._ensureReady().then((_) async {
+      final resp = await _Grpc.instance.job.deleteJob(
+        pb.DeleteBackgroundJobRequest(id: jobId),
+        options: _Grpc.instance._authOptions,
+      );
+      return Basic(err: resp.err, msg: resp.msg);
+    });
   }
 
   Future<ResponseDownloadBackgroundJobFile> downloadBackgroundJobFile(
       String jobId) async {
-    log.i("发送请求 下载后台任务文件: $jobId");
-    final String path = "/bgjob/$jobId/download";
-    final Map<String, String> headers = {
-      'Authorization': getAuthorization(),
-    };
-    final url = URI().get(serverAddress, path);
-
-    try {
-      final response = await http.get(url, headers: headers);
-
-      // 处理 404 错误（文件未找到）
-      if (response.statusCode == 404) {
-        return ResponseDownloadBackgroundJobFile(
-          err: 404,
-          msg: '文件未找到',
-        );
-      }
-
-      // 处理其他错误状态码（400, 500 等）
-      if (response.statusCode != 200) {
-        // 后端错误时返回 JSON 格式
-        try {
-          final json = jsonDecode(response.body);
-          return ResponseDownloadBackgroundJobFile(
-            err: json['err'] ?? response.statusCode,
-            msg: json['msg'] ?? '下载失败',
-          );
-        } catch (e) {
-          return ResponseDownloadBackgroundJobFile(
-            err: response.statusCode,
-            msg: '下载失败: HTTP ${response.statusCode}',
-          );
-        }
-      }
-
-      // 成功时（200），后端直接返回文件二进制数据
-      // 从响应头中获取文件名
-      String? filename;
-      final contentDisposition = response.headers['content-disposition'];
-      if (contentDisposition != null) {
-        // 优先尝试解析 RFC 2231 格式 (filename*=UTF-8''encoded_name)
-        final rfc2231Regex = RegExp(r"filename\*=UTF-8''([^;]+)");
-        final rfc2231Match = rfc2231Regex.firstMatch(contentDisposition);
-        if (rfc2231Match != null) {
-          final encodedFilename = rfc2231Match.group(1);
-          if (encodedFilename != null) {
-            try {
-              filename = Uri.decodeComponent(encodedFilename);
-            } catch (e) {
-              log.e("解码文件名失败: $e");
-            }
-          }
-        }
-
-        // 如果 RFC 2231 解析失败，尝试普通格式
-        if (filename == null) {
-          final regex = RegExp(r'filename="?([^";]+)"?');
-          final match = regex.firstMatch(contentDisposition);
-          if (match != null) {
-            filename = match.group(1)?.trim();
-          }
-        }
-      }
-
-      return ResponseDownloadBackgroundJobFile(
-        err: 0,
-        msg: 'ok',
-        data: response.bodyBytes,
-        filename: filename,
-      );
-    } catch (e) {
-      log.e("下载后台任务文件失败: $e");
-      return ResponseDownloadBackgroundJobFile(
-        err: -1,
-        msg: '网络错误: ${e.toString()}',
-      );
-    }
+    log.i("发送请求 下载后台任务文件(gRPC): $jobId");
+    await _Grpc.instance._ensureReady();
+    final resp = await _Grpc.instance.job.downloadJobFile(
+      pb.DownloadBackgroundJobFileRequest(id: jobId),
+      options: _Grpc.instance._authOptions,
+    );
+    return ResponseDownloadBackgroundJobFile(
+      err: resp.err,
+      msg: resp.msg,
+      data: resp.data.isEmpty ? null : Uint8List.fromList(resp.data),
+      filename: resp.filename.isEmpty ? null : resp.filename,
+    );
   }
 }
