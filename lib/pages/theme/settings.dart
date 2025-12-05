@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:whispering_time/services/http/http.dart';
 import 'package:whispering_time/utils/ui.dart';
 import 'package:whispering_time/utils/export.dart';
-import 'theme.dart';
+import 'browser.dart';
 
 class ThemeSettings extends StatefulWidget {
   final ThemeItem theme;

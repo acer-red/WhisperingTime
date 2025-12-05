@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:whispering_time/pages/theme/theme.dart';
+import 'package:whispering_time/pages/theme/browser.dart';
 import 'package:whispering_time/pages/home/drawer.dart';
 import 'package:whispering_time/services/isar/font.dart';
 import 'package:whispering_time/services/isar/config.dart';
