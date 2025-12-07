@@ -448,7 +448,7 @@ class _ConfigManagementDialogState extends State<ConfigManagementDialog> {
       _busy = true;
     });
 
-    final res = await Http().exportAllConfig();
+    final res = await Grpc().exportAllConfig();
     if (!mounted) return;
 
     setState(() {
@@ -491,15 +491,15 @@ class _ConfigManagementDialogState extends State<ConfigManagementDialog> {
   }
 
   Future<void> _openJobPicker() async {
-    final jobsRes = await Http().getBackgroundJobs();
+    final res = await Grpc().getBackgroundJobs();
     if (!mounted) return;
 
-    if (jobsRes.isNotOK) {
-      showErrMsg(context, jobsRes.msg);
+    if (res.isNotOK) {
+      showErrMsg(context, res.msg);
       return;
     }
 
-    final available = jobsRes.jobs
+    final available = res.jobs
         .where((j) =>
             j.status == 'completed' &&
             (j.jobType == 'ExportGroupConfig' ||
@@ -546,7 +546,7 @@ class _ConfigManagementDialogState extends State<ConfigManagementDialog> {
       _sourceError = null;
     });
     try {
-      final res = await Http().downloadBackgroundJobFile(job.id);
+      final res = await Grpc().downloadBackgroundJobFile(job.id);
       if (!mounted) return;
       if (res.err != 0 || res.data == null) {
         setState(() {
@@ -760,14 +760,14 @@ class _ConfigManagementDialogState extends State<ConfigManagementDialog> {
     });
 
     try {
-      final themesRes = await Http().getthemes();
-      if (themesRes.isNotOK) {
-        if (mounted) showErrMsg(context, themesRes.msg);
+      final res = await Grpc().getthemes();
+      if (res.isNotOK) {
+        if (mounted) showErrMsg(context, res.msg);
         setState(() => _processing = false);
         return;
       }
 
-      final existingThemes = {for (final t in themesRes.data) t.name: t.id};
+      final existingThemes = {for (final t in res.data) t.name: t.id};
       int successGroups = 0;
       final errors = <String>[];
 
@@ -779,7 +779,7 @@ class _ConfigManagementDialogState extends State<ConfigManagementDialog> {
         String? tid = existingThemes[theme.name];
         if (tid == null) {
           final createRes =
-              await Http().postTheme(RequestPostTheme(name: theme.name));
+              await Grpc().createTheme(RequestCreateTheme(name: theme.name));
           if (createRes.isOK) {
             tid = createRes.id;
             existingThemes[theme.name] = tid;
@@ -789,10 +789,10 @@ class _ConfigManagementDialogState extends State<ConfigManagementDialog> {
           }
         }
 
-        final groupsRes = await Http(tid: tid).getGroups();
+        final res = await Grpc(tid: tid).getGroups();
         final existingGroups = <String, String>{};
-        if (groupsRes.isOK) {
-          for (final g in groupsRes.data) {
+        if (res.isOK) {
+          for (final g in res.data) {
             existingGroups[g.name] = g.id;
           }
         }
@@ -807,12 +807,12 @@ class _ConfigManagementDialogState extends State<ConfigManagementDialog> {
           if (_conflict == _ImportConflictStrategy.overwrite &&
               existingGroups.containsKey(group.name)) {
             final gid = existingGroups[group.name]!;
-            await Http(tid: tid, gid: gid).deleteGroup();
+            await Grpc(tid: tid, gid: gid).deleteGroup();
           }
 
           final zipFile = await _buildGroupZip(group);
           final res =
-              await Http(tid: tid, gid: 'temp').importGroupConfig(zipFile.path);
+              await Grpc(tid: tid, gid: 'temp').importGroupConfig(zipFile.path);
           if (res.isOK) {
             successGroups += 1;
           } else {

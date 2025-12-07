@@ -343,7 +343,7 @@ class _Welcome extends State<Welcome> {
     final String password = passwordController.text;
 
     Http()
-        .userLogin(RequestPostUserLogin(account: account, password: password))
+        .userLogin(RequestCreateUserLogin(account: account, password: password))
         .then((value) async {
       final loginUserId = value.id;
       if (value.isOK) {
@@ -507,7 +507,7 @@ class _Welcome extends State<Welcome> {
 
     Http()
         .userRegister(
-      RequestPostUserRegister(
+      RequestCreateUserRegister(
         username: user,
         email: email,
         password: password,

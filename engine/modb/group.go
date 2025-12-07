@@ -3,6 +3,7 @@ package modb
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -24,7 +25,7 @@ import (
 
 type RequestGroupPost struct {
 	Data struct {
-		Name     string `json:"name"`
+		Name     []byte `json:"name"`
 		CreateAt string `json:"createAt"`
 		UpdateAt string `json:"updateAt"`
 		Config   *struct {
@@ -34,12 +35,10 @@ type RequestGroupPost struct {
 }
 type RequestGroupPut struct {
 	Data struct {
-		Name     *string `json:"name"`
+		Name     *[]byte `json:"name"`
 		UpdateAt *string `json:"updateAt"`
 		OverAt   *string `json:"overAt"`
 		Config   *struct {
-			Is_multi       *bool   `json:"is_multi"`
-			Is_all         *bool   `json:"is_all"`
 			Levels         *[]bool `json:"levels"`
 			View_type      *int    `json:"view_type"`
 			Sort_type      *int    `json:"sort_type"`
@@ -72,12 +71,6 @@ func GroupsGet(toid primitive.ObjectID) ([]ml.Group, error) {
 
 		if ms, ok := m["config"].(bson.M); ok {
 
-			if ret, o := ms["is_multi"].(bool); o {
-				config.Is_multi = ret
-			}
-			if ret, o := ms["is_all"].(bool); o {
-				config.Is_all = ret
-			}
 			if ret, o := ms["levels"].(primitive.A); o {
 				if len(ret) == 5 {
 					config.Levels = []bool{ret[0].(bool), ret[1].(bool), ret[2].(bool), ret[3].(bool), ret[4].(bool)}
@@ -107,7 +100,7 @@ func GroupsGet(toid primitive.ObjectID) ([]ml.Group, error) {
 
 		results = append(results, ml.Group{
 			ID:       m["gid"].(string),
-			Name:     m["name"].(string),
+			Name:     bytesField(m["name"]),
 			CreateAt: m["createAt"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
 			UpdateAt: m["updateAt"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05"),
 			OverAt:   overAt,
@@ -138,7 +131,7 @@ func GroupGet(toid primitive.ObjectID, goid primitive.ObjectID) (ml.Group, error
 		return ml.Group{}, err
 	}
 	res.ID = m["gid"].(string)
-	res.Name = m["name"].(string)
+	res.Name = bytesField(m["name"])
 	res.CreateAt = m["createAt"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05")
 	res.UpdateAt = m["updateAt"].(primitive.DateTime).Time().Format("2006-01-02 15:04:05")
 	if val, ok := m["overAt"].(primitive.DateTime); ok {
@@ -148,8 +141,6 @@ func GroupGet(toid primitive.ObjectID, goid primitive.ObjectID) (ml.Group, error
 	res.Config = NewGroupConfig()
 
 	if config, ok := m["config"].(bson.M); ok {
-		res.Config.Is_multi = config["is_multi"].(bool)
-		res.Config.Is_all = config["is_all"].(bool)
 		res.Config.Levels = config["levels"].([]bool)
 		if val, ok := toInt(config["view_type"]); ok {
 			res.Config.View_type = val
@@ -233,8 +224,8 @@ func GroupPut(toid primitive.ObjectID, goid primitive.ObjectID, req *RequestGrou
 
 	m := bson.M{}
 
-	if (*req).Data.Name != nil {
-		m["name"] = (*req).Data.Name
+	if req.Data.Name != nil {
+		m["name"] = *req.Data.Name
 	}
 
 	if (*req).Data.OverAt != nil {
@@ -243,12 +234,6 @@ func GroupPut(toid primitive.ObjectID, goid primitive.ObjectID, req *RequestGrou
 
 	if req.Data.Config != nil {
 
-		if req.Data.Config.Is_multi != nil {
-			m["config.is_multi"] = req.Data.Config.Is_multi
-		}
-		if req.Data.Config.Is_all != nil {
-			m["config.is_all"] = req.Data.Config.Is_all
-		}
 		if req.Data.Config.Levels != nil {
 			m["config.levels"] = req.Data.Config.Levels
 		}
@@ -412,7 +397,7 @@ func CountinueExportConfig(id BGJobOID, uoid, toid, goid primitive.ObjectID) err
 	base := `/users/tengfei/Documents/source/project/acer/tmp/store/`
 
 	base = filepath.Join(base, "枫迹")
-	groupName := l.Name
+	groupName := base64.RawURLEncoding.EncodeToString(l.Name)
 
 	// 数据导出的文件名
 	outZipFilename := fmt.Sprintf("分组配置-%s-%s.zip", groupName, sys.YYYYMMDDhhmmss())
@@ -526,7 +511,7 @@ func ExportAllThemesConfig(uoid primitive.ObjectID) (string, error) {
 
 type themeExport struct {
 	Tid    string             `json:"tid" bson:"tid"`
-	Name   string             `json:"name" bson:"name"`
+	Name   []byte             `json:"name" bson:"name"`
 	Groups []ml.GroupAndDocs  `json:"groups"`
 	OID    primitive.ObjectID `json:"-" bson:"_id"`
 }
@@ -701,8 +686,6 @@ func exportImagesForDocs(docIDs []primitive.ObjectID, workdir string) error {
 func NewGroupConfig() ml.GroupConfig {
 	return ml.GroupConfig{
 		Levels:         []bool{true, true, true, true, true},
-		Is_multi:       false,
-		Is_all:         false,
 		View_type:      0,
 		Sort_type:      0,
 		AutoFreezeDays: 30,
@@ -731,6 +714,19 @@ func toInt(v any) (int, bool) {
 		return int(val), true
 	default:
 		return 0, false
+	}
+}
+
+func bytesField(v any) []byte {
+	switch val := v.(type) {
+	case []byte:
+		return val
+	case primitive.Binary:
+		return val.Data
+	case string:
+		return []byte(val)
+	default:
+		return []byte{}
 	}
 }
 
@@ -957,10 +953,7 @@ func GroupImportConfig(uoid, toid primitive.ObjectID, fileHeader *multipart.File
 			{Key: "_goid", Value: goid},
 			{Key: "_toid", Value: toid},
 			{Key: "did", Value: did},
-			{Key: "title", Value: doc.Title},
 			{Key: "content", Value: content},
-			{Key: "plain_text", Value: doc.PlainText},
-			{Key: "level", Value: doc.Level},
 			{Key: "createAt", Value: primitive.NewDateTimeFromTime(doc.CreateAt)},
 			{Key: "updateAt", Value: primitive.NewDateTimeFromTime(time.Now())},
 		}
@@ -974,7 +967,7 @@ func GroupImportConfig(uoid, toid primitive.ObjectID, fileHeader *multipart.File
 			log.Error(fmt.Errorf("插入文档失败: %w", err))
 			continue
 		}
-		log.Infof("成功导入文档: %s", doc.Title)
+		log.Infof("成功导入文档: %s", did)
 	}
 
 	log.Info("分组配置导入完成")

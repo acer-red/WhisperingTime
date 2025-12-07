@@ -10,22 +10,24 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+
+	m "github.com/tengfei-xy/whisperingtime/engine/model"
 )
 
 type Theme struct {
-	Name string `json:"name" bson:"name"`
+	Name []byte `json:"name" bson:"name"`
 	ID   string `json:"id" bson:"tid"`
 }
 
 type RequestThemePut struct {
 	Data struct {
-		Name     string `json:"name"`
+		Name     []byte `json:"name"`
 		UpdateAt string `json:"updateAt"`
 	} `json:"data" `
 }
 
 type RequestThemePostDefaultGroup struct {
-	Name     string `json:"name"`
+	Name     []byte `json:"name"`
 	CreateAt string `json:"createAt"`
 	Config   *struct {
 		AutoFreezeDays *int `json:"auto_freeze_days"`
@@ -34,7 +36,7 @@ type RequestThemePostDefaultGroup struct {
 
 type RequestThemePost struct {
 	Data struct {
-		Name         string                       `json:"name"`
+		Name         []byte                       `json:"name"`
 		CreateAt     string                       `json:"createAt"`
 		DefaultGroup RequestThemePostDefaultGroup `json:"default_group"`
 	} `json:"data" `
@@ -56,14 +58,14 @@ func ThemesGet(uoid primitive.ObjectID) ([]Theme, error) {
 	}
 
 	for cursor.Next(context.TODO()) {
-		var result Theme
-		err := cursor.Decode(&result)
-		if err != nil {
+		var m bson.M
+		if err := cursor.Decode(&m); err != nil {
 			log.Error(err)
-
 			return nil, err
 		}
-		results = append(results, result)
+		name := bytesField(m["name"])
+		tid, _ := m["tid"].(string)
+		results = append(results, Theme{Name: name, ID: tid})
 	}
 
 	if err := cursor.Err(); err != nil {
@@ -74,6 +76,7 @@ func ThemesGet(uoid primitive.ObjectID) ([]Theme, error) {
 
 	return results, nil
 }
+
 func ThemesGetAndDocs(uoid primitive.ObjectID, has_id bool) (any, error) {
 	// db.theme.aggregate([
 	// 	{
@@ -134,21 +137,20 @@ func ThemesGetAndDocs(uoid primitive.ObjectID, has_id bool) (any, error) {
 	// ])
 
 	type doc struct {
-		Did       string             `json:"did" bson:"did"`
-		PlainText string             `json:"plain_text" bson:"plain_text"`
-		Title     string             `json:"title" bson:"title"`
-		CreateAt  primitive.DateTime `json:"createAt" bson:"createAt"`
-		UpdateAt  primitive.DateTime `json:"updateAt" bson:"updateAt"`
-		Level     int                `json:"level" bson:"level"`
+		Did      string             `json:"did" bson:"did"`
+		Content  m.DocContent       `json:"content" bson:"content"`
+		CreateAt primitive.DateTime `json:"createAt" bson:"createAt"`
+		UpdateAt primitive.DateTime `json:"updateAt" bson:"updateAt"`
+		Level    int                `json:"level" bson:"level"`
 	}
 	type group struct {
 		Gid  string `json:"gid" bson:"gid"`
-		Name string `json:"name" bson:"name"`
+		Name []byte `json:"name" bson:"name"`
 		Docs []doc  `json:"docs" bson:"docs"`
 	}
 	type theme struct {
 		Tid       string  `json:"tid" bson:"tid"`
-		ThemeName string  `json:"theme_name" bson:"theme_name"`
+		ThemeName []byte  `json:"theme_name" bson:"theme_name"`
 		Groups    []group `json:"groups" bson:"groups"`
 	}
 
@@ -189,8 +191,7 @@ func ThemesGetAndDocs(uoid primitive.ObjectID, has_id bool) (any, error) {
 								{Key: "as", Value: "doc"},
 								{Key: "in", Value: bson.D{
 									{Key: "did", Value: "$$doc.did"},
-									{Key: "plain_text", Value: "$$doc.plain_text"},
-									{Key: "title", Value: "$$doc.title"},
+									{Key: "content", Value: "$$doc.content"},
 									{Key: "createAt", Value: "$$doc.createAt"},
 									{Key: "updateAt", Value: "$$doc.updateAt"},
 									{Key: "level", Value: "$$doc.level"},
@@ -291,22 +292,20 @@ func ThemesGetAndDocsDetail(uoid primitive.ObjectID, has_id bool) (any, error) {
 	// ])
 
 	type doc struct {
-		Did       string             `json:"did" bson:"did"`
-		PlainText string             `json:"plain_text" bson:"plain_text"`
-		Content   string             `json:"content" bson:"content"`
-		Level     int                `json:"level" bson:"level"`
-		CreateAt  primitive.DateTime `json:"createAt" bson:"createAt"`
-		UpdateAt  primitive.DateTime `json:"updateAt" bson:"updateAt"`
-		Title     string             `json:"title" bson:"title"`
+		Did      string             `json:"did" bson:"did"`
+		Content  m.DocContent       `json:"content" bson:"content"`
+		Level    int                `json:"level" bson:"level"`
+		CreateAt primitive.DateTime `json:"createAt" bson:"createAt"`
+		UpdateAt primitive.DateTime `json:"updateAt" bson:"updateAt"`
 	}
 	type group struct {
 		Gid  string `json:"gid" bson:"gid"`
-		Name string `json:"name" bson:"name"`
+		Name []byte `json:"name" bson:"name"`
 		Docs []doc  `json:"docs" bson:"docs"`
 	}
 	type theme struct {
 		Tid       string  `json:"tid" bson:"tid"`
-		ThemeName string  `json:"theme_name" bson:"theme_name"`
+		ThemeName []byte  `json:"theme_name" bson:"theme_name"`
 		Groups    []group `json:"groups" bson:"groups"`
 	}
 
@@ -347,8 +346,6 @@ func ThemesGetAndDocsDetail(uoid primitive.ObjectID, has_id bool) (any, error) {
 								{Key: "as", Value: "doc"},
 								{Key: "in", Value: bson.D{
 									{Key: "did", Value: "$$doc.did"},
-									{Key: "plain_text", Value: "$$doc.plain_text"},
-									{Key: "title", Value: "$$doc.title"},
 									{Key: "content", Value: "$$doc.content"},
 									{Key: "level", Value: "$$doc.level"},
 									{Key: "createAt", Value: "$$doc.createAt"},

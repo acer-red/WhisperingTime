@@ -7,10 +7,9 @@ import 'package:whispering_time/utils/ui.dart';
 import 'package:whispering_time/utils/env.dart';
 import 'package:whispering_time/services/http/base.dart';
 import 'package:whispering_time/services/http/index.dart' as http_index;
-import 'package:whispering_time/services/grpc/grpc.dart' as http;
+import 'package:whispering_time/services/grpc/grpc.dart';
 import 'package:provider/provider.dart';
 import 'package:whispering_time/pages/group/manager.dart';
-import 'package:file_picker/file_picker.dart';
 
 const double iconsize = 25;
 
@@ -218,7 +217,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<List<ThemeItem>> initTheme() async {
-    final list = await http.Http().getthemes();
+    final list = await Grpc().getthemes();
     if (list.isNotOK) {
       if (mounted) {
         showErrMsg(context, "服务器连接失败");
@@ -372,8 +371,7 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    final res =
-        await http.Http().postTheme(http.RequestPostTheme(name: result!));
+    final res = await Grpc().createTheme(RequestCreateTheme(name: result!));
 
     if (res.isNotOK) {
       return;

@@ -166,7 +166,7 @@ class _ScenePageState extends State<ScenePage> with WidgetsBindingObserver {
                       color: Theme.of(context)
                           .colorScheme
                           .surface
-                          .withValues(alpha:  0.5),
+                          .withValues(alpha: 0.5),
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(
@@ -249,7 +249,7 @@ class _DocItemWidgetState extends State<DocItemWidget> {
 
   void _fallbackController() {
     _controller = QuillController(
-      document: Document()..insert(0, widget.doc.plainText),
+      document: Document()..insert(0, widget.doc.content),
       selection: const TextSelection.collapsed(offset: 0),
       readOnly: true,
     );

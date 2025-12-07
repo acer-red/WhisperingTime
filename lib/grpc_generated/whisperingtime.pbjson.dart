@@ -40,20 +40,18 @@ const ThemeSummary$json = {
   '1': 'ThemeSummary',
   '2': [
     {'1': 'id', '3': 1, '4': 1, '5': 9, '10': 'id'},
-    {'1': 'name', '3': 2, '4': 1, '5': 9, '10': 'name'},
+    {'1': 'name', '3': 2, '4': 1, '5': 12, '10': 'name'},
   ],
 };
 
 /// Descriptor for `ThemeSummary`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List themeSummaryDescriptor = $convert.base64Decode(
-    'CgxUaGVtZVN1bW1hcnkSDgoCaWQYASABKAlSAmlkEhIKBG5hbWUYAiABKAlSBG5hbWU=');
+    'CgxUaGVtZVN1bW1hcnkSDgoCaWQYASABKAlSAmlkEhIKBG5hbWUYAiABKAxSBG5hbWU=');
 
 @$core.Deprecated('Use groupConfigDescriptor instead')
 const GroupConfig$json = {
   '1': 'GroupConfig',
   '2': [
-    {'1': 'is_multi', '3': 1, '4': 1, '5': 8, '10': 'isMulti'},
-    {'1': 'is_all', '3': 2, '4': 1, '5': 8, '10': 'isAll'},
     {'1': 'levels', '3': 3, '4': 3, '5': 8, '10': 'levels'},
     {'1': 'view_type', '3': 4, '4': 1, '5': 5, '10': 'viewType'},
     {'1': 'sort_type', '3': 5, '4': 1, '5': 5, '10': 'sortType'},
@@ -63,17 +61,16 @@ const GroupConfig$json = {
 
 /// Descriptor for `GroupConfig`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List groupConfigDescriptor = $convert.base64Decode(
-    'CgtHcm91cENvbmZpZxIZCghpc19tdWx0aRgBIAEoCFIHaXNNdWx0aRIVCgZpc19hbGwYAiABKA'
-    'hSBWlzQWxsEhYKBmxldmVscxgDIAMoCFIGbGV2ZWxzEhsKCXZpZXdfdHlwZRgEIAEoBVIIdmll'
-    'd1R5cGUSGwoJc29ydF90eXBlGAUgASgFUghzb3J0VHlwZRIoChBhdXRvX2ZyZWV6ZV9kYXlzGA'
-    'YgASgFUg5hdXRvRnJlZXplRGF5cw==');
+    'CgtHcm91cENvbmZpZxIWCgZsZXZlbHMYAyADKAhSBmxldmVscxIbCgl2aWV3X3R5cGUYBCABKA'
+    'VSCHZpZXdUeXBlEhsKCXNvcnRfdHlwZRgFIAEoBVIIc29ydFR5cGUSKAoQYXV0b19mcmVlemVf'
+    'ZGF5cxgGIAEoBVIOYXV0b0ZyZWV6ZURheXM=');
 
 @$core.Deprecated('Use groupSummaryDescriptor instead')
 const GroupSummary$json = {
   '1': 'GroupSummary',
   '2': [
     {'1': 'id', '3': 1, '4': 1, '5': 9, '10': 'id'},
-    {'1': 'name', '3': 2, '4': 1, '5': 9, '10': 'name'},
+    {'1': 'name', '3': 2, '4': 1, '5': 12, '10': 'name'},
     {'1': 'create_at', '3': 3, '4': 1, '5': 3, '10': 'createAt'},
     {'1': 'update_at', '3': 4, '4': 1, '5': 3, '10': 'updateAt'},
     {'1': 'over_at', '3': 5, '4': 1, '5': 3, '10': 'overAt'},
@@ -83,7 +80,7 @@ const GroupSummary$json = {
 
 /// Descriptor for `GroupSummary`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List groupSummaryDescriptor = $convert.base64Decode(
-    'CgxHcm91cFN1bW1hcnkSDgoCaWQYASABKAlSAmlkEhIKBG5hbWUYAiABKAlSBG5hbWUSGwoJY3'
+    'CgxHcm91cFN1bW1hcnkSDgoCaWQYASABKAlSAmlkEhIKBG5hbWUYAiABKAxSBG5hbWUSGwoJY3'
     'JlYXRlX2F0GAMgASgDUghjcmVhdGVBdBIbCgl1cGRhdGVfYXQYBCABKANSCHVwZGF0ZUF0EhcK'
     'B292ZXJfYXQYBSABKANSBm92ZXJBdBIzCgZjb25maWcYBiABKAsyGy53aGlzcGVyaW5ndGltZS'
     '5Hcm91cENvbmZpZ1IGY29uZmln');
@@ -93,47 +90,68 @@ const DocSummary$json = {
   '1': 'DocSummary',
   '2': [
     {'1': 'id', '3': 1, '4': 1, '5': 9, '10': 'id'},
-    {'1': 'title', '3': 2, '4': 1, '5': 9, '10': 'title'},
-    {'1': 'plain_text', '3': 3, '4': 1, '5': 9, '10': 'plainText'},
-    {'1': 'level', '3': 4, '4': 1, '5': 5, '10': 'level'},
+    {'1': 'content', '3': 2, '4': 1, '5': 11, '6': '.whisperingtime.Content', '10': 'content'},
     {'1': 'create_at', '3': 5, '4': 1, '5': 3, '10': 'createAt'},
     {'1': 'update_at', '3': 6, '4': 1, '5': 3, '10': 'updateAt'},
+  ],
+  '9': [
+    {'1': 4, '2': 5},
   ],
 };
 
 /// Descriptor for `DocSummary`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List docSummaryDescriptor = $convert.base64Decode(
-    'CgpEb2NTdW1tYXJ5Eg4KAmlkGAEgASgJUgJpZBIUCgV0aXRsZRgCIAEoCVIFdGl0bGUSHQoKcG'
-    'xhaW5fdGV4dBgDIAEoCVIJcGxhaW5UZXh0EhQKBWxldmVsGAQgASgFUgVsZXZlbBIbCgljcmVh'
-    'dGVfYXQYBSABKANSCGNyZWF0ZUF0EhsKCXVwZGF0ZV9hdBgGIAEoA1IIdXBkYXRlQXQ=');
+    'CgpEb2NTdW1tYXJ5Eg4KAmlkGAEgASgJUgJpZBIxCgdjb250ZW50GAIgASgLMhcud2hpc3Blcm'
+    'luZ3RpbWUuQ29udGVudFIHY29udGVudBIbCgljcmVhdGVfYXQYBSABKANSCGNyZWF0ZUF0EhsK'
+    'CXVwZGF0ZV9hdBgGIAEoA1IIdXBkYXRlQXRKBAgEEAU=');
+
+@$core.Deprecated('Use contentDescriptor instead')
+const Content$json = {
+  '1': 'Content',
+  '2': [
+    {'1': 'title', '3': 1, '4': 1, '5': 12, '9': 0, '10': 'title', '17': true},
+    {'1': 'rich', '3': 2, '4': 1, '5': 12, '9': 1, '10': 'rich', '17': true},
+    {'1': 'level', '3': 3, '4': 1, '5': 12, '9': 2, '10': 'level', '17': true},
+  ],
+  '8': [
+    {'1': '_title'},
+    {'1': '_rich'},
+    {'1': '_level'},
+  ],
+};
+
+/// Descriptor for `Content`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List contentDescriptor = $convert.base64Decode(
+    'CgdDb250ZW50EhkKBXRpdGxlGAEgASgMSABSBXRpdGxliAEBEhcKBHJpY2gYAiABKAxIAVIEcm'
+    'ljaIgBARIZCgVsZXZlbBgDIAEoDEgCUgVsZXZlbIgBAUIICgZfdGl0bGVCBwoFX3JpY2hCCAoG'
+    'X2xldmVs');
 
 @$core.Deprecated('Use docDetailDescriptor instead')
 const DocDetail$json = {
   '1': 'DocDetail',
   '2': [
     {'1': 'id', '3': 1, '4': 1, '5': 9, '10': 'id'},
-    {'1': 'title', '3': 2, '4': 1, '5': 9, '10': 'title'},
-    {'1': 'plain_text', '3': 3, '4': 1, '5': 9, '10': 'plainText'},
-    {'1': 'content', '3': 4, '4': 1, '5': 9, '10': 'content'},
-    {'1': 'level', '3': 5, '4': 1, '5': 5, '10': 'level'},
+    {'1': 'content', '3': 2, '4': 1, '5': 11, '6': '.whisperingtime.Content', '10': 'content'},
     {'1': 'create_at', '3': 6, '4': 1, '5': 3, '10': 'createAt'},
     {'1': 'update_at', '3': 7, '4': 1, '5': 3, '10': 'updateAt'},
+  ],
+  '9': [
+    {'1': 5, '2': 6},
   ],
 };
 
 /// Descriptor for `DocDetail`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List docDetailDescriptor = $convert.base64Decode(
-    'CglEb2NEZXRhaWwSDgoCaWQYASABKAlSAmlkEhQKBXRpdGxlGAIgASgJUgV0aXRsZRIdCgpwbG'
-    'Fpbl90ZXh0GAMgASgJUglwbGFpblRleHQSGAoHY29udGVudBgEIAEoCVIHY29udGVudBIUCgVs'
-    'ZXZlbBgFIAEoBVIFbGV2ZWwSGwoJY3JlYXRlX2F0GAYgASgDUghjcmVhdGVBdBIbCgl1cGRhdG'
-    'VfYXQYByABKANSCHVwZGF0ZUF0');
+    'CglEb2NEZXRhaWwSDgoCaWQYASABKAlSAmlkEjEKB2NvbnRlbnQYAiABKAsyFy53aGlzcGVyaW'
+    '5ndGltZS5Db250ZW50Ugdjb250ZW50EhsKCWNyZWF0ZV9hdBgGIAEoA1IIY3JlYXRlQXQSGwoJ'
+    'dXBkYXRlX2F0GAcgASgDUgh1cGRhdGVBdEoECAUQBg==');
 
 @$core.Deprecated('Use groupDetailDescriptor instead')
 const GroupDetail$json = {
   '1': 'GroupDetail',
   '2': [
     {'1': 'id', '3': 1, '4': 1, '5': 9, '10': 'id'},
-    {'1': 'name', '3': 2, '4': 1, '5': 9, '10': 'name'},
+    {'1': 'name', '3': 2, '4': 1, '5': 12, '10': 'name'},
     {'1': 'config', '3': 3, '4': 1, '5': 11, '6': '.whisperingtime.GroupConfig', '10': 'config'},
     {'1': 'docs', '3': 4, '4': 3, '5': 11, '6': '.whisperingtime.DocDetail', '10': 'docs'},
   ],
@@ -141,7 +159,7 @@ const GroupDetail$json = {
 
 /// Descriptor for `GroupDetail`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List groupDetailDescriptor = $convert.base64Decode(
-    'CgtHcm91cERldGFpbBIOCgJpZBgBIAEoCVICaWQSEgoEbmFtZRgCIAEoCVIEbmFtZRIzCgZjb2'
+    'CgtHcm91cERldGFpbBIOCgJpZBgBIAEoCVICaWQSEgoEbmFtZRgCIAEoDFIEbmFtZRIzCgZjb2'
     '5maWcYAyABKAsyGy53aGlzcGVyaW5ndGltZS5Hcm91cENvbmZpZ1IGY29uZmlnEi0KBGRvY3MY'
     'BCADKAsyGS53aGlzcGVyaW5ndGltZS5Eb2NEZXRhaWxSBGRvY3M=');
 
@@ -150,14 +168,14 @@ const ThemeDetail$json = {
   '1': 'ThemeDetail',
   '2': [
     {'1': 'id', '3': 1, '4': 1, '5': 9, '10': 'id'},
-    {'1': 'name', '3': 2, '4': 1, '5': 9, '10': 'name'},
+    {'1': 'name', '3': 2, '4': 1, '5': 12, '10': 'name'},
     {'1': 'groups', '3': 3, '4': 3, '5': 11, '6': '.whisperingtime.GroupDetail', '10': 'groups'},
   ],
 };
 
 /// Descriptor for `ThemeDetail`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List themeDetailDescriptor = $convert.base64Decode(
-    'CgtUaGVtZURldGFpbBIOCgJpZBgBIAEoCVICaWQSEgoEbmFtZRgCIAEoCVIEbmFtZRIzCgZncm'
+    'CgtUaGVtZURldGFpbBIOCgJpZBgBIAEoCVICaWQSEgoEbmFtZRgCIAEoDFIEbmFtZRIzCgZncm'
     '91cHMYAyADKAsyGy53aGlzcGVyaW5ndGltZS5Hcm91cERldGFpbFIGZ3JvdXBz');
 
 @$core.Deprecated('Use listThemesRequestDescriptor instead')
@@ -193,13 +211,15 @@ final $typed_data.Uint8List listThemesResponseDescriptor = $convert.base64Decode
 const CreateThemeRequest$json = {
   '1': 'CreateThemeRequest',
   '2': [
-    {'1': 'name', '3': 1, '4': 1, '5': 9, '10': 'name'},
+    {'1': 'name', '3': 1, '4': 1, '5': 12, '10': 'name'},
+    {'1': 'default_group_name', '3': 2, '4': 1, '5': 12, '10': 'defaultGroupName'},
   ],
 };
 
 /// Descriptor for `CreateThemeRequest`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List createThemeRequestDescriptor = $convert.base64Decode(
-    'ChJDcmVhdGVUaGVtZVJlcXVlc3QSEgoEbmFtZRgBIAEoCVIEbmFtZQ==');
+    'ChJDcmVhdGVUaGVtZVJlcXVlc3QSEgoEbmFtZRgBIAEoDFIEbmFtZRIsChJkZWZhdWx0X2dyb3'
+    'VwX25hbWUYAiABKAxSEGRlZmF1bHRHcm91cE5hbWU=');
 
 @$core.Deprecated('Use createThemeResponseDescriptor instead')
 const CreateThemeResponse$json = {
@@ -221,13 +241,13 @@ const UpdateThemeRequest$json = {
   '1': 'UpdateThemeRequest',
   '2': [
     {'1': 'id', '3': 1, '4': 1, '5': 9, '10': 'id'},
-    {'1': 'name', '3': 2, '4': 1, '5': 9, '10': 'name'},
+    {'1': 'name', '3': 2, '4': 1, '5': 12, '10': 'name'},
   ],
 };
 
 /// Descriptor for `UpdateThemeRequest`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List updateThemeRequestDescriptor = $convert.base64Decode(
-    'ChJVcGRhdGVUaGVtZVJlcXVlc3QSDgoCaWQYASABKAlSAmlkEhIKBG5hbWUYAiABKAlSBG5hbW'
+    'ChJVcGRhdGVUaGVtZVJlcXVlc3QSDgoCaWQYASABKAlSAmlkEhIKBG5hbWUYAiABKAxSBG5hbW'
     'U=');
 
 @$core.Deprecated('Use deleteThemeRequestDescriptor instead')
@@ -315,7 +335,7 @@ const CreateGroupRequest$json = {
   '1': 'CreateGroupRequest',
   '2': [
     {'1': 'theme_id', '3': 1, '4': 1, '5': 9, '10': 'themeId'},
-    {'1': 'name', '3': 2, '4': 1, '5': 9, '10': 'name'},
+    {'1': 'name', '3': 2, '4': 1, '5': 12, '10': 'name'},
     {'1': 'auto_freeze_days', '3': 3, '4': 1, '5': 5, '10': 'autoFreezeDays'},
   ],
 };
@@ -323,7 +343,7 @@ const CreateGroupRequest$json = {
 /// Descriptor for `CreateGroupRequest`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List createGroupRequestDescriptor = $convert.base64Decode(
     'ChJDcmVhdGVHcm91cFJlcXVlc3QSGQoIdGhlbWVfaWQYASABKAlSB3RoZW1lSWQSEgoEbmFtZR'
-    'gCIAEoCVIEbmFtZRIoChBhdXRvX2ZyZWV6ZV9kYXlzGAMgASgFUg5hdXRvRnJlZXplRGF5cw==');
+    'gCIAEoDFIEbmFtZRIoChBhdXRvX2ZyZWV6ZV9kYXlzGAMgASgFUg5hdXRvRnJlZXplRGF5cw==');
 
 @$core.Deprecated('Use createGroupResponseDescriptor instead')
 const CreateGroupResponse$json = {
@@ -346,7 +366,7 @@ const UpdateGroupRequest$json = {
   '2': [
     {'1': 'theme_id', '3': 1, '4': 1, '5': 9, '10': 'themeId'},
     {'1': 'group_id', '3': 2, '4': 1, '5': 9, '10': 'groupId'},
-    {'1': 'name', '3': 3, '4': 1, '5': 9, '10': 'name'},
+    {'1': 'name', '3': 3, '4': 1, '5': 12, '10': 'name'},
     {'1': 'config', '3': 4, '4': 1, '5': 11, '6': '.whisperingtime.GroupConfig', '10': 'config'},
     {'1': 'over_at', '3': 5, '4': 1, '5': 3, '10': 'overAt'},
   ],
@@ -355,7 +375,7 @@ const UpdateGroupRequest$json = {
 /// Descriptor for `UpdateGroupRequest`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List updateGroupRequestDescriptor = $convert.base64Decode(
     'ChJVcGRhdGVHcm91cFJlcXVlc3QSGQoIdGhlbWVfaWQYASABKAlSB3RoZW1lSWQSGQoIZ3JvdX'
-    'BfaWQYAiABKAlSB2dyb3VwSWQSEgoEbmFtZRgDIAEoCVIEbmFtZRIzCgZjb25maWcYBCABKAsy'
+    'BfaWQYAiABKAlSB2dyb3VwSWQSEgoEbmFtZRgDIAEoDFIEbmFtZRIzCgZjb25maWcYBCABKAsy'
     'Gy53aGlzcGVyaW5ndGltZS5Hcm91cENvbmZpZ1IGY29uZmlnEhcKB292ZXJfYXQYBSABKANSBm'
     '92ZXJBdA==');
 
@@ -436,20 +456,19 @@ const CreateDocRequest$json = {
   '1': 'CreateDocRequest',
   '2': [
     {'1': 'group_id', '3': 1, '4': 1, '5': 9, '10': 'groupId'},
-    {'1': 'title', '3': 2, '4': 1, '5': 9, '10': 'title'},
-    {'1': 'content', '3': 3, '4': 1, '5': 9, '10': 'content'},
-    {'1': 'plain_text', '3': 4, '4': 1, '5': 9, '10': 'plainText'},
-    {'1': 'level', '3': 5, '4': 1, '5': 5, '10': 'level'},
+    {'1': 'content', '3': 2, '4': 1, '5': 11, '6': '.whisperingtime.Content', '10': 'content'},
     {'1': 'create_at', '3': 6, '4': 1, '5': 3, '10': 'createAt'},
+  ],
+  '9': [
+    {'1': 5, '2': 6},
   ],
 };
 
 /// Descriptor for `CreateDocRequest`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List createDocRequestDescriptor = $convert.base64Decode(
-    'ChBDcmVhdGVEb2NSZXF1ZXN0EhkKCGdyb3VwX2lkGAEgASgJUgdncm91cElkEhQKBXRpdGxlGA'
-    'IgASgJUgV0aXRsZRIYCgdjb250ZW50GAMgASgJUgdjb250ZW50Eh0KCnBsYWluX3RleHQYBCAB'
-    'KAlSCXBsYWluVGV4dBIUCgVsZXZlbBgFIAEoBVIFbGV2ZWwSGwoJY3JlYXRlX2F0GAYgASgDUg'
-    'hjcmVhdGVBdA==');
+    'ChBDcmVhdGVEb2NSZXF1ZXN0EhkKCGdyb3VwX2lkGAEgASgJUgdncm91cElkEjEKB2NvbnRlbn'
+    'QYAiABKAsyFy53aGlzcGVyaW5ndGltZS5Db250ZW50Ugdjb250ZW50EhsKCWNyZWF0ZV9hdBgG'
+    'IAEoA1IIY3JlYXRlQXRKBAgFEAY=');
 
 @$core.Deprecated('Use createDocResponseDescriptor instead')
 const CreateDocResponse$json = {
@@ -472,20 +491,19 @@ const UpdateDocRequest$json = {
   '2': [
     {'1': 'group_id', '3': 1, '4': 1, '5': 9, '10': 'groupId'},
     {'1': 'doc_id', '3': 2, '4': 1, '5': 9, '10': 'docId'},
-    {'1': 'title', '3': 3, '4': 1, '5': 9, '10': 'title'},
-    {'1': 'content', '3': 4, '4': 1, '5': 9, '10': 'content'},
-    {'1': 'plain_text', '3': 5, '4': 1, '5': 9, '10': 'plainText'},
-    {'1': 'level', '3': 6, '4': 1, '5': 5, '10': 'level'},
+    {'1': 'content', '3': 3, '4': 1, '5': 11, '6': '.whisperingtime.Content', '10': 'content'},
     {'1': 'create_at', '3': 7, '4': 1, '5': 3, '10': 'createAt'},
+  ],
+  '9': [
+    {'1': 6, '2': 7},
   ],
 };
 
 /// Descriptor for `UpdateDocRequest`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List updateDocRequestDescriptor = $convert.base64Decode(
     'ChBVcGRhdGVEb2NSZXF1ZXN0EhkKCGdyb3VwX2lkGAEgASgJUgdncm91cElkEhUKBmRvY19pZB'
-    'gCIAEoCVIFZG9jSWQSFAoFdGl0bGUYAyABKAlSBXRpdGxlEhgKB2NvbnRlbnQYBCABKAlSB2Nv'
-    'bnRlbnQSHQoKcGxhaW5fdGV4dBgFIAEoCVIJcGxhaW5UZXh0EhQKBWxldmVsGAYgASgFUgVsZX'
-    'ZlbBIbCgljcmVhdGVfYXQYByABKANSCGNyZWF0ZUF0');
+    'gCIAEoCVIFZG9jSWQSMQoHY29udGVudBgDIAEoCzIXLndoaXNwZXJpbmd0aW1lLkNvbnRlbnRS'
+    'B2NvbnRlbnQSGwoJY3JlYXRlX2F0GAcgASgDUghjcmVhdGVBdEoECAYQBw==');
 
 @$core.Deprecated('Use deleteDocRequestDescriptor instead')
 const DeleteDocRequest$json = {

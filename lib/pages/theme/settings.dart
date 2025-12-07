@@ -55,8 +55,8 @@ class _ThemeSettingsState extends State<ThemeSettings> {
     }
 
     if (ishttp) {
-      final res = await Http(tid: widget.theme.id)
-          .putTheme(RequestPutTheme(name: newName));
+      final res = await Grpc(tid: widget.theme.id)
+          .updateTheme(RequestUpdateTheme(name: newName));
 
       if (res.isNotOK) {
         return;
@@ -159,7 +159,7 @@ class _ThemeSettingsState extends State<ThemeSettings> {
       return;
     }
 
-    final res = await Http(tid: widget.theme.id).deleteTheme();
+    final res = await Grpc(tid: widget.theme.id).deleteTheme();
 
     if (res.isNotOK) {
       return;

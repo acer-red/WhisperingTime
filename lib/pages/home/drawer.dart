@@ -342,8 +342,8 @@ class _HomeDrawerState extends State<HomeDrawer> {
         return;
     }
 
-    http_index.RequestPutUserProfile req =
-        http_index.RequestPutUserProfile(bytes: bytes, ext: ext);
+    http_index.RequestUpdateUserProfile req =
+        http_index.RequestUpdateUserProfile(bytes: bytes, ext: ext);
 
     http_index.Http().userProfile(req).then((value) {
       if (value.isNotOK) {
@@ -363,8 +363,8 @@ class _HomeDrawerState extends State<HomeDrawer> {
     if (value == widget.userinfo.profile.nickname) {
       return;
     }
-    http_index.RequestPutUserProfile req =
-        http_index.RequestPutUserProfile(nickname: value);
+    http_index.RequestUpdateUserProfile req =
+        http_index.RequestUpdateUserProfile(nickname: value);
 
     http_index.Http().userProfile(req).then((onValue) {
       if (onValue.isNotOK) {

@@ -31,21 +31,21 @@ class _TaskManagerPageState extends State<TaskManagerPage> {
     });
 
     try {
-      final response = await Http().getBackgroundJobs();
-      if (response.isNotOK) {
+      final res = await Grpc().getBackgroundJobs();
+      if (res.isNotOK) {
         setState(() {
-          _errorMessage = response.msg;
+          _errorMessage = res.msg;
           _isLoading = false;
         });
         if (mounted) {
-          showErrMsg(context, response.msg);
+          showErrMsg(context, res.msg);
         }
         return;
       }
 
       setState(() {
         // 按创建时间降序排序（最新的在前面）
-        _jobs = response.jobs;
+        _jobs = res.jobs;
         _jobs.sort((a, b) {
           try {
             final aTime = DateTime.parse(a.createdAt);
@@ -375,7 +375,7 @@ class _TaskManagerPageState extends State<TaskManagerPage> {
       );
 
       // 调用下载接口
-      final response = await Http().downloadBackgroundJobFile(job.id);
+      final res = await Grpc().downloadBackgroundJobFile(job.id);
 
       // 关闭进度对话框
       if (mounted) {
@@ -385,20 +385,20 @@ class _TaskManagerPageState extends State<TaskManagerPage> {
       if (!mounted) return;
 
       // 处理 404 错误
-      if (response.err == 404) {
+      if (res.err == 404) {
         showErrMsg(context, '文件未找到');
         return;
       }
 
       // 处理其他错误
-      if (response.err != 0 || response.data == null) {
-        showErrMsg(context, response.msg);
+      if (res.err != 0 || res.data == null) {
+        showErrMsg(context, res.msg);
         return;
       }
 
       // 生成文件名
-      String defaultFilename = response.filename ??
-          'download_${DateTime.now().millisecondsSinceEpoch}';
+      String defaultFilename =
+          res.filename ?? 'download_${DateTime.now().millisecondsSinceEpoch}';
 
       // 确保文件名安全
       defaultFilename =
@@ -417,7 +417,7 @@ class _TaskManagerPageState extends State<TaskManagerPage> {
 
       // 保存文件
       final file = File(filePath);
-      await file.writeAsBytes(response.data!);
+      await file.writeAsBytes(res.data!);
 
       if (!mounted) return;
 
@@ -512,10 +512,10 @@ class _TaskManagerPageState extends State<TaskManagerPage> {
     if (confirmed == true) {
       try {
         // 调用删除接口
-        final response = await Http().deleteBackgroundJob(job.id);
+        final res = await Grpc().deleteBackgroundJob(job.id);
 
         if (mounted) {
-          if (response.isOK) {
+          if (res.isOK) {
             // 响应成功，从列表中删除
             setState(() {
               _jobs.removeWhere((j) => j.id == job.id);
@@ -523,7 +523,7 @@ class _TaskManagerPageState extends State<TaskManagerPage> {
             showSuccessMsg(context, '删除成功');
           } else {
             // 响应失败，显示错误信息
-            showErrMsg(context, response.msg);
+            showErrMsg(context, res.msg);
           }
         }
       } catch (e) {

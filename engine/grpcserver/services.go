@@ -3,12 +3,14 @@ package grpcserver
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	log "github.com/tengfei-xy/go-log"
@@ -39,8 +41,6 @@ func ts(t time.Time) int64 { return t.Unix() }
 
 func toGroupConfig(cfg m.GroupConfig) *pb.GroupConfig {
 	return &pb.GroupConfig{
-		IsMulti:        cfg.Is_multi,
-		IsAll:          cfg.Is_all,
 		Levels:         cfg.Levels,
 		ViewType:       int32(cfg.View_type),
 		SortType:       int32(cfg.Sort_type),
@@ -53,8 +53,6 @@ func fromGroupConfig(cfg *pb.GroupConfig) *m.GroupConfig {
 		return nil
 	}
 	return &m.GroupConfig{
-		Is_multi:       cfg.GetIsMulti(),
-		Is_all:         cfg.GetIsAll(),
 		Levels:         cfg.GetLevels(),
 		View_type:      int(cfg.GetViewType()),
 		Sort_type:      int(cfg.GetSortType()),
@@ -95,13 +93,11 @@ func (s *Service) ListThemes(ctx context.Context, req *pb.ListThemesRequest) (*p
 				Gid  string `json:"gid"`
 				Name string `json:"name"`
 				Docs []struct {
-					Did       string             `json:"did"`
-					PlainText string             `json:"plain_text"`
-					Content   string             `json:"content"`
-					Level     int32              `json:"level"`
-					CreateAt  primitive.DateTime `json:"createAt"`
-					UpdateAt  primitive.DateTime `json:"updateAt"`
-					Title     string             `json:"title"`
+					Did      string             `json:"did"`
+					Content  m.DocContent       `json:"content"`
+					Legacy   int32              `json:"level"`
+					CreateAt primitive.DateTime `json:"createAt"`
+					UpdateAt primitive.DateTime `json:"updateAt"`
 				} `json:"docs"`
 			} `json:"groups"`
 		}
@@ -109,18 +105,19 @@ func (s *Service) ListThemes(ctx context.Context, req *pb.ListThemesRequest) (*p
 		_ = json.Unmarshal(b, &items)
 		res := make([]*pb.ThemeDetail, 0, len(items))
 		for _, t := range items {
-			td := &pb.ThemeDetail{Id: t.Tid, Name: t.ThemeName}
+			td := &pb.ThemeDetail{Id: t.Tid, Name: decodeNameBytes(t.ThemeName)}
 			for _, g := range t.Groups {
-				gd := &pb.GroupDetail{Id: g.Gid, Name: g.Name}
+				gd := &pb.GroupDetail{Id: g.Gid, Name: decodeNameBytes(g.Name)}
 				for _, d := range g.Docs {
 					gd.Docs = append(gd.Docs, &pb.DocDetail{
-						Id:        d.Did,
-						Title:     d.Title,
-						PlainText: d.PlainText,
-						Content:   d.Content,
-						Level:     d.Level,
-						CreateAt:  d.CreateAt.Time().Unix(),
-						UpdateAt:  d.UpdateAt.Time().Unix(),
+						Id: d.Did,
+						Content: &pb.Content{
+							Title: d.Content.Title,
+							Rich:  d.Content.Rich,
+							Level: levelBytes(d.Content.Level, d.Legacy),
+						},
+						CreateAt: d.CreateAt.Time().Unix(),
+						UpdateAt: d.UpdateAt.Time().Unix(),
 					})
 				}
 				td.Groups = append(td.Groups, gd)
@@ -137,17 +134,16 @@ func (s *Service) ListThemes(ctx context.Context, req *pb.ListThemesRequest) (*p
 	}
 	var items []struct {
 		Tid       string `json:"tid"`
-		ThemeName string `json:"theme_name"`
+		ThemeName []byte `json:"theme_name"`
 		Groups    []struct {
 			Gid  string `json:"gid"`
-			Name string `json:"name"`
+			Name []byte `json:"name"`
 			Docs []struct {
-				Did       string             `json:"did"`
-				PlainText string             `json:"plain_text"`
-				Title     string             `json:"title"`
-				Level     int32              `json:"level"`
-				CreateAt  primitive.DateTime `json:"createAt"`
-				UpdateAt  primitive.DateTime `json:"updateAt"`
+				Did      string             `json:"did"`
+				Content  m.DocContent       `json:"content"`
+				Legacy   int32              `json:"level"`
+				CreateAt primitive.DateTime `json:"createAt"`
+				UpdateAt primitive.DateTime `json:"updateAt"`
 			} `json:"docs"`
 		} `json:"groups"`
 	}
@@ -160,12 +156,10 @@ func (s *Service) ListThemes(ctx context.Context, req *pb.ListThemesRequest) (*p
 			gd := &pb.GroupDetail{Id: g.Gid, Name: g.Name}
 			for _, d := range g.Docs {
 				gd.Docs = append(gd.Docs, &pb.DocDetail{
-					Id:        d.Did,
-					Title:     d.Title,
-					PlainText: d.PlainText,
-					Level:     d.Level,
-					CreateAt:  d.CreateAt.Time().Unix(),
-					UpdateAt:  d.UpdateAt.Time().Unix(),
+					Id:       d.Did,
+					Content:  &pb.Content{Title: d.Content.Title, Rich: d.Content.Rich, Level: levelBytes(d.Content.Level, d.Legacy)},
+					CreateAt: d.CreateAt.Time().Unix(),
+					UpdateAt: d.UpdateAt.Time().Unix(),
 				})
 			}
 			td.Groups = append(td.Groups, gd)
@@ -176,7 +170,7 @@ func (s *Service) ListThemes(ctx context.Context, req *pb.ListThemesRequest) (*p
 }
 
 func (s *Service) CreateTheme(ctx context.Context, req *pb.CreateThemeRequest) (*pb.CreateThemeResponse, error) {
-	log.Infof("[grpc] CreateTheme uid=%s name=%s", getUID(ctx), req.GetName())
+	log.Infof("[grpc] CreateTheme uid=%s", getUID(ctx))
 	uoid := getUOID(ctx)
 	if uoid == primitive.NilObjectID {
 		return &pb.CreateThemeResponse{Err: 1, Msg: "unauthenticated"}, nil
@@ -185,7 +179,11 @@ func (s *Service) CreateTheme(ctx context.Context, req *pb.CreateThemeRequest) (
 	r := modb.RequestThemePost{}
 	r.Data.Name = req.GetName()
 	r.Data.CreateAt = nowString()
-	r.Data.DefaultGroup.Name = "默认分组"
+	defaultGroupName := req.GetDefaultGroupName()
+	if len(defaultGroupName) == 0 {
+		defaultGroupName = []byte("默认分组")
+	}
+	r.Data.DefaultGroup.Name = defaultGroupName
 	def := 30
 	r.Data.DefaultGroup.CreateAt = nowString()
 	r.Data.DefaultGroup.Config = &struct {
@@ -290,13 +288,10 @@ func (s *Service) GetGroup(ctx context.Context, req *pb.GetGroupRequest) (*pb.Ge
 		gd := &pb.GroupDetail{Id: g.GID, Name: g.Name, Config: toGroupConfig(g.Config)}
 		for _, d := range g.Docs {
 			gd.Docs = append(gd.Docs, &pb.DocDetail{
-				Id:        d.ID,
-				Title:     d.Title,
-				PlainText: d.PlainText,
-				Content:   d.Content,
-				Level:     d.Level,
-				CreateAt:  d.CreateAt.Unix(),
-				UpdateAt:  d.UpdateAt.Unix(),
+				Id:       d.ID,
+				Content:  &pb.Content{Title: d.Content.Title, Rich: d.Content.Rich, Level: levelBytes(d.Content.Level, d.LegacyLevel)},
+				CreateAt: d.CreateAt.Unix(),
+				UpdateAt: d.UpdateAt.Unix(),
 			})
 		}
 		return &pb.GetGroupResponse{Err: 0, Msg: "ok", Group: gd}, nil
@@ -344,8 +339,9 @@ func (s *Service) UpdateGroup(ctx context.Context, req *pb.UpdateGroupRequest) (
 
 	r := modb.RequestGroupPut{}
 	r.Data.UpdateAt = strPtr(nowString())
-	if req.Name != "" {
-		r.Data.Name = strPtr(req.GetName())
+	if req.Name != nil {
+		name := req.GetName()
+		r.Data.Name = &name
 	}
 	if req.OverAt != 0 {
 		t := time.Unix(req.GetOverAt(), 0).Format("2006-01-02 15:04:05")
@@ -353,15 +349,11 @@ func (s *Service) UpdateGroup(ctx context.Context, req *pb.UpdateGroupRequest) (
 	}
 	if cfg := req.GetConfig(); cfg != nil {
 		r.Data.Config = &struct {
-			Is_multi       *bool   `json:"is_multi"`
-			Is_all         *bool   `json:"is_all"`
 			Levels         *[]bool `json:"levels"`
 			View_type      *int    `json:"view_type"`
 			Sort_type      *int    `json:"sort_type"`
 			AutoFreezeDays *int    `json:"auto_freeze_days"`
 		}{}
-		r.Data.Config.Is_multi = boolPtr(cfg.GetIsMulti())
-		r.Data.Config.Is_all = boolPtr(cfg.GetIsAll())
 		lv := cfg.GetLevels()
 		r.Data.Config.Levels = &lv
 		vt := int(cfg.GetViewType())
@@ -487,28 +479,31 @@ func (s *Service) ListDocs(ctx context.Context, req *pb.ListDocsRequest) (*pb.Li
 	res := make([]*pb.DocSummary, 0, len(docs))
 	for _, d := range docs {
 		res = append(res, &pb.DocSummary{
-			Id:        d.ID,
-			Title:     d.Title,
-			PlainText: d.PlainText,
-			Level:     d.Level,
-			CreateAt:  d.CreateAt.Unix(),
-			UpdateAt:  d.UpdateAt.Unix(),
+			Id: d.ID,
+			Content: &pb.Content{
+				Title: d.Content.Title,
+				Rich:  d.Content.Rich,
+				Level: levelBytes(d.Content.Level, d.LegacyLevel),
+			},
+			CreateAt: d.CreateAt.Unix(),
+			UpdateAt: d.UpdateAt.Unix(),
 		})
 	}
 	return &pb.ListDocsResponse{Err: 0, Msg: "ok", Docs: res}, nil
 }
 
 func (s *Service) CreateDoc(ctx context.Context, req *pb.CreateDocRequest) (*pb.CreateDocResponse, error) {
-	log.Infof("[grpc] CreateDoc uid=%s groupId=%s title=%s", getUID(ctx), req.GetGroupId(), req.GetTitle())
+	log.Infof("[grpc] CreateDoc uid=%s groupId=%s", getUID(ctx), req.GetGroupId())
 	goid, err := modb.GetGOIDFromGID(req.GetGroupId())
 	if err != nil {
 		return &pb.CreateDocResponse{Err: 1, Msg: err.Error()}, nil
 	}
 	r := modb.RequestDocPost{}
-	r.Data.Title = req.GetTitle()
-	r.Data.Content = req.GetContent()
-	r.Data.PlainText = req.GetPlainText()
-	r.Data.Level = req.GetLevel()
+	r.Data.Content = m.DocContent{
+		Title: req.GetContent().GetTitle(),
+		Rich:  req.GetContent().GetRich(),
+		Level: req.GetContent().GetLevel(),
+	}
 	r.Data.CreateAt = fmt.Sprintf("%d", req.GetCreateAt())
 	r.Data.Config = &m.DocConfig{IsShowTool: true}
 
@@ -531,16 +526,18 @@ func (s *Service) UpdateDoc(ctx context.Context, req *pb.UpdateDocRequest) (*pb.
 	}
 
 	r := modb.RequestDocPut{}
-	if req.Title != "" {
-		r.Doc.Title = strPtr(req.GetTitle())
-	}
-	if req.Content != "" {
-		r.Doc.Content = strPtr(req.GetContent())
-		r.Doc.PlainText = strPtr(req.GetPlainText())
-	}
-	if req.Level != 0 {
-		lvl := req.GetLevel()
-		r.Doc.Level = &lvl
+	if req.Content != nil {
+		c := m.DocContent{}
+		if req.GetContent().Title != nil {
+			c.Title = req.GetContent().Title
+		}
+		if req.GetContent().Rich != nil {
+			c.Rich = req.GetContent().Rich
+		}
+		if req.GetContent().Level != nil {
+			c.Level = req.GetContent().Level
+		}
+		r.Doc.Content = &c
 	}
 	if req.CreateAt != 0 {
 		t := fmt.Sprintf("%d", req.GetCreateAt())
@@ -553,6 +550,13 @@ func (s *Service) UpdateDoc(ctx context.Context, req *pb.UpdateDocRequest) (*pb.
 		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
 	}
 	return &pb.BasicResponse{Err: 0, Msg: "ok"}, nil
+}
+
+func levelBytes(contentLevel []byte, legacyLevel int32) []byte {
+	if len(contentLevel) > 0 {
+		return contentLevel
+	}
+	return []byte(strconv.Itoa(int(legacyLevel)))
 }
 
 func (s *Service) DeleteDoc(ctx context.Context, req *pb.DeleteDocRequest) (*pb.BasicResponse, error) {
@@ -743,6 +747,13 @@ func toJSON(v interface{}) string {
 	return string(b)
 }
 
+func decodeNameBytes(s string) []byte {
+	if b, err := base64.StdEncoding.DecodeString(s); err == nil {
+		return b
+	}
+	return []byte(s)
+}
+
 func nowString() string {
 	return time.Now().Format("2006-01-02 15:04:05")
 }
@@ -752,17 +763,6 @@ func timePtrToString(t *time.Time) string {
 		return ""
 	}
 	return t.Format(time.RFC3339)
-}
-
-// fakeFile is a minimal adapter to satisfy modb.GroupImportConfig signature.
-type fakeFile struct {
-	filename string
-}
-
-func (f *fakeFile) Filename() string { return filepath.Base(f.filename) }
-
-func (f *fakeFile) Open() (multipart.File, error) {
-	return os.Open(f.filename)
 }
 
 // metadataParam pulls a param from incoming metadata.

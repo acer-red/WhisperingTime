@@ -59,7 +59,7 @@ class _DocListState extends State<DocList> {
     return Scaffold(
       appBar:
           AppBar(title: Text(widget.group.name), centerTitle: true, actions: [
-        IconButton(icon: Icon(Icons.add), onPressed: () => createNewDoc()),
+        IconButton(icon: Icon(Icons.add), onPressed: () => navigatorNewDoc()),
         IconButton(
             onPressed: () => playDocPage(), icon: Icon(Icons.play_arrow)),
         IconButton(
@@ -122,15 +122,13 @@ class _DocListState extends State<DocList> {
 
   void _syncConfigToServer() async {
     // Save to server
-    RequestPutGroup req = RequestPutGroup();
+    RequestUpdateGroup req = RequestUpdateGroup();
     req.config = GroupConfigNULL(
       viewType: widget.group.config.viewType,
       sortType: widget.group.config.sortType,
       levels: widget.group.config.levels,
-      isMulti: widget.group.config.isMulti,
-      isAll: widget.group.config.isAll,
     );
-    await Http(tid: widget.tid, gid: widget.group.id).putGroup(req);
+    await Grpc(tid: widget.tid, gid: widget.group.id).putGroup(req);
     if (mounted) {
       final groups = Provider.of<GroupsManager>(context, listen: false);
       groups.updateConfig();
@@ -160,12 +158,11 @@ class _DocListState extends State<DocList> {
   }
 
   // 创建新文档
-  void createNewDoc() {
+  void navigatorNewDoc() {
     Doc newDoc = Doc(
       id: '',
       title: '',
       content: '',
-      plainText: '',
       level: getSelectLevel(),
       createAt: DateTime.now(),
       updateAt: DateTime.now(),
@@ -255,7 +252,7 @@ class _DocListState extends State<DocList> {
     }
   }
 
-  // 构建预览模式的卡片
+  // 卡片: 预览模式
   Widget _buildPreviewCard(int index, Doc item) {
     return InkWell(
       onTap: () => toggleExpand(index),
@@ -289,12 +286,7 @@ class _DocListState extends State<DocList> {
             // 印迹具体内容
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Text(
-                item.plainText.trimRight(),
-                style: TextStyle(color: Colors.grey[700]),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
+              child: _buildRichText(item.content, limitLines: true),
             ),
             // 创建时间
             Center(
@@ -321,7 +313,7 @@ class _DocListState extends State<DocList> {
     );
   }
 
-  // 构建展开模式的卡片
+  // 卡片: 展开模式
   Widget _buildExpandedCard(int index, Doc item) {
     return Padding(
       padding: EdgeInsets.all(16.0),
@@ -371,7 +363,7 @@ class _DocListState extends State<DocList> {
           SizedBox(height: 8),
 
           // 完整内容
-          _buildQuillViewer(item),
+          _buildRichText(item.content),
 
           SizedBox(height: 16),
 
@@ -399,35 +391,53 @@ class _DocListState extends State<DocList> {
     );
   }
 
-  Widget _buildQuillViewer(Doc item) {
-    if (item.content.isEmpty) return SizedBox.shrink();
+  Widget _buildRichText(String content, {bool limitLines = false}) {
+    if (content.isEmpty) return SizedBox.shrink();
+    final Document doc;
+
     try {
-      final doc = Document.fromJson(jsonDecode(item.content));
-      return QuillEditor(
-        controller: QuillController(
-            document: doc,
-            selection: const TextSelection.collapsed(offset: 0),
-            readOnly: true),
-        focusNode: FocusNode(),
-        scrollController: ScrollController(),
-        config: QuillEditorConfig(
-          embedBuilders: [
-            _CustomImageEmbedBuilder(),
-            ...(kIsWeb
-                    ? FlutterQuillEmbeds.editorWebBuilders()
-                    : FlutterQuillEmbeds.editorBuilders())
-                .where((builder) => builder.key != 'image'),
-          ],
-          scrollable: false,
-          autoFocus: false,
-          expands: false,
-          padding: EdgeInsets.zero,
-          enableInteractiveSelection: true,
-        ),
-      );
+      doc = Document.fromJson(jsonDecode(content));
     } catch (e) {
-      return Text(item.plainText);
+      return Text(content);
     }
+
+    final baseStyle = Theme.of(context).textTheme.bodyMedium;
+    final double fontSize = baseStyle?.fontSize ?? 14;
+    final double heightFactor = baseStyle?.height ?? 1.2;
+    final double? maxHeight = limitLines
+        ? fontSize * heightFactor * 3 - 8 // approximate three lines
+        : null;
+
+    final editor = QuillEditor(
+      controller: QuillController(
+          document: doc,
+          selection: const TextSelection.collapsed(offset: 0),
+          readOnly: true),
+      focusNode: FocusNode(),
+      scrollController: ScrollController(),
+      config: QuillEditorConfig(
+        embedBuilders: [
+          _CustomImageEmbedBuilder(),
+          ...(kIsWeb
+                  ? FlutterQuillEmbeds.editorWebBuilders()
+                  : FlutterQuillEmbeds.editorBuilders())
+              .where((builder) => builder.key != 'image'),
+        ],
+        scrollable: limitLines,
+        autoFocus: false,
+        expands: false,
+        padding: EdgeInsets.zero,
+        enableInteractiveSelection: true,
+      ),
+    );
+
+    if (maxHeight != null) {
+      return SizedBox(
+        height: maxHeight,
+        child: ClipRect(child: editor),
+      );
+    }
+    return editor;
   }
 
   // 切换展开状态

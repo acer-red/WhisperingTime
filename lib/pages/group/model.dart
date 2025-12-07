@@ -16,7 +16,7 @@ class Group {
 
   @override
   String toString() {
-    return "Group - id: $id, name: $name, config: viewType=${config.viewType}, isAll=${config.isAll}, isMulti=${config.isMulti}, levels=${config.levels}, autoFreezeDays=${config.autoFreezeDays}";
+    return "Group - id: $id, name: $name, config: viewType=${config.viewType}, levels=${config.levels}, autoFreezeDays=${config.autoFreezeDays}";
   }
 
   bool isFreezedOrBuf() => getoverAtStatus() != 0;
@@ -63,24 +63,18 @@ class Group {
 }
 
 class GroupConfig {
-  bool isMulti;
-  bool isAll;
   List<bool> levels = [];
   int viewType;
   int sortType;
   int autoFreezeDays;
   GroupConfig(
-      {required this.isMulti,
-      required this.isAll,
-      required this.levels,
+      {required this.levels,
       required this.viewType,
       required this.sortType,
       required this.autoFreezeDays});
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = {};
-    data['is_multi'] = isMulti;
-    data['is_all'] = isAll;
     if (levels.isNotEmpty) {
       data['levels'] = levels;
     }
@@ -92,8 +86,6 @@ class GroupConfig {
 
   static GroupConfig getDefault() {
     return GroupConfig(
-        isAll: false,
-        isMulti: false,
         levels: [true, false, false, false, false],
         viewType: 0,
         sortType: 0,

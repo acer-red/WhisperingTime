@@ -16,12 +16,10 @@ message Empty {}
 // Theme models
 message ThemeSummary {
   string id = 1;
-  string name = 2;
+  bytes name = 2;
 }
 
 message GroupConfig {
-  bool is_multi = 1;
-  bool is_all = 2;
   repeated bool levels = 3;
   int32 view_type = 4;
   int32 sort_type = 5;
@@ -30,7 +28,7 @@ message GroupConfig {
 
 message GroupSummary {
   string id = 1;
-  string name = 2;
+  bytes name = 2;
   int64 create_at = 3;
   int64 update_at = 4;
   int64 over_at = 5;
@@ -39,33 +37,36 @@ message GroupSummary {
 
 message DocSummary {
   string id = 1;
-  string title = 2;
-  string plain_text = 3;
-  int32 level = 4;
+  Content content = 2;
+  reserved 4;
   int64 create_at = 5;
   int64 update_at = 6;
 }
 
+message Content {
+  optional bytes title = 1;
+  optional bytes rich = 2;
+  optional bytes level = 3;
+}
+
 message DocDetail {
   string id = 1;
-  string title = 2;
-  string plain_text = 3;
-  string content = 4;
-  int32 level = 5;
+  Content content = 2;
+  reserved 5;
   int64 create_at = 6;
   int64 update_at = 7;
 }
 
 message GroupDetail {
   string id = 1;
-  string name = 2;
+  bytes name = 2;
   GroupConfig config = 3;
   repeated DocDetail docs = 4;
 }
 
 message ThemeDetail {
   string id = 1;
-  string name = 2;
+  bytes name = 2;
   repeated GroupDetail groups = 3;
 }
 
@@ -81,9 +82,15 @@ message ListThemesResponse {
   repeated ThemeDetail themes = 3;
 }
 
-message CreateThemeRequest { string name = 1; }
+message CreateThemeRequest {
+  bytes name = 1;
+  bytes default_group_name = 2;
+}
 message CreateThemeResponse { int32 err = 1; string msg = 2; string id = 3; }
-message UpdateThemeRequest { string id = 1; string name = 2; }
+message UpdateThemeRequest {
+  string id = 1;
+  bytes name = 2;
+}
 message DeleteThemeRequest { string id = 1; }
 message ExportAllConfigRequest {}
 
@@ -102,9 +109,19 @@ message ListGroupsResponse { int32 err = 1; string msg = 2; repeated GroupSummar
 message GetGroupRequest { string theme_id = 1; string group_id = 2; bool include_docs = 3; bool include_detail = 4; }
 message GetGroupResponse { int32 err = 1; string msg = 2; GroupDetail group = 3; }
 
-message CreateGroupRequest { string theme_id = 1; string name = 2; int32 auto_freeze_days = 3; }
+message CreateGroupRequest {
+  string theme_id = 1;
+  bytes name = 2;
+  int32 auto_freeze_days = 3;
+}
 message CreateGroupResponse { int32 err = 1; string msg = 2; string id = 3; }
-message UpdateGroupRequest { string theme_id = 1; string group_id = 2; string name = 3; GroupConfig config = 4; int64 over_at = 5; }
+message UpdateGroupRequest {
+  string theme_id = 1;
+  string group_id = 2;
+  bytes name = 3;
+  GroupConfig config = 4;
+  int64 over_at = 5;
+}
 message DeleteGroupRequest { string theme_id = 1; string group_id = 2; }
 message ExportGroupConfigRequest { string theme_id = 1; string group_id = 2; }
 message ImportGroupConfigResponse { int32 err = 1; string msg = 2; }
@@ -125,20 +142,16 @@ message ListDocsRequest { string group_id = 1; int32 year = 2; int32 month = 3; 
 message ListDocsResponse { int32 err = 1; string msg = 2; repeated DocSummary docs = 3; }
 message CreateDocRequest {
   string group_id = 1;
-  string title = 2;
-  string content = 3;
-  string plain_text = 4;
-  int32 level = 5;
+  Content content = 2;
+  reserved 5;
   int64 create_at = 6;
 }
 message CreateDocResponse { int32 err = 1; string msg = 2; string id = 3; }
 message UpdateDocRequest {
   string group_id = 1;
   string doc_id = 2;
-  string title = 3;
-  string content = 4;
-  string plain_text = 5;
-  int32 level = 6;
+  Content content = 3;
+  reserved 6;
   int64 create_at = 7;
 }
 message DeleteDocRequest { string group_id = 1; string doc_id = 2; }

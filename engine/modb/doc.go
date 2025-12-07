@@ -2,6 +2,7 @@ package modb
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/tengfei-xy/whisperingtime/engine/sys"
@@ -15,25 +16,19 @@ import (
 
 type RequestDocPost struct {
 	Data struct {
-		Content   string       `json:"content"`
-		Title     string       `json:"title"`
-		PlainText string       `json:"plain_text"`
-		Level     int32        `json:"level"`
-		CreateAt  string       `json:"createAt"`
-		Config    *m.DocConfig `json:"config"`
+		Content  m.DocContent `json:"content"`
+		CreateAt string       `json:"createAt"`
+		Config   *m.DocConfig `json:"config"`
 	} `json:"data"`
 }
 
 type RequestDocPut struct {
 	Doc struct {
-		Title     *string      `json:"title,omitempty" bson:"title"`
-		Content   *string      `json:"content,omitempty" bson:"content"`
-		PlainText *string      `json:"plain_text,omitempty" bson:"plain_text"`
-		Level     *int32       `json:"level,omitempty" bson:"level"`
-		CreateAt  *string      `json:"createAt,omitempty"`
-		UpdateAt  *string      `json:"updateAt,omitempty"`
-		Config    *m.DocConfig `json:"config,omitempty" bson:"config"`
-		ID        *string      `json:"id" bson:"did"`
+		Content  *m.DocContent `json:"content,omitempty" bson:"content"`
+		CreateAt *string       `json:"createAt,omitempty"`
+		UpdateAt *string       `json:"updateAt,omitempty"`
+		Config   *m.DocConfig  `json:"config,omitempty" bson:"config"`
+		ID       *string       `json:"id" bson:"did"`
 	} `json:"data"`
 }
 type DocFilter struct {
@@ -67,17 +62,26 @@ func DocsGet(goid primitive.ObjectID, f DocFilter) ([]m.Doc, error) {
 			log.Error(err)
 			return nil, err
 		}
+
+		contentM := doc["content"].(bson.M)
+		levelBytes := extractLevelBytes(contentM, doc)
+		configM, _ := doc["config"].(bson.M)
+		cfg := &m.DocConfig{}
+		if configM != nil {
+			if v, ok := configM["is_show_tool"].(bool); ok {
+				cfg.IsShowTool = v
+			}
+		}
 		results = append(results, m.Doc{
-			Title:     doc["title"].(string),
-			Content:   doc["content"].(string),
-			PlainText: doc["plain_text"].(string),
-			Level:     doc["level"].(int32),
-			CreateAt:  doc["createAt"].(primitive.DateTime).Time(),
-			UpdateAt:  doc["updateAt"].(primitive.DateTime).Time(),
-			Config: &m.DocConfig{
-				IsShowTool: doc["config"].(bson.M)["is_show_tool"].(bool),
+			Content: m.DocContent{
+				Title: contentM["title"].(primitive.Binary).Data,
+				Rich:  contentM["rich"].(primitive.Binary).Data,
+				Level: levelBytes,
 			},
-			ID: doc["did"].(string),
+			CreateAt: doc["createAt"].(primitive.DateTime).Time(),
+			UpdateAt: doc["updateAt"].(primitive.DateTime).Time(),
+			Config:   cfg,
+			ID:       doc["did"].(string),
 		})
 	}
 
@@ -94,10 +98,7 @@ func DocPost(goid primitive.ObjectID, req *RequestDocPost) (string, error) {
 	data := bson.D{
 		{Key: "_goid", Value: goid},
 		{Key: "did", Value: did},
-		{Key: "title", Value: (*req).Data.Title},
 		{Key: "content", Value: (*req).Data.Content},
-		{Key: "plain_text", Value: (*req).Data.PlainText},
-		{Key: "level", Value: (*req).Data.Level},
 		{Key: "createAt", Value: sys.StringtoTime((*req).Data.CreateAt)},
 		{Key: "updateAt", Value: sys.StringtoTime((*req).Data.CreateAt)},
 		{Key: "config", Value: (*req).Data.Config},
@@ -124,12 +125,15 @@ func DocPut(goid primitive.ObjectID, doid primitive.ObjectID, req *RequestDocPut
 	m := bson.M{}
 
 	if (*req).Doc.Content != nil {
-		m["content"] = (*req).Doc.Content
-		m["plain_text"] = (*req).Doc.PlainText
-	}
-
-	if (*req).Doc.Title != nil {
-		m["title"] = (*req).Doc.Title
+		if (*req).Doc.Content.Title != nil {
+			m["content.title"] = (*req).Doc.Content.Title
+		}
+		if (*req).Doc.Content.Rich != nil {
+			m["content.rich"] = (*req).Doc.Content.Rich
+		}
+		if (*req).Doc.Content.Level != nil {
+			m["content.level"] = (*req).Doc.Content.Level
+		}
 	}
 
 	if (*req).Doc.CreateAt != nil {
@@ -140,18 +144,10 @@ func DocPut(goid primitive.ObjectID, doid primitive.ObjectID, req *RequestDocPut
 		m["updateAt"] = sys.StringtoTime(*(*req).Doc.UpdateAt)
 	}
 
-	if (*req).Doc.Title != nil {
-		m["title"] = (*req).Doc.Title
-	}
-
 	if (*req).Doc.Config != nil {
 		m["config"] = bson.M{
 			"is_show_tool": (*req).Doc.Config.IsShowTool,
 		}
-	}
-
-	if (*req).Doc.Level != nil {
-		m["level"] = (*req).Doc.Level
 	}
 
 	_, err := db.Collection("doc").UpdateOne(
@@ -167,6 +163,30 @@ func DocPut(goid primitive.ObjectID, doid primitive.ObjectID, req *RequestDocPut
 	}
 
 	return refreshGroupUpdateAt(goid, true)
+}
+
+func extractLevelBytes(content bson.M, doc bson.M) []byte {
+	if raw, ok := content["level"]; ok {
+		switch v := raw.(type) {
+		case primitive.Binary:
+			return v.Data
+		case []byte:
+			return v
+		}
+	}
+
+	if raw, ok := doc["level"]; ok {
+		switch v := raw.(type) {
+		case int32:
+			return []byte(strconv.Itoa(int(v)))
+		case int64:
+			return []byte(strconv.FormatInt(v, 10))
+		case float64:
+			return []byte(strconv.Itoa(int(v)))
+		}
+	}
+
+	return nil
 }
 func DocDelete(goid primitive.ObjectID, doid primitive.ObjectID) error {
 	filter := bson.M{

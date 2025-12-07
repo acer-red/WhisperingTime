@@ -68,8 +68,8 @@ class _EditPageState extends State<EditPage> {
     config = widget.doc.config;
     createAt = widget.doc.createAt;
 
-    // For brand new docs, jump directly into title editing for clarity.
-    _isEditingTitle = widget.doc.id.isEmpty;
+    // Default to non-editing title state even for brand new docs; user can tap to edit.
+    _isEditingTitle = false;
   }
 
   void _startAutoSaveTimer() {
@@ -139,8 +139,8 @@ class _EditPageState extends State<EditPage> {
             }
 
             // 上传图片
-            final req = RequestPostImage(type: imgType, data: bytes);
-            final res = await Http(gid: widget.group.id).postImage(req);
+            final req = RequestCreateImage(type: imgType, data: bytes);
+            final res = await Grpc(gid: widget.group.id).postImage(req);
 
             if (res.isOK) {
               // 删除旧的图片引用并插入文件名（不是完整URL）
@@ -320,9 +320,9 @@ class _EditPageState extends State<EditPage> {
               PopupMenuButton<String>(
                 onSelected: (value) {
                   if (value == 'settings') {
-                    settings();
+                    dialogSettings();
                   } else if (value == 'export') {
-                    export();
+                    dialogExport();
                   }
                 },
                 itemBuilder: (BuildContext context) {
@@ -473,17 +473,16 @@ class _EditPageState extends State<EditPage> {
   // 保存文档
   Future<void> save() async {
     String content = jsonEncode(quillController.document.toDelta().toJson());
-    String plainText = quillController.document.toPlainText();
+    // String plainText = quillController.document.toPlainText();
     bool persisted = false;
 
     // 如果有ID，更新文档
     if (widget.doc.id.isNotEmpty) {
-      RequestPutDoc req = RequestPutDoc();
+      RequestUpdateDoc req = RequestUpdateDoc();
       bool hasChanges = false;
 
       if (content != widget.doc.content) {
         req.content = content;
-        req.plainText = plainText;
         hasChanges = true;
       }
       if (titleController.text != widget.doc.title) {
@@ -497,7 +496,7 @@ class _EditPageState extends State<EditPage> {
 
       if (hasChanges) {
         final res =
-            await Http(gid: widget.group.id, did: widget.doc.id).putDoc(req);
+            await Grpc(gid: widget.group.id, did: widget.doc.id).putDoc(req);
         if (res.isNotOK) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -509,21 +508,19 @@ class _EditPageState extends State<EditPage> {
         persisted = true;
         // Update local doc state
         widget.doc.content = content;
-        widget.doc.plainText = plainText;
         widget.doc.title = titleController.text;
         widget.doc.level = level;
       }
     } else {
       // 创建新文档
-      final req = RequestPostDoc(
+      final req = RequestCreateDoc(
         content: content,
-        plainText: plainText,
         title: titleController.text,
         level: level,
         createAt: createAt,
         config: config,
       );
-      final ret = await Http(gid: widget.group.id).postDoc(req);
+      final ret = await Grpc(gid: widget.group.id).createDoc(req);
       if (ret.isNotOK) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -536,7 +533,6 @@ class _EditPageState extends State<EditPage> {
       widget.doc.id = ret.id;
       // Update local doc state
       widget.doc.content = content;
-      widget.doc.plainText = plainText;
       widget.doc.title = titleController.text;
       widget.doc.level = level;
     }
@@ -546,7 +542,6 @@ class _EditPageState extends State<EditPage> {
       id: widget.doc.id,
       title: titleController.text,
       content: content,
-      plainText: plainText,
       level: level,
       createAt: createAt,
       updateAt: DateTime.now(),
@@ -560,8 +555,8 @@ class _EditPageState extends State<EditPage> {
     widget.onSave(updatedDoc);
   }
 
-  // 打开设置弹窗
-  void settings() async {
+  // 弹窗: 设置
+  void dialogSettings() async {
     final groupsManager = context.read<GroupsManager>();
 
     final result = await showDialog<Map<String, dynamic>>(
@@ -590,10 +585,10 @@ class _EditPageState extends State<EditPage> {
       // 如果有修改
       if (result['changed'] == true) {
         if (widget.doc.id.isNotEmpty) {
-          RequestPutDoc req = RequestPutDoc(createAt: result['createAt']);
+          RequestUpdateDoc req = RequestUpdateDoc(createAt: result['createAt']);
           req.config = result['config'];
           final res =
-              await Http(gid: widget.group.id, did: widget.doc.id).putDoc(req);
+              await Grpc(gid: widget.group.id, did: widget.doc.id).putDoc(req);
           if (res.isNotOK) {
             return;
           }
@@ -613,8 +608,8 @@ class _EditPageState extends State<EditPage> {
     }
   }
 
-  // 导出文档
-  void export() {
+  // 弹窗: 导出
+  void dialogExport() {
     showDialog(
       context: context,
       builder: (context) => Export(
@@ -624,7 +619,6 @@ class _EditPageState extends State<EditPage> {
         doc: ExportData(
           content: jsonEncode(quillController.document.toDelta().toJson()),
           title: titleController.text,
-          plainText: quillController.document.toPlainText(),
           level: level,
           createAt: createAt,
         ),

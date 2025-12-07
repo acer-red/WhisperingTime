@@ -67,8 +67,8 @@ class _GroupSettingsState extends State<GroupSettings> {
     }
 
     if (ishttp) {
-      final res = await Http(tid: tid, gid: id)
-          .putGroup(RequestPutGroup(name: newName));
+      final res = await Grpc(tid: tid, gid: id)
+          .putGroup(RequestUpdateGroup(name: newName));
 
       if (res.isNotOK) {
         return;
@@ -176,7 +176,7 @@ class _GroupSettingsState extends State<GroupSettings> {
       return;
     }
 
-    final ret = await Http(tid: tid, gid: id).deleteGroup();
+    final ret = await Grpc(tid: tid, gid: id).deleteGroup();
     if (ret.isNotOK) {
       return;
     }
@@ -201,7 +201,7 @@ class _GroupSettingsState extends State<GroupSettings> {
 
   /// 按钮：导出当前分组的配置
   void clickExportConfig() {
-    Http(tid: widget.tid, gid: widget.group.id)
+    Grpc(tid: widget.tid, gid: widget.group.id)
         .exportGroupConfig()
         .then((configData) {});
   }
@@ -271,8 +271,8 @@ class _FreezeSwitchTileState extends State<FreezeSwitchTile> {
       isManual = value;
     });
 
-    final res =
-        await Http(tid: tid, gid: id).putGroup(RequestPutGroup(overAt: time));
+    final res = await Grpc(tid: tid, gid: id)
+        .putGroup(RequestUpdateGroup(overAt: time));
 
     if (res.isNotOK || !mounted) {
       setState(() {

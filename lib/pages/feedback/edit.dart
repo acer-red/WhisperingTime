@@ -254,7 +254,7 @@ class _EditState extends State<Edit> {
             ],
           ),
         ),
-         SizedBox(
+        SizedBox(
           width: double.infinity,
           child: Row(
             children: [
@@ -297,12 +297,12 @@ class _EditState extends State<Edit> {
 
   void submit() async {
     check();
-    RequestPostFeedback req = RequestPostFeedback(
-        fbType: feedbackType,
-        title: title.text,
-        content: desc.text,
-        isPublic: isPublic,
-        );
+    RequestCreateFeedback req = RequestCreateFeedback(
+      fbType: feedbackType,
+      title: title.text,
+      content: desc.text,
+      isPublic: isPublic,
+    );
     if (isUploadDeviceInfo) {
       req.deviceFilePath = await Device().write();
     }

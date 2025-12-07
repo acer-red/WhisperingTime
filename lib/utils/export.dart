@@ -13,10 +13,13 @@ import 'package:whispering_time/utils/env.dart';
 import 'package:whispering_time/utils/time.dart';
 import 'package:file_picker/file_picker.dart';
 
+// class Content {
+//   String ? rich;
+//   Content(this.rich);
+// }
 class ExportData {
   String content;
   String title;
-  String plainText;
   int level;
   DateTime createAt;
 
@@ -27,7 +30,6 @@ class ExportData {
   ExportData({
     required this.content,
     required this.title,
-    required this.plainText,
     required this.level,
     required this.createAt,
   });
@@ -114,7 +116,7 @@ class _Export extends State<Export> {
       _errorMsg = null;
     });
 
-    final res = await Http().getThemesAndDoc();
+    final res = await Grpc().getThemesAndDoc();
     if (!mounted) {
       return;
     }
@@ -836,7 +838,7 @@ class _Export extends State<Export> {
     if (_selectedGroupForDoc == null || _selectedDocId == null) {
       return null;
     }
-    final res = await Http(gid: _selectedGroupForDoc).getDocs(null, null);
+    final res = await Grpc(gid: _selectedGroupForDoc).getDocs(null, null);
     if (res.isNotOK) {
       return null;
     }
@@ -847,7 +849,6 @@ class _Export extends State<Export> {
     return ExportData(
       content: doc.content,
       title: doc.title,
-      plainText: doc.plainText,
       level: doc.level,
       createAt: doc.createAt,
     );
@@ -1070,7 +1071,7 @@ class TXT {
       return;
     }
 
-    final res = await Http().getThemesAndDoc();
+    final res = await Grpc().getThemesAndDoc();
     if (res.isNotOK) {
       return;
     }
@@ -1105,7 +1106,7 @@ class TXT {
           File file = File(filePath);
 
           try {
-            await file.writeAsString(doc.plainText);
+            // await file.writeAsString(doc.content);
             try {
               await file.setLastModified(doc.createAt);
               await file.setLastAccessed(doc.createAt);
@@ -1125,7 +1126,7 @@ class TXT {
 
   /// 导出所有主题为单个txt文件
   Future<void> themeOne({Set<String>? filterThemeIds}) async {
-    final res = await Http().getThemesAndDoc();
+    final res = await Grpc().getThemesAndDoc();
     if (res.isNotOK) {
       return;
     }
@@ -1157,7 +1158,7 @@ class TXT {
             yield "主题: ${doc.title}\n";
             yield "印迹分级: ${doc.levelString}\n";
             yield "创建时间: ${doc.createAtString}\n";
-            yield doc.plainText;
+            // yield doc.plainText;
             yield "\n\n\n\n------------------------------------------------------------\n";
           }
         }
@@ -1174,7 +1175,7 @@ class TXT {
 
   /// 导出一个主题下的一个分组的所有印迹为多个TXT文件
   Future<void> groupSplit() async {
-    final res = await Http(tid: tid, gid: gid).getGroupAndDocDetail();
+    final res = await Grpc(tid: tid, gid: gid).getGroupAndDocDetail();
     if (res.isNotOK) {
       return;
     }
@@ -1206,7 +1207,6 @@ class TXT {
             ExportData(
                 title: doc.title,
                 content: "",
-                plainText: doc.plainText,
                 level: doc.level,
                 createAt: doc.createAt),
             savePath: savePath);
@@ -1220,7 +1220,7 @@ class TXT {
 
   /// 导出一个主题下的一个分组的所有印迹为单个TXT文件
   Future<void> groupOne() async {
-    final res = await Http(tid: tid, gid: gid).getGroupAndDocDetail();
+    final res = await Grpc(tid: tid, gid: gid).getGroupAndDocDetail();
     if (res.isNotOK) {
       return;
     }
@@ -1245,7 +1245,7 @@ class TXT {
         yield "主题: ${doc.title}\n";
         yield "印迹分级: ${doc.levelString}\n";
         yield "创建时间: ${doc.createAtString}\n";
-        yield doc.plainText;
+        // yield doc.plainText;
         yield "\n\n\n\n------------------------------------------------------------\n";
       }
     })();
@@ -1274,7 +1274,7 @@ class TXT {
     String fileName =
         "${savePath!}/${doc.title.isEmpty ? "无题" : doc.title}.txt";
     File file = File(fileName);
-    await file.writeAsString(doc.plainText);
+    await file.writeAsString(doc.content);
     try {
       await file.setLastModified(doc.createAt);
       await file.setLastAccessed(doc.createAt);
@@ -1315,7 +1315,7 @@ class PDF {
       return;
     }
 
-    final res = await Http().getThemesAndDocDetail();
+    final res = await Grpc().getThemesAndDocDetail();
     if (res.isNotOK) {
       return;
     }
@@ -1347,7 +1347,6 @@ class PDF {
                 ExportData(
                     title: doc.title,
                     content: doc.content,
-                    plainText: "",
                     level: doc.level,
                     createAt: doc.createAt),
                 savePath: savePath);
@@ -1364,7 +1363,7 @@ class PDF {
   /// 导出所有主题为单个PDF文件
   Future<void> themeOne({Set<String>? filterThemeIds}) async {
     print("导出所有主题为单个PDF文件");
-    final res = await Http().getThemesAndDocDetail();
+    final res = await Grpc().getThemesAndDocDetail();
     if (res.isNotOK) {
       return;
     }
@@ -1541,7 +1540,7 @@ class PDF {
 
   /// 导出一个主题下的一个分组的所有印迹为多个PDF文件
   Future<void> groupSplit() async {
-    final res = await Http(tid: tid, gid: gid).getGroupAndDocDetail();
+    final res = await Grpc(tid: tid, gid: gid).getGroupAndDocDetail();
     if (res.isNotOK) {
       return;
     }
@@ -1573,7 +1572,6 @@ class PDF {
             ExportData(
                 title: doc.title,
                 content: doc.content,
-                plainText: "",
                 level: doc.level,
                 createAt: doc.createAt),
             savePath: savePath);
@@ -1589,7 +1587,7 @@ class PDF {
   Future<void> groupOne() async {
     print("导出一个主题下的一个分组的所有印迹为单个PDF文件");
 
-    final res = await Http(tid: tid, gid: gid).getGroupAndDocDetail();
+    final res = await Grpc(tid: tid, gid: gid).getGroupAndDocDetail();
     if (res.isNotOK) {
       return;
     }

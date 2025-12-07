@@ -114,7 +114,7 @@ class Empty extends $pb.GeneratedMessage {
 class ThemeSummary extends $pb.GeneratedMessage {
   factory ThemeSummary({
     $core.String? id,
-    $core.String? name,
+    $core.List<$core.int>? name,
   }) {
     final $result = create();
     if (id != null) {
@@ -131,7 +131,7 @@ class ThemeSummary extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ThemeSummary', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'id')
-    ..aOS(2, _omitFieldNames ? '' : 'name')
+    ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'name', $pb.PbFieldType.OY)
     ..hasRequiredFields = false
   ;
 
@@ -166,9 +166,9 @@ class ThemeSummary extends $pb.GeneratedMessage {
   void clearId() => clearField(1);
 
   @$pb.TagNumber(2)
-  $core.String get name => $_getSZ(1);
+  $core.List<$core.int> get name => $_getN(1);
   @$pb.TagNumber(2)
-  set name($core.String v) { $_setString(1, v); }
+  set name($core.List<$core.int> v) { $_setBytes(1, v); }
   @$pb.TagNumber(2)
   $core.bool hasName() => $_has(1);
   @$pb.TagNumber(2)
@@ -177,20 +177,12 @@ class ThemeSummary extends $pb.GeneratedMessage {
 
 class GroupConfig extends $pb.GeneratedMessage {
   factory GroupConfig({
-    $core.bool? isMulti,
-    $core.bool? isAll,
     $core.Iterable<$core.bool>? levels,
     $core.int? viewType,
     $core.int? sortType,
     $core.int? autoFreezeDays,
   }) {
     final $result = create();
-    if (isMulti != null) {
-      $result.isMulti = isMulti;
-    }
-    if (isAll != null) {
-      $result.isAll = isAll;
-    }
     if (levels != null) {
       $result.levels.addAll(levels);
     }
@@ -210,8 +202,6 @@ class GroupConfig extends $pb.GeneratedMessage {
   factory GroupConfig.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'GroupConfig', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
-    ..aOB(1, _omitFieldNames ? '' : 'isMulti')
-    ..aOB(2, _omitFieldNames ? '' : 'isAll')
     ..p<$core.bool>(3, _omitFieldNames ? '' : 'levels', $pb.PbFieldType.KB)
     ..a<$core.int>(4, _omitFieldNames ? '' : 'viewType', $pb.PbFieldType.O3)
     ..a<$core.int>(5, _omitFieldNames ? '' : 'sortType', $pb.PbFieldType.O3)
@@ -240,51 +230,33 @@ class GroupConfig extends $pb.GeneratedMessage {
   static GroupConfig getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<GroupConfig>(create);
   static GroupConfig? _defaultInstance;
 
-  @$pb.TagNumber(1)
-  $core.bool get isMulti => $_getBF(0);
-  @$pb.TagNumber(1)
-  set isMulti($core.bool v) { $_setBool(0, v); }
-  @$pb.TagNumber(1)
-  $core.bool hasIsMulti() => $_has(0);
-  @$pb.TagNumber(1)
-  void clearIsMulti() => clearField(1);
-
-  @$pb.TagNumber(2)
-  $core.bool get isAll => $_getBF(1);
-  @$pb.TagNumber(2)
-  set isAll($core.bool v) { $_setBool(1, v); }
-  @$pb.TagNumber(2)
-  $core.bool hasIsAll() => $_has(1);
-  @$pb.TagNumber(2)
-  void clearIsAll() => clearField(2);
-
   @$pb.TagNumber(3)
-  $core.List<$core.bool> get levels => $_getList(2);
+  $core.List<$core.bool> get levels => $_getList(0);
 
   @$pb.TagNumber(4)
-  $core.int get viewType => $_getIZ(3);
+  $core.int get viewType => $_getIZ(1);
   @$pb.TagNumber(4)
-  set viewType($core.int v) { $_setSignedInt32(3, v); }
+  set viewType($core.int v) { $_setSignedInt32(1, v); }
   @$pb.TagNumber(4)
-  $core.bool hasViewType() => $_has(3);
+  $core.bool hasViewType() => $_has(1);
   @$pb.TagNumber(4)
   void clearViewType() => clearField(4);
 
   @$pb.TagNumber(5)
-  $core.int get sortType => $_getIZ(4);
+  $core.int get sortType => $_getIZ(2);
   @$pb.TagNumber(5)
-  set sortType($core.int v) { $_setSignedInt32(4, v); }
+  set sortType($core.int v) { $_setSignedInt32(2, v); }
   @$pb.TagNumber(5)
-  $core.bool hasSortType() => $_has(4);
+  $core.bool hasSortType() => $_has(2);
   @$pb.TagNumber(5)
   void clearSortType() => clearField(5);
 
   @$pb.TagNumber(6)
-  $core.int get autoFreezeDays => $_getIZ(5);
+  $core.int get autoFreezeDays => $_getIZ(3);
   @$pb.TagNumber(6)
-  set autoFreezeDays($core.int v) { $_setSignedInt32(5, v); }
+  set autoFreezeDays($core.int v) { $_setSignedInt32(3, v); }
   @$pb.TagNumber(6)
-  $core.bool hasAutoFreezeDays() => $_has(5);
+  $core.bool hasAutoFreezeDays() => $_has(3);
   @$pb.TagNumber(6)
   void clearAutoFreezeDays() => clearField(6);
 }
@@ -292,7 +264,7 @@ class GroupConfig extends $pb.GeneratedMessage {
 class GroupSummary extends $pb.GeneratedMessage {
   factory GroupSummary({
     $core.String? id,
-    $core.String? name,
+    $core.List<$core.int>? name,
     $fixnum.Int64? createAt,
     $fixnum.Int64? updateAt,
     $fixnum.Int64? overAt,
@@ -325,7 +297,7 @@ class GroupSummary extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'GroupSummary', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'id')
-    ..aOS(2, _omitFieldNames ? '' : 'name')
+    ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'name', $pb.PbFieldType.OY)
     ..aInt64(3, _omitFieldNames ? '' : 'createAt')
     ..aInt64(4, _omitFieldNames ? '' : 'updateAt')
     ..aInt64(5, _omitFieldNames ? '' : 'overAt')
@@ -364,9 +336,9 @@ class GroupSummary extends $pb.GeneratedMessage {
   void clearId() => clearField(1);
 
   @$pb.TagNumber(2)
-  $core.String get name => $_getSZ(1);
+  $core.List<$core.int> get name => $_getN(1);
   @$pb.TagNumber(2)
-  set name($core.String v) { $_setString(1, v); }
+  set name($core.List<$core.int> v) { $_setBytes(1, v); }
   @$pb.TagNumber(2)
   $core.bool hasName() => $_has(1);
   @$pb.TagNumber(2)
@@ -414,9 +386,7 @@ class GroupSummary extends $pb.GeneratedMessage {
 class DocSummary extends $pb.GeneratedMessage {
   factory DocSummary({
     $core.String? id,
-    $core.String? title,
-    $core.String? plainText,
-    $core.int? level,
+    Content? content,
     $fixnum.Int64? createAt,
     $fixnum.Int64? updateAt,
   }) {
@@ -424,14 +394,8 @@ class DocSummary extends $pb.GeneratedMessage {
     if (id != null) {
       $result.id = id;
     }
-    if (title != null) {
-      $result.title = title;
-    }
-    if (plainText != null) {
-      $result.plainText = plainText;
-    }
-    if (level != null) {
-      $result.level = level;
+    if (content != null) {
+      $result.content = content;
     }
     if (createAt != null) {
       $result.createAt = createAt;
@@ -447,9 +411,7 @@ class DocSummary extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'DocSummary', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'id')
-    ..aOS(2, _omitFieldNames ? '' : 'title')
-    ..aOS(3, _omitFieldNames ? '' : 'plainText')
-    ..a<$core.int>(4, _omitFieldNames ? '' : 'level', $pb.PbFieldType.O3)
+    ..aOM<Content>(2, _omitFieldNames ? '' : 'content', subBuilder: Content.create)
     ..aInt64(5, _omitFieldNames ? '' : 'createAt')
     ..aInt64(6, _omitFieldNames ? '' : 'updateAt')
     ..hasRequiredFields = false
@@ -486,58 +448,117 @@ class DocSummary extends $pb.GeneratedMessage {
   void clearId() => clearField(1);
 
   @$pb.TagNumber(2)
-  $core.String get title => $_getSZ(1);
+  Content get content => $_getN(1);
   @$pb.TagNumber(2)
-  set title($core.String v) { $_setString(1, v); }
+  set content(Content v) { setField(2, v); }
   @$pb.TagNumber(2)
-  $core.bool hasTitle() => $_has(1);
+  $core.bool hasContent() => $_has(1);
   @$pb.TagNumber(2)
-  void clearTitle() => clearField(2);
-
-  @$pb.TagNumber(3)
-  $core.String get plainText => $_getSZ(2);
-  @$pb.TagNumber(3)
-  set plainText($core.String v) { $_setString(2, v); }
-  @$pb.TagNumber(3)
-  $core.bool hasPlainText() => $_has(2);
-  @$pb.TagNumber(3)
-  void clearPlainText() => clearField(3);
-
-  @$pb.TagNumber(4)
-  $core.int get level => $_getIZ(3);
-  @$pb.TagNumber(4)
-  set level($core.int v) { $_setSignedInt32(3, v); }
-  @$pb.TagNumber(4)
-  $core.bool hasLevel() => $_has(3);
-  @$pb.TagNumber(4)
-  void clearLevel() => clearField(4);
+  void clearContent() => clearField(2);
+  @$pb.TagNumber(2)
+  Content ensureContent() => $_ensure(1);
 
   @$pb.TagNumber(5)
-  $fixnum.Int64 get createAt => $_getI64(4);
+  $fixnum.Int64 get createAt => $_getI64(2);
   @$pb.TagNumber(5)
-  set createAt($fixnum.Int64 v) { $_setInt64(4, v); }
+  set createAt($fixnum.Int64 v) { $_setInt64(2, v); }
   @$pb.TagNumber(5)
-  $core.bool hasCreateAt() => $_has(4);
+  $core.bool hasCreateAt() => $_has(2);
   @$pb.TagNumber(5)
   void clearCreateAt() => clearField(5);
 
   @$pb.TagNumber(6)
-  $fixnum.Int64 get updateAt => $_getI64(5);
+  $fixnum.Int64 get updateAt => $_getI64(3);
   @$pb.TagNumber(6)
-  set updateAt($fixnum.Int64 v) { $_setInt64(5, v); }
+  set updateAt($fixnum.Int64 v) { $_setInt64(3, v); }
   @$pb.TagNumber(6)
-  $core.bool hasUpdateAt() => $_has(5);
+  $core.bool hasUpdateAt() => $_has(3);
   @$pb.TagNumber(6)
   void clearUpdateAt() => clearField(6);
+}
+
+class Content extends $pb.GeneratedMessage {
+  factory Content({
+    $core.List<$core.int>? title,
+    $core.List<$core.int>? rich,
+    $core.List<$core.int>? level,
+  }) {
+    final $result = create();
+    if (title != null) {
+      $result.title = title;
+    }
+    if (rich != null) {
+      $result.rich = rich;
+    }
+    if (level != null) {
+      $result.level = level;
+    }
+    return $result;
+  }
+  Content._() : super();
+  factory Content.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory Content.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'Content', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
+    ..a<$core.List<$core.int>>(1, _omitFieldNames ? '' : 'title', $pb.PbFieldType.OY)
+    ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'rich', $pb.PbFieldType.OY)
+    ..a<$core.List<$core.int>>(3, _omitFieldNames ? '' : 'level', $pb.PbFieldType.OY)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  Content clone() => Content()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  Content copyWith(void Function(Content) updates) => super.copyWith((message) => updates(message as Content)) as Content;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static Content create() => Content._();
+  Content createEmptyInstance() => create();
+  static $pb.PbList<Content> createRepeated() => $pb.PbList<Content>();
+  @$core.pragma('dart2js:noInline')
+  static Content getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Content>(create);
+  static Content? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.List<$core.int> get title => $_getN(0);
+  @$pb.TagNumber(1)
+  set title($core.List<$core.int> v) { $_setBytes(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasTitle() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearTitle() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.List<$core.int> get rich => $_getN(1);
+  @$pb.TagNumber(2)
+  set rich($core.List<$core.int> v) { $_setBytes(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasRich() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearRich() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.List<$core.int> get level => $_getN(2);
+  @$pb.TagNumber(3)
+  set level($core.List<$core.int> v) { $_setBytes(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasLevel() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearLevel() => clearField(3);
 }
 
 class DocDetail extends $pb.GeneratedMessage {
   factory DocDetail({
     $core.String? id,
-    $core.String? title,
-    $core.String? plainText,
-    $core.String? content,
-    $core.int? level,
+    Content? content,
     $fixnum.Int64? createAt,
     $fixnum.Int64? updateAt,
   }) {
@@ -545,17 +566,8 @@ class DocDetail extends $pb.GeneratedMessage {
     if (id != null) {
       $result.id = id;
     }
-    if (title != null) {
-      $result.title = title;
-    }
-    if (plainText != null) {
-      $result.plainText = plainText;
-    }
     if (content != null) {
       $result.content = content;
-    }
-    if (level != null) {
-      $result.level = level;
     }
     if (createAt != null) {
       $result.createAt = createAt;
@@ -571,10 +583,7 @@ class DocDetail extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'DocDetail', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'id')
-    ..aOS(2, _omitFieldNames ? '' : 'title')
-    ..aOS(3, _omitFieldNames ? '' : 'plainText')
-    ..aOS(4, _omitFieldNames ? '' : 'content')
-    ..a<$core.int>(5, _omitFieldNames ? '' : 'level', $pb.PbFieldType.O3)
+    ..aOM<Content>(2, _omitFieldNames ? '' : 'content', subBuilder: Content.create)
     ..aInt64(6, _omitFieldNames ? '' : 'createAt')
     ..aInt64(7, _omitFieldNames ? '' : 'updateAt')
     ..hasRequiredFields = false
@@ -611,56 +620,31 @@ class DocDetail extends $pb.GeneratedMessage {
   void clearId() => clearField(1);
 
   @$pb.TagNumber(2)
-  $core.String get title => $_getSZ(1);
+  Content get content => $_getN(1);
   @$pb.TagNumber(2)
-  set title($core.String v) { $_setString(1, v); }
+  set content(Content v) { setField(2, v); }
   @$pb.TagNumber(2)
-  $core.bool hasTitle() => $_has(1);
+  $core.bool hasContent() => $_has(1);
   @$pb.TagNumber(2)
-  void clearTitle() => clearField(2);
-
-  @$pb.TagNumber(3)
-  $core.String get plainText => $_getSZ(2);
-  @$pb.TagNumber(3)
-  set plainText($core.String v) { $_setString(2, v); }
-  @$pb.TagNumber(3)
-  $core.bool hasPlainText() => $_has(2);
-  @$pb.TagNumber(3)
-  void clearPlainText() => clearField(3);
-
-  @$pb.TagNumber(4)
-  $core.String get content => $_getSZ(3);
-  @$pb.TagNumber(4)
-  set content($core.String v) { $_setString(3, v); }
-  @$pb.TagNumber(4)
-  $core.bool hasContent() => $_has(3);
-  @$pb.TagNumber(4)
-  void clearContent() => clearField(4);
-
-  @$pb.TagNumber(5)
-  $core.int get level => $_getIZ(4);
-  @$pb.TagNumber(5)
-  set level($core.int v) { $_setSignedInt32(4, v); }
-  @$pb.TagNumber(5)
-  $core.bool hasLevel() => $_has(4);
-  @$pb.TagNumber(5)
-  void clearLevel() => clearField(5);
+  void clearContent() => clearField(2);
+  @$pb.TagNumber(2)
+  Content ensureContent() => $_ensure(1);
 
   @$pb.TagNumber(6)
-  $fixnum.Int64 get createAt => $_getI64(5);
+  $fixnum.Int64 get createAt => $_getI64(2);
   @$pb.TagNumber(6)
-  set createAt($fixnum.Int64 v) { $_setInt64(5, v); }
+  set createAt($fixnum.Int64 v) { $_setInt64(2, v); }
   @$pb.TagNumber(6)
-  $core.bool hasCreateAt() => $_has(5);
+  $core.bool hasCreateAt() => $_has(2);
   @$pb.TagNumber(6)
   void clearCreateAt() => clearField(6);
 
   @$pb.TagNumber(7)
-  $fixnum.Int64 get updateAt => $_getI64(6);
+  $fixnum.Int64 get updateAt => $_getI64(3);
   @$pb.TagNumber(7)
-  set updateAt($fixnum.Int64 v) { $_setInt64(6, v); }
+  set updateAt($fixnum.Int64 v) { $_setInt64(3, v); }
   @$pb.TagNumber(7)
-  $core.bool hasUpdateAt() => $_has(6);
+  $core.bool hasUpdateAt() => $_has(3);
   @$pb.TagNumber(7)
   void clearUpdateAt() => clearField(7);
 }
@@ -668,7 +652,7 @@ class DocDetail extends $pb.GeneratedMessage {
 class GroupDetail extends $pb.GeneratedMessage {
   factory GroupDetail({
     $core.String? id,
-    $core.String? name,
+    $core.List<$core.int>? name,
     GroupConfig? config,
     $core.Iterable<DocDetail>? docs,
   }) {
@@ -693,7 +677,7 @@ class GroupDetail extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'GroupDetail', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'id')
-    ..aOS(2, _omitFieldNames ? '' : 'name')
+    ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'name', $pb.PbFieldType.OY)
     ..aOM<GroupConfig>(3, _omitFieldNames ? '' : 'config', subBuilder: GroupConfig.create)
     ..pc<DocDetail>(4, _omitFieldNames ? '' : 'docs', $pb.PbFieldType.PM, subBuilder: DocDetail.create)
     ..hasRequiredFields = false
@@ -730,9 +714,9 @@ class GroupDetail extends $pb.GeneratedMessage {
   void clearId() => clearField(1);
 
   @$pb.TagNumber(2)
-  $core.String get name => $_getSZ(1);
+  $core.List<$core.int> get name => $_getN(1);
   @$pb.TagNumber(2)
-  set name($core.String v) { $_setString(1, v); }
+  set name($core.List<$core.int> v) { $_setBytes(1, v); }
   @$pb.TagNumber(2)
   $core.bool hasName() => $_has(1);
   @$pb.TagNumber(2)
@@ -756,7 +740,7 @@ class GroupDetail extends $pb.GeneratedMessage {
 class ThemeDetail extends $pb.GeneratedMessage {
   factory ThemeDetail({
     $core.String? id,
-    $core.String? name,
+    $core.List<$core.int>? name,
     $core.Iterable<GroupDetail>? groups,
   }) {
     final $result = create();
@@ -777,7 +761,7 @@ class ThemeDetail extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ThemeDetail', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'id')
-    ..aOS(2, _omitFieldNames ? '' : 'name')
+    ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'name', $pb.PbFieldType.OY)
     ..pc<GroupDetail>(3, _omitFieldNames ? '' : 'groups', $pb.PbFieldType.PM, subBuilder: GroupDetail.create)
     ..hasRequiredFields = false
   ;
@@ -813,9 +797,9 @@ class ThemeDetail extends $pb.GeneratedMessage {
   void clearId() => clearField(1);
 
   @$pb.TagNumber(2)
-  $core.String get name => $_getSZ(1);
+  $core.List<$core.int> get name => $_getN(1);
   @$pb.TagNumber(2)
-  set name($core.String v) { $_setString(1, v); }
+  set name($core.List<$core.int> v) { $_setBytes(1, v); }
   @$pb.TagNumber(2)
   $core.bool hasName() => $_has(1);
   @$pb.TagNumber(2)
@@ -964,11 +948,15 @@ class ListThemesResponse extends $pb.GeneratedMessage {
 
 class CreateThemeRequest extends $pb.GeneratedMessage {
   factory CreateThemeRequest({
-    $core.String? name,
+    $core.List<$core.int>? name,
+    $core.List<$core.int>? defaultGroupName,
   }) {
     final $result = create();
     if (name != null) {
       $result.name = name;
+    }
+    if (defaultGroupName != null) {
+      $result.defaultGroupName = defaultGroupName;
     }
     return $result;
   }
@@ -977,7 +965,8 @@ class CreateThemeRequest extends $pb.GeneratedMessage {
   factory CreateThemeRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'CreateThemeRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
-    ..aOS(1, _omitFieldNames ? '' : 'name')
+    ..a<$core.List<$core.int>>(1, _omitFieldNames ? '' : 'name', $pb.PbFieldType.OY)
+    ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'defaultGroupName', $pb.PbFieldType.OY)
     ..hasRequiredFields = false
   ;
 
@@ -1003,13 +992,22 @@ class CreateThemeRequest extends $pb.GeneratedMessage {
   static CreateThemeRequest? _defaultInstance;
 
   @$pb.TagNumber(1)
-  $core.String get name => $_getSZ(0);
+  $core.List<$core.int> get name => $_getN(0);
   @$pb.TagNumber(1)
-  set name($core.String v) { $_setString(0, v); }
+  set name($core.List<$core.int> v) { $_setBytes(0, v); }
   @$pb.TagNumber(1)
   $core.bool hasName() => $_has(0);
   @$pb.TagNumber(1)
   void clearName() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.List<$core.int> get defaultGroupName => $_getN(1);
+  @$pb.TagNumber(2)
+  set defaultGroupName($core.List<$core.int> v) { $_setBytes(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasDefaultGroupName() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearDefaultGroupName() => clearField(2);
 }
 
 class CreateThemeResponse extends $pb.GeneratedMessage {
@@ -1093,7 +1091,7 @@ class CreateThemeResponse extends $pb.GeneratedMessage {
 class UpdateThemeRequest extends $pb.GeneratedMessage {
   factory UpdateThemeRequest({
     $core.String? id,
-    $core.String? name,
+    $core.List<$core.int>? name,
   }) {
     final $result = create();
     if (id != null) {
@@ -1110,7 +1108,7 @@ class UpdateThemeRequest extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'UpdateThemeRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'id')
-    ..aOS(2, _omitFieldNames ? '' : 'name')
+    ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'name', $pb.PbFieldType.OY)
     ..hasRequiredFields = false
   ;
 
@@ -1145,9 +1143,9 @@ class UpdateThemeRequest extends $pb.GeneratedMessage {
   void clearId() => clearField(1);
 
   @$pb.TagNumber(2)
-  $core.String get name => $_getSZ(1);
+  $core.List<$core.int> get name => $_getN(1);
   @$pb.TagNumber(2)
-  set name($core.String v) { $_setString(1, v); }
+  set name($core.List<$core.int> v) { $_setBytes(1, v); }
   @$pb.TagNumber(2)
   $core.bool hasName() => $_has(1);
   @$pb.TagNumber(2)
@@ -1534,7 +1532,7 @@ class GetGroupResponse extends $pb.GeneratedMessage {
 class CreateGroupRequest extends $pb.GeneratedMessage {
   factory CreateGroupRequest({
     $core.String? themeId,
-    $core.String? name,
+    $core.List<$core.int>? name,
     $core.int? autoFreezeDays,
   }) {
     final $result = create();
@@ -1555,7 +1553,7 @@ class CreateGroupRequest extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'CreateGroupRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'themeId')
-    ..aOS(2, _omitFieldNames ? '' : 'name')
+    ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'name', $pb.PbFieldType.OY)
     ..a<$core.int>(3, _omitFieldNames ? '' : 'autoFreezeDays', $pb.PbFieldType.O3)
     ..hasRequiredFields = false
   ;
@@ -1591,9 +1589,9 @@ class CreateGroupRequest extends $pb.GeneratedMessage {
   void clearThemeId() => clearField(1);
 
   @$pb.TagNumber(2)
-  $core.String get name => $_getSZ(1);
+  $core.List<$core.int> get name => $_getN(1);
   @$pb.TagNumber(2)
-  set name($core.String v) { $_setString(1, v); }
+  set name($core.List<$core.int> v) { $_setBytes(1, v); }
   @$pb.TagNumber(2)
   $core.bool hasName() => $_has(1);
   @$pb.TagNumber(2)
@@ -1691,7 +1689,7 @@ class UpdateGroupRequest extends $pb.GeneratedMessage {
   factory UpdateGroupRequest({
     $core.String? themeId,
     $core.String? groupId,
-    $core.String? name,
+    $core.List<$core.int>? name,
     GroupConfig? config,
     $fixnum.Int64? overAt,
   }) {
@@ -1720,7 +1718,7 @@ class UpdateGroupRequest extends $pb.GeneratedMessage {
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'UpdateGroupRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'themeId')
     ..aOS(2, _omitFieldNames ? '' : 'groupId')
-    ..aOS(3, _omitFieldNames ? '' : 'name')
+    ..a<$core.List<$core.int>>(3, _omitFieldNames ? '' : 'name', $pb.PbFieldType.OY)
     ..aOM<GroupConfig>(4, _omitFieldNames ? '' : 'config', subBuilder: GroupConfig.create)
     ..aInt64(5, _omitFieldNames ? '' : 'overAt')
     ..hasRequiredFields = false
@@ -1766,9 +1764,9 @@ class UpdateGroupRequest extends $pb.GeneratedMessage {
   void clearGroupId() => clearField(2);
 
   @$pb.TagNumber(3)
-  $core.String get name => $_getSZ(2);
+  $core.List<$core.int> get name => $_getN(2);
   @$pb.TagNumber(3)
-  set name($core.String v) { $_setString(2, v); }
+  set name($core.List<$core.int> v) { $_setBytes(2, v); }
   @$pb.TagNumber(3)
   $core.bool hasName() => $_has(2);
   @$pb.TagNumber(3)
@@ -2141,27 +2139,15 @@ class ListDocsResponse extends $pb.GeneratedMessage {
 class CreateDocRequest extends $pb.GeneratedMessage {
   factory CreateDocRequest({
     $core.String? groupId,
-    $core.String? title,
-    $core.String? content,
-    $core.String? plainText,
-    $core.int? level,
+    Content? content,
     $fixnum.Int64? createAt,
   }) {
     final $result = create();
     if (groupId != null) {
       $result.groupId = groupId;
     }
-    if (title != null) {
-      $result.title = title;
-    }
     if (content != null) {
       $result.content = content;
-    }
-    if (plainText != null) {
-      $result.plainText = plainText;
-    }
-    if (level != null) {
-      $result.level = level;
     }
     if (createAt != null) {
       $result.createAt = createAt;
@@ -2174,10 +2160,7 @@ class CreateDocRequest extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'CreateDocRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'groupId')
-    ..aOS(2, _omitFieldNames ? '' : 'title')
-    ..aOS(3, _omitFieldNames ? '' : 'content')
-    ..aOS(4, _omitFieldNames ? '' : 'plainText')
-    ..a<$core.int>(5, _omitFieldNames ? '' : 'level', $pb.PbFieldType.O3)
+    ..aOM<Content>(2, _omitFieldNames ? '' : 'content', subBuilder: Content.create)
     ..aInt64(6, _omitFieldNames ? '' : 'createAt')
     ..hasRequiredFields = false
   ;
@@ -2213,47 +2196,22 @@ class CreateDocRequest extends $pb.GeneratedMessage {
   void clearGroupId() => clearField(1);
 
   @$pb.TagNumber(2)
-  $core.String get title => $_getSZ(1);
+  Content get content => $_getN(1);
   @$pb.TagNumber(2)
-  set title($core.String v) { $_setString(1, v); }
+  set content(Content v) { setField(2, v); }
   @$pb.TagNumber(2)
-  $core.bool hasTitle() => $_has(1);
+  $core.bool hasContent() => $_has(1);
   @$pb.TagNumber(2)
-  void clearTitle() => clearField(2);
-
-  @$pb.TagNumber(3)
-  $core.String get content => $_getSZ(2);
-  @$pb.TagNumber(3)
-  set content($core.String v) { $_setString(2, v); }
-  @$pb.TagNumber(3)
-  $core.bool hasContent() => $_has(2);
-  @$pb.TagNumber(3)
-  void clearContent() => clearField(3);
-
-  @$pb.TagNumber(4)
-  $core.String get plainText => $_getSZ(3);
-  @$pb.TagNumber(4)
-  set plainText($core.String v) { $_setString(3, v); }
-  @$pb.TagNumber(4)
-  $core.bool hasPlainText() => $_has(3);
-  @$pb.TagNumber(4)
-  void clearPlainText() => clearField(4);
-
-  @$pb.TagNumber(5)
-  $core.int get level => $_getIZ(4);
-  @$pb.TagNumber(5)
-  set level($core.int v) { $_setSignedInt32(4, v); }
-  @$pb.TagNumber(5)
-  $core.bool hasLevel() => $_has(4);
-  @$pb.TagNumber(5)
-  void clearLevel() => clearField(5);
+  void clearContent() => clearField(2);
+  @$pb.TagNumber(2)
+  Content ensureContent() => $_ensure(1);
 
   @$pb.TagNumber(6)
-  $fixnum.Int64 get createAt => $_getI64(5);
+  $fixnum.Int64 get createAt => $_getI64(2);
   @$pb.TagNumber(6)
-  set createAt($fixnum.Int64 v) { $_setInt64(5, v); }
+  set createAt($fixnum.Int64 v) { $_setInt64(2, v); }
   @$pb.TagNumber(6)
-  $core.bool hasCreateAt() => $_has(5);
+  $core.bool hasCreateAt() => $_has(2);
   @$pb.TagNumber(6)
   void clearCreateAt() => clearField(6);
 }
@@ -2340,10 +2298,7 @@ class UpdateDocRequest extends $pb.GeneratedMessage {
   factory UpdateDocRequest({
     $core.String? groupId,
     $core.String? docId,
-    $core.String? title,
-    $core.String? content,
-    $core.String? plainText,
-    $core.int? level,
+    Content? content,
     $fixnum.Int64? createAt,
   }) {
     final $result = create();
@@ -2353,17 +2308,8 @@ class UpdateDocRequest extends $pb.GeneratedMessage {
     if (docId != null) {
       $result.docId = docId;
     }
-    if (title != null) {
-      $result.title = title;
-    }
     if (content != null) {
       $result.content = content;
-    }
-    if (plainText != null) {
-      $result.plainText = plainText;
-    }
-    if (level != null) {
-      $result.level = level;
     }
     if (createAt != null) {
       $result.createAt = createAt;
@@ -2377,10 +2323,7 @@ class UpdateDocRequest extends $pb.GeneratedMessage {
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'UpdateDocRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'groupId')
     ..aOS(2, _omitFieldNames ? '' : 'docId')
-    ..aOS(3, _omitFieldNames ? '' : 'title')
-    ..aOS(4, _omitFieldNames ? '' : 'content')
-    ..aOS(5, _omitFieldNames ? '' : 'plainText')
-    ..a<$core.int>(6, _omitFieldNames ? '' : 'level', $pb.PbFieldType.O3)
+    ..aOM<Content>(3, _omitFieldNames ? '' : 'content', subBuilder: Content.create)
     ..aInt64(7, _omitFieldNames ? '' : 'createAt')
     ..hasRequiredFields = false
   ;
@@ -2425,47 +2368,22 @@ class UpdateDocRequest extends $pb.GeneratedMessage {
   void clearDocId() => clearField(2);
 
   @$pb.TagNumber(3)
-  $core.String get title => $_getSZ(2);
+  Content get content => $_getN(2);
   @$pb.TagNumber(3)
-  set title($core.String v) { $_setString(2, v); }
+  set content(Content v) { setField(3, v); }
   @$pb.TagNumber(3)
-  $core.bool hasTitle() => $_has(2);
+  $core.bool hasContent() => $_has(2);
   @$pb.TagNumber(3)
-  void clearTitle() => clearField(3);
-
-  @$pb.TagNumber(4)
-  $core.String get content => $_getSZ(3);
-  @$pb.TagNumber(4)
-  set content($core.String v) { $_setString(3, v); }
-  @$pb.TagNumber(4)
-  $core.bool hasContent() => $_has(3);
-  @$pb.TagNumber(4)
-  void clearContent() => clearField(4);
-
-  @$pb.TagNumber(5)
-  $core.String get plainText => $_getSZ(4);
-  @$pb.TagNumber(5)
-  set plainText($core.String v) { $_setString(4, v); }
-  @$pb.TagNumber(5)
-  $core.bool hasPlainText() => $_has(4);
-  @$pb.TagNumber(5)
-  void clearPlainText() => clearField(5);
-
-  @$pb.TagNumber(6)
-  $core.int get level => $_getIZ(5);
-  @$pb.TagNumber(6)
-  set level($core.int v) { $_setSignedInt32(5, v); }
-  @$pb.TagNumber(6)
-  $core.bool hasLevel() => $_has(5);
-  @$pb.TagNumber(6)
-  void clearLevel() => clearField(6);
+  void clearContent() => clearField(3);
+  @$pb.TagNumber(3)
+  Content ensureContent() => $_ensure(2);
 
   @$pb.TagNumber(7)
-  $fixnum.Int64 get createAt => $_getI64(6);
+  $fixnum.Int64 get createAt => $_getI64(3);
   @$pb.TagNumber(7)
-  set createAt($fixnum.Int64 v) { $_setInt64(6, v); }
+  set createAt($fixnum.Int64 v) { $_setInt64(3, v); }
   @$pb.TagNumber(7)
-  $core.bool hasCreateAt() => $_has(6);
+  $core.bool hasCreateAt() => $_has(3);
   @$pb.TagNumber(7)
   void clearCreateAt() => clearField(7);
 }

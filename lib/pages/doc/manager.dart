@@ -24,7 +24,7 @@ class DocsManager extends ChangeNotifier {
   // 获取数据
   Future<void> fetchDocs(
       {int? year, int? month, required GroupConfig config}) async {
-    final ret = await Http(gid: groupId).getDocs(year, month);
+    final ret = await Grpc(gid: groupId).getDocs(year, month);
     _allFetchedDocs = ret.data;
 
     // 如果是获取全部数据，则更新缓存

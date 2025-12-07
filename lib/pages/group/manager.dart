@@ -19,8 +19,6 @@ class GroupsManager with ChangeNotifier {
   }
 
   final config = GroupConfig(
-      isAll: false,
-      isMulti: false,
       levels: [true, true, true, true, true],
       viewType: 0,
       sortType: 0,
@@ -35,7 +33,7 @@ class GroupsManager with ChangeNotifier {
     final idToFetch = targetTid ?? tid;
     if (idToFetch.isEmpty) return false;
 
-    final res = await Http(tid: idToFetch).getGroups();
+    final res = await Grpc(tid: idToFetch).getGroups();
     if (res.isNotOK) {
       return false;
     }
@@ -88,8 +86,8 @@ class GroupsManager with ChangeNotifier {
   }
 
   Future<bool> add(String name, {int freezeDays = 30}) async {
-    final req = RequestPostGroup(name: name, autoFreezeDays: freezeDays);
-    final res = await Http(tid: tid).postGroup(req);
+    final req = RequestCreateGroup(name: name, autoFreezeDays: freezeDays);
+    final res = await Grpc(tid: tid).postGroup(req);
     if (res.isNotOK) {
       return false;
     }

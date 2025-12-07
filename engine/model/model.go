@@ -7,16 +7,20 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type DocContent struct {
+	Title []byte `json:"title" bson:"title"`
+	Rich  []byte `json:"rich" bson:"rich"`
+	Level []byte `json:"level,omitempty" bson:"level"`
+}
+
 type Doc struct {
-	Title     string             `json:"title" bson:"title"`
-	Content   string             `json:"content" bson:"content"`
-	PlainText string             `json:"plain_text" bson:"plain_text"`
-	Level     int32              `json:"level" bson:"level"`
-	CreateAt  time.Time          `json:"createAt" bson:"createAt"`
-	UpdateAt  time.Time          `json:"updateAt" bson:"updateAt"`
-	Config    *DocConfig         `json:"config,omitempty" bson:"config"`
-	ID        string             `json:"id" bson:"did"`
-	OID       primitive.ObjectID `json:"-" bson:"_id"`
+	Content     DocContent         `json:"content" bson:"content"`
+	CreateAt    time.Time          `json:"createAt" bson:"createAt"`
+	UpdateAt    time.Time          `json:"updateAt" bson:"updateAt"`
+	Config      *DocConfig         `json:"config,omitempty" bson:"config"`
+	ID          string             `json:"id" bson:"did"`
+	OID         primitive.ObjectID `json:"-" bson:"_id"`
+	LegacyLevel int32              `json:"-" bson:"level,omitempty"`
 }
 
 // MarshalJSON 自定义 JSON 序列化,将时间格式化为字符串
@@ -65,7 +69,7 @@ func (d *Doc) UnmarshalJSON(data []byte) error {
 }
 
 type Group struct {
-	Name     string      `json:"name" bson:"name"`
+	Name     []byte      `json:"name" bson:"name"`
 	ID       string      `json:"id" bson:"gid"`
 	CreateAt string      `json:"createAt" bson:"createAt"`
 	UpdateAt string      `json:"updateAt" bson:"updateAt"`
@@ -74,7 +78,7 @@ type Group struct {
 }
 type GroupAndDocs struct {
 	GID      string      `json:"gid" bson:"gid"`
-	Name     string      `json:"name" bson:"name,omitempty"` // 来自 A 集合的 name 字段
+	Name     []byte      `json:"name" bson:"name,omitempty"` // 来自 A 集合的 name 字段
 	Docs     []Doc       `json:"docs" bson:"docs,omitempty"` // 关联查询到的 B 集合印迹数组
 	Default  bool        `json:"default" bson:"default,omitempty"`
 	CreateAt string      `json:"createAt" bson:"createAt"`
@@ -83,8 +87,6 @@ type GroupAndDocs struct {
 	Config   GroupConfig `json:"group_config" bson:"group_config"`
 }
 type GroupConfig struct {
-	Is_multi       bool   `json:"is_multi" bson:"is_multi"`
-	Is_all         bool   `json:"is_all" bson:"is_all"`
 	Levels         []bool `json:"levels" bson:"levels"`
 	View_type      int    `json:"view_type" bson:"view_type"`
 	Sort_type      int    `json:"sort_type" bson:"sort_type"`

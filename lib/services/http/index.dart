@@ -6,10 +6,10 @@ import 'package:whispering_time/utils/env.dart';
 import 'package:whispering_time/services/isar/config.dart';
 
 // 用户登陆
-class RequestPostUserLogin {
+class RequestCreateUserLogin {
   final String account;
   final String password;
-  RequestPostUserLogin({required this.account, required this.password});
+  RequestCreateUserLogin({required this.account, required this.password});
   Map<String, dynamic> toJson() {
     return {'account': account, 'password': password, 'category': appNameEn};
   }
@@ -39,11 +39,11 @@ class ReponsePostUserLogin extends Basic {
 }
 
 // 用户注册
-class RequestPostUserRegister {
+class RequestCreateUserRegister {
   final String username;
   final String email;
   final String password;
-  RequestPostUserRegister({
+  RequestCreateUserRegister({
     required this.username,
     required this.email,
     required this.password,
@@ -80,8 +80,8 @@ class ReponsePostUserRegister extends Basic {
   }
 }
 
-class RequestPostUserRegisterVisitor {
-  RequestPostUserRegisterVisitor();
+class RequestCreateUserRegisterVisitor {
+  RequestCreateUserRegisterVisitor();
   Map<String, dynamic> toJson() {
     return {
       'category': appNameEn,
@@ -119,11 +119,11 @@ class ReponseGetUserInfo extends Basic {
 }
 
 // 用户头像和昵称
-class RequestPutUserProfile {
+class RequestUpdateUserProfile {
   final String? nickname;
   final Uint8List? bytes;
   final String? ext;
-  RequestPutUserProfile({this.nickname, this.bytes, this.ext});
+  RequestUpdateUserProfile({this.nickname, this.bytes, this.ext});
 }
 
 class ReponsePutUserProfile extends Basic {
@@ -179,14 +179,14 @@ class FeedBack {
   }
 }
 
-class RequestPostFeedback {
+class RequestCreateFeedback {
   FeedbackType fbType;
   String title;
   String content;
   bool isPublic;
   String? deviceFilePath;
   List<String>? images;
-  RequestPostFeedback(
+  RequestCreateFeedback(
       {required this.fbType,
       required this.title,
       required this.content,
@@ -290,7 +290,7 @@ class Http {
     return statusCode >= 400;
   }
 
-  Future<ResponsePostFeedback> postFeedback(RequestPostFeedback req) async {
+  Future<ResponsePostFeedback> postFeedback(RequestCreateFeedback req) async {
     log.i("发送请求 提交反馈");
     String path = "/api/v1/feedback";
 
@@ -344,7 +344,7 @@ class Http {
     );
   }
 
-  Future<ReponsePostUserRegister> userRegister(RequestPostUserRegister req) {
+  Future<ReponsePostUserRegister> userRegister(RequestCreateUserRegister req) {
     log.i("发送请求 用户注册");
     final path = "/api/v1/user/register";
 
@@ -360,7 +360,7 @@ class Http {
 
   Future<ReponsePostUserRegister> userRegisterVisitor() {
     log.i("发送请求 游客注册");
-    RequestPostUserRegisterVisitor req = RequestPostUserRegisterVisitor();
+    RequestCreateUserRegisterVisitor req = RequestCreateUserRegisterVisitor();
 
     final path = "/api/v1/user/register";
     final Map<String, String> param = {
@@ -377,7 +377,7 @@ class Http {
     );
   }
 
-  Future<ReponsePostUserLogin> userLogin(RequestPostUserLogin req) async {
+  Future<ReponsePostUserLogin> userLogin(RequestCreateUserLogin req) async {
     log.i("发送请求 用户登陆");
     final path = "/api/v1/user/login";
     final uri = URI().get(serverAddress, path);
@@ -405,7 +405,8 @@ class Http {
     );
   }
 
-  Future<ReponsePutUserProfile> userProfile(RequestPutUserProfile req) async {
+  Future<ReponsePutUserProfile> userProfile(
+      RequestUpdateUserProfile req) async {
     final path = "/api/v1/user/profile";
     final uri = URI().get(serverAddress, path);
 

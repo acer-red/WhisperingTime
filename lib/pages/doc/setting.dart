@@ -121,8 +121,8 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
   void _setTool(bool value) async {
     isChanged = true;
     if (widget.did != null) {
-      final res = await Http(gid: widget.gid, did: widget.did)
-          .putDoc(RequestPutDoc(config: DocConfig(isShowTool: value)));
+      final res = await Grpc(gid: widget.gid, did: widget.did)
+          .putDoc(RequestUpdateDoc(config: DocConfig(isShowTool: value)));
       if (res.isNotOK) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -192,8 +192,8 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
 
     // 如果文档已保存，立即更新到服务器
     if (widget.did != null) {
-      final res = await Http(gid: widget.gid, did: widget.did)
-          .putDoc(RequestPutDoc(createAt: newCreateAt));
+      final res = await Grpc(gid: widget.gid, did: widget.did)
+          .putDoc(RequestUpdateDoc(createAt: newCreateAt));
       if (res.isNotOK) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -231,7 +231,7 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
       return false;
     }
 
-    final res = await Http(gid: widget.gid, did: widget.did).deleteDoc();
+    final res = await Grpc(gid: widget.gid, did: widget.did).deleteDoc();
     if (!mounted) return false;
 
     if (res.isNotOK) {
