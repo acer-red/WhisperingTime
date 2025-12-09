@@ -1,11 +1,13 @@
-module github.com/tengfei-xy/whisperingtime/engine
+module github.com/acer-red/whisperingtime/engine
 
 go 1.24.0
 
 require (
 	github.com/gin-gonic/gin v1.10.0
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/google/uuid v1.6.0
 	github.com/minio/minio-go/v7 v7.0.97
+	github.com/redis/go-redis/v9 v9.7.0
 	github.com/tengfei-xy/go-log v0.2.7
 	go.mongodb.org/mongo-driver v1.17.6
 	google.golang.org/grpc v1.68.0
@@ -13,6 +15,8 @@ require (
 )
 
 require (
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/klauspost/crc32 v1.3.0 // indirect

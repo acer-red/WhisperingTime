@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:whispering_time/utils/ui.dart';
-import 'package:whispering_time/pages/home/appbar.dart';
-import 'package:whispering_time/services/http/index.dart';
-import 'package:whispering_time/services/sp/sp.dart';
-import 'package:whispering_time/services/isar/config.dart';
+import 'package:whispering_time/util/ui.dart';
+import 'package:whispering_time/page/home/appbar.dart';
+import 'package:whispering_time/service/http/official.dart';
+import 'package:whispering_time/service/sp/sp.dart';
+import 'package:whispering_time/service/isar/config.dart';
+import 'package:whispering_time/util/secure.dart';
 
 class Welcome extends StatefulWidget {
   const Welcome({super.key});
@@ -33,44 +34,84 @@ class _Welcome extends State<Welcome> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Row(
-          children: [
-            Expanded(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final bool isWide = constraints.maxWidth >= 900;
+
+            if (isWide) {
+              return Row(
+                children: [
+                  Expanded(child: _buildBrandSection(isWide)),
+                  Expanded(child: _buildFormArea(isWide)),
+                ],
+              );
+            }
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Padding(
-                    padding:
-                        EdgeInsets.only(left: 70.0, right: 70.0, bottom: 20),
-                    child: Image(
-                        image:
-                            AssetImage('assets/images/wt-transparent-512.png')),
-                  ),
-                  Text('枫迹',
-                      style:
-                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 10),
-                  Text('生活不只是日复一日，更是步步印迹',
-                      maxLines: 1,
-                      style: TextStyle(fontSize: 15, color: Color(0xFF777777))),
+                children: [
+                  _buildBrandSection(isWide),
+                  const SizedBox(height: 32),
+                  _buildFormArea(isWide),
                 ],
               ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.all(20),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (_showLogin)
-                      _isRegister ? registerForm() : loginForm()
-                    else
-                      accountType(),
-                  ],
-                ),
-              ),
-            ),
-          ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBrandSection(bool isWide) {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: isWide ? 70 : 12,
+        vertical: isWide ? 0 : 12,
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: const [
+          Padding(
+            padding: EdgeInsets.only(bottom: 20),
+            child: Image(image: AssetImage('assets/images/icon.png')),
+          ),
+          Text('枫迹',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          SizedBox(height: 10),
+          Text('生活不只是日复一日，更是步步印迹',
+              maxLines: 2,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 15, color: Color(0xFF777777))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFormArea(bool isWide) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: isWide ? 520 : 600,
+        ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: isWide ? 32 : 12,
+            vertical: isWide ? 40 : 12,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_showLogin)
+                _isRegister ? registerForm() : loginForm()
+              else
+                accountType(),
+            ],
+          ),
         ),
       ),
     );
@@ -342,8 +383,9 @@ class _Welcome extends State<Welcome> {
     final String account = accountController.text;
     final String password = passwordController.text;
 
+    // 关键步骤: 客户端发起登录请求
     Http()
-        .userLogin(RequestCreateUserLogin(account: account, password: password))
+        .userLogin(RequestUserLogin(account: account, password: password))
         .then((value) async {
       final loginUserId = value.id;
       if (value.isOK) {
@@ -495,7 +537,7 @@ class _Welcome extends State<Welcome> {
   }
 
   // 用户注册
-  void register() {
+  void register() async {
     final ok = registerCheck();
     if (!ok) {
       return;
@@ -504,13 +546,16 @@ class _Welcome extends State<Welcome> {
     final String user = userController.text;
     final String email = emailController.text;
     final String password = registerPasswordController.text;
-
+    final List<int> publicKey = await generateKey();
+    final uid = SP().getUID();
     Http()
         .userRegister(
       RequestCreateUserRegister(
         username: user,
         email: email,
         password: password,
+        publicKey: publicKey,
+        uid: uid,
       ),
     )
         .then((value) async {
@@ -542,5 +587,12 @@ class _Welcome extends State<Welcome> {
         }
       }
     });
+  }
+
+  Future<List<int>> generateKey() async {
+    final key = await KeyManager().generateAndPrintKeys();
+
+    await Storage().getKey(newKey: key.privateKey);
+    return key.publicKey;
   }
 }

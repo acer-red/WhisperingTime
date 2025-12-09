@@ -14,3 +14,11 @@ db: # mongo
 
 basic:
   store: "/users/tengfei/Documents/source/project/acer/备份/枫迹"
+
+endpoints:
+  index: "http://127.0.0.1:13440"
+
+redis:
+  addr: "127.0.0.1:6379"
+  password: ""
+  db: 0
