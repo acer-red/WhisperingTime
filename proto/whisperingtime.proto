@@ -19,6 +19,11 @@ message ThemeSummary {
   bytes name = 2;
 }
 
+message PermissionEnvelope {
+  bytes encrypted_key = 1;
+  string role = 2;
+}
+
 message GroupConfig {
   repeated bool levels = 3;
   int32 view_type = 4;
@@ -33,6 +38,7 @@ message GroupSummary {
   int64 update_at = 4;
   int64 over_at = 5;
   GroupConfig config = 6;
+  PermissionEnvelope permission = 7;
 }
 
 message DocSummary {
@@ -41,6 +47,7 @@ message DocSummary {
   reserved 4;
   int64 create_at = 5;
   int64 update_at = 6;
+  PermissionEnvelope permission = 7;
 }
 
 message Content {
@@ -55,6 +62,7 @@ message DocDetail {
   reserved 5;
   int64 create_at = 6;
   int64 update_at = 7;
+  PermissionEnvelope permission = 8;
 }
 
 message GroupDetail {
@@ -62,12 +70,14 @@ message GroupDetail {
   bytes name = 2;
   GroupConfig config = 3;
   repeated DocDetail docs = 4;
+  PermissionEnvelope permission = 5;
 }
 
 message ThemeDetail {
   string id = 1;
   bytes name = 2;
   repeated GroupDetail groups = 3;
+  PermissionEnvelope permission = 4;
 }
 
 // Theme service
@@ -85,11 +95,14 @@ message ListThemesResponse {
 message CreateThemeRequest {
   bytes name = 1;
   bytes default_group_name = 2;
+  bytes encrypted_key = 3;
+  bytes default_group_encrypted_key = 4;
 }
 message CreateThemeResponse { int32 err = 1; string msg = 2; string id = 3; }
 message UpdateThemeRequest {
   string id = 1;
   bytes name = 2;
+  bytes encrypted_key = 3;
 }
 message DeleteThemeRequest { string id = 1; }
 message ExportAllConfigRequest {}
@@ -113,6 +126,7 @@ message CreateGroupRequest {
   string theme_id = 1;
   bytes name = 2;
   int32 auto_freeze_days = 3;
+  bytes encrypted_key = 4;
 }
 message CreateGroupResponse { int32 err = 1; string msg = 2; string id = 3; }
 message UpdateGroupRequest {
@@ -121,6 +135,7 @@ message UpdateGroupRequest {
   bytes name = 3;
   GroupConfig config = 4;
   int64 over_at = 5;
+  bytes encrypted_key = 6;
 }
 message DeleteGroupRequest { string theme_id = 1; string group_id = 2; }
 message ExportGroupConfigRequest { string theme_id = 1; string group_id = 2; }
@@ -145,6 +160,7 @@ message CreateDocRequest {
   Content content = 2;
   reserved 5;
   int64 create_at = 6;
+  bytes encrypted_key = 7;
 }
 message CreateDocResponse { int32 err = 1; string msg = 2; string id = 3; }
 message UpdateDocRequest {
@@ -153,6 +169,7 @@ message UpdateDocRequest {
   Content content = 3;
   reserved 6;
   int64 create_at = 7;
+  bytes encrypted_key = 8;
 }
 message DeleteDocRequest { string group_id = 1; string doc_id = 2; }
 

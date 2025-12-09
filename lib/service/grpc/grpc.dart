@@ -425,6 +425,25 @@ class ResponseDownloadBackgroundJobFile extends Basic {
   });
 }
 
+class _CipherWithKey {
+  final Uint8List cipher;
+  final Uint8List encryptedKey;
+  _CipherWithKey({required this.cipher, required this.encryptedKey});
+}
+
+class _DocCipher {
+  final Uint8List title;
+  final Uint8List rich;
+  final Uint8List level;
+  final Uint8List encryptedKey;
+  _DocCipher({
+    required this.title,
+    required this.rich,
+    required this.level,
+    required this.encryptedKey,
+  });
+}
+
 class Grpc {
   final String? content;
   final String? tid;
@@ -436,30 +455,63 @@ class Grpc {
 
   Grpc({this.content, this.tid, this.gid, this.did});
 
-  Future<Uint8List> _encryptName(String name) async {
-    return _storage.encryptData(Uint8List.fromList(utf8.encode(name)));
+  Future<_CipherWithKey> _encryptText(String value) async {
+    final env = await _storage.envelopeEncrypt(utf8.encode(value));
+    return _CipherWithKey(
+        cipher: env.cipherText, encryptedKey: env.encryptedKey);
   }
 
-  Future<String> _decryptName(List<int> data) async {
-    final plain = await _storage.decryptData(Uint8List.fromList(data));
+  Future<_DocCipher> _encryptDocContent(
+      String title, String content, int level) async {
+    final dataKey = Uint8List.fromList(await KeyManager.generateAES());
+    final encryptedKey = await _storage.wrapDataKey(dataKey);
+    final titleCipher =
+        await _storage.encryptWithDataKey(dataKey, utf8.encode(title));
+    final richCipher =
+        await _storage.encryptWithDataKey(dataKey, utf8.encode(content));
+    final levelCipher =
+        await _storage.encryptWithDataKey(dataKey, utf8.encode('$level'));
+    return _DocCipher(
+        title: titleCipher,
+        rich: richCipher,
+        level: levelCipher,
+        encryptedKey: encryptedKey);
+  }
+
+  Future<Uint8List?> _unwrapDataKey(pb.PermissionEnvelope? permission) async {
+    if (permission == null || permission.encryptedKey.isEmpty) return null;
+    return _storage.unwrapDataKey(Uint8List.fromList(permission.encryptedKey));
+  }
+
+  Future<Uint8List> _decryptBytes(
+      List<int> data, pb.PermissionEnvelope? permission) async {
+    if (data.isEmpty) return Uint8List(0);
+    final key = await _unwrapDataKey(permission);
+    if (key != null) {
+      return _storage.decryptWithDataKey(key, data);
+    }
+    return _storage.decryptData(Uint8List.fromList(data));
+  }
+
+  Future<String> _decryptText(
+      List<int> data, pb.PermissionEnvelope? permission) async {
+    final plain = await _decryptBytes(data, permission);
     return utf8.decode(plain);
   }
 
-  Future<Uint8List> _encryptLevel(int level) async {
-    return _storage.encryptData(Uint8List.fromList(utf8.encode('$level')));
-  }
-
-  Future<int> _decryptLevel(List<int> data) async {
+  Future<int> _decryptLevel(
+      List<int> data, pb.PermissionEnvelope? permission) async {
     if (data.isEmpty) return 0;
-    final raw = Uint8List.fromList(data);
     try {
-      final plain = await _storage.decryptData(raw);
+      final plain = await _decryptBytes(data, permission);
       final parsed = int.tryParse(utf8.decode(plain));
       if (parsed != null) return parsed;
     } catch (_) {
       // fall through to plain-text decoding
     }
-    return int.tryParse(utf8.decode(raw, allowMalformed: true)) ?? 0;
+    return int.tryParse(
+            utf8.decode(Uint8List.fromList(data), allowMalformed: true)) ??
+        0;
   }
 
   // theme
@@ -470,8 +522,10 @@ class Grpc {
       pb.ListThemesRequest(),
       options: await _Grpc.instance.authOptions(),
     );
-    final data = await Future.wait(resp.themes.map((e) async =>
-        ThemeListData(name: await _decryptName(e.name), id: e.id)));
+    final data = await Future.wait(resp.themes.map((e) async => ThemeListData(
+          name: await _decryptText(e.name, e.permission),
+          id: e.id,
+        )));
     return ResponseGetThemes(err: resp.err, msg: resp.msg, data: data);
   }
 
@@ -483,13 +537,13 @@ class Grpc {
       options: await _Grpc.instance.authOptions(),
     );
     final data = await Future.wait(resp.themes.map((t) async {
-      final themeName = await _decryptName(t.name);
+      final themeName = await _decryptText(t.name, t.permission);
       final groups = await Future.wait(t.groups.map((g) async {
-        final groupName = await _decryptName(g.name);
+        final groupName = await _decryptText(g.name, g.permission);
         final docs = await Future.wait(g.docs.map((d) async {
-          final titleBytes =
-              await _storage.decryptData(Uint8List.fromList(d.content.title));
-          final level = await _decryptLevel(d.content.level);
+          final titleBytes = await _decryptBytes(
+              Uint8List.fromList(d.content.title), d.permission);
+          final level = await _decryptLevel(d.content.level, d.permission);
           return XDoc(
             did: d.id,
             title: utf8.decode(titleBytes),
@@ -523,15 +577,15 @@ class Grpc {
       options: await _Grpc.instance.authOptions(),
     );
     final data = await Future.wait(resp.themes.map((t) async {
-      final themeName = await _decryptName(t.name);
+      final themeName = await _decryptText(t.name, t.permission);
       final groups = await Future.wait(t.groups.map((g) async {
-        final groupName = await _decryptName(g.name);
+        final groupName = await _decryptText(g.name, g.permission);
         final docs = await Future.wait(g.docs.map((d) async {
-          final titleBytes =
-              await _storage.decryptData(Uint8List.fromList(d.content.title));
-          final contentBytes =
-              await _storage.decryptData(Uint8List.fromList(d.content.rich));
-          final level = await _decryptLevel(d.content.level);
+          final titleBytes = await _decryptBytes(
+              Uint8List.fromList(d.content.title), d.permission);
+          final contentBytes = await _decryptBytes(
+              Uint8List.fromList(d.content.rich), d.permission);
+          final level = await _decryptLevel(d.content.level, d.permission);
           return DDoc(
             title: utf8.decode(titleBytes),
             content: utf8.decode(contentBytes),
@@ -560,10 +614,15 @@ class Grpc {
   Future<ResponseCreateTheme> createTheme(RequestCreateTheme req) async {
     log.i("发送请求 创建主题(gRPC)");
     await _Grpc.instance._ensureReady();
-    final encName = await _encryptName(req.name);
-    final encDefault = await _encryptName(defaultGroupName);
+    final encName = await _encryptText(req.name);
+    final encDefault = await _encryptText(defaultGroupName);
     final resp = await _Grpc.instance.theme.createTheme(
-      pb.CreateThemeRequest(name: encName, defaultGroupName: encDefault),
+      pb.CreateThemeRequest(
+        name: encName.cipher,
+        encryptedKey: encName.encryptedKey,
+        defaultGroupName: encDefault.cipher,
+        defaultGroupEncryptedKey: encDefault.encryptedKey,
+      ),
       options: await _Grpc.instance.authOptions(),
     );
     return ResponseCreateTheme(err: resp.err, msg: resp.msg, id: resp.id);
@@ -572,9 +631,13 @@ class Grpc {
   Future<ResponseUpdateTheme> updateTheme(RequestUpdateTheme req) async {
     log.i("发送请求 更新主题(gRPC)");
     await _Grpc.instance._ensureReady();
-    final encName = await _encryptName(req.name);
+    final encName = await _encryptText(req.name);
     final resp = await _Grpc.instance.theme.updateTheme(
-      pb.UpdateThemeRequest(id: tid!, name: encName),
+      pb.UpdateThemeRequest(
+        id: tid!,
+        name: encName.cipher,
+        encryptedKey: encName.encryptedKey,
+      ),
       options: await _Grpc.instance.authOptions(),
     );
     return ResponseUpdateTheme(err: resp.err, msg: resp.msg);
@@ -599,7 +662,7 @@ class Grpc {
       options: await _Grpc.instance.authOptions(),
     );
     final data = await Future.wait(resp.groups.map((g) async => GroupListData(
-          name: await _decryptName(g.name),
+          name: await _decryptText(g.name, g.permission),
           id: g.id,
           createAt:
               DateTime.fromMillisecondsSinceEpoch(g.createAt.toInt() * 1000),
@@ -631,13 +694,13 @@ class Grpc {
       options: await _Grpc.instance.authOptions(),
     );
     final g = resp.group;
-    final groupName = await _decryptName(g.name);
+    final groupName = await _decryptText(g.name, g.permission);
     final docs = await Future.wait(g.docs.map((d) async {
-      final titleBytes =
-          await _storage.decryptData(Uint8List.fromList(d.content.title));
+      final titleBytes = await _decryptBytes(
+          Uint8List.fromList(d.content.title), d.permission);
       final contentBytes =
-          await _storage.decryptData(Uint8List.fromList(d.content.rich));
-      final level = await _decryptLevel(d.content.level);
+          await _decryptBytes(Uint8List.fromList(d.content.rich), d.permission);
+      final level = await _decryptLevel(d.content.level, d.permission);
       return DDoc(
         title: utf8.decode(titleBytes),
         content: utf8.decode(contentBytes),
@@ -660,11 +723,12 @@ class Grpc {
   Future<ResponsePostGroup> postGroup(RequestCreateGroup req) async {
     log.i("发送请求 创建分组(gRPC)");
     await _Grpc.instance._ensureReady();
-    final encName = await _encryptName(req.name);
+    final encName = await _encryptText(req.name);
     final resp = await _Grpc.instance.group.createGroup(
       pb.CreateGroupRequest(
         themeId: tid!,
-        name: encName,
+        name: encName.cipher,
+        encryptedKey: encName.encryptedKey,
         autoFreezeDays: req.autoFreezeDays,
       ),
       options: await _Grpc.instance.authOptions(),
@@ -696,7 +760,10 @@ class Grpc {
           : Int64.ZERO,
     );
     if (req.name != null) {
-      reqMsg.name = await _encryptName(req.name!);
+      final enc = await _encryptText(req.name!);
+      reqMsg
+        ..name = enc.cipher
+        ..encryptedKey = enc.encryptedKey;
     }
     final resp = await _Grpc.instance.group.updateGroup(
       reqMsg,
@@ -758,13 +825,12 @@ class Grpc {
       ),
       options: await _Grpc.instance.authOptions(),
     );
-    final storage = Storage();
     final docs = await Future.wait(resp.docs.map((d) async {
-      final titleBytes =
-          await storage.decryptData(Uint8List.fromList(d.content.title));
+      final titleBytes = await _decryptBytes(
+          Uint8List.fromList(d.content.title), d.permission);
       final richBytes =
-          await storage.decryptData(Uint8List.fromList(d.content.rich));
-      final level = await _decryptLevel(d.content.level);
+          await _decryptBytes(Uint8List.fromList(d.content.rich), d.permission);
+      final level = await _decryptLevel(d.content.level, d.permission);
       return Doc(
         title: utf8.decode(titleBytes),
         content: utf8.decode(richBytes),
@@ -783,16 +849,19 @@ class Grpc {
   Future<ResponseCreateDoc> createDoc(RequestCreateDoc req) async {
     log.i("发送请求 创建印迹(gRPC)");
     await _Grpc.instance._ensureReady();
-    final storage = Storage();
+    final docCipher =
+        await _encryptDocContent(req.title, req.content, req.level);
     final content = pb.Content();
-    content.title = await storage.encryptData(utf8.encode(req.title));
-    content.rich = await storage.encryptData(utf8.encode(req.content));
-    content.level = await _encryptLevel(req.level);
+    content
+      ..title = docCipher.title
+      ..rich = docCipher.rich
+      ..level = docCipher.level;
 
     final resp = await _Grpc.instance.doc.createDoc(
       pb.CreateDocRequest(
         groupId: gid!,
         content: content,
+        encryptedKey: docCipher.encryptedKey,
         createAt: Int64(req.createAt.millisecondsSinceEpoch ~/ 1000),
       ),
       options: await _Grpc.instance.authOptions(),
@@ -803,19 +872,24 @@ class Grpc {
   Future<ResponsePutDoc> putDoc(RequestUpdateDoc req) async {
     log.i("发送请求 更新印迹(gRPC)");
     await _Grpc.instance._ensureReady();
-    final storage = Storage();
 
     pb.Content? content;
+    Uint8List? encryptedKey;
     if (req.title != null || req.content != null || req.level != null) {
       content = pb.Content();
+      final dataKey = Uint8List.fromList(await KeyManager.generateAES());
+      encryptedKey = await _storage.wrapDataKey(dataKey);
       if (req.title != null) {
-        content.title = await storage.encryptData(utf8.encode(req.title!));
+        content.title =
+            await _storage.encryptWithDataKey(dataKey, utf8.encode(req.title!));
       }
       if (req.content != null) {
-        content.rich = await storage.encryptData(utf8.encode(req.content!));
+        content.rich = await _storage.encryptWithDataKey(
+            dataKey, utf8.encode(req.content!));
       }
       if (req.level != null) {
-        content.level = await _encryptLevel(req.level!);
+        content.level = await _storage.encryptWithDataKey(
+            dataKey, utf8.encode('${req.level!}'));
       }
     }
 
@@ -824,6 +898,7 @@ class Grpc {
         groupId: gid!,
         docId: did!,
         content: content,
+        encryptedKey: encryptedKey,
         createAt: req.createAt != null
             ? Int64(req.createAt!.millisecondsSinceEpoch ~/ 1000)
             : Int64.ZERO,

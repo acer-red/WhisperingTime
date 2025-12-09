@@ -175,6 +175,70 @@ class ThemeSummary extends $pb.GeneratedMessage {
   void clearName() => clearField(2);
 }
 
+class PermissionEnvelope extends $pb.GeneratedMessage {
+  factory PermissionEnvelope({
+    $core.List<$core.int>? encryptedKey,
+    $core.String? role,
+  }) {
+    final $result = create();
+    if (encryptedKey != null) {
+      $result.encryptedKey = encryptedKey;
+    }
+    if (role != null) {
+      $result.role = role;
+    }
+    return $result;
+  }
+  PermissionEnvelope._() : super();
+  factory PermissionEnvelope.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory PermissionEnvelope.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'PermissionEnvelope', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
+    ..a<$core.List<$core.int>>(1, _omitFieldNames ? '' : 'encryptedKey', $pb.PbFieldType.OY)
+    ..aOS(2, _omitFieldNames ? '' : 'role')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  PermissionEnvelope clone() => PermissionEnvelope()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  PermissionEnvelope copyWith(void Function(PermissionEnvelope) updates) => super.copyWith((message) => updates(message as PermissionEnvelope)) as PermissionEnvelope;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static PermissionEnvelope create() => PermissionEnvelope._();
+  PermissionEnvelope createEmptyInstance() => create();
+  static $pb.PbList<PermissionEnvelope> createRepeated() => $pb.PbList<PermissionEnvelope>();
+  @$core.pragma('dart2js:noInline')
+  static PermissionEnvelope getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PermissionEnvelope>(create);
+  static PermissionEnvelope? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.List<$core.int> get encryptedKey => $_getN(0);
+  @$pb.TagNumber(1)
+  set encryptedKey($core.List<$core.int> v) { $_setBytes(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasEncryptedKey() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearEncryptedKey() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get role => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set role($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasRole() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearRole() => clearField(2);
+}
+
 class GroupConfig extends $pb.GeneratedMessage {
   factory GroupConfig({
     $core.Iterable<$core.bool>? levels,
@@ -269,6 +333,7 @@ class GroupSummary extends $pb.GeneratedMessage {
     $fixnum.Int64? updateAt,
     $fixnum.Int64? overAt,
     GroupConfig? config,
+    PermissionEnvelope? permission,
   }) {
     final $result = create();
     if (id != null) {
@@ -289,6 +354,9 @@ class GroupSummary extends $pb.GeneratedMessage {
     if (config != null) {
       $result.config = config;
     }
+    if (permission != null) {
+      $result.permission = permission;
+    }
     return $result;
   }
   GroupSummary._() : super();
@@ -302,6 +370,7 @@ class GroupSummary extends $pb.GeneratedMessage {
     ..aInt64(4, _omitFieldNames ? '' : 'updateAt')
     ..aInt64(5, _omitFieldNames ? '' : 'overAt')
     ..aOM<GroupConfig>(6, _omitFieldNames ? '' : 'config', subBuilder: GroupConfig.create)
+    ..aOM<PermissionEnvelope>(7, _omitFieldNames ? '' : 'permission', subBuilder: PermissionEnvelope.create)
     ..hasRequiredFields = false
   ;
 
@@ -381,6 +450,17 @@ class GroupSummary extends $pb.GeneratedMessage {
   void clearConfig() => clearField(6);
   @$pb.TagNumber(6)
   GroupConfig ensureConfig() => $_ensure(5);
+
+  @$pb.TagNumber(7)
+  PermissionEnvelope get permission => $_getN(6);
+  @$pb.TagNumber(7)
+  set permission(PermissionEnvelope v) { setField(7, v); }
+  @$pb.TagNumber(7)
+  $core.bool hasPermission() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearPermission() => clearField(7);
+  @$pb.TagNumber(7)
+  PermissionEnvelope ensurePermission() => $_ensure(6);
 }
 
 class DocSummary extends $pb.GeneratedMessage {
@@ -389,6 +469,7 @@ class DocSummary extends $pb.GeneratedMessage {
     Content? content,
     $fixnum.Int64? createAt,
     $fixnum.Int64? updateAt,
+    PermissionEnvelope? permission,
   }) {
     final $result = create();
     if (id != null) {
@@ -403,6 +484,9 @@ class DocSummary extends $pb.GeneratedMessage {
     if (updateAt != null) {
       $result.updateAt = updateAt;
     }
+    if (permission != null) {
+      $result.permission = permission;
+    }
     return $result;
   }
   DocSummary._() : super();
@@ -414,6 +498,7 @@ class DocSummary extends $pb.GeneratedMessage {
     ..aOM<Content>(2, _omitFieldNames ? '' : 'content', subBuilder: Content.create)
     ..aInt64(5, _omitFieldNames ? '' : 'createAt')
     ..aInt64(6, _omitFieldNames ? '' : 'updateAt')
+    ..aOM<PermissionEnvelope>(7, _omitFieldNames ? '' : 'permission', subBuilder: PermissionEnvelope.create)
     ..hasRequiredFields = false
   ;
 
@@ -475,6 +560,17 @@ class DocSummary extends $pb.GeneratedMessage {
   $core.bool hasUpdateAt() => $_has(3);
   @$pb.TagNumber(6)
   void clearUpdateAt() => clearField(6);
+
+  @$pb.TagNumber(7)
+  PermissionEnvelope get permission => $_getN(4);
+  @$pb.TagNumber(7)
+  set permission(PermissionEnvelope v) { setField(7, v); }
+  @$pb.TagNumber(7)
+  $core.bool hasPermission() => $_has(4);
+  @$pb.TagNumber(7)
+  void clearPermission() => clearField(7);
+  @$pb.TagNumber(7)
+  PermissionEnvelope ensurePermission() => $_ensure(4);
 }
 
 class Content extends $pb.GeneratedMessage {
@@ -561,6 +657,7 @@ class DocDetail extends $pb.GeneratedMessage {
     Content? content,
     $fixnum.Int64? createAt,
     $fixnum.Int64? updateAt,
+    PermissionEnvelope? permission,
   }) {
     final $result = create();
     if (id != null) {
@@ -575,6 +672,9 @@ class DocDetail extends $pb.GeneratedMessage {
     if (updateAt != null) {
       $result.updateAt = updateAt;
     }
+    if (permission != null) {
+      $result.permission = permission;
+    }
     return $result;
   }
   DocDetail._() : super();
@@ -586,6 +686,7 @@ class DocDetail extends $pb.GeneratedMessage {
     ..aOM<Content>(2, _omitFieldNames ? '' : 'content', subBuilder: Content.create)
     ..aInt64(6, _omitFieldNames ? '' : 'createAt')
     ..aInt64(7, _omitFieldNames ? '' : 'updateAt')
+    ..aOM<PermissionEnvelope>(8, _omitFieldNames ? '' : 'permission', subBuilder: PermissionEnvelope.create)
     ..hasRequiredFields = false
   ;
 
@@ -647,6 +748,17 @@ class DocDetail extends $pb.GeneratedMessage {
   $core.bool hasUpdateAt() => $_has(3);
   @$pb.TagNumber(7)
   void clearUpdateAt() => clearField(7);
+
+  @$pb.TagNumber(8)
+  PermissionEnvelope get permission => $_getN(4);
+  @$pb.TagNumber(8)
+  set permission(PermissionEnvelope v) { setField(8, v); }
+  @$pb.TagNumber(8)
+  $core.bool hasPermission() => $_has(4);
+  @$pb.TagNumber(8)
+  void clearPermission() => clearField(8);
+  @$pb.TagNumber(8)
+  PermissionEnvelope ensurePermission() => $_ensure(4);
 }
 
 class GroupDetail extends $pb.GeneratedMessage {
@@ -655,6 +767,7 @@ class GroupDetail extends $pb.GeneratedMessage {
     $core.List<$core.int>? name,
     GroupConfig? config,
     $core.Iterable<DocDetail>? docs,
+    PermissionEnvelope? permission,
   }) {
     final $result = create();
     if (id != null) {
@@ -669,6 +782,9 @@ class GroupDetail extends $pb.GeneratedMessage {
     if (docs != null) {
       $result.docs.addAll(docs);
     }
+    if (permission != null) {
+      $result.permission = permission;
+    }
     return $result;
   }
   GroupDetail._() : super();
@@ -680,6 +796,7 @@ class GroupDetail extends $pb.GeneratedMessage {
     ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'name', $pb.PbFieldType.OY)
     ..aOM<GroupConfig>(3, _omitFieldNames ? '' : 'config', subBuilder: GroupConfig.create)
     ..pc<DocDetail>(4, _omitFieldNames ? '' : 'docs', $pb.PbFieldType.PM, subBuilder: DocDetail.create)
+    ..aOM<PermissionEnvelope>(5, _omitFieldNames ? '' : 'permission', subBuilder: PermissionEnvelope.create)
     ..hasRequiredFields = false
   ;
 
@@ -735,6 +852,17 @@ class GroupDetail extends $pb.GeneratedMessage {
 
   @$pb.TagNumber(4)
   $core.List<DocDetail> get docs => $_getList(3);
+
+  @$pb.TagNumber(5)
+  PermissionEnvelope get permission => $_getN(4);
+  @$pb.TagNumber(5)
+  set permission(PermissionEnvelope v) { setField(5, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasPermission() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearPermission() => clearField(5);
+  @$pb.TagNumber(5)
+  PermissionEnvelope ensurePermission() => $_ensure(4);
 }
 
 class ThemeDetail extends $pb.GeneratedMessage {
@@ -742,6 +870,7 @@ class ThemeDetail extends $pb.GeneratedMessage {
     $core.String? id,
     $core.List<$core.int>? name,
     $core.Iterable<GroupDetail>? groups,
+    PermissionEnvelope? permission,
   }) {
     final $result = create();
     if (id != null) {
@@ -753,6 +882,9 @@ class ThemeDetail extends $pb.GeneratedMessage {
     if (groups != null) {
       $result.groups.addAll(groups);
     }
+    if (permission != null) {
+      $result.permission = permission;
+    }
     return $result;
   }
   ThemeDetail._() : super();
@@ -763,6 +895,7 @@ class ThemeDetail extends $pb.GeneratedMessage {
     ..aOS(1, _omitFieldNames ? '' : 'id')
     ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'name', $pb.PbFieldType.OY)
     ..pc<GroupDetail>(3, _omitFieldNames ? '' : 'groups', $pb.PbFieldType.PM, subBuilder: GroupDetail.create)
+    ..aOM<PermissionEnvelope>(4, _omitFieldNames ? '' : 'permission', subBuilder: PermissionEnvelope.create)
     ..hasRequiredFields = false
   ;
 
@@ -807,6 +940,17 @@ class ThemeDetail extends $pb.GeneratedMessage {
 
   @$pb.TagNumber(3)
   $core.List<GroupDetail> get groups => $_getList(2);
+
+  @$pb.TagNumber(4)
+  PermissionEnvelope get permission => $_getN(3);
+  @$pb.TagNumber(4)
+  set permission(PermissionEnvelope v) { setField(4, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasPermission() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearPermission() => clearField(4);
+  @$pb.TagNumber(4)
+  PermissionEnvelope ensurePermission() => $_ensure(3);
 }
 
 /// Theme service
@@ -950,6 +1094,8 @@ class CreateThemeRequest extends $pb.GeneratedMessage {
   factory CreateThemeRequest({
     $core.List<$core.int>? name,
     $core.List<$core.int>? defaultGroupName,
+    $core.List<$core.int>? encryptedKey,
+    $core.List<$core.int>? defaultGroupEncryptedKey,
   }) {
     final $result = create();
     if (name != null) {
@@ -957,6 +1103,12 @@ class CreateThemeRequest extends $pb.GeneratedMessage {
     }
     if (defaultGroupName != null) {
       $result.defaultGroupName = defaultGroupName;
+    }
+    if (encryptedKey != null) {
+      $result.encryptedKey = encryptedKey;
+    }
+    if (defaultGroupEncryptedKey != null) {
+      $result.defaultGroupEncryptedKey = defaultGroupEncryptedKey;
     }
     return $result;
   }
@@ -967,6 +1119,8 @@ class CreateThemeRequest extends $pb.GeneratedMessage {
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'CreateThemeRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
     ..a<$core.List<$core.int>>(1, _omitFieldNames ? '' : 'name', $pb.PbFieldType.OY)
     ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'defaultGroupName', $pb.PbFieldType.OY)
+    ..a<$core.List<$core.int>>(3, _omitFieldNames ? '' : 'encryptedKey', $pb.PbFieldType.OY)
+    ..a<$core.List<$core.int>>(4, _omitFieldNames ? '' : 'defaultGroupEncryptedKey', $pb.PbFieldType.OY)
     ..hasRequiredFields = false
   ;
 
@@ -1008,6 +1162,24 @@ class CreateThemeRequest extends $pb.GeneratedMessage {
   $core.bool hasDefaultGroupName() => $_has(1);
   @$pb.TagNumber(2)
   void clearDefaultGroupName() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.List<$core.int> get encryptedKey => $_getN(2);
+  @$pb.TagNumber(3)
+  set encryptedKey($core.List<$core.int> v) { $_setBytes(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasEncryptedKey() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearEncryptedKey() => clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.List<$core.int> get defaultGroupEncryptedKey => $_getN(3);
+  @$pb.TagNumber(4)
+  set defaultGroupEncryptedKey($core.List<$core.int> v) { $_setBytes(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasDefaultGroupEncryptedKey() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearDefaultGroupEncryptedKey() => clearField(4);
 }
 
 class CreateThemeResponse extends $pb.GeneratedMessage {
@@ -1092,6 +1264,7 @@ class UpdateThemeRequest extends $pb.GeneratedMessage {
   factory UpdateThemeRequest({
     $core.String? id,
     $core.List<$core.int>? name,
+    $core.List<$core.int>? encryptedKey,
   }) {
     final $result = create();
     if (id != null) {
@@ -1099,6 +1272,9 @@ class UpdateThemeRequest extends $pb.GeneratedMessage {
     }
     if (name != null) {
       $result.name = name;
+    }
+    if (encryptedKey != null) {
+      $result.encryptedKey = encryptedKey;
     }
     return $result;
   }
@@ -1109,6 +1285,7 @@ class UpdateThemeRequest extends $pb.GeneratedMessage {
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'UpdateThemeRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'id')
     ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'name', $pb.PbFieldType.OY)
+    ..a<$core.List<$core.int>>(3, _omitFieldNames ? '' : 'encryptedKey', $pb.PbFieldType.OY)
     ..hasRequiredFields = false
   ;
 
@@ -1150,6 +1327,15 @@ class UpdateThemeRequest extends $pb.GeneratedMessage {
   $core.bool hasName() => $_has(1);
   @$pb.TagNumber(2)
   void clearName() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.List<$core.int> get encryptedKey => $_getN(2);
+  @$pb.TagNumber(3)
+  set encryptedKey($core.List<$core.int> v) { $_setBytes(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasEncryptedKey() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearEncryptedKey() => clearField(3);
 }
 
 class DeleteThemeRequest extends $pb.GeneratedMessage {
@@ -1534,6 +1720,7 @@ class CreateGroupRequest extends $pb.GeneratedMessage {
     $core.String? themeId,
     $core.List<$core.int>? name,
     $core.int? autoFreezeDays,
+    $core.List<$core.int>? encryptedKey,
   }) {
     final $result = create();
     if (themeId != null) {
@@ -1545,6 +1732,9 @@ class CreateGroupRequest extends $pb.GeneratedMessage {
     if (autoFreezeDays != null) {
       $result.autoFreezeDays = autoFreezeDays;
     }
+    if (encryptedKey != null) {
+      $result.encryptedKey = encryptedKey;
+    }
     return $result;
   }
   CreateGroupRequest._() : super();
@@ -1555,6 +1745,7 @@ class CreateGroupRequest extends $pb.GeneratedMessage {
     ..aOS(1, _omitFieldNames ? '' : 'themeId')
     ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'name', $pb.PbFieldType.OY)
     ..a<$core.int>(3, _omitFieldNames ? '' : 'autoFreezeDays', $pb.PbFieldType.O3)
+    ..a<$core.List<$core.int>>(4, _omitFieldNames ? '' : 'encryptedKey', $pb.PbFieldType.OY)
     ..hasRequiredFields = false
   ;
 
@@ -1605,6 +1796,15 @@ class CreateGroupRequest extends $pb.GeneratedMessage {
   $core.bool hasAutoFreezeDays() => $_has(2);
   @$pb.TagNumber(3)
   void clearAutoFreezeDays() => clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.List<$core.int> get encryptedKey => $_getN(3);
+  @$pb.TagNumber(4)
+  set encryptedKey($core.List<$core.int> v) { $_setBytes(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasEncryptedKey() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearEncryptedKey() => clearField(4);
 }
 
 class CreateGroupResponse extends $pb.GeneratedMessage {
@@ -1692,6 +1892,7 @@ class UpdateGroupRequest extends $pb.GeneratedMessage {
     $core.List<$core.int>? name,
     GroupConfig? config,
     $fixnum.Int64? overAt,
+    $core.List<$core.int>? encryptedKey,
   }) {
     final $result = create();
     if (themeId != null) {
@@ -1709,6 +1910,9 @@ class UpdateGroupRequest extends $pb.GeneratedMessage {
     if (overAt != null) {
       $result.overAt = overAt;
     }
+    if (encryptedKey != null) {
+      $result.encryptedKey = encryptedKey;
+    }
     return $result;
   }
   UpdateGroupRequest._() : super();
@@ -1721,6 +1925,7 @@ class UpdateGroupRequest extends $pb.GeneratedMessage {
     ..a<$core.List<$core.int>>(3, _omitFieldNames ? '' : 'name', $pb.PbFieldType.OY)
     ..aOM<GroupConfig>(4, _omitFieldNames ? '' : 'config', subBuilder: GroupConfig.create)
     ..aInt64(5, _omitFieldNames ? '' : 'overAt')
+    ..a<$core.List<$core.int>>(6, _omitFieldNames ? '' : 'encryptedKey', $pb.PbFieldType.OY)
     ..hasRequiredFields = false
   ;
 
@@ -1791,6 +1996,15 @@ class UpdateGroupRequest extends $pb.GeneratedMessage {
   $core.bool hasOverAt() => $_has(4);
   @$pb.TagNumber(5)
   void clearOverAt() => clearField(5);
+
+  @$pb.TagNumber(6)
+  $core.List<$core.int> get encryptedKey => $_getN(5);
+  @$pb.TagNumber(6)
+  set encryptedKey($core.List<$core.int> v) { $_setBytes(5, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasEncryptedKey() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearEncryptedKey() => clearField(6);
 }
 
 class DeleteGroupRequest extends $pb.GeneratedMessage {
@@ -2141,6 +2355,7 @@ class CreateDocRequest extends $pb.GeneratedMessage {
     $core.String? groupId,
     Content? content,
     $fixnum.Int64? createAt,
+    $core.List<$core.int>? encryptedKey,
   }) {
     final $result = create();
     if (groupId != null) {
@@ -2152,6 +2367,9 @@ class CreateDocRequest extends $pb.GeneratedMessage {
     if (createAt != null) {
       $result.createAt = createAt;
     }
+    if (encryptedKey != null) {
+      $result.encryptedKey = encryptedKey;
+    }
     return $result;
   }
   CreateDocRequest._() : super();
@@ -2162,6 +2380,7 @@ class CreateDocRequest extends $pb.GeneratedMessage {
     ..aOS(1, _omitFieldNames ? '' : 'groupId')
     ..aOM<Content>(2, _omitFieldNames ? '' : 'content', subBuilder: Content.create)
     ..aInt64(6, _omitFieldNames ? '' : 'createAt')
+    ..a<$core.List<$core.int>>(7, _omitFieldNames ? '' : 'encryptedKey', $pb.PbFieldType.OY)
     ..hasRequiredFields = false
   ;
 
@@ -2214,6 +2433,15 @@ class CreateDocRequest extends $pb.GeneratedMessage {
   $core.bool hasCreateAt() => $_has(2);
   @$pb.TagNumber(6)
   void clearCreateAt() => clearField(6);
+
+  @$pb.TagNumber(7)
+  $core.List<$core.int> get encryptedKey => $_getN(3);
+  @$pb.TagNumber(7)
+  set encryptedKey($core.List<$core.int> v) { $_setBytes(3, v); }
+  @$pb.TagNumber(7)
+  $core.bool hasEncryptedKey() => $_has(3);
+  @$pb.TagNumber(7)
+  void clearEncryptedKey() => clearField(7);
 }
 
 class CreateDocResponse extends $pb.GeneratedMessage {
@@ -2300,6 +2528,7 @@ class UpdateDocRequest extends $pb.GeneratedMessage {
     $core.String? docId,
     Content? content,
     $fixnum.Int64? createAt,
+    $core.List<$core.int>? encryptedKey,
   }) {
     final $result = create();
     if (groupId != null) {
@@ -2314,6 +2543,9 @@ class UpdateDocRequest extends $pb.GeneratedMessage {
     if (createAt != null) {
       $result.createAt = createAt;
     }
+    if (encryptedKey != null) {
+      $result.encryptedKey = encryptedKey;
+    }
     return $result;
   }
   UpdateDocRequest._() : super();
@@ -2325,6 +2557,7 @@ class UpdateDocRequest extends $pb.GeneratedMessage {
     ..aOS(2, _omitFieldNames ? '' : 'docId')
     ..aOM<Content>(3, _omitFieldNames ? '' : 'content', subBuilder: Content.create)
     ..aInt64(7, _omitFieldNames ? '' : 'createAt')
+    ..a<$core.List<$core.int>>(8, _omitFieldNames ? '' : 'encryptedKey', $pb.PbFieldType.OY)
     ..hasRequiredFields = false
   ;
 
@@ -2386,6 +2619,15 @@ class UpdateDocRequest extends $pb.GeneratedMessage {
   $core.bool hasCreateAt() => $_has(3);
   @$pb.TagNumber(7)
   void clearCreateAt() => clearField(7);
+
+  @$pb.TagNumber(8)
+  $core.List<$core.int> get encryptedKey => $_getN(4);
+  @$pb.TagNumber(8)
+  set encryptedKey($core.List<$core.int> v) { $_setBytes(4, v); }
+  @$pb.TagNumber(8)
+  $core.bool hasEncryptedKey() => $_has(4);
+  @$pb.TagNumber(8)
+  void clearEncryptedKey() => clearField(8);
 }
 
 class DeleteDocRequest extends $pb.GeneratedMessage {

@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/acer-red/whisperingtime/engine/service/cache"
 	"github.com/acer-red/whisperingtime/engine/service/modb"
@@ -90,6 +91,9 @@ func withAuth(ctx context.Context) (context.Context, error) {
 	uid, err := validateCookie(ctx, cookie)
 	if err != nil {
 		return ctx, status.Error(codes.Unauthenticated, err.Error())
+	}
+	if !utf8.ValidString(uid) {
+		return ctx, status.Error(codes.Unauthenticated, "invalid uid encoding")
 	}
 
 	uoid, err := modb.GetUOIDFromUID(uid)

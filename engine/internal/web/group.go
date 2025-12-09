@@ -72,6 +72,7 @@ func GroupPost(g *gin.Context) {
 	log.Infof("获取主题")
 
 	toid := g.MustGet("toid").(primitive.ObjectID)
+	uoid := g.MustGet("uoid").(primitive.ObjectID)
 
 	// 响应必须返回ID
 	type response struct {
@@ -84,7 +85,7 @@ func GroupPost(g *gin.Context) {
 		return
 	}
 
-	id, err := modb.GroupPost(toid, &req)
+	id, err := modb.GroupPost(uoid, toid, &req)
 	if err != nil {
 		internalServerError(g)
 		return

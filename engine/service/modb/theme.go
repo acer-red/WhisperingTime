@@ -31,6 +31,7 @@ type RequestThemePostDefaultGroup struct {
 	Config   *struct {
 		AutoFreezeDays *int `json:"auto_freeze_days"`
 	} `json:"config"`
+	EncryptedKey []byte `json:"encrypted_key"`
 }
 
 type RequestThemePost struct {
@@ -38,6 +39,7 @@ type RequestThemePost struct {
 		Name         []byte                       `json:"name"`
 		CreateAt     string                       `json:"createAt"`
 		DefaultGroup RequestThemePostDefaultGroup `json:"default_group"`
+		EncryptedKey []byte                       `json:"encrypted_key"`
 	} `json:"data" `
 }
 
@@ -384,8 +386,15 @@ func ThemeCreate(uoid primitive.ObjectID, req *RequestThemePost) (primitive.Obje
 		{Key: "tid", Value: tid},
 	}
 	ret, err := db.Collection("theme").InsertOne(context.TODO(), theme)
+	if err != nil {
+		return primitive.NilObjectID, "", err
+	}
 
-	return ret.InsertedID.(primitive.ObjectID), tid, err
+	if err := PermissionUpsert(uoid, tid, ResourceTypeTheme, RoleOwner, req.Data.EncryptedKey); err != nil {
+		return primitive.NilObjectID, "", err
+	}
+
+	return ret.InsertedID.(primitive.ObjectID), tid, nil
 }
 func ThemeUpdate(toid primitive.ObjectID, req *RequestThemePut) error {
 
@@ -407,14 +416,31 @@ func ThemeUpdate(toid primitive.ObjectID, req *RequestThemePut) error {
 	return err
 }
 func ThemeDelete(toid primitive.ObjectID) error {
+	tid, err := GetTIDFromTOID(toid)
+	if err != nil {
+		return err
+	}
 
 	// 根据toid返回所有goids
 	goids, err := GetGOIDsFromTOID(toid)
 	if err != nil {
 		return err
 	}
+	gids := make([]string, 0, len(goids))
+	dids := make([]string, 0)
 
 	for _, goid := range goids {
+		if gid, err := GetGIDFromGOID(goid); err == nil {
+			gids = append(gids, gid)
+		} else if err != mongo.ErrNoDocuments {
+			return err
+		}
+
+		docIDs, err := GetDIDsFromGOID(goid)
+		if err != nil && err != mongo.ErrNoDocuments {
+			return err
+		}
+		dids = append(dids, docIDs...)
 
 		if err := DocDeleteFromGOID(goid); err != nil {
 			return err
@@ -423,6 +449,16 @@ func ThemeDelete(toid primitive.ObjectID) error {
 		if err := GroupDeleteFromGOID(goid); err != nil {
 			return err
 		}
+	}
+
+	if err := PermissionDelete(ResourceTypeDoc, dids); err != nil {
+		return err
+	}
+	if err := PermissionDelete(ResourceTypeGroup, gids); err != nil {
+		return err
+	}
+	if err := PermissionDelete(ResourceTypeTheme, []string{tid}); err != nil {
+		return err
 	}
 
 	filter := bson.M{

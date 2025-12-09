@@ -55,6 +55,7 @@ func DocPost(g *gin.Context) {
 	log.Info("创建印迹")
 
 	goid := g.MustGet("goid").(primitive.ObjectID)
+	uoid := g.MustGet("uoid").(primitive.ObjectID)
 	var req modb.RequestDocPost
 
 	if err := g.ShouldBindBodyWithJSON(&req); err != nil {
@@ -62,7 +63,7 @@ func DocPost(g *gin.Context) {
 		return
 	}
 
-	did, err := modb.DocPost(goid, &req)
+	did, err := modb.DocPost(uoid, goid, &req)
 	if err != nil {
 		log.Error(err)
 		internalServerError(g)

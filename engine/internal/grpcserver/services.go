@@ -71,9 +71,14 @@ func (s *Service) ListThemes(ctx context.Context, req *pb.ListThemesRequest) (*p
 		if err != nil {
 			return &pb.ListThemesResponse{Err: 1, Msg: err.Error()}, nil
 		}
+		ids := make([]string, 0, len(themes))
+		for _, t := range themes {
+			ids = append(ids, t.ID)
+		}
+		perms, _ := modb.PermissionsFor(uoid, modb.ResourceTypeTheme, ids)
 		res := make([]*pb.ThemeDetail, 0, len(themes))
 		for _, t := range themes {
-			res = append(res, &pb.ThemeDetail{Id: t.ID, Name: t.Name})
+			res = append(res, &pb.ThemeDetail{Id: t.ID, Name: t.Name, Permission: permissionEnvelopeFromMap(perms, t.ID)})
 		}
 		return &pb.ListThemesResponse{Err: 0, Msg: "ok", Themes: res}, nil
 	}
@@ -100,11 +105,26 @@ func (s *Service) ListThemes(ctx context.Context, req *pb.ListThemesRequest) (*p
 		}
 		b, _ := json.Marshal(raw)
 		_ = json.Unmarshal(b, &items)
+		themeIDs := make([]string, 0, len(items))
+		groupIDs := make([]string, 0)
+		docIDs := make([]string, 0)
+		for _, t := range items {
+			themeIDs = append(themeIDs, t.Tid)
+			for _, g := range t.Groups {
+				groupIDs = append(groupIDs, g.Gid)
+				for _, d := range g.Docs {
+					docIDs = append(docIDs, d.Did)
+				}
+			}
+		}
+		themePerms, _ := modb.PermissionsFor(uoid, modb.ResourceTypeTheme, themeIDs)
+		groupPerms, _ := modb.PermissionsFor(uoid, modb.ResourceTypeGroup, groupIDs)
+		docPerms, _ := modb.PermissionsFor(uoid, modb.ResourceTypeDoc, docIDs)
 		res := make([]*pb.ThemeDetail, 0, len(items))
 		for _, t := range items {
-			td := &pb.ThemeDetail{Id: t.Tid, Name: decodeNameBytes(t.ThemeName)}
+			td := &pb.ThemeDetail{Id: t.Tid, Name: decodeNameBytes(t.ThemeName), Permission: permissionEnvelopeFromMap(themePerms, t.Tid)}
 			for _, g := range t.Groups {
-				gd := &pb.GroupDetail{Id: g.Gid, Name: decodeNameBytes(g.Name)}
+				gd := &pb.GroupDetail{Id: g.Gid, Name: decodeNameBytes(g.Name), Permission: permissionEnvelopeFromMap(groupPerms, g.Gid)}
 				for _, d := range g.Docs {
 					gd.Docs = append(gd.Docs, &pb.DocDetail{
 						Id: d.Did,
@@ -113,8 +133,9 @@ func (s *Service) ListThemes(ctx context.Context, req *pb.ListThemesRequest) (*p
 							Rich:  d.Content.Rich,
 							Level: levelBytes(d.Content.Level, d.Legacy),
 						},
-						CreateAt: d.CreateAt.Time().Unix(),
-						UpdateAt: d.UpdateAt.Time().Unix(),
+						CreateAt:   d.CreateAt.Time().Unix(),
+						UpdateAt:   d.UpdateAt.Time().Unix(),
+						Permission: permissionEnvelopeFromMap(docPerms, d.Did),
 					})
 				}
 				td.Groups = append(td.Groups, gd)
@@ -146,17 +167,33 @@ func (s *Service) ListThemes(ctx context.Context, req *pb.ListThemesRequest) (*p
 	}
 	b, _ := json.Marshal(raw)
 	_ = json.Unmarshal(b, &items)
+	themeIDs := make([]string, 0, len(items))
+	groupIDs := make([]string, 0)
+	docIDs := make([]string, 0)
+	for _, t := range items {
+		themeIDs = append(themeIDs, t.Tid)
+		for _, g := range t.Groups {
+			groupIDs = append(groupIDs, g.Gid)
+			for _, d := range g.Docs {
+				docIDs = append(docIDs, d.Did)
+			}
+		}
+	}
+	themePerms, _ := modb.PermissionsFor(uoid, modb.ResourceTypeTheme, themeIDs)
+	groupPerms, _ := modb.PermissionsFor(uoid, modb.ResourceTypeGroup, groupIDs)
+	docPerms, _ := modb.PermissionsFor(uoid, modb.ResourceTypeDoc, docIDs)
 	res := make([]*pb.ThemeDetail, 0, len(items))
 	for _, t := range items {
-		td := &pb.ThemeDetail{Id: t.Tid, Name: t.ThemeName}
+		td := &pb.ThemeDetail{Id: t.Tid, Name: t.ThemeName, Permission: permissionEnvelopeFromMap(themePerms, t.Tid)}
 		for _, g := range t.Groups {
-			gd := &pb.GroupDetail{Id: g.Gid, Name: g.Name}
+			gd := &pb.GroupDetail{Id: g.Gid, Name: g.Name, Permission: permissionEnvelopeFromMap(groupPerms, g.Gid)}
 			for _, d := range g.Docs {
 				gd.Docs = append(gd.Docs, &pb.DocDetail{
-					Id:       d.Did,
-					Content:  &pb.Content{Title: d.Content.Title, Rich: d.Content.Rich, Level: levelBytes(d.Content.Level, d.Legacy)},
-					CreateAt: d.CreateAt.Time().Unix(),
-					UpdateAt: d.UpdateAt.Time().Unix(),
+					Id:         d.Did,
+					Content:    &pb.Content{Title: d.Content.Title, Rich: d.Content.Rich, Level: levelBytes(d.Content.Level, d.Legacy)},
+					CreateAt:   d.CreateAt.Time().Unix(),
+					UpdateAt:   d.UpdateAt.Time().Unix(),
+					Permission: permissionEnvelopeFromMap(docPerms, d.Did),
 				})
 			}
 			td.Groups = append(td.Groups, gd)
@@ -176,11 +213,13 @@ func (s *Service) CreateTheme(ctx context.Context, req *pb.CreateThemeRequest) (
 	r := modb.RequestThemePost{}
 	r.Data.Name = req.GetName()
 	r.Data.CreateAt = nowString()
+	r.Data.EncryptedKey = req.GetEncryptedKey()
 	defaultGroupName := req.GetDefaultGroupName()
 	if len(defaultGroupName) == 0 {
 		defaultGroupName = []byte("默认分组")
 	}
 	r.Data.DefaultGroup.Name = defaultGroupName
+	r.Data.DefaultGroup.EncryptedKey = req.GetDefaultGroupEncryptedKey()
 	def := 30
 	r.Data.DefaultGroup.CreateAt = nowString()
 	r.Data.DefaultGroup.Config = &struct {
@@ -191,7 +230,7 @@ func (s *Service) CreateTheme(ctx context.Context, req *pb.CreateThemeRequest) (
 	if err != nil {
 		return &pb.CreateThemeResponse{Err: 1, Msg: err.Error()}, nil
 	}
-	if _, err := modb.GroupCreateDefault(toid, r.Data.DefaultGroup); err != nil {
+	if _, err := modb.GroupCreateDefault(uoid, toid, r.Data.DefaultGroup); err != nil {
 		return &pb.CreateThemeResponse{Err: 1, Msg: err.Error()}, nil
 	}
 	return &pb.CreateThemeResponse{Err: 0, Msg: "ok", Id: tid}, nil
@@ -199,6 +238,10 @@ func (s *Service) CreateTheme(ctx context.Context, req *pb.CreateThemeRequest) (
 
 func (s *Service) UpdateTheme(ctx context.Context, req *pb.UpdateThemeRequest) (*pb.BasicResponse, error) {
 	log.Infof("[grpc] UpdateTheme uid=%s id=%s", getUID(ctx), req.GetId())
+	uoid := getUOID(ctx)
+	if uoid == primitive.NilObjectID {
+		return &pb.BasicResponse{Err: 1, Msg: "unauthenticated"}, nil
+	}
 	toid, err := modb.GetTOIDFromTID(req.GetId())
 	if err != nil {
 		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
@@ -208,6 +251,9 @@ func (s *Service) UpdateTheme(ctx context.Context, req *pb.UpdateThemeRequest) (
 	r.Data.UpdateAt = nowString()
 	if err := modb.ThemeUpdate(toid, &r); err != nil {
 		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	if len(req.GetEncryptedKey()) > 0 {
+		_ = modb.PermissionUpsert(uoid, req.GetId(), modb.ResourceTypeTheme, modb.RoleOwner, req.GetEncryptedKey())
 	}
 	return &pb.BasicResponse{Err: 0, Msg: "ok"}, nil
 }
@@ -240,6 +286,10 @@ func (s *Service) ExportAllConfig(ctx context.Context, _ *pb.ExportAllConfigRequ
 // GroupService
 func (s *Service) ListGroups(ctx context.Context, req *pb.ListGroupsRequest) (*pb.ListGroupsResponse, error) {
 	log.Infof("[grpc] ListGroups uid=%s themeId=%s", getUID(ctx), req.GetThemeId())
+	uoid := getUOID(ctx)
+	if uoid == primitive.NilObjectID {
+		return &pb.ListGroupsResponse{Err: 1, Msg: "unauthenticated"}, nil
+	}
 	toid, err := modb.GetTOIDFromTID(req.GetThemeId())
 	if err != nil {
 		return &pb.ListGroupsResponse{Err: 1, Msg: err.Error()}, nil
@@ -248,6 +298,11 @@ func (s *Service) ListGroups(ctx context.Context, req *pb.ListGroupsRequest) (*p
 	if err != nil {
 		return &pb.ListGroupsResponse{Err: 1, Msg: err.Error()}, nil
 	}
+	ids := make([]string, 0, len(groups))
+	for _, g := range groups {
+		ids = append(ids, g.ID)
+	}
+	perms, _ := modb.PermissionsFor(uoid, modb.ResourceTypeGroup, ids)
 	res := make([]*pb.GroupSummary, 0, len(groups))
 	for _, g := range groups {
 		var over int64
@@ -255,12 +310,13 @@ func (s *Service) ListGroups(ctx context.Context, req *pb.ListGroupsRequest) (*p
 			over = util.StringtoTime(g.OverAt).Unix()
 		}
 		res = append(res, &pb.GroupSummary{
-			Id:       g.ID,
-			Name:     g.Name,
-			CreateAt: util.StringtoTime(g.CreateAt).Unix(),
-			UpdateAt: util.StringtoTime(g.UpdateAt).Unix(),
-			OverAt:   over,
-			Config:   toGroupConfig(g.Config),
+			Id:         g.ID,
+			Name:       g.Name,
+			CreateAt:   util.StringtoTime(g.CreateAt).Unix(),
+			UpdateAt:   util.StringtoTime(g.UpdateAt).Unix(),
+			OverAt:     over,
+			Config:     toGroupConfig(g.Config),
+			Permission: permissionEnvelopeFromMap(perms, g.ID),
 		})
 	}
 	return &pb.ListGroupsResponse{Err: 0, Msg: "ok", Groups: res}, nil
@@ -268,6 +324,7 @@ func (s *Service) ListGroups(ctx context.Context, req *pb.ListGroupsRequest) (*p
 
 func (s *Service) GetGroup(ctx context.Context, req *pb.GetGroupRequest) (*pb.GetGroupResponse, error) {
 	log.Infof("[grpc] GetGroup uid=%s themeId=%s groupId=%s includeDocs=%v includeDetail=%v", getUID(ctx), req.GetThemeId(), req.GetGroupId(), req.GetIncludeDocs(), req.GetIncludeDetail())
+	uoid := getUOID(ctx)
 	toid, err := modb.GetTOIDFromTID(req.GetThemeId())
 	if err != nil {
 		return &pb.GetGroupResponse{Err: 1, Msg: err.Error()}, nil
@@ -282,13 +339,16 @@ func (s *Service) GetGroup(ctx context.Context, req *pb.GetGroupRequest) (*pb.Ge
 		if err != nil {
 			return &pb.GetGroupResponse{Err: 1, Msg: err.Error()}, nil
 		}
-		gd := &pb.GroupDetail{Id: g.GID, Name: g.Name, Config: toGroupConfig(g.Config)}
+		permMap, _ := modb.PermissionsFor(uoid, modb.ResourceTypeDoc, extractDocIDs(g.Docs))
+		groupPerm, _ := modb.PermissionGet(uoid, modb.ResourceTypeGroup, g.GID)
+		gd := &pb.GroupDetail{Id: g.GID, Name: g.Name, Config: toGroupConfig(g.Config), Permission: permissionEnvelopeFromPermission(groupPerm)}
 		for _, d := range g.Docs {
 			gd.Docs = append(gd.Docs, &pb.DocDetail{
-				Id:       d.ID,
-				Content:  &pb.Content{Title: d.Content.Title, Rich: d.Content.Rich, Level: levelBytes(d.Content.Level, d.LegacyLevel)},
-				CreateAt: d.CreateAt.Unix(),
-				UpdateAt: d.UpdateAt.Unix(),
+				Id:         d.ID,
+				Content:    &pb.Content{Title: d.Content.Title, Rich: d.Content.Rich, Level: levelBytes(d.Content.Level, d.LegacyLevel)},
+				CreateAt:   d.CreateAt.Unix(),
+				UpdateAt:   d.UpdateAt.Unix(),
+				Permission: permissionEnvelopeFromMap(permMap, d.ID),
 			})
 		}
 		return &pb.GetGroupResponse{Err: 0, Msg: "ok", Group: gd}, nil
@@ -298,12 +358,17 @@ func (s *Service) GetGroup(ctx context.Context, req *pb.GetGroupRequest) (*pb.Ge
 	if err != nil {
 		return &pb.GetGroupResponse{Err: 1, Msg: err.Error()}, nil
 	}
-	gd := &pb.GroupDetail{Id: g.ID, Name: g.Name, Config: toGroupConfig(g.Config)}
+	groupPerm, _ := modb.PermissionGet(uoid, modb.ResourceTypeGroup, g.ID)
+	gd := &pb.GroupDetail{Id: g.ID, Name: g.Name, Config: toGroupConfig(g.Config), Permission: permissionEnvelopeFromPermission(groupPerm)}
 	return &pb.GetGroupResponse{Err: 0, Msg: "ok", Group: gd}, nil
 }
 
 func (s *Service) CreateGroup(ctx context.Context, req *pb.CreateGroupRequest) (*pb.CreateGroupResponse, error) {
 	log.Infof("[grpc] CreateGroup uid=%s themeId=%s name=%s", getUID(ctx), req.GetThemeId(), req.GetName())
+	uoid := getUOID(ctx)
+	if uoid == primitive.NilObjectID {
+		return &pb.CreateGroupResponse{Err: 1, Msg: "unauthenticated"}, nil
+	}
 	toid, err := modb.GetTOIDFromTID(req.GetThemeId())
 	if err != nil {
 		return &pb.CreateGroupResponse{Err: 1, Msg: err.Error()}, nil
@@ -312,11 +377,12 @@ func (s *Service) CreateGroup(ctx context.Context, req *pb.CreateGroupRequest) (
 	r.Data.Name = req.GetName()
 	r.Data.CreateAt = nowString()
 	r.Data.UpdateAt = nowString()
+	r.Data.EncryptedKey = req.GetEncryptedKey()
 	r.Data.Config = &struct {
 		AutoFreezeDays *int `json:"auto_freeze_days"`
 	}{AutoFreezeDays: intPtr(int(req.GetAutoFreezeDays()))}
 
-	gid, err := modb.GroupPost(toid, &r)
+	gid, err := modb.GroupPost(uoid, toid, &r)
 	if err != nil {
 		return &pb.CreateGroupResponse{Err: 1, Msg: err.Error()}, nil
 	}
@@ -325,6 +391,10 @@ func (s *Service) CreateGroup(ctx context.Context, req *pb.CreateGroupRequest) (
 
 func (s *Service) UpdateGroup(ctx context.Context, req *pb.UpdateGroupRequest) (*pb.BasicResponse, error) {
 	log.Infof("[grpc] UpdateGroup uid=%s themeId=%s groupId=%s", getUID(ctx), req.GetThemeId(), req.GetGroupId())
+	uoid := getUOID(ctx)
+	if uoid == primitive.NilObjectID {
+		return &pb.BasicResponse{Err: 1, Msg: "unauthenticated"}, nil
+	}
 	toid, err := modb.GetTOIDFromTID(req.GetThemeId())
 	if err != nil {
 		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
@@ -363,6 +433,9 @@ func (s *Service) UpdateGroup(ctx context.Context, req *pb.UpdateGroupRequest) (
 
 	if err := modb.GroupPut(toid, goid, &r); err != nil {
 		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	if len(req.GetEncryptedKey()) > 0 {
+		_ = modb.PermissionUpsert(uoid, req.GetGroupId(), modb.ResourceTypeGroup, modb.RoleOwner, req.GetEncryptedKey())
 	}
 	return &pb.BasicResponse{Err: 0, Msg: "ok"}, nil
 }
@@ -465,6 +538,10 @@ func (s *Service) ImportGroupConfig(stream pb.GroupService_ImportGroupConfigServ
 // DocService
 func (s *Service) ListDocs(ctx context.Context, req *pb.ListDocsRequest) (*pb.ListDocsResponse, error) {
 	log.Infof("[grpc] ListDocs uid=%s groupId=%s year=%d month=%d", getUID(ctx), req.GetGroupId(), req.GetYear(), req.GetMonth())
+	uoid := getUOID(ctx)
+	if uoid == primitive.NilObjectID {
+		return &pb.ListDocsResponse{Err: 1, Msg: "unauthenticated"}, nil
+	}
 	goid, err := modb.GetGOIDFromGID(req.GetGroupId())
 	if err != nil {
 		return &pb.ListDocsResponse{Err: 1, Msg: err.Error()}, nil
@@ -473,6 +550,11 @@ func (s *Service) ListDocs(ctx context.Context, req *pb.ListDocsRequest) (*pb.Li
 	if err != nil {
 		return &pb.ListDocsResponse{Err: 1, Msg: err.Error()}, nil
 	}
+	ids := make([]string, 0, len(docs))
+	for _, d := range docs {
+		ids = append(ids, d.ID)
+	}
+	perms, _ := modb.PermissionsFor(uoid, modb.ResourceTypeDoc, ids)
 	res := make([]*pb.DocSummary, 0, len(docs))
 	for _, d := range docs {
 		res = append(res, &pb.DocSummary{
@@ -482,8 +564,9 @@ func (s *Service) ListDocs(ctx context.Context, req *pb.ListDocsRequest) (*pb.Li
 				Rich:  d.Content.Rich,
 				Level: levelBytes(d.Content.Level, d.LegacyLevel),
 			},
-			CreateAt: d.CreateAt.Unix(),
-			UpdateAt: d.UpdateAt.Unix(),
+			CreateAt:   d.CreateAt.Unix(),
+			UpdateAt:   d.UpdateAt.Unix(),
+			Permission: permissionEnvelopeFromMap(perms, d.ID),
 		})
 	}
 	return &pb.ListDocsResponse{Err: 0, Msg: "ok", Docs: res}, nil
@@ -491,6 +574,10 @@ func (s *Service) ListDocs(ctx context.Context, req *pb.ListDocsRequest) (*pb.Li
 
 func (s *Service) CreateDoc(ctx context.Context, req *pb.CreateDocRequest) (*pb.CreateDocResponse, error) {
 	log.Infof("[grpc] CreateDoc uid=%s groupId=%s", getUID(ctx), req.GetGroupId())
+	uoid := getUOID(ctx)
+	if uoid == primitive.NilObjectID {
+		return &pb.CreateDocResponse{Err: 1, Msg: "unauthenticated"}, nil
+	}
 	goid, err := modb.GetGOIDFromGID(req.GetGroupId())
 	if err != nil {
 		return &pb.CreateDocResponse{Err: 1, Msg: err.Error()}, nil
@@ -503,8 +590,9 @@ func (s *Service) CreateDoc(ctx context.Context, req *pb.CreateDocRequest) (*pb.
 	}
 	r.Data.CreateAt = fmt.Sprintf("%d", req.GetCreateAt())
 	r.Data.Config = &m.DocConfig{IsShowTool: true}
+	r.Data.EncryptedKey = req.GetEncryptedKey()
 
-	did, err := modb.DocPost(goid, &r)
+	did, err := modb.DocPost(uoid, goid, &r)
 	if err != nil {
 		return &pb.CreateDocResponse{Err: 1, Msg: err.Error()}, nil
 	}
@@ -513,6 +601,10 @@ func (s *Service) CreateDoc(ctx context.Context, req *pb.CreateDocRequest) (*pb.
 
 func (s *Service) UpdateDoc(ctx context.Context, req *pb.UpdateDocRequest) (*pb.BasicResponse, error) {
 	log.Infof("[grpc] UpdateDoc uid=%s groupId=%s docId=%s", getUID(ctx), req.GetGroupId(), req.GetDocId())
+	uoid := getUOID(ctx)
+	if uoid == primitive.NilObjectID {
+		return &pb.BasicResponse{Err: 1, Msg: "unauthenticated"}, nil
+	}
 	goid, err := modb.GetGOIDFromGID(req.GetGroupId())
 	if err != nil {
 		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
@@ -545,6 +637,9 @@ func (s *Service) UpdateDoc(ctx context.Context, req *pb.UpdateDocRequest) (*pb.
 
 	if err := modb.DocPut(goid, doid, &r); err != nil {
 		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	if len(req.GetEncryptedKey()) > 0 {
+		_ = modb.PermissionUpsert(uoid, req.GetDocId(), modb.ResourceTypeDoc, modb.RoleOwner, req.GetEncryptedKey())
 	}
 	return &pb.BasicResponse{Err: 0, Msg: "ok"}, nil
 }
@@ -735,6 +830,34 @@ func mimeExt(m string) string {
 	default:
 		return "bin"
 	}
+}
+
+func permissionEnvelopeFromMap(m map[string]modb.Permission, id string) *pb.PermissionEnvelope {
+	if m == nil {
+		return nil
+	}
+	if p, ok := m[id]; ok {
+		return &pb.PermissionEnvelope{
+			EncryptedKey: p.EncryptedKey,
+			Role:         p.Role,
+		}
+	}
+	return nil
+}
+
+func permissionEnvelopeFromPermission(p *modb.Permission) *pb.PermissionEnvelope {
+	if p == nil {
+		return nil
+	}
+	return &pb.PermissionEnvelope{EncryptedKey: p.EncryptedKey, Role: p.Role}
+}
+
+func extractDocIDs(docs []m.Doc) []string {
+	ids := make([]string, 0, len(docs))
+	for _, d := range docs {
+		ids = append(ids, d.ID)
+	}
+	return ids
 }
 
 func toJSON(v interface{}) string {

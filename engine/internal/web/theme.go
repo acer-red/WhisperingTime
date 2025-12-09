@@ -97,7 +97,7 @@ func ThemePost(g *gin.Context) {
 		return
 	}
 
-	if _, err := modb.GroupCreateDefault(toid, req.Data.DefaultGroup); err != nil {
+	if _, err := modb.GroupCreateDefault(uoid, toid, req.Data.DefaultGroup); err != nil {
 		internalServerError(g)
 		return
 	}

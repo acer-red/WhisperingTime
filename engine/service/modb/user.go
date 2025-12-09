@@ -2,7 +2,9 @@ package modb
 
 import (
 	"context"
+	"errors"
 	"net/http"
+	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/tengfei-xy/go-log"
@@ -20,6 +22,10 @@ func ExistUser() gin.HandlerFunc {
 		}
 		if uid == "" {
 			g.AbortWithStatusJSON(http.StatusBadRequest, "缺少uid")
+			return
+		}
+		if !utf8.ValidString(uid) {
+			g.AbortWithStatusJSON(http.StatusBadRequest, "uid编码非法")
 			return
 		}
 		g.Set("uid", uid)
@@ -57,6 +63,9 @@ func ExistUser() gin.HandlerFunc {
 
 // EnsureUser finds uid and returns its object id, creating a user if missing.
 func EnsureUser(uid string) (primitive.ObjectID, error) {
+	if !utf8.ValidString(uid) {
+		return primitive.NilObjectID, errors.New("uid contains invalid utf-8")
+	}
 	ctx := context.TODO()
 	identified := bson.D{{Key: "uid", Value: uid}}
 

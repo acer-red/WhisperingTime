@@ -304,6 +304,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
     await Storage().deleteCookie();
     SP().setIsAutoLogin(false);
 
+    if (!mounted) return;
     Navigator.pushReplacement(
         context,
         MaterialPageRoute(

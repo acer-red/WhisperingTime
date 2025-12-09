@@ -8,6 +8,7 @@ import (
 	"github.com/tengfei-xy/go-log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 
 	m "github.com/acer-red/whisperingtime/engine/model"
 	"github.com/acer-red/whisperingtime/engine/util"
@@ -15,9 +16,10 @@ import (
 
 type RequestDocPost struct {
 	Data struct {
-		Content  m.DocContent `json:"content"`
-		CreateAt string       `json:"createAt"`
-		Config   *m.DocConfig `json:"config"`
+		Content      m.DocContent `json:"content"`
+		CreateAt     string       `json:"createAt"`
+		Config       *m.DocConfig `json:"config"`
+		EncryptedKey []byte       `json:"encrypted_key"`
 	} `json:"data"`
 }
 
@@ -91,7 +93,7 @@ func DocsGet(goid primitive.ObjectID, f DocFilter) ([]m.Doc, error) {
 
 	return results, nil
 }
-func DocPost(goid primitive.ObjectID, req *RequestDocPost) (string, error) {
+func DocPost(uoid, goid primitive.ObjectID, req *RequestDocPost) (string, error) {
 
 	did := util.CreateUUID()
 	data := bson.D{
@@ -105,6 +107,10 @@ func DocPost(goid primitive.ObjectID, req *RequestDocPost) (string, error) {
 
 	_, err := db.Collection("doc").InsertOne(context.TODO(), data)
 	if err != nil {
+		return "", err
+	}
+
+	if err := PermissionUpsert(uoid, did, ResourceTypeDoc, RoleOwner, req.Data.EncryptedKey); err != nil {
 		return "", err
 	}
 
@@ -188,16 +194,27 @@ func extractLevelBytes(content bson.M, doc bson.M) []byte {
 	return nil
 }
 func DocDelete(goid primitive.ObjectID, doid primitive.ObjectID) error {
+	did, err := GetDIDFromDOID(doid)
+	if err != nil && err != mongo.ErrNoDocuments {
+		return err
+	}
+
 	filter := bson.M{
 		"_goid": goid,
 		"_id":   doid,
 	}
-	_, err := db.Collection("doc").DeleteOne(context.TODO(),
+	_, err = db.Collection("doc").DeleteOne(context.TODO(),
 		filter,
 		nil,
 	)
 	if err != nil {
 		return err
+	}
+
+	if did != "" {
+		if err := PermissionDelete(ResourceTypeDoc, []string{did}); err != nil {
+			return err
+		}
 	}
 
 	return refreshGroupUpdateAt(goid, true)

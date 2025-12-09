@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -25,10 +26,11 @@ import (
 
 type RequestGroupPost struct {
 	Data struct {
-		Name     []byte `json:"name"`
-		CreateAt string `json:"createAt"`
-		UpdateAt string `json:"updateAt"`
-		Config   *struct {
+		Name         []byte `json:"name"`
+		CreateAt     string `json:"createAt"`
+		UpdateAt     string `json:"updateAt"`
+		EncryptedKey []byte `json:"encrypted_key"`
+		Config       *struct {
 			AutoFreezeDays *int `json:"auto_freeze_days"`
 		} `json:"config"`
 	} `json:"data"`
@@ -196,7 +198,7 @@ func GroupGetAndDocDetail(toid primitive.ObjectID, goid primitive.ObjectID) (ml.
 	return results[0], nil
 
 }
-func GroupPost(toid primitive.ObjectID, req *RequestGroupPost) (string, error) {
+func GroupPost(uoid, toid primitive.ObjectID, req *RequestGroupPost) (string, error) {
 
 	gid := util.CreateUUID()
 	data := bson.D{
@@ -210,6 +212,10 @@ func GroupPost(toid primitive.ObjectID, req *RequestGroupPost) (string, error) {
 
 	_, err := db.Collection("group").InsertOne(context.TODO(), data)
 	if err != nil {
+		return "", err
+	}
+
+	if err := PermissionUpsert(uoid, gid, ResourceTypeGroup, RoleOwner, req.Data.EncryptedKey); err != nil {
 		return "", err
 	}
 
@@ -263,7 +269,7 @@ func GroupPut(toid primitive.ObjectID, goid primitive.ObjectID, req *RequestGrou
 
 	return refreshGroupUpdateAt(goid, req.Data.OverAt == nil)
 }
-func GroupCreateDefault(toid primitive.ObjectID, gd RequestThemePostDefaultGroup) (string, error) {
+func GroupCreateDefault(uoid, toid primitive.ObjectID, gd RequestThemePostDefaultGroup) (string, error) {
 
 	gid := util.CreateUUID()
 	config := buildConfig(gd.Config)
@@ -282,19 +288,52 @@ func GroupCreateDefault(toid primitive.ObjectID, gd RequestThemePostDefaultGroup
 	if err != nil {
 		return "", err
 	}
+
+	if err := PermissionUpsert(uoid, gid, ResourceTypeGroup, RoleOwner, gd.EncryptedKey); err != nil {
+		return "", err
+	}
 	return gid, nil
 }
 
 // GroupDeleteOne 删除一个分组和所有日志
 func GroupDeleteOne(toid primitive.ObjectID, goid primitive.ObjectID) error {
+	if goid == primitive.NilObjectID {
+		return errors.New("invalid goid")
+	}
+
+	gid, err := GetGIDFromGOID(goid)
+	if err != nil && err != mongo.ErrNoDocuments {
+		return err
+	}
+
+	docIDs, err := GetDIDsFromGOID(goid)
+	if err != nil && err != mongo.ErrNoDocuments {
+		return err
+	}
+
+	if err := DocDeleteFromGOID(goid); err != nil {
+		return err
+	}
 	filter := bson.D{
 		{Key: "_toid", Value: toid},
 		{Key: "_id", Value: goid},
 	}
 
-	_, err := db.Collection("group").DeleteOne(context.TODO(), filter, nil)
+	_, err = db.Collection("group").DeleteOne(context.TODO(), filter, nil)
+	if err != nil {
+		return err
+	}
 
-	return err
+	if err := PermissionDelete(ResourceTypeDoc, docIDs); err != nil {
+		return err
+	}
+	if gid != "" {
+		if err := PermissionDelete(ResourceTypeGroup, []string{gid}); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // GroupDeleteFromGOID 根据goid删除一个分组
