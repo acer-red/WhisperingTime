@@ -99,24 +99,22 @@ class Storage {
   }
 }
 
-class Key {
+class KeyPair {
   final List<int> publicKey;
   final List<int> privateKey;
   String get publicKeyString => base64Encode(publicKey);
   String get privateKeyString => base64Encode(privateKey);
-  Key({required this.publicKey, required this.privateKey});
+  KeyPair({required this.publicKey, required this.privateKey});
 }
 
 class KeyManager {
-  final algorithm = X25519();
-
-  Future<Key> generateAndPrintKeys() async {
+  static Future<KeyPair> generateX25519() async {
     try {
-      final SimpleKeyPair keyPair = await algorithm.newKeyPair();
+      final SimpleKeyPair keyPair = await X25519().newKeyPair();
 
       final SimplePublicKey publicKey = await keyPair.extractPublicKey();
 
-      return Key(
+      return KeyPair(
         // 获取公钥的原始字节 (32 bytes)
         publicKey: publicKey.bytes,
 
@@ -126,5 +124,12 @@ class KeyManager {
     } catch (e) {
       throw '生成密钥失败: $e';
     }
+  }
+
+  static Future<List<int>> generateAes() async {
+    final algorithm = AesGcm.with256bits();
+    final secretKey = await algorithm.newSecretKey();
+    final keyBytes = await secretKey.extractBytes();
+    return keyBytes;
   }
 }

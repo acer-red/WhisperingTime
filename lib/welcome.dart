@@ -590,7 +590,7 @@ class _Welcome extends State<Welcome> {
   }
 
   Future<List<int>> generateKey() async {
-    final key = await KeyManager().generateAndPrintKeys();
+    final key = await KeyManager.generateX25519();
 
     await Storage().getKey(newKey: key.privateKey);
     return key.publicKey;
