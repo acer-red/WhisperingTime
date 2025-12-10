@@ -18,12 +18,14 @@ class DocSettingsDialog extends StatefulWidget {
   final String? did;
   final DocConfig config;
   final DateTime createAt;
+  final bool fromBrowser;
 
   DocSettingsDialog({
     required this.gid,
     required this.did,
     required this.createAt,
     required this.config,
+    this.fromBrowser = false,
   });
 
   @override
@@ -32,6 +34,7 @@ class DocSettingsDialog extends StatefulWidget {
 
 class _DocSettingsDialogState extends State<DocSettingsDialog> {
   late bool isShowTool;
+  late int displayPriority;
   late DateTime createAt;
   bool isChanged = false;
 
@@ -44,6 +47,7 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
   void initState() {
     super.initState();
     isShowTool = widget.config.isShowTool ?? false;
+    displayPriority = widget.config.displayPriority ?? 0;
     createAt = widget.createAt;
   }
 
@@ -70,13 +74,29 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
             ),
             Divider(height: 1),
             // 显示工具栏开关
-            SwitchListTile(
-              secondary: Icon(Icons.build),
-              title: Text('显示工具栏'),
-              subtitle: Text('含图片上传'),
-              value: isShowTool,
-              onChanged: (value) => _setTool(value),
-            ),
+            if (!widget.fromBrowser)
+              SwitchListTile(
+                secondary: Icon(Icons.build),
+                title: Text('显示工具栏'),
+                subtitle: Text('含图片上传'),
+                value: isShowTool,
+                onChanged: (value) => _setTool(value),
+              ),
+            if (widget.fromBrowser)
+              ListTile(
+                leading: Icon(Icons.visibility),
+                title: Text('显示优先'),
+                subtitle: Text(_getDisplayPriorityDesc(displayPriority)),
+                trailing: DropdownButton<int>(
+                  value: displayPriority,
+                  onChanged: (value) => _setDisplayPriority(value),
+                  items: [
+                    DropdownMenuItem(value: 0, child: Text('完整')),
+                    DropdownMenuItem(value: 1, child: Text('文字优先')),
+                    DropdownMenuItem(value: 2, child: Text('媒体优先')),
+                  ],
+                ),
+              ),
             Divider(height: 1),
             // 删除文档按钮
             if (widget.did != null)
@@ -108,13 +128,51 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
             Navigator.of(context).pop({
               'changed': isChanged,
               'createAt': createAt,
-              'config': DocConfig(isShowTool: isShowTool),
+              'config': DocConfig(
+                  isShowTool: isShowTool, displayPriority: displayPriority),
             });
           },
           child: Text('确定'),
         ),
       ],
     );
+  }
+
+  // 设置显示优先
+  void _setDisplayPriority(int? value) async {
+    if (value == null) return;
+    isChanged = true;
+    if (widget.did != null) {
+      final res = await Grpc(gid: widget.gid, did: widget.did)
+          .putDoc(RequestUpdateDoc(config: DocConfig(displayPriority: value)));
+      if (res.isNotOK) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('设置失败')),
+          );
+        }
+        return;
+      }
+
+      _touchGroup();
+    }
+
+    setState(() {
+      displayPriority = value;
+    });
+  }
+
+  String _getDisplayPriorityDesc(int priority) {
+    switch (priority) {
+      case 0:
+        return '详细显示印迹，图文混排';
+      case 1:
+        return '文字为主，图片以缩略图形式';
+      case 2:
+        return '媒体为主，文字最小化显示';
+      default:
+        return '';
+    }
   }
 
   // 设置工具栏显示

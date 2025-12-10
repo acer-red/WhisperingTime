@@ -888,7 +888,10 @@ class Grpc {
               DateTime.fromMillisecondsSinceEpoch(d.createAt.toInt() * 1000),
           updateAt:
               DateTime.fromMillisecondsSinceEpoch(d.updateAt.toInt() * 1000),
-          config: DocConfig(isShowTool: true),
+          config: DocConfig(
+            isShowTool: d.config.isShowTool,
+            displayPriority: d.config.displayPriority,
+          ),
           id: d.id,
         );
       } catch (e) {
@@ -903,7 +906,10 @@ class Grpc {
               DateTime.fromMillisecondsSinceEpoch(d.createAt.toInt() * 1000),
           updateAt:
               DateTime.fromMillisecondsSinceEpoch(d.updateAt.toInt() * 1000),
-          config: DocConfig(isShowTool: true),
+          config: DocConfig(
+            isShowTool: d.config.isShowTool,
+            displayPriority: d.config.displayPriority,
+          ),
           id: d.id,
         );
       }
@@ -928,6 +934,10 @@ class Grpc {
         content: content,
         encryptedKey: docCipher.encryptedKey,
         createAt: Int64(req.createAt.millisecondsSinceEpoch ~/ 1000),
+        config: pb.DocConfig(
+          isShowTool: req.config.isShowTool ?? false,
+          displayPriority: req.config.displayPriority ?? 0,
+        ),
       ),
       options: await _Grpc.instance.authOptions(),
     );
@@ -967,6 +977,12 @@ class Grpc {
         createAt: req.createAt != null
             ? Int64(req.createAt!.millisecondsSinceEpoch ~/ 1000)
             : Int64.ZERO,
+        config: req.config != null
+            ? pb.DocConfig(
+                isShowTool: req.config!.isShowTool ?? false,
+                displayPriority: req.config!.displayPriority ?? 0,
+              )
+            : null,
       ),
       options: await _Grpc.instance.authOptions(),
     );

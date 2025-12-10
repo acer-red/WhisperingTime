@@ -43,7 +43,10 @@ class Doc {
       level: parsedLevel,
       createAt: Time.stringToTime(json['createAt'] as String),
       updateAt: Time.stringToTime(json['updateAt'] as String),
-      config: DocConfig(isShowTool: json['config']['is_show_tool'] as bool),
+      config: DocConfig(
+        isShowTool: json['config']['is_show_tool'] as bool?,
+        displayPriority: json['config']['display_priority'] as int?,
+      ),
       id: json['id'] as String,
     );
   }
@@ -64,10 +67,12 @@ class Doc {
 
 class DocConfig {
   bool? isShowTool;
-  DocConfig({this.isShowTool});
+  int? displayPriority;
+  DocConfig({this.isShowTool, this.displayPriority});
   Map<String, dynamic> toJson() {
     return {
       'is_show_tool': isShowTool,
+      'display_priority': displayPriority,
     };
   }
 }

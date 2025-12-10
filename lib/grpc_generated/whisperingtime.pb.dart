@@ -325,6 +325,70 @@ class GroupConfig extends $pb.GeneratedMessage {
   void clearAutoFreezeDays() => clearField(6);
 }
 
+class DocConfig extends $pb.GeneratedMessage {
+  factory DocConfig({
+    $core.bool? isShowTool,
+    $core.int? displayPriority,
+  }) {
+    final $result = create();
+    if (isShowTool != null) {
+      $result.isShowTool = isShowTool;
+    }
+    if (displayPriority != null) {
+      $result.displayPriority = displayPriority;
+    }
+    return $result;
+  }
+  DocConfig._() : super();
+  factory DocConfig.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory DocConfig.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'DocConfig', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
+    ..aOB(1, _omitFieldNames ? '' : 'isShowTool')
+    ..a<$core.int>(2, _omitFieldNames ? '' : 'displayPriority', $pb.PbFieldType.O3)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  DocConfig clone() => DocConfig()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  DocConfig copyWith(void Function(DocConfig) updates) => super.copyWith((message) => updates(message as DocConfig)) as DocConfig;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static DocConfig create() => DocConfig._();
+  DocConfig createEmptyInstance() => create();
+  static $pb.PbList<DocConfig> createRepeated() => $pb.PbList<DocConfig>();
+  @$core.pragma('dart2js:noInline')
+  static DocConfig getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<DocConfig>(create);
+  static DocConfig? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get isShowTool => $_getBF(0);
+  @$pb.TagNumber(1)
+  set isShowTool($core.bool v) { $_setBool(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasIsShowTool() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearIsShowTool() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.int get displayPriority => $_getIZ(1);
+  @$pb.TagNumber(2)
+  set displayPriority($core.int v) { $_setSignedInt32(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasDisplayPriority() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearDisplayPriority() => clearField(2);
+}
+
 class GroupSummary extends $pb.GeneratedMessage {
   factory GroupSummary({
     $core.String? id,
@@ -470,6 +534,7 @@ class DocSummary extends $pb.GeneratedMessage {
     $fixnum.Int64? createAt,
     $fixnum.Int64? updateAt,
     PermissionEnvelope? permission,
+    DocConfig? config,
   }) {
     final $result = create();
     if (id != null) {
@@ -487,6 +552,9 @@ class DocSummary extends $pb.GeneratedMessage {
     if (permission != null) {
       $result.permission = permission;
     }
+    if (config != null) {
+      $result.config = config;
+    }
     return $result;
   }
   DocSummary._() : super();
@@ -499,6 +567,7 @@ class DocSummary extends $pb.GeneratedMessage {
     ..aInt64(5, _omitFieldNames ? '' : 'createAt')
     ..aInt64(6, _omitFieldNames ? '' : 'updateAt')
     ..aOM<PermissionEnvelope>(7, _omitFieldNames ? '' : 'permission', subBuilder: PermissionEnvelope.create)
+    ..aOM<DocConfig>(8, _omitFieldNames ? '' : 'config', subBuilder: DocConfig.create)
     ..hasRequiredFields = false
   ;
 
@@ -571,6 +640,17 @@ class DocSummary extends $pb.GeneratedMessage {
   void clearPermission() => clearField(7);
   @$pb.TagNumber(7)
   PermissionEnvelope ensurePermission() => $_ensure(4);
+
+  @$pb.TagNumber(8)
+  DocConfig get config => $_getN(5);
+  @$pb.TagNumber(8)
+  set config(DocConfig v) { setField(8, v); }
+  @$pb.TagNumber(8)
+  $core.bool hasConfig() => $_has(5);
+  @$pb.TagNumber(8)
+  void clearConfig() => clearField(8);
+  @$pb.TagNumber(8)
+  DocConfig ensureConfig() => $_ensure(5);
 }
 
 class Content extends $pb.GeneratedMessage {
@@ -658,6 +738,7 @@ class DocDetail extends $pb.GeneratedMessage {
     $fixnum.Int64? createAt,
     $fixnum.Int64? updateAt,
     PermissionEnvelope? permission,
+    DocConfig? config,
   }) {
     final $result = create();
     if (id != null) {
@@ -675,6 +756,9 @@ class DocDetail extends $pb.GeneratedMessage {
     if (permission != null) {
       $result.permission = permission;
     }
+    if (config != null) {
+      $result.config = config;
+    }
     return $result;
   }
   DocDetail._() : super();
@@ -687,6 +771,7 @@ class DocDetail extends $pb.GeneratedMessage {
     ..aInt64(6, _omitFieldNames ? '' : 'createAt')
     ..aInt64(7, _omitFieldNames ? '' : 'updateAt')
     ..aOM<PermissionEnvelope>(8, _omitFieldNames ? '' : 'permission', subBuilder: PermissionEnvelope.create)
+    ..aOM<DocConfig>(9, _omitFieldNames ? '' : 'config', subBuilder: DocConfig.create)
     ..hasRequiredFields = false
   ;
 
@@ -759,6 +844,17 @@ class DocDetail extends $pb.GeneratedMessage {
   void clearPermission() => clearField(8);
   @$pb.TagNumber(8)
   PermissionEnvelope ensurePermission() => $_ensure(4);
+
+  @$pb.TagNumber(9)
+  DocConfig get config => $_getN(5);
+  @$pb.TagNumber(9)
+  set config(DocConfig v) { setField(9, v); }
+  @$pb.TagNumber(9)
+  $core.bool hasConfig() => $_has(5);
+  @$pb.TagNumber(9)
+  void clearConfig() => clearField(9);
+  @$pb.TagNumber(9)
+  DocConfig ensureConfig() => $_ensure(5);
 }
 
 class GroupDetail extends $pb.GeneratedMessage {
@@ -2356,6 +2452,7 @@ class CreateDocRequest extends $pb.GeneratedMessage {
     Content? content,
     $fixnum.Int64? createAt,
     $core.List<$core.int>? encryptedKey,
+    DocConfig? config,
   }) {
     final $result = create();
     if (groupId != null) {
@@ -2370,6 +2467,9 @@ class CreateDocRequest extends $pb.GeneratedMessage {
     if (encryptedKey != null) {
       $result.encryptedKey = encryptedKey;
     }
+    if (config != null) {
+      $result.config = config;
+    }
     return $result;
   }
   CreateDocRequest._() : super();
@@ -2381,6 +2481,7 @@ class CreateDocRequest extends $pb.GeneratedMessage {
     ..aOM<Content>(2, _omitFieldNames ? '' : 'content', subBuilder: Content.create)
     ..aInt64(6, _omitFieldNames ? '' : 'createAt')
     ..a<$core.List<$core.int>>(7, _omitFieldNames ? '' : 'encryptedKey', $pb.PbFieldType.OY)
+    ..aOM<DocConfig>(8, _omitFieldNames ? '' : 'config', subBuilder: DocConfig.create)
     ..hasRequiredFields = false
   ;
 
@@ -2442,6 +2543,17 @@ class CreateDocRequest extends $pb.GeneratedMessage {
   $core.bool hasEncryptedKey() => $_has(3);
   @$pb.TagNumber(7)
   void clearEncryptedKey() => clearField(7);
+
+  @$pb.TagNumber(8)
+  DocConfig get config => $_getN(4);
+  @$pb.TagNumber(8)
+  set config(DocConfig v) { setField(8, v); }
+  @$pb.TagNumber(8)
+  $core.bool hasConfig() => $_has(4);
+  @$pb.TagNumber(8)
+  void clearConfig() => clearField(8);
+  @$pb.TagNumber(8)
+  DocConfig ensureConfig() => $_ensure(4);
 }
 
 class CreateDocResponse extends $pb.GeneratedMessage {
@@ -2529,6 +2641,7 @@ class UpdateDocRequest extends $pb.GeneratedMessage {
     Content? content,
     $fixnum.Int64? createAt,
     $core.List<$core.int>? encryptedKey,
+    DocConfig? config,
   }) {
     final $result = create();
     if (groupId != null) {
@@ -2546,6 +2659,9 @@ class UpdateDocRequest extends $pb.GeneratedMessage {
     if (encryptedKey != null) {
       $result.encryptedKey = encryptedKey;
     }
+    if (config != null) {
+      $result.config = config;
+    }
     return $result;
   }
   UpdateDocRequest._() : super();
@@ -2558,6 +2674,7 @@ class UpdateDocRequest extends $pb.GeneratedMessage {
     ..aOM<Content>(3, _omitFieldNames ? '' : 'content', subBuilder: Content.create)
     ..aInt64(7, _omitFieldNames ? '' : 'createAt')
     ..a<$core.List<$core.int>>(8, _omitFieldNames ? '' : 'encryptedKey', $pb.PbFieldType.OY)
+    ..aOM<DocConfig>(9, _omitFieldNames ? '' : 'config', subBuilder: DocConfig.create)
     ..hasRequiredFields = false
   ;
 
@@ -2628,6 +2745,17 @@ class UpdateDocRequest extends $pb.GeneratedMessage {
   $core.bool hasEncryptedKey() => $_has(4);
   @$pb.TagNumber(8)
   void clearEncryptedKey() => clearField(8);
+
+  @$pb.TagNumber(9)
+  DocConfig get config => $_getN(5);
+  @$pb.TagNumber(9)
+  set config(DocConfig v) { setField(9, v); }
+  @$pb.TagNumber(9)
+  $core.bool hasConfig() => $_has(5);
+  @$pb.TagNumber(9)
+  void clearConfig() => clearField(9);
+  @$pb.TagNumber(9)
+  DocConfig ensureConfig() => $_ensure(5);
 }
 
 class DeleteDocRequest extends $pb.GeneratedMessage {

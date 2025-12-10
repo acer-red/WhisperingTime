@@ -571,6 +571,10 @@ func (s *Service) ListDocs(ctx context.Context, req *pb.ListDocsRequest) (*pb.Li
 			CreateAt:   d.CreateAt.Unix(),
 			UpdateAt:   d.UpdateAt.Unix(),
 			Permission: permissionEnvelopeFromMap(perms, d.ID),
+			Config: &pb.DocConfig{
+				IsShowTool:      d.Config.IsShowTool,
+				DisplayPriority: int32(d.Config.DisplayPriority),
+			},
 		})
 	}
 	return &pb.ListDocsResponse{Err: 0, Msg: "ok", Docs: res}, nil
@@ -593,7 +597,14 @@ func (s *Service) CreateDoc(ctx context.Context, req *pb.CreateDocRequest) (*pb.
 		Level: req.GetContent().GetLevel(),
 	}
 	r.Data.CreateAt = fmt.Sprintf("%d", req.GetCreateAt())
-	r.Data.Config = &m.DocConfig{IsShowTool: true}
+	if req.GetConfig() != nil {
+		r.Data.Config = &m.DocConfig{
+			IsShowTool:      req.GetConfig().GetIsShowTool(),
+			DisplayPriority: int(req.GetConfig().GetDisplayPriority()),
+		}
+	} else {
+		r.Data.Config = &m.DocConfig{IsShowTool: true}
+	}
 	r.Data.EncryptedKey = req.GetEncryptedKey()
 
 	did, err := modb.DocPost(uoid, goid, &r)
@@ -638,6 +649,13 @@ func (s *Service) UpdateDoc(ctx context.Context, req *pb.UpdateDocRequest) (*pb.
 	}
 	upd := time.Now().Format("2006-01-02 15:04:05")
 	r.Doc.UpdateAt = &upd
+
+	if req.Config != nil {
+		r.Doc.Config = &m.DocConfig{
+			IsShowTool:      req.GetConfig().GetIsShowTool(),
+			DisplayPriority: int(req.GetConfig().GetDisplayPriority()),
+		}
+	}
 
 	if err := modb.DocPut(goid, doid, &r); err != nil {
 		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil

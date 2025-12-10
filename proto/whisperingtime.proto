@@ -31,6 +31,11 @@ message GroupConfig {
   int32 auto_freeze_days = 6;
 }
 
+message DocConfig {
+  bool is_show_tool = 1;
+  int32 display_priority = 2;
+}
+
 message GroupSummary {
   string id = 1;
   bytes name = 2;
@@ -48,6 +53,7 @@ message DocSummary {
   int64 create_at = 5;
   int64 update_at = 6;
   PermissionEnvelope permission = 7;
+  DocConfig config = 8;
 }
 
 message Content {
@@ -63,6 +69,7 @@ message DocDetail {
   int64 create_at = 6;
   int64 update_at = 7;
   PermissionEnvelope permission = 8;
+  DocConfig config = 9;
 }
 
 message GroupDetail {
@@ -161,6 +168,7 @@ message CreateDocRequest {
   reserved 5;
   int64 create_at = 6;
   bytes encrypted_key = 7;
+  DocConfig config = 8;
 }
 message CreateDocResponse { int32 err = 1; string msg = 2; string id = 3; }
 message UpdateDocRequest {
@@ -170,6 +178,7 @@ message UpdateDocRequest {
   reserved 6;
   int64 create_at = 7;
   bytes encrypted_key = 8;
+  DocConfig config = 9;
 }
 message DeleteDocRequest { string group_id = 1; string doc_id = 2; }
 

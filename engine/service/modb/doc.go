@@ -72,6 +72,11 @@ func DocsGet(goid primitive.ObjectID, f DocFilter) ([]m.Doc, error) {
 			if v, ok := configM["is_show_tool"].(bool); ok {
 				cfg.IsShowTool = v
 			}
+			if v, ok := configM["display_priority"].(int32); ok {
+				cfg.DisplayPriority = int(v)
+			} else if v, ok := configM["display_priority"].(int); ok {
+				cfg.DisplayPriority = v
+			}
 		}
 		results = append(results, m.Doc{
 			Content: m.DocContent{
@@ -151,7 +156,8 @@ func DocPut(goid primitive.ObjectID, doid primitive.ObjectID, req *RequestDocPut
 
 	if (*req).Doc.Config != nil {
 		m["config"] = bson.M{
-			"is_show_tool": (*req).Doc.Config.IsShowTool,
+			"is_show_tool":     (*req).Doc.Config.IsShowTool,
+			"display_priority": (*req).Doc.Config.DisplayPriority,
 		}
 	}
 

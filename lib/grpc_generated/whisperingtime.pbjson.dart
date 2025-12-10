@@ -79,6 +79,20 @@ final $typed_data.Uint8List groupConfigDescriptor = $convert.base64Decode(
     'VSCHZpZXdUeXBlEhsKCXNvcnRfdHlwZRgFIAEoBVIIc29ydFR5cGUSKAoQYXV0b19mcmVlemVf'
     'ZGF5cxgGIAEoBVIOYXV0b0ZyZWV6ZURheXM=');
 
+@$core.Deprecated('Use docConfigDescriptor instead')
+const DocConfig$json = {
+  '1': 'DocConfig',
+  '2': [
+    {'1': 'is_show_tool', '3': 1, '4': 1, '5': 8, '10': 'isShowTool'},
+    {'1': 'display_priority', '3': 2, '4': 1, '5': 5, '10': 'displayPriority'},
+  ],
+};
+
+/// Descriptor for `DocConfig`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List docConfigDescriptor = $convert.base64Decode(
+    'CglEb2NDb25maWcSIAoMaXNfc2hvd190b29sGAEgASgIUgppc1Nob3dUb29sEikKEGRpc3BsYX'
+    'lfcHJpb3JpdHkYAiABKAVSD2Rpc3BsYXlQcmlvcml0eQ==');
+
 @$core.Deprecated('Use groupSummaryDescriptor instead')
 const GroupSummary$json = {
   '1': 'GroupSummary',
@@ -110,6 +124,7 @@ const DocSummary$json = {
     {'1': 'create_at', '3': 5, '4': 1, '5': 3, '10': 'createAt'},
     {'1': 'update_at', '3': 6, '4': 1, '5': 3, '10': 'updateAt'},
     {'1': 'permission', '3': 7, '4': 1, '5': 11, '6': '.whisperingtime.PermissionEnvelope', '10': 'permission'},
+    {'1': 'config', '3': 8, '4': 1, '5': 11, '6': '.whisperingtime.DocConfig', '10': 'config'},
   ],
   '9': [
     {'1': 4, '2': 5},
@@ -121,7 +136,8 @@ final $typed_data.Uint8List docSummaryDescriptor = $convert.base64Decode(
     'CgpEb2NTdW1tYXJ5Eg4KAmlkGAEgASgJUgJpZBIxCgdjb250ZW50GAIgASgLMhcud2hpc3Blcm'
     'luZ3RpbWUuQ29udGVudFIHY29udGVudBIbCgljcmVhdGVfYXQYBSABKANSCGNyZWF0ZUF0EhsK'
     'CXVwZGF0ZV9hdBgGIAEoA1IIdXBkYXRlQXQSQgoKcGVybWlzc2lvbhgHIAEoCzIiLndoaXNwZX'
-    'Jpbmd0aW1lLlBlcm1pc3Npb25FbnZlbG9wZVIKcGVybWlzc2lvbkoECAQQBQ==');
+    'Jpbmd0aW1lLlBlcm1pc3Npb25FbnZlbG9wZVIKcGVybWlzc2lvbhIxCgZjb25maWcYCCABKAsy'
+    'GS53aGlzcGVyaW5ndGltZS5Eb2NDb25maWdSBmNvbmZpZ0oECAQQBQ==');
 
 @$core.Deprecated('Use contentDescriptor instead')
 const Content$json = {
@@ -153,6 +169,7 @@ const DocDetail$json = {
     {'1': 'create_at', '3': 6, '4': 1, '5': 3, '10': 'createAt'},
     {'1': 'update_at', '3': 7, '4': 1, '5': 3, '10': 'updateAt'},
     {'1': 'permission', '3': 8, '4': 1, '5': 11, '6': '.whisperingtime.PermissionEnvelope', '10': 'permission'},
+    {'1': 'config', '3': 9, '4': 1, '5': 11, '6': '.whisperingtime.DocConfig', '10': 'config'},
   ],
   '9': [
     {'1': 5, '2': 6},
@@ -164,7 +181,8 @@ final $typed_data.Uint8List docDetailDescriptor = $convert.base64Decode(
     'CglEb2NEZXRhaWwSDgoCaWQYASABKAlSAmlkEjEKB2NvbnRlbnQYAiABKAsyFy53aGlzcGVyaW'
     '5ndGltZS5Db250ZW50Ugdjb250ZW50EhsKCWNyZWF0ZV9hdBgGIAEoA1IIY3JlYXRlQXQSGwoJ'
     'dXBkYXRlX2F0GAcgASgDUgh1cGRhdGVBdBJCCgpwZXJtaXNzaW9uGAggASgLMiIud2hpc3Blcm'
-    'luZ3RpbWUuUGVybWlzc2lvbkVudmVsb3BlUgpwZXJtaXNzaW9uSgQIBRAG');
+    'luZ3RpbWUuUGVybWlzc2lvbkVudmVsb3BlUgpwZXJtaXNzaW9uEjEKBmNvbmZpZxgJIAEoCzIZ'
+    'LndoaXNwZXJpbmd0aW1lLkRvY0NvbmZpZ1IGY29uZmlnSgQIBRAG');
 
 @$core.Deprecated('Use groupDetailDescriptor instead')
 const GroupDetail$json = {
@@ -492,6 +510,7 @@ const CreateDocRequest$json = {
     {'1': 'content', '3': 2, '4': 1, '5': 11, '6': '.whisperingtime.Content', '10': 'content'},
     {'1': 'create_at', '3': 6, '4': 1, '5': 3, '10': 'createAt'},
     {'1': 'encrypted_key', '3': 7, '4': 1, '5': 12, '10': 'encryptedKey'},
+    {'1': 'config', '3': 8, '4': 1, '5': 11, '6': '.whisperingtime.DocConfig', '10': 'config'},
   ],
   '9': [
     {'1': 5, '2': 6},
@@ -502,8 +521,8 @@ const CreateDocRequest$json = {
 final $typed_data.Uint8List createDocRequestDescriptor = $convert.base64Decode(
     'ChBDcmVhdGVEb2NSZXF1ZXN0EhkKCGdyb3VwX2lkGAEgASgJUgdncm91cElkEjEKB2NvbnRlbn'
     'QYAiABKAsyFy53aGlzcGVyaW5ndGltZS5Db250ZW50Ugdjb250ZW50EhsKCWNyZWF0ZV9hdBgG'
-    'IAEoA1IIY3JlYXRlQXQSIwoNZW5jcnlwdGVkX2tleRgHIAEoDFIMZW5jcnlwdGVkS2V5SgQIBR'
-    'AG');
+    'IAEoA1IIY3JlYXRlQXQSIwoNZW5jcnlwdGVkX2tleRgHIAEoDFIMZW5jcnlwdGVkS2V5EjEKBm'
+    'NvbmZpZxgIIAEoCzIZLndoaXNwZXJpbmd0aW1lLkRvY0NvbmZpZ1IGY29uZmlnSgQIBRAG');
 
 @$core.Deprecated('Use createDocResponseDescriptor instead')
 const CreateDocResponse$json = {
@@ -529,6 +548,7 @@ const UpdateDocRequest$json = {
     {'1': 'content', '3': 3, '4': 1, '5': 11, '6': '.whisperingtime.Content', '10': 'content'},
     {'1': 'create_at', '3': 7, '4': 1, '5': 3, '10': 'createAt'},
     {'1': 'encrypted_key', '3': 8, '4': 1, '5': 12, '10': 'encryptedKey'},
+    {'1': 'config', '3': 9, '4': 1, '5': 11, '6': '.whisperingtime.DocConfig', '10': 'config'},
   ],
   '9': [
     {'1': 6, '2': 7},
@@ -540,7 +560,8 @@ final $typed_data.Uint8List updateDocRequestDescriptor = $convert.base64Decode(
     'ChBVcGRhdGVEb2NSZXF1ZXN0EhkKCGdyb3VwX2lkGAEgASgJUgdncm91cElkEhUKBmRvY19pZB'
     'gCIAEoCVIFZG9jSWQSMQoHY29udGVudBgDIAEoCzIXLndoaXNwZXJpbmd0aW1lLkNvbnRlbnRS'
     'B2NvbnRlbnQSGwoJY3JlYXRlX2F0GAcgASgDUghjcmVhdGVBdBIjCg1lbmNyeXB0ZWRfa2V5GA'
-    'ggASgMUgxlbmNyeXB0ZWRLZXlKBAgGEAc=');
+    'ggASgMUgxlbmNyeXB0ZWRLZXkSMQoGY29uZmlnGAkgASgLMhkud2hpc3BlcmluZ3RpbWUuRG9j'
+    'Q29uZmlnUgZjb25maWdKBAgGEAc=');
 
 @$core.Deprecated('Use deleteDocRequestDescriptor instead')
 const DeleteDocRequest$json = {

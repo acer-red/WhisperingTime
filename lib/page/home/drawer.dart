@@ -70,14 +70,97 @@ class _HomeDrawerState extends State<HomeDrawer> {
               indent: 20,
             ),
             SizedBox(height: 2),
-            _buildSettingsMenuItem(),
-            _buildTaskManagerMenuItem(),
-            _buildExportMenuItem(),
-            _buildConfigManagementMenuItem(),
-            _buildFontMenuItem(),
-            _buildFeedbackMenuItem(),
+            ListTile(
+              leading: Icon(Icons.settings),
+              title: Text("设置"),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SettingPage(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.task_alt),
+              title: Text("任务管理"),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TaskManagerPage(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.download),
+              title: Text("内容导出"),
+              onTap: () {
+                showDialog(
+                  context: context,
+                  barrierDismissible: true,
+                  builder: (BuildContext context) {
+                    return Export(ResourceType.theme);
+                  },
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.settings_backup_restore),
+              title: Text("配置管理"),
+              onTap: () {
+                showDialog(
+                  context: context,
+                  barrierDismissible: true,
+                  builder: (BuildContext context) {
+                    return const ConfigManagementDialog();
+                  },
+                ).then((needRefresh) {
+                  if (needRefresh == true && mounted) {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => HomePage()),
+                    );
+                  }
+                });
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.font_download),
+              title: Text("字体"),
+              onTap: () {
+                showDialog(
+                  context: context,
+                  barrierDismissible: true,
+                  builder: (BuildContext context) {
+                    return FontManager();
+                  },
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.feedback),
+              title: const Text('反馈'),
+              onTap: () async {
+                Navigator.of(context).pop(); // close drawer
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => FeedbackPage(),
+                  ),
+                );
+              },
+            ),
             Spacer(),
-            _buildLogoutMenuItem(),
+            ListTile(
+              leading: const Icon(Icons.exit_to_app),
+              title: const Text('退出'),
+              onTap: () async {
+                Navigator.of(context).pop(); // close drawer
+                await _logout();
+              },
+            ),
           ],
         ),
       ),
@@ -95,17 +178,17 @@ class _HomeDrawerState extends State<HomeDrawer> {
           return const Text("Error loading user info");
         }
 
-        return Row(
+        return Column(
           children: [
-            SizedBox(width: 10, height: 60),
+            SizedBox(height: 20),
             SizedBox(
-              height: 35,
-              width: 35,
+              height: 50,
+              width: 50,
               child: _buildAvatarIcon(() {
                 _updateAvatar();
               }),
             ),
-            SizedBox(width: 20),
+            SizedBox(height: 10),
             _buildNicknameText(snapshot.data?.profile.nickname ?? ""),
           ],
         );
@@ -162,133 +245,6 @@ class _HomeDrawerState extends State<HomeDrawer> {
           },
         ),
       ),
-    );
-  }
-
-  Widget _buildSettingsMenuItem() {
-    return PopupMenuItem(
-      child: Row(
-        spacing: 10,
-        children: [
-          Icon(Icons.settings),
-          Text("设置"),
-        ],
-      ),
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => SettingPage(),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildTaskManagerMenuItem() {
-    return PopupMenuItem(
-      child: Row(
-        spacing: 10,
-        children: [
-          Icon(Icons.task_alt),
-          Text("任务管理"),
-        ],
-      ),
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => TaskManagerPage(),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildExportMenuItem() {
-    return PopupMenuItem(
-      child: Row(
-        spacing: 10,
-        children: [Icon(Icons.download), Text("内容导出")],
-      ),
-      onTap: () {
-        showDialog(
-          context: context,
-          barrierDismissible: true,
-          builder: (BuildContext context) {
-            return Export(ResourceType.theme);
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildConfigManagementMenuItem() {
-    return PopupMenuItem(
-      child: Row(
-        spacing: 10,
-        children: [Icon(Icons.settings_backup_restore), Text("配置管理")],
-      ),
-      onTap: () {
-        showDialog(
-          context: context,
-          barrierDismissible: true,
-          builder: (BuildContext context) {
-            return const ConfigManagementDialog();
-          },
-        ).then((needRefresh) {
-          if (needRefresh == true && mounted) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => HomePage()),
-            );
-          }
-        });
-      },
-    );
-  }
-
-  Widget _buildFontMenuItem() {
-    return PopupMenuItem(
-      child: Row(
-        spacing: 10,
-        children: [Icon(Icons.font_download), Text("字体")],
-      ),
-      onTap: () {
-        showDialog(
-          context: context,
-          barrierDismissible: true,
-          builder: (BuildContext context) {
-            return FontManager();
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildFeedbackMenuItem() {
-    return ListTile(
-      leading: const Icon(Icons.feedback),
-      title: const Text('反馈'),
-      onTap: () async {
-        Navigator.of(context).pop(); // close drawer
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => FeedbackPage(),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildLogoutMenuItem() {
-    return ListTile(
-      leading: const Icon(Icons.exit_to_app),
-      title: const Text('退出'),
-      onTap: () async {
-        Navigator.of(context).pop(); // close drawer
-        await _logout();
-      },
     );
   }
 

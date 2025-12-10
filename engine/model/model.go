@@ -94,5 +94,6 @@ type GroupConfig struct {
 }
 
 type DocConfig struct {
-	IsShowTool bool `json:"is_show_tool" bson:"is_show_tool"`
+	IsShowTool      bool `json:"is_show_tool" bson:"is_show_tool"`
+	DisplayPriority int  `json:"display_priority" bson:"display_priority"`
 }
