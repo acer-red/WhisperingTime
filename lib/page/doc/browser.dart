@@ -7,7 +7,6 @@ import 'package:whispering_time/util/ui.dart';
 import 'package:whispering_time/service/grpc/grpc.dart';
 import 'package:whispering_time/service/isar/config.dart';
 import 'package:intl/intl.dart';
-import 'package:whispering_time/util/time.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'dart:convert';
 import 'package:whispering_time/util/picker_wheel.dart';
@@ -187,7 +186,8 @@ class _DocListState extends State<DocList> {
                   group: widget.group,
                   onSave: (updatedDoc) {
                     setState(() {
-                      docsManager.insertDoc(updatedDoc);
+                      docsManager.insertDoc(updatedDoc,
+                          config: widget.group.config);
                     });
                   },
                   onDelete: () {
@@ -489,7 +489,8 @@ class _DocListState extends State<DocList> {
 
   // UI: 主体内容-日历模式
   Widget screenCalendar() {
-    if (docsManager.items.isEmpty) {
+    // 使用allFetchedDocs来计算日期范围，确保所有文档（包括被筛选掉的）都能显示其月份
+    if (docsManager.allFetchedDocs.isEmpty) {
       return Center(
         child: SizedBox(
           width: MediaQuery.of(context).size.width * 0.8,
@@ -503,9 +504,9 @@ class _DocListState extends State<DocList> {
       );
     }
 
-    DateTime minDate = docsManager.items.first.createAt;
-    DateTime maxDate = docsManager.items.first.createAt;
-    for (var doc in docsManager.items) {
+    DateTime minDate = docsManager.allFetchedDocs.first.createAt;
+    DateTime maxDate = docsManager.allFetchedDocs.first.createAt;
+    for (var doc in docsManager.allFetchedDocs) {
       if (doc.createAt.isBefore(minDate)) minDate = doc.createAt;
       if (doc.createAt.isAfter(maxDate)) maxDate = doc.createAt;
     }
@@ -538,7 +539,7 @@ class _DocListState extends State<DocList> {
     DateTime current = minDate;
     while (current.isBefore(maxDate) ||
         current.year == maxDate.year && current.month == maxDate.month) {
-      bool hasDocs = docsManager.items.any((d) =>
+      bool hasDocs = docsManager.allFetchedDocs.any((d) =>
           d.createAt.year == current.year && d.createAt.month == current.month);
       bool isPicked =
           current.year == pickedDate.year && current.month == pickedDate.month;
@@ -701,14 +702,12 @@ class _DocListState extends State<DocList> {
           return Container();
         }
 
-        int docIndex = -1;
-        for (int i = 0; i < docsManager.items.length; i++) {
-          var d = docsManager.items[i];
+        List<Doc> dayDocs = [];
+        for (var d in docsManager.items) {
           if (d.createAt.year == date.year &&
               d.createAt.month == date.month &&
               d.createAt.day == dayNumber) {
-            docIndex = i;
-            break;
+            dayDocs.add(d);
           }
         }
 
@@ -716,8 +715,8 @@ class _DocListState extends State<DocList> {
             date.month == DateTime.now().month &&
             date.year == DateTime.now().year;
 
-        if (docIndex != -1) {
-          return _grid(istoday, dayNumber, docIndex);
+        if (dayDocs.isNotEmpty) {
+          return _grid(istoday, dayNumber, dayDocs);
         } else {
           return _gridNoFlag(istoday, dayNumber);
         }
@@ -744,33 +743,271 @@ class _DocListState extends State<DocList> {
     }
   }
 
-  Widget _grid(bool istoday, int dayNumber, int i) {
-    return GestureDetector(
-      onTap: () => _navigateToEditPage(i, docsManager.items[i]),
-      child: Align(
-        alignment: Alignment.center,
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              Text(
-                "$dayNumber",
-                style: TextStyle(
-                    fontSize: 18,
-                    color: istoday ? Colors.blue : Colors.black,
-                    fontWeight: istoday ? FontWeight.w700 : FontWeight.w400),
-              ),
-              Icon(
-                Icons.star_rounded,
-                size: 10,
-                color: Colors.blue,
-              ),
-            ],
+  void _showDocsBubble(BuildContext context, List<Doc> docs) {
+    final RenderBox renderBox = context.findRenderObject() as RenderBox;
+    final size = renderBox.size;
+    final offset = renderBox.localToGlobal(Offset.zero);
+
+    OverlayEntry? entry;
+
+    // 气泡配置
+    final double bubbleWidth = 240.0;
+    final double itemHeight = 52.0;
+    final double headerHeight = 40.0;
+    final double maxBubbleHeight = 280.0;
+    final double tailHeight = 10.0;
+
+    // 计算内容高度
+    final double contentHeight = headerHeight + (docs.length * itemHeight);
+    final double bubbleHeight =
+        contentHeight.clamp(headerHeight + itemHeight, maxBubbleHeight) +
+            tailHeight;
+
+    // 计算位置
+    final double centerX = offset.dx + size.width / 2;
+    double left = centerX - bubbleWidth / 2;
+    double top = offset.dy - bubbleHeight - 4; // 4px 间距
+
+    // 边界检查，防止气泡超出屏幕左右边界
+    final double screenWidth = MediaQuery.of(context).size.width;
+    if (left < 10) left = 10;
+    if (left + bubbleWidth > screenWidth - 10) {
+      left = screenWidth - bubbleWidth - 10;
+    }
+
+    // 箭头相对于气泡左侧的偏移量
+    final double arrowOffset = centerX - left;
+
+    entry = OverlayEntry(
+      builder: (context) => Stack(
+        children: [
+          // 遮罩层，点击关闭
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: () {
+                entry?.remove();
+              },
+              child: Container(color: Colors.black.withValues(alpha: 0.05)),
+            ),
           ),
-        ),
+          // 气泡主体
+          Positioned(
+            left: left,
+            top: top,
+            child: Material(
+              color: Colors.transparent,
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOutBack,
+                builder: (context, value, child) {
+                  return Transform.scale(
+                    scale: value,
+                    alignment: Alignment(
+                        (arrowOffset - bubbleWidth / 2) / (bubbleWidth / 2),
+                        1.0),
+                    child: Opacity(
+                      opacity: value.clamp(0.0, 1.0),
+                      child: child,
+                    ),
+                  );
+                },
+                child: Container(
+                  width: bubbleWidth,
+                  height: bubbleHeight,
+                  child: CustomPaint(
+                    painter: _BubblePainter(
+                      color: Colors.white,
+                      arrowOffset: arrowOffset,
+                      tailHeight: tailHeight,
+                      shadowColor: Colors.black.withValues(alpha: 0.1),
+                      shadowBlur: 16,
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.only(bottom: tailHeight),
+                      child: Column(
+                        children: [
+                          // 标题栏
+                          Container(
+                            height: headerHeight,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              border: Border(
+                                  bottom: BorderSide(
+                                      color:
+                                          Colors.grey.withValues(alpha: 0.1))),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.history_edu,
+                                    size: 16,
+                                    color: Theme.of(context).primaryColor),
+                                SizedBox(width: 6),
+                                Text(
+                                  "${docs.length} 篇日记",
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey.shade700,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // 列表
+                          Expanded(
+                            child: ListView.separated(
+                              padding: EdgeInsets.only(
+                                  top: 4, bottom: 4, left: 4, right: 4),
+                              itemCount: docs.length,
+                              separatorBuilder: (c, i) => Divider(
+                                height: 1,
+                                indent: 48,
+                                endIndent: 16,
+                                color: Colors.grey.withValues(alpha: 0.05),
+                              ),
+                              itemBuilder: (context, index) {
+                                final doc = docs[index];
+                                String title = doc.title;
+                                if (title.isEmpty) {
+                                  try {
+                                    final document = Document.fromJson(
+                                        jsonDecode(doc.content));
+                                    title = document
+                                        .toPlainText()
+                                        .trim()
+                                        .split('\n')
+                                        .first;
+                                    if (title.length > 12) {
+                                      title = '${title.substring(0, 12)}...';
+                                    }
+                                  } catch (e) {
+                                    title = "无标题";
+                                  }
+                                }
+                                if (title.isEmpty) title = "无标题";
+
+                                return InkWell(
+                                  borderRadius: BorderRadius.circular(8),
+                                  onTap: () {
+                                    entry?.remove();
+                                    int globalIndex =
+                                        docsManager.items.indexOf(doc);
+                                    if (globalIndex != -1) {
+                                      _navigateToEditPage(globalIndex, doc);
+                                    }
+                                  },
+                                  child: Container(
+                                    height: itemHeight - 8, // 减去padding
+                                    padding:
+                                        EdgeInsets.symmetric(horizontal: 12),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 32,
+                                          height: 32,
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(context)
+                                                .primaryColor
+                                                .withValues(alpha: 0.1),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              "${index + 1}",
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Theme.of(context)
+                                                    .primaryColor,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                title,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                    fontSize: 14,
+                                                    color: Colors.black87,
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                              ),
+                                              Text(
+                                                DateFormat('HH:mm')
+                                                    .format(doc.createAt),
+                                                style: TextStyle(
+                                                    fontSize: 10,
+                                                    color: Colors.grey),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Icon(Icons.chevron_right,
+                                            size: 16,
+                                            color: Colors.grey.shade300),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
+
+    Overlay.of(context).insert(entry);
+  }
+
+  Widget _grid(bool istoday, int dayNumber, List<Doc> dayDocs) {
+    return Builder(builder: (context) {
+      return GestureDetector(
+        onTap: () => _showDocsBubble(context, dayDocs),
+        child: Align(
+          alignment: Alignment.center,
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                Text(
+                  "$dayNumber",
+                  style: TextStyle(
+                      fontSize: 18,
+                      color: istoday ? Colors.blue : Colors.black,
+                      fontWeight: istoday ? FontWeight.w700 : FontWeight.w400),
+                ),
+                Icon(
+                  Icons.star_rounded,
+                  size: 10,
+                  color: Colors.blue,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    });
   }
 
   Widget _gridNoFlag(bool istoday, int dayNumber) {
@@ -1210,4 +1447,37 @@ class _DatePickerDialogState extends State<_DatePickerDialog> {
       ),
     );
   }
+}
+
+class _BubblePainter extends CustomPainter {
+  final Color color;
+  final double arrowOffset;
+  final double tailHeight;
+  final Color shadowColor;
+  final double shadowBlur;
+
+  _BubblePainter({
+    required this.color,
+    required this.arrowOffset,
+    required this.tailHeight,
+    required this.shadowColor,
+    required this.shadowBlur,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height - tailHeight);
+    final path = Path()
+      ..addRRect(RRect.fromRectAndRadius(rect, const Radius.circular(12)))
+      ..moveTo(rect.left + arrowOffset - 8, rect.bottom)
+      ..lineTo(rect.left + arrowOffset, rect.bottom + tailHeight)
+      ..lineTo(rect.left + arrowOffset + 8, rect.bottom)
+      ..close();
+
+    canvas.drawShadow(path, shadowColor, shadowBlur, true);
+    canvas.drawPath(path, Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

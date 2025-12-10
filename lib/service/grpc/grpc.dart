@@ -874,22 +874,39 @@ class Grpc {
       options: await _Grpc.instance.authOptions(),
     );
     final docs = await Future.wait(resp.docs.map((d) async {
-      final titleBytes = await _decryptBytes(
-          Uint8List.fromList(d.content.title), d.permission);
-      final richBytes =
-          await _decryptBytes(Uint8List.fromList(d.content.rich), d.permission);
-      final level = await _decryptLevel(d.content.level, d.permission);
-      return Doc(
-        title: utf8.decode(titleBytes),
-        content: utf8.decode(richBytes),
-        level: level,
-        createAt:
-            DateTime.fromMillisecondsSinceEpoch(d.createAt.toInt() * 1000),
-        updateAt:
-            DateTime.fromMillisecondsSinceEpoch(d.updateAt.toInt() * 1000),
-        config: DocConfig(isShowTool: true),
-        id: d.id,
-      );
+      try {
+        final titleBytes = await _decryptBytes(
+            Uint8List.fromList(d.content.title), d.permission);
+        final richBytes = await _decryptBytes(
+            Uint8List.fromList(d.content.rich), d.permission);
+        final level = await _decryptLevel(d.content.level, d.permission);
+        return Doc(
+          title: utf8.decode(titleBytes),
+          content: utf8.decode(richBytes),
+          level: level,
+          createAt:
+              DateTime.fromMillisecondsSinceEpoch(d.createAt.toInt() * 1000),
+          updateAt:
+              DateTime.fromMillisecondsSinceEpoch(d.updateAt.toInt() * 1000),
+          config: DocConfig(isShowTool: true),
+          id: d.id,
+        );
+      } catch (e) {
+        log.e("Decrypt doc ${d.id} failed: $e");
+        return Doc(
+          title: "解密失败",
+          content: jsonEncode([
+            {"insert": "文档解密失败，可能已损坏。\n$e\n"}
+          ]),
+          level: 0,
+          createAt:
+              DateTime.fromMillisecondsSinceEpoch(d.createAt.toInt() * 1000),
+          updateAt:
+              DateTime.fromMillisecondsSinceEpoch(d.updateAt.toInt() * 1000),
+          config: DocConfig(isShowTool: true),
+          id: d.id,
+        );
+      }
     }));
     return ResponseGetDocs(err: resp.err, msg: resp.msg, data: docs);
   }

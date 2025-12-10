@@ -88,10 +88,21 @@ class DocsManager extends ChangeNotifier {
   }
 
   // 插入新文档
-  void insertDoc(Doc doc) {
-    _allFetchedDocs.insert(0, doc);
-    _items.insert(0, doc);
+  void insertDoc(Doc doc, {GroupConfig? config}) {
+    _allFetchedDocs.add(doc);
     _addToCache(doc);
+
+    // 如果提供了config，则根据筛选条件决定是否添加到items
+    if (config != null) {
+      if (isNoSelectLevel(config) || isContainSelectLevel(doc.level, config)) {
+        _items.add(doc);
+        _items.sort((a, b) => compareDocs(a, b, config));
+      }
+    } else {
+      // 如果没有提供config，直接添加
+      _items.add(doc);
+    }
+
     notifyListeners();
   }
 

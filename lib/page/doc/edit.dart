@@ -575,19 +575,21 @@ class _EditPageState extends State<EditPage> {
       bool hasChanges = false;
 
       if (content != widget.doc.content) {
-        req.content = content;
         hasChanges = true;
       }
       if (titleController.text != widget.doc.title) {
-        req.title = titleController.text;
         hasChanges = true;
       }
       if (level != widget.doc.level) {
-        req.level = level;
         hasChanges = true;
       }
 
       if (hasChanges) {
+        // 必须同时更新所有加密字段，因为putDoc会生成新的密钥
+        req.content = content;
+        req.title = titleController.text;
+        req.level = level;
+
         final res =
             await Grpc(gid: widget.group.id, did: widget.doc.id).putDoc(req);
         if (res.isNotOK) {
