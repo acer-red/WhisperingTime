@@ -3,11 +3,11 @@ package minio
 import (
 	"context"
 	"fmt"
+	"time"
 
 	log "github.com/tengfei-xy/go-log"
 
 	"sync"
-	"time"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -105,4 +105,33 @@ func (m *MinioClient) UploadFile(ctx context.Context, objectName string, filePat
 		return minio.UploadInfo{}, err
 	}
 	return info, nil
+}
+
+// PresignPut generates a presigned PUT URL for direct upload.
+func (m *MinioClient) PresignPut(ctx context.Context, objectName string, contentType string, expires time.Duration) (string, time.Time, error) {
+	if expires <= 0 {
+		expires = 15 * time.Minute
+	}
+	url, err := m.client.PresignedPutObject(ctx, m.bucketName, objectName, expires)
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	return url.String(), time.Now().Add(expires), nil
+}
+
+// PresignGet generates a presigned GET URL for direct download.
+func (m *MinioClient) PresignGet(ctx context.Context, objectName string, expires time.Duration) (string, time.Time, error) {
+	if expires <= 0 {
+		expires = 15 * time.Minute
+	}
+	url, err := m.client.PresignedGetObject(ctx, m.bucketName, objectName, expires, nil)
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	return url.String(), time.Now().Add(expires), nil
+}
+
+// DeleteObject removes an object from the bucket.
+func (m *MinioClient) DeleteObject(ctx context.Context, objectName string) error {
+	return m.client.RemoveObject(ctx, m.bucketName, objectName, minio.RemoveObjectOptions{})
 }

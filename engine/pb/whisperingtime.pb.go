@@ -2262,6 +2262,451 @@ func (x *ImageUploadChunk) GetData() []byte {
 	return nil
 }
 
+// File service for presigned upload/download
+type PresignUploadFileRequest struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	ThemeId           string                 `protobuf:"bytes,1,opt,name=theme_id,json=themeId,proto3" json:"theme_id,omitempty"`
+	GroupId           string                 `protobuf:"bytes,2,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
+	DocId             string                 `protobuf:"bytes,3,opt,name=doc_id,json=docId,proto3" json:"doc_id,omitempty"`
+	Filename          string                 `protobuf:"bytes,4,opt,name=filename,proto3" json:"filename,omitempty"`
+	Mime              string                 `protobuf:"bytes,5,opt,name=mime,proto3" json:"mime,omitempty"`
+	Size              int64                  `protobuf:"varint,6,opt,name=size,proto3" json:"size,omitempty"`                                                   // ciphertext size
+	EncryptedKey      []byte                 `protobuf:"bytes,7,opt,name=encrypted_key,json=encryptedKey,proto3" json:"encrypted_key,omitempty"`                // envelope-encrypted data key
+	Iv                []byte                 `protobuf:"bytes,8,opt,name=iv,proto3" json:"iv,omitempty"`                                                        // optional IV if caller separates it from ciphertext
+	EncryptedMetadata []byte                 `protobuf:"bytes,9,opt,name=encrypted_metadata,json=encryptedMetadata,proto3" json:"encrypted_metadata,omitempty"` // encrypted custom metadata from client
+	ExpiresInSec      int64                  `protobuf:"varint,10,opt,name=expires_in_sec,json=expiresInSec,proto3" json:"expires_in_sec,omitempty"`            // optional presign TTL, default server value
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *PresignUploadFileRequest) Reset() {
+	*x = PresignUploadFileRequest{}
+	mi := &file_whisperingtime_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PresignUploadFileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PresignUploadFileRequest) ProtoMessage() {}
+
+func (x *PresignUploadFileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_whisperingtime_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PresignUploadFileRequest.ProtoReflect.Descriptor instead.
+func (*PresignUploadFileRequest) Descriptor() ([]byte, []int) {
+	return file_whisperingtime_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *PresignUploadFileRequest) GetThemeId() string {
+	if x != nil {
+		return x.ThemeId
+	}
+	return ""
+}
+
+func (x *PresignUploadFileRequest) GetGroupId() string {
+	if x != nil {
+		return x.GroupId
+	}
+	return ""
+}
+
+func (x *PresignUploadFileRequest) GetDocId() string {
+	if x != nil {
+		return x.DocId
+	}
+	return ""
+}
+
+func (x *PresignUploadFileRequest) GetFilename() string {
+	if x != nil {
+		return x.Filename
+	}
+	return ""
+}
+
+func (x *PresignUploadFileRequest) GetMime() string {
+	if x != nil {
+		return x.Mime
+	}
+	return ""
+}
+
+func (x *PresignUploadFileRequest) GetSize() int64 {
+	if x != nil {
+		return x.Size
+	}
+	return 0
+}
+
+func (x *PresignUploadFileRequest) GetEncryptedKey() []byte {
+	if x != nil {
+		return x.EncryptedKey
+	}
+	return nil
+}
+
+func (x *PresignUploadFileRequest) GetIv() []byte {
+	if x != nil {
+		return x.Iv
+	}
+	return nil
+}
+
+func (x *PresignUploadFileRequest) GetEncryptedMetadata() []byte {
+	if x != nil {
+		return x.EncryptedMetadata
+	}
+	return nil
+}
+
+func (x *PresignUploadFileRequest) GetExpiresInSec() int64 {
+	if x != nil {
+		return x.ExpiresInSec
+	}
+	return 0
+}
+
+type PresignUploadFileResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Err           int32                  `protobuf:"varint,1,opt,name=err,proto3" json:"err,omitempty"`
+	Msg           string                 `protobuf:"bytes,2,opt,name=msg,proto3" json:"msg,omitempty"`
+	FileId        string                 `protobuf:"bytes,3,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`
+	ObjectPath    string                 `protobuf:"bytes,4,opt,name=object_path,json=objectPath,proto3" json:"object_path,omitempty"`
+	UploadUrl     string                 `protobuf:"bytes,5,opt,name=upload_url,json=uploadUrl,proto3" json:"upload_url,omitempty"`
+	ExpiresAt     int64                  `protobuf:"varint,6,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"` // unix seconds
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PresignUploadFileResponse) Reset() {
+	*x = PresignUploadFileResponse{}
+	mi := &file_whisperingtime_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PresignUploadFileResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PresignUploadFileResponse) ProtoMessage() {}
+
+func (x *PresignUploadFileResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_whisperingtime_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PresignUploadFileResponse.ProtoReflect.Descriptor instead.
+func (*PresignUploadFileResponse) Descriptor() ([]byte, []int) {
+	return file_whisperingtime_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *PresignUploadFileResponse) GetErr() int32 {
+	if x != nil {
+		return x.Err
+	}
+	return 0
+}
+
+func (x *PresignUploadFileResponse) GetMsg() string {
+	if x != nil {
+		return x.Msg
+	}
+	return ""
+}
+
+func (x *PresignUploadFileResponse) GetFileId() string {
+	if x != nil {
+		return x.FileId
+	}
+	return ""
+}
+
+func (x *PresignUploadFileResponse) GetObjectPath() string {
+	if x != nil {
+		return x.ObjectPath
+	}
+	return ""
+}
+
+func (x *PresignUploadFileResponse) GetUploadUrl() string {
+	if x != nil {
+		return x.UploadUrl
+	}
+	return ""
+}
+
+func (x *PresignUploadFileResponse) GetExpiresAt() int64 {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return 0
+}
+
+type PresignDownloadFileRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	FileId        string                 `protobuf:"bytes,1,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PresignDownloadFileRequest) Reset() {
+	*x = PresignDownloadFileRequest{}
+	mi := &file_whisperingtime_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PresignDownloadFileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PresignDownloadFileRequest) ProtoMessage() {}
+
+func (x *PresignDownloadFileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_whisperingtime_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PresignDownloadFileRequest.ProtoReflect.Descriptor instead.
+func (*PresignDownloadFileRequest) Descriptor() ([]byte, []int) {
+	return file_whisperingtime_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *PresignDownloadFileRequest) GetFileId() string {
+	if x != nil {
+		return x.FileId
+	}
+	return ""
+}
+
+type PresignDownloadFileResponse struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	Err               int32                  `protobuf:"varint,1,opt,name=err,proto3" json:"err,omitempty"`
+	Msg               string                 `protobuf:"bytes,2,opt,name=msg,proto3" json:"msg,omitempty"`
+	FileId            string                 `protobuf:"bytes,3,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`
+	ObjectPath        string                 `protobuf:"bytes,4,opt,name=object_path,json=objectPath,proto3" json:"object_path,omitempty"`
+	DownloadUrl       string                 `protobuf:"bytes,5,opt,name=download_url,json=downloadUrl,proto3" json:"download_url,omitempty"`
+	ExpiresAt         int64                  `protobuf:"varint,6,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"` // unix seconds
+	OwnerUid          string                 `protobuf:"bytes,7,opt,name=owner_uid,json=ownerUid,proto3" json:"owner_uid,omitempty"`
+	ThemeId           string                 `protobuf:"bytes,8,opt,name=theme_id,json=themeId,proto3" json:"theme_id,omitempty"`
+	GroupId           string                 `protobuf:"bytes,9,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
+	DocId             string                 `protobuf:"bytes,10,opt,name=doc_id,json=docId,proto3" json:"doc_id,omitempty"`
+	Mime              string                 `protobuf:"bytes,11,opt,name=mime,proto3" json:"mime,omitempty"`
+	Size              int64                  `protobuf:"varint,12,opt,name=size,proto3" json:"size,omitempty"`
+	EncryptedKey      []byte                 `protobuf:"bytes,13,opt,name=encrypted_key,json=encryptedKey,proto3" json:"encrypted_key,omitempty"`
+	Iv                []byte                 `protobuf:"bytes,14,opt,name=iv,proto3" json:"iv,omitempty"`
+	EncryptedMetadata []byte                 `protobuf:"bytes,15,opt,name=encrypted_metadata,json=encryptedMetadata,proto3" json:"encrypted_metadata,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *PresignDownloadFileResponse) Reset() {
+	*x = PresignDownloadFileResponse{}
+	mi := &file_whisperingtime_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PresignDownloadFileResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PresignDownloadFileResponse) ProtoMessage() {}
+
+func (x *PresignDownloadFileResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_whisperingtime_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PresignDownloadFileResponse.ProtoReflect.Descriptor instead.
+func (*PresignDownloadFileResponse) Descriptor() ([]byte, []int) {
+	return file_whisperingtime_proto_rawDescGZIP(), []int{40}
+}
+
+func (x *PresignDownloadFileResponse) GetErr() int32 {
+	if x != nil {
+		return x.Err
+	}
+	return 0
+}
+
+func (x *PresignDownloadFileResponse) GetMsg() string {
+	if x != nil {
+		return x.Msg
+	}
+	return ""
+}
+
+func (x *PresignDownloadFileResponse) GetFileId() string {
+	if x != nil {
+		return x.FileId
+	}
+	return ""
+}
+
+func (x *PresignDownloadFileResponse) GetObjectPath() string {
+	if x != nil {
+		return x.ObjectPath
+	}
+	return ""
+}
+
+func (x *PresignDownloadFileResponse) GetDownloadUrl() string {
+	if x != nil {
+		return x.DownloadUrl
+	}
+	return ""
+}
+
+func (x *PresignDownloadFileResponse) GetExpiresAt() int64 {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return 0
+}
+
+func (x *PresignDownloadFileResponse) GetOwnerUid() string {
+	if x != nil {
+		return x.OwnerUid
+	}
+	return ""
+}
+
+func (x *PresignDownloadFileResponse) GetThemeId() string {
+	if x != nil {
+		return x.ThemeId
+	}
+	return ""
+}
+
+func (x *PresignDownloadFileResponse) GetGroupId() string {
+	if x != nil {
+		return x.GroupId
+	}
+	return ""
+}
+
+func (x *PresignDownloadFileResponse) GetDocId() string {
+	if x != nil {
+		return x.DocId
+	}
+	return ""
+}
+
+func (x *PresignDownloadFileResponse) GetMime() string {
+	if x != nil {
+		return x.Mime
+	}
+	return ""
+}
+
+func (x *PresignDownloadFileResponse) GetSize() int64 {
+	if x != nil {
+		return x.Size
+	}
+	return 0
+}
+
+func (x *PresignDownloadFileResponse) GetEncryptedKey() []byte {
+	if x != nil {
+		return x.EncryptedKey
+	}
+	return nil
+}
+
+func (x *PresignDownloadFileResponse) GetIv() []byte {
+	if x != nil {
+		return x.Iv
+	}
+	return nil
+}
+
+func (x *PresignDownloadFileResponse) GetEncryptedMetadata() []byte {
+	if x != nil {
+		return x.EncryptedMetadata
+	}
+	return nil
+}
+
+type DeleteFileRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	FileId        string                 `protobuf:"bytes,1,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteFileRequest) Reset() {
+	*x = DeleteFileRequest{}
+	mi := &file_whisperingtime_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteFileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteFileRequest) ProtoMessage() {}
+
+func (x *DeleteFileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_whisperingtime_proto_msgTypes[41]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteFileRequest.ProtoReflect.Descriptor instead.
+func (*DeleteFileRequest) Descriptor() ([]byte, []int) {
+	return file_whisperingtime_proto_rawDescGZIP(), []int{41}
+}
+
+func (x *DeleteFileRequest) GetFileId() string {
+	if x != nil {
+		return x.FileId
+	}
+	return ""
+}
+
 // Background job service
 type BackgroundJob struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -2282,7 +2727,7 @@ type BackgroundJob struct {
 
 func (x *BackgroundJob) Reset() {
 	*x = BackgroundJob{}
-	mi := &file_whisperingtime_proto_msgTypes[37]
+	mi := &file_whisperingtime_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2294,7 +2739,7 @@ func (x *BackgroundJob) String() string {
 func (*BackgroundJob) ProtoMessage() {}
 
 func (x *BackgroundJob) ProtoReflect() protoreflect.Message {
-	mi := &file_whisperingtime_proto_msgTypes[37]
+	mi := &file_whisperingtime_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2307,7 +2752,7 @@ func (x *BackgroundJob) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BackgroundJob.ProtoReflect.Descriptor instead.
 func (*BackgroundJob) Descriptor() ([]byte, []int) {
-	return file_whisperingtime_proto_rawDescGZIP(), []int{37}
+	return file_whisperingtime_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *BackgroundJob) GetId() string {
@@ -2395,7 +2840,7 @@ type ListBackgroundJobsRequest struct {
 
 func (x *ListBackgroundJobsRequest) Reset() {
 	*x = ListBackgroundJobsRequest{}
-	mi := &file_whisperingtime_proto_msgTypes[38]
+	mi := &file_whisperingtime_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2407,7 +2852,7 @@ func (x *ListBackgroundJobsRequest) String() string {
 func (*ListBackgroundJobsRequest) ProtoMessage() {}
 
 func (x *ListBackgroundJobsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_whisperingtime_proto_msgTypes[38]
+	mi := &file_whisperingtime_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2420,7 +2865,7 @@ func (x *ListBackgroundJobsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListBackgroundJobsRequest.ProtoReflect.Descriptor instead.
 func (*ListBackgroundJobsRequest) Descriptor() ([]byte, []int) {
-	return file_whisperingtime_proto_rawDescGZIP(), []int{38}
+	return file_whisperingtime_proto_rawDescGZIP(), []int{43}
 }
 
 type ListBackgroundJobsResponse struct {
@@ -2434,7 +2879,7 @@ type ListBackgroundJobsResponse struct {
 
 func (x *ListBackgroundJobsResponse) Reset() {
 	*x = ListBackgroundJobsResponse{}
-	mi := &file_whisperingtime_proto_msgTypes[39]
+	mi := &file_whisperingtime_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2446,7 +2891,7 @@ func (x *ListBackgroundJobsResponse) String() string {
 func (*ListBackgroundJobsResponse) ProtoMessage() {}
 
 func (x *ListBackgroundJobsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_whisperingtime_proto_msgTypes[39]
+	mi := &file_whisperingtime_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2459,7 +2904,7 @@ func (x *ListBackgroundJobsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListBackgroundJobsResponse.ProtoReflect.Descriptor instead.
 func (*ListBackgroundJobsResponse) Descriptor() ([]byte, []int) {
-	return file_whisperingtime_proto_rawDescGZIP(), []int{39}
+	return file_whisperingtime_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *ListBackgroundJobsResponse) GetErr() int32 {
@@ -2492,7 +2937,7 @@ type GetBackgroundJobRequest struct {
 
 func (x *GetBackgroundJobRequest) Reset() {
 	*x = GetBackgroundJobRequest{}
-	mi := &file_whisperingtime_proto_msgTypes[40]
+	mi := &file_whisperingtime_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2504,7 +2949,7 @@ func (x *GetBackgroundJobRequest) String() string {
 func (*GetBackgroundJobRequest) ProtoMessage() {}
 
 func (x *GetBackgroundJobRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_whisperingtime_proto_msgTypes[40]
+	mi := &file_whisperingtime_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2517,7 +2962,7 @@ func (x *GetBackgroundJobRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBackgroundJobRequest.ProtoReflect.Descriptor instead.
 func (*GetBackgroundJobRequest) Descriptor() ([]byte, []int) {
-	return file_whisperingtime_proto_rawDescGZIP(), []int{40}
+	return file_whisperingtime_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *GetBackgroundJobRequest) GetId() string {
@@ -2536,7 +2981,7 @@ type DeleteBackgroundJobRequest struct {
 
 func (x *DeleteBackgroundJobRequest) Reset() {
 	*x = DeleteBackgroundJobRequest{}
-	mi := &file_whisperingtime_proto_msgTypes[41]
+	mi := &file_whisperingtime_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2548,7 +2993,7 @@ func (x *DeleteBackgroundJobRequest) String() string {
 func (*DeleteBackgroundJobRequest) ProtoMessage() {}
 
 func (x *DeleteBackgroundJobRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_whisperingtime_proto_msgTypes[41]
+	mi := &file_whisperingtime_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2561,7 +3006,7 @@ func (x *DeleteBackgroundJobRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteBackgroundJobRequest.ProtoReflect.Descriptor instead.
 func (*DeleteBackgroundJobRequest) Descriptor() ([]byte, []int) {
-	return file_whisperingtime_proto_rawDescGZIP(), []int{41}
+	return file_whisperingtime_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *DeleteBackgroundJobRequest) GetId() string {
@@ -2580,7 +3025,7 @@ type DownloadBackgroundJobFileRequest struct {
 
 func (x *DownloadBackgroundJobFileRequest) Reset() {
 	*x = DownloadBackgroundJobFileRequest{}
-	mi := &file_whisperingtime_proto_msgTypes[42]
+	mi := &file_whisperingtime_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2592,7 +3037,7 @@ func (x *DownloadBackgroundJobFileRequest) String() string {
 func (*DownloadBackgroundJobFileRequest) ProtoMessage() {}
 
 func (x *DownloadBackgroundJobFileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_whisperingtime_proto_msgTypes[42]
+	mi := &file_whisperingtime_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2605,7 +3050,7 @@ func (x *DownloadBackgroundJobFileRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DownloadBackgroundJobFileRequest.ProtoReflect.Descriptor instead.
 func (*DownloadBackgroundJobFileRequest) Descriptor() ([]byte, []int) {
-	return file_whisperingtime_proto_rawDescGZIP(), []int{42}
+	return file_whisperingtime_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *DownloadBackgroundJobFileRequest) GetId() string {
@@ -2627,7 +3072,7 @@ type DownloadBackgroundJobFileResponse struct {
 
 func (x *DownloadBackgroundJobFileResponse) Reset() {
 	*x = DownloadBackgroundJobFileResponse{}
-	mi := &file_whisperingtime_proto_msgTypes[43]
+	mi := &file_whisperingtime_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2639,7 +3084,7 @@ func (x *DownloadBackgroundJobFileResponse) String() string {
 func (*DownloadBackgroundJobFileResponse) ProtoMessage() {}
 
 func (x *DownloadBackgroundJobFileResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_whisperingtime_proto_msgTypes[43]
+	mi := &file_whisperingtime_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2652,7 +3097,7 @@ func (x *DownloadBackgroundJobFileResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use DownloadBackgroundJobFileResponse.ProtoReflect.Descriptor instead.
 func (*DownloadBackgroundJobFileResponse) Descriptor() ([]byte, []int) {
-	return file_whisperingtime_proto_rawDescGZIP(), []int{43}
+	return file_whisperingtime_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *DownloadBackgroundJobFileResponse) GetErr() int32 {
@@ -2693,7 +3138,7 @@ type BytesChunk struct {
 
 func (x *BytesChunk) Reset() {
 	*x = BytesChunk{}
-	mi := &file_whisperingtime_proto_msgTypes[44]
+	mi := &file_whisperingtime_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2705,7 +3150,7 @@ func (x *BytesChunk) String() string {
 func (*BytesChunk) ProtoMessage() {}
 
 func (x *BytesChunk) ProtoReflect() protoreflect.Message {
-	mi := &file_whisperingtime_proto_msgTypes[44]
+	mi := &file_whisperingtime_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2718,7 +3163,7 @@ func (x *BytesChunk) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BytesChunk.ProtoReflect.Descriptor instead.
 func (*BytesChunk) Descriptor() ([]byte, []int) {
-	return file_whisperingtime_proto_rawDescGZIP(), []int{44}
+	return file_whisperingtime_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *BytesChunk) GetData() []byte {
@@ -2896,7 +3341,52 @@ const file_whisperingtime_proto_rawDesc = "" +
 	"\x10ImageUploadChunk\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x12\n" +
 	"\x04mime\x18\x02 \x01(\tR\x04mime\x12\x12\n" +
-	"\x04data\x18\x03 \x01(\fR\x04data\"\xc4\x02\n" +
+	"\x04data\x18\x03 \x01(\fR\x04data\"\xb5\x02\n" +
+	"\x18PresignUploadFileRequest\x12\x19\n" +
+	"\btheme_id\x18\x01 \x01(\tR\athemeId\x12\x19\n" +
+	"\bgroup_id\x18\x02 \x01(\tR\agroupId\x12\x15\n" +
+	"\x06doc_id\x18\x03 \x01(\tR\x05docId\x12\x1a\n" +
+	"\bfilename\x18\x04 \x01(\tR\bfilename\x12\x12\n" +
+	"\x04mime\x18\x05 \x01(\tR\x04mime\x12\x12\n" +
+	"\x04size\x18\x06 \x01(\x03R\x04size\x12#\n" +
+	"\rencrypted_key\x18\a \x01(\fR\fencryptedKey\x12\x0e\n" +
+	"\x02iv\x18\b \x01(\fR\x02iv\x12-\n" +
+	"\x12encrypted_metadata\x18\t \x01(\fR\x11encryptedMetadata\x12$\n" +
+	"\x0eexpires_in_sec\x18\n" +
+	" \x01(\x03R\fexpiresInSec\"\xb7\x01\n" +
+	"\x19PresignUploadFileResponse\x12\x10\n" +
+	"\x03err\x18\x01 \x01(\x05R\x03err\x12\x10\n" +
+	"\x03msg\x18\x02 \x01(\tR\x03msg\x12\x17\n" +
+	"\afile_id\x18\x03 \x01(\tR\x06fileId\x12\x1f\n" +
+	"\vobject_path\x18\x04 \x01(\tR\n" +
+	"objectPath\x12\x1d\n" +
+	"\n" +
+	"upload_url\x18\x05 \x01(\tR\tuploadUrl\x12\x1d\n" +
+	"\n" +
+	"expires_at\x18\x06 \x01(\x03R\texpiresAt\"5\n" +
+	"\x1aPresignDownloadFileRequest\x12\x17\n" +
+	"\afile_id\x18\x01 \x01(\tR\x06fileId\"\xb3\x03\n" +
+	"\x1bPresignDownloadFileResponse\x12\x10\n" +
+	"\x03err\x18\x01 \x01(\x05R\x03err\x12\x10\n" +
+	"\x03msg\x18\x02 \x01(\tR\x03msg\x12\x17\n" +
+	"\afile_id\x18\x03 \x01(\tR\x06fileId\x12\x1f\n" +
+	"\vobject_path\x18\x04 \x01(\tR\n" +
+	"objectPath\x12!\n" +
+	"\fdownload_url\x18\x05 \x01(\tR\vdownloadUrl\x12\x1d\n" +
+	"\n" +
+	"expires_at\x18\x06 \x01(\x03R\texpiresAt\x12\x1b\n" +
+	"\towner_uid\x18\a \x01(\tR\bownerUid\x12\x19\n" +
+	"\btheme_id\x18\b \x01(\tR\athemeId\x12\x19\n" +
+	"\bgroup_id\x18\t \x01(\tR\agroupId\x12\x15\n" +
+	"\x06doc_id\x18\n" +
+	" \x01(\tR\x05docId\x12\x12\n" +
+	"\x04mime\x18\v \x01(\tR\x04mime\x12\x12\n" +
+	"\x04size\x18\f \x01(\x03R\x04size\x12#\n" +
+	"\rencrypted_key\x18\r \x01(\fR\fencryptedKey\x12\x0e\n" +
+	"\x02iv\x18\x0e \x01(\fR\x02iv\x12-\n" +
+	"\x12encrypted_metadata\x18\x0f \x01(\fR\x11encryptedMetadata\",\n" +
+	"\x11DeleteFileRequest\x12\x17\n" +
+	"\afile_id\x18\x01 \x01(\tR\x06fileId\"\xc4\x02\n" +
 	"\rBackgroundJob\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x19\n" +
@@ -2963,7 +3453,12 @@ const file_whisperingtime_proto_rawDesc = "" +
 	"\bListJobs\x12).whisperingtime.ListBackgroundJobsRequest\x1a*.whisperingtime.ListBackgroundJobsResponse\x12P\n" +
 	"\x06GetJob\x12'.whisperingtime.GetBackgroundJobRequest\x1a\x1d.whisperingtime.BackgroundJob\x12V\n" +
 	"\tDeleteJob\x12*.whisperingtime.DeleteBackgroundJobRequest\x1a\x1d.whisperingtime.BasicResponse\x12v\n" +
-	"\x0fDownloadJobFile\x120.whisperingtime.DownloadBackgroundJobFileRequest\x1a1.whisperingtime.DownloadBackgroundJobFileResponseBP\n" +
+	"\x0fDownloadJobFile\x120.whisperingtime.DownloadBackgroundJobFileRequest\x1a1.whisperingtime.DownloadBackgroundJobFileResponse2\xb7\x02\n" +
+	"\vFileService\x12h\n" +
+	"\x11PresignUploadFile\x12(.whisperingtime.PresignUploadFileRequest\x1a).whisperingtime.PresignUploadFileResponse\x12n\n" +
+	"\x13PresignDownloadFile\x12*.whisperingtime.PresignDownloadFileRequest\x1a+.whisperingtime.PresignDownloadFileResponse\x12N\n" +
+	"\n" +
+	"DeleteFile\x12!.whisperingtime.DeleteFileRequest\x1a\x1d.whisperingtime.BasicResponseBP\n" +
 	"\x17dev.whisperingtime.grpcP\x01Z3github.com/tengfei-xy/whisperingtime/engine/grpc/pbb\x06proto3"
 
 var (
@@ -2978,7 +3473,7 @@ func file_whisperingtime_proto_rawDescGZIP() []byte {
 	return file_whisperingtime_proto_rawDescData
 }
 
-var file_whisperingtime_proto_msgTypes = make([]protoimpl.MessageInfo, 45)
+var file_whisperingtime_proto_msgTypes = make([]protoimpl.MessageInfo, 50)
 var file_whisperingtime_proto_goTypes = []any{
 	(*BasicResponse)(nil),                     // 0: whisperingtime.BasicResponse
 	(*Empty)(nil),                             // 1: whisperingtime.Empty
@@ -3017,14 +3512,19 @@ var file_whisperingtime_proto_goTypes = []any{
 	(*UploadImageResponse)(nil),               // 34: whisperingtime.UploadImageResponse
 	(*DeleteImageRequest)(nil),                // 35: whisperingtime.DeleteImageRequest
 	(*ImageUploadChunk)(nil),                  // 36: whisperingtime.ImageUploadChunk
-	(*BackgroundJob)(nil),                     // 37: whisperingtime.BackgroundJob
-	(*ListBackgroundJobsRequest)(nil),         // 38: whisperingtime.ListBackgroundJobsRequest
-	(*ListBackgroundJobsResponse)(nil),        // 39: whisperingtime.ListBackgroundJobsResponse
-	(*GetBackgroundJobRequest)(nil),           // 40: whisperingtime.GetBackgroundJobRequest
-	(*DeleteBackgroundJobRequest)(nil),        // 41: whisperingtime.DeleteBackgroundJobRequest
-	(*DownloadBackgroundJobFileRequest)(nil),  // 42: whisperingtime.DownloadBackgroundJobFileRequest
-	(*DownloadBackgroundJobFileResponse)(nil), // 43: whisperingtime.DownloadBackgroundJobFileResponse
-	(*BytesChunk)(nil),                        // 44: whisperingtime.BytesChunk
+	(*PresignUploadFileRequest)(nil),          // 37: whisperingtime.PresignUploadFileRequest
+	(*PresignUploadFileResponse)(nil),         // 38: whisperingtime.PresignUploadFileResponse
+	(*PresignDownloadFileRequest)(nil),        // 39: whisperingtime.PresignDownloadFileRequest
+	(*PresignDownloadFileResponse)(nil),       // 40: whisperingtime.PresignDownloadFileResponse
+	(*DeleteFileRequest)(nil),                 // 41: whisperingtime.DeleteFileRequest
+	(*BackgroundJob)(nil),                     // 42: whisperingtime.BackgroundJob
+	(*ListBackgroundJobsRequest)(nil),         // 43: whisperingtime.ListBackgroundJobsRequest
+	(*ListBackgroundJobsResponse)(nil),        // 44: whisperingtime.ListBackgroundJobsResponse
+	(*GetBackgroundJobRequest)(nil),           // 45: whisperingtime.GetBackgroundJobRequest
+	(*DeleteBackgroundJobRequest)(nil),        // 46: whisperingtime.DeleteBackgroundJobRequest
+	(*DownloadBackgroundJobFileRequest)(nil),  // 47: whisperingtime.DownloadBackgroundJobFileRequest
+	(*DownloadBackgroundJobFileResponse)(nil), // 48: whisperingtime.DownloadBackgroundJobFileResponse
+	(*BytesChunk)(nil),                        // 49: whisperingtime.BytesChunk
 }
 var file_whisperingtime_proto_depIdxs = []int32{
 	4,  // 0: whisperingtime.GroupSummary.config:type_name -> whisperingtime.GroupConfig
@@ -3045,7 +3545,7 @@ var file_whisperingtime_proto_depIdxs = []int32{
 	6,  // 15: whisperingtime.ListDocsResponse.docs:type_name -> whisperingtime.DocSummary
 	7,  // 16: whisperingtime.CreateDocRequest.content:type_name -> whisperingtime.Content
 	7,  // 17: whisperingtime.UpdateDocRequest.content:type_name -> whisperingtime.Content
-	37, // 18: whisperingtime.ListBackgroundJobsResponse.jobs:type_name -> whisperingtime.BackgroundJob
+	42, // 18: whisperingtime.ListBackgroundJobsResponse.jobs:type_name -> whisperingtime.BackgroundJob
 	11, // 19: whisperingtime.ThemeService.ListThemes:input_type -> whisperingtime.ListThemesRequest
 	13, // 20: whisperingtime.ThemeService.CreateTheme:input_type -> whisperingtime.CreateThemeRequest
 	15, // 21: whisperingtime.ThemeService.UpdateTheme:input_type -> whisperingtime.UpdateThemeRequest
@@ -3057,41 +3557,47 @@ var file_whisperingtime_proto_depIdxs = []int32{
 	24, // 27: whisperingtime.GroupService.UpdateGroup:input_type -> whisperingtime.UpdateGroupRequest
 	25, // 28: whisperingtime.GroupService.DeleteGroup:input_type -> whisperingtime.DeleteGroupRequest
 	26, // 29: whisperingtime.GroupService.ExportGroupConfig:input_type -> whisperingtime.ExportGroupConfigRequest
-	44, // 30: whisperingtime.GroupService.ImportGroupConfig:input_type -> whisperingtime.BytesChunk
+	49, // 30: whisperingtime.GroupService.ImportGroupConfig:input_type -> whisperingtime.BytesChunk
 	28, // 31: whisperingtime.DocService.ListDocs:input_type -> whisperingtime.ListDocsRequest
 	30, // 32: whisperingtime.DocService.CreateDoc:input_type -> whisperingtime.CreateDocRequest
 	32, // 33: whisperingtime.DocService.UpdateDoc:input_type -> whisperingtime.UpdateDocRequest
 	33, // 34: whisperingtime.DocService.DeleteDoc:input_type -> whisperingtime.DeleteDocRequest
 	36, // 35: whisperingtime.ImageService.UploadImage:input_type -> whisperingtime.ImageUploadChunk
 	35, // 36: whisperingtime.ImageService.DeleteImage:input_type -> whisperingtime.DeleteImageRequest
-	38, // 37: whisperingtime.BackgroundJobService.ListJobs:input_type -> whisperingtime.ListBackgroundJobsRequest
-	40, // 38: whisperingtime.BackgroundJobService.GetJob:input_type -> whisperingtime.GetBackgroundJobRequest
-	41, // 39: whisperingtime.BackgroundJobService.DeleteJob:input_type -> whisperingtime.DeleteBackgroundJobRequest
-	42, // 40: whisperingtime.BackgroundJobService.DownloadJobFile:input_type -> whisperingtime.DownloadBackgroundJobFileRequest
-	12, // 41: whisperingtime.ThemeService.ListThemes:output_type -> whisperingtime.ListThemesResponse
-	14, // 42: whisperingtime.ThemeService.CreateTheme:output_type -> whisperingtime.CreateThemeResponse
-	0,  // 43: whisperingtime.ThemeService.UpdateTheme:output_type -> whisperingtime.BasicResponse
-	0,  // 44: whisperingtime.ThemeService.DeleteTheme:output_type -> whisperingtime.BasicResponse
-	0,  // 45: whisperingtime.ThemeService.ExportAllConfig:output_type -> whisperingtime.BasicResponse
-	19, // 46: whisperingtime.GroupService.ListGroups:output_type -> whisperingtime.ListGroupsResponse
-	21, // 47: whisperingtime.GroupService.GetGroup:output_type -> whisperingtime.GetGroupResponse
-	23, // 48: whisperingtime.GroupService.CreateGroup:output_type -> whisperingtime.CreateGroupResponse
-	0,  // 49: whisperingtime.GroupService.UpdateGroup:output_type -> whisperingtime.BasicResponse
-	0,  // 50: whisperingtime.GroupService.DeleteGroup:output_type -> whisperingtime.BasicResponse
-	0,  // 51: whisperingtime.GroupService.ExportGroupConfig:output_type -> whisperingtime.BasicResponse
-	27, // 52: whisperingtime.GroupService.ImportGroupConfig:output_type -> whisperingtime.ImportGroupConfigResponse
-	29, // 53: whisperingtime.DocService.ListDocs:output_type -> whisperingtime.ListDocsResponse
-	31, // 54: whisperingtime.DocService.CreateDoc:output_type -> whisperingtime.CreateDocResponse
-	0,  // 55: whisperingtime.DocService.UpdateDoc:output_type -> whisperingtime.BasicResponse
-	0,  // 56: whisperingtime.DocService.DeleteDoc:output_type -> whisperingtime.BasicResponse
-	34, // 57: whisperingtime.ImageService.UploadImage:output_type -> whisperingtime.UploadImageResponse
-	0,  // 58: whisperingtime.ImageService.DeleteImage:output_type -> whisperingtime.BasicResponse
-	39, // 59: whisperingtime.BackgroundJobService.ListJobs:output_type -> whisperingtime.ListBackgroundJobsResponse
-	37, // 60: whisperingtime.BackgroundJobService.GetJob:output_type -> whisperingtime.BackgroundJob
-	0,  // 61: whisperingtime.BackgroundJobService.DeleteJob:output_type -> whisperingtime.BasicResponse
-	43, // 62: whisperingtime.BackgroundJobService.DownloadJobFile:output_type -> whisperingtime.DownloadBackgroundJobFileResponse
-	41, // [41:63] is the sub-list for method output_type
-	19, // [19:41] is the sub-list for method input_type
+	43, // 37: whisperingtime.BackgroundJobService.ListJobs:input_type -> whisperingtime.ListBackgroundJobsRequest
+	45, // 38: whisperingtime.BackgroundJobService.GetJob:input_type -> whisperingtime.GetBackgroundJobRequest
+	46, // 39: whisperingtime.BackgroundJobService.DeleteJob:input_type -> whisperingtime.DeleteBackgroundJobRequest
+	47, // 40: whisperingtime.BackgroundJobService.DownloadJobFile:input_type -> whisperingtime.DownloadBackgroundJobFileRequest
+	37, // 41: whisperingtime.FileService.PresignUploadFile:input_type -> whisperingtime.PresignUploadFileRequest
+	39, // 42: whisperingtime.FileService.PresignDownloadFile:input_type -> whisperingtime.PresignDownloadFileRequest
+	41, // 43: whisperingtime.FileService.DeleteFile:input_type -> whisperingtime.DeleteFileRequest
+	12, // 44: whisperingtime.ThemeService.ListThemes:output_type -> whisperingtime.ListThemesResponse
+	14, // 45: whisperingtime.ThemeService.CreateTheme:output_type -> whisperingtime.CreateThemeResponse
+	0,  // 46: whisperingtime.ThemeService.UpdateTheme:output_type -> whisperingtime.BasicResponse
+	0,  // 47: whisperingtime.ThemeService.DeleteTheme:output_type -> whisperingtime.BasicResponse
+	0,  // 48: whisperingtime.ThemeService.ExportAllConfig:output_type -> whisperingtime.BasicResponse
+	19, // 49: whisperingtime.GroupService.ListGroups:output_type -> whisperingtime.ListGroupsResponse
+	21, // 50: whisperingtime.GroupService.GetGroup:output_type -> whisperingtime.GetGroupResponse
+	23, // 51: whisperingtime.GroupService.CreateGroup:output_type -> whisperingtime.CreateGroupResponse
+	0,  // 52: whisperingtime.GroupService.UpdateGroup:output_type -> whisperingtime.BasicResponse
+	0,  // 53: whisperingtime.GroupService.DeleteGroup:output_type -> whisperingtime.BasicResponse
+	0,  // 54: whisperingtime.GroupService.ExportGroupConfig:output_type -> whisperingtime.BasicResponse
+	27, // 55: whisperingtime.GroupService.ImportGroupConfig:output_type -> whisperingtime.ImportGroupConfigResponse
+	29, // 56: whisperingtime.DocService.ListDocs:output_type -> whisperingtime.ListDocsResponse
+	31, // 57: whisperingtime.DocService.CreateDoc:output_type -> whisperingtime.CreateDocResponse
+	0,  // 58: whisperingtime.DocService.UpdateDoc:output_type -> whisperingtime.BasicResponse
+	0,  // 59: whisperingtime.DocService.DeleteDoc:output_type -> whisperingtime.BasicResponse
+	34, // 60: whisperingtime.ImageService.UploadImage:output_type -> whisperingtime.UploadImageResponse
+	0,  // 61: whisperingtime.ImageService.DeleteImage:output_type -> whisperingtime.BasicResponse
+	44, // 62: whisperingtime.BackgroundJobService.ListJobs:output_type -> whisperingtime.ListBackgroundJobsResponse
+	42, // 63: whisperingtime.BackgroundJobService.GetJob:output_type -> whisperingtime.BackgroundJob
+	0,  // 64: whisperingtime.BackgroundJobService.DeleteJob:output_type -> whisperingtime.BasicResponse
+	48, // 65: whisperingtime.BackgroundJobService.DownloadJobFile:output_type -> whisperingtime.DownloadBackgroundJobFileResponse
+	38, // 66: whisperingtime.FileService.PresignUploadFile:output_type -> whisperingtime.PresignUploadFileResponse
+	40, // 67: whisperingtime.FileService.PresignDownloadFile:output_type -> whisperingtime.PresignDownloadFileResponse
+	0,  // 68: whisperingtime.FileService.DeleteFile:output_type -> whisperingtime.BasicResponse
+	44, // [44:69] is the sub-list for method output_type
+	19, // [19:44] is the sub-list for method input_type
 	19, // [19:19] is the sub-list for extension type_name
 	19, // [19:19] is the sub-list for extension extendee
 	0,  // [0:19] is the sub-list for field type_name
@@ -3109,9 +3615,9 @@ func file_whisperingtime_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_whisperingtime_proto_rawDesc), len(file_whisperingtime_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   45,
+			NumMessages:   50,
 			NumExtensions: 0,
-			NumServices:   5,
+			NumServices:   6,
 		},
 		GoTypes:           file_whisperingtime_proto_goTypes,
 		DependencyIndexes: file_whisperingtime_proto_depIdxs,

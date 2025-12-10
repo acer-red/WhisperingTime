@@ -9,16 +9,19 @@ import (
 	"io"
 	"mime/multipart"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"time"
 
 	m "github.com/acer-red/whisperingtime/engine/model"
 	"github.com/acer-red/whisperingtime/engine/pb"
+	minioSvc "github.com/acer-red/whisperingtime/engine/service/minio"
 	"github.com/acer-red/whisperingtime/engine/service/modb"
 	"github.com/acer-red/whisperingtime/engine/util"
 	log "github.com/tengfei-xy/go-log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -32,6 +35,7 @@ type Service struct {
 	pb.UnimplementedDocServiceServer
 	pb.UnimplementedImageServiceServer
 	pb.UnimplementedBackgroundJobServiceServer
+	pb.UnimplementedFileServiceServer
 
 	publicHTTPBase string
 }
@@ -664,6 +668,9 @@ func (s *Service) DeleteDoc(ctx context.Context, req *pb.DeleteDocRequest) (*pb.
 	if err := modb.DocDelete(goid, doid); err != nil {
 		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
 	}
+	if err := s.deleteAllFilesForDoc(ctx, req.GetDocId()); err != nil {
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
 	return &pb.BasicResponse{Err: 0, Msg: "ok"}, nil
 }
 
@@ -717,6 +724,175 @@ func (s *Service) DeleteImage(ctx context.Context, req *pb.DeleteImageRequest) (
 		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
 	}
 	return &pb.BasicResponse{Err: 0, Msg: "ok"}, nil
+}
+
+// FileService
+func (s *Service) PresignUploadFile(ctx context.Context, req *pb.PresignUploadFileRequest) (*pb.PresignUploadFileResponse, error) {
+	uid := getUID(ctx)
+	uoid := getUOID(ctx)
+	log.Infof("[grpc] PresignUploadFile uid=%s themeId=%s groupId=%s docId=%s filename=%s size=%d mime=%s expires=%d", uid, req.GetThemeId(), req.GetGroupId(), req.GetDocId(), req.GetFilename(), req.GetSize(), req.GetMime(), req.GetExpiresInSec())
+	if uid == "" || uoid == primitive.NilObjectID {
+		return &pb.PresignUploadFileResponse{Err: 1, Msg: "unauthenticated"}, nil
+	}
+
+	if req.GetThemeId() == "" || req.GetGroupId() == "" || req.GetDocId() == "" {
+		return &pb.PresignUploadFileResponse{Err: 1, Msg: "missing theme/group/doc id"}, nil
+	}
+	if len(req.GetEncryptedKey()) == 0 {
+		return &pb.PresignUploadFileResponse{Err: 1, Msg: "missing encrypted key"}, nil
+	}
+
+	// Permission check on doc level; fallback to group if doc missing
+	if _, err := modb.PermissionGet(uoid, modb.ResourceTypeDoc, req.GetDocId()); err != nil {
+		if err != mongo.ErrNoDocuments {
+			return &pb.PresignUploadFileResponse{Err: 1, Msg: err.Error()}, nil
+		}
+		if _, err := modb.PermissionGet(uoid, modb.ResourceTypeGroup, req.GetGroupId()); err != nil {
+			return &pb.PresignUploadFileResponse{Err: 403, Msg: "permission denied"}, nil
+		}
+	}
+
+	filename := req.GetFilename()
+	if filename == "" {
+		filename = fmt.Sprintf("%s.bin", util.CreateUUID())
+	} else {
+		filename = filepath.Base(filename)
+	}
+
+	objectPath := path.Join(uid, req.GetThemeId(), req.GetGroupId(), req.GetDocId(), filename)
+	fileID := util.CreateUUID()
+
+	expires := time.Duration(req.GetExpiresInSec()) * time.Second
+	url, expAt, err := minioSvc.GetClient().PresignPut(ctx, objectPath, req.GetMime(), expires)
+	if err != nil {
+		return &pb.PresignUploadFileResponse{Err: 1, Msg: err.Error()}, nil
+	}
+
+	meta := &modb.FileMeta{
+		ID:                fileID,
+		UID:               uid,
+		ThemeID:           req.GetThemeId(),
+		GroupID:           req.GetGroupId(),
+		DocID:             req.GetDocId(),
+		ObjectPath:        objectPath,
+		Mime:              req.GetMime(),
+		Size:              req.GetSize(),
+		EncryptedKey:      req.GetEncryptedKey(),
+		IV:                req.GetIv(),
+		EncryptedMetadata: req.GetEncryptedMetadata(),
+	}
+	if err := modb.FileMetaCreate(ctx, meta); err != nil {
+		return &pb.PresignUploadFileResponse{Err: 1, Msg: err.Error()}, nil
+	}
+
+	return &pb.PresignUploadFileResponse{
+		Err:        0,
+		Msg:        "ok",
+		FileId:     fileID,
+		ObjectPath: objectPath,
+		UploadUrl:  url,
+		ExpiresAt:  expAt.Unix(),
+	}, nil
+}
+
+func (s *Service) PresignDownloadFile(ctx context.Context, req *pb.PresignDownloadFileRequest) (*pb.PresignDownloadFileResponse, error) {
+	uid := getUID(ctx)
+	uoid := getUOID(ctx)
+	log.Infof("[grpc] PresignDownloadFile uid=%s fileId=%s", uid, req.GetFileId())
+	if uid == "" || uoid == primitive.NilObjectID {
+		return &pb.PresignDownloadFileResponse{Err: 1, Msg: "unauthenticated"}, nil
+	}
+
+	meta, err := modb.FileMetaGet(ctx, req.GetFileId())
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return &pb.PresignDownloadFileResponse{Err: 404, Msg: "not found"}, nil
+		}
+		return &pb.PresignDownloadFileResponse{Err: 1, Msg: err.Error()}, nil
+	}
+
+	if meta.UID != uid {
+		// Check doc permission for non-owner
+		if _, err := modb.PermissionGet(uoid, modb.ResourceTypeDoc, meta.DocID); err != nil {
+			return &pb.PresignDownloadFileResponse{Err: 403, Msg: "permission denied"}, nil
+		}
+	}
+
+	url, expAt, err := minioSvc.GetClient().PresignGet(ctx, meta.ObjectPath, 0)
+	if err != nil {
+		return &pb.PresignDownloadFileResponse{Err: 1, Msg: err.Error()}, nil
+	}
+
+	return &pb.PresignDownloadFileResponse{
+		Err:               0,
+		Msg:               "ok",
+		FileId:            meta.ID,
+		ObjectPath:        meta.ObjectPath,
+		DownloadUrl:       url,
+		ExpiresAt:         expAt.Unix(),
+		OwnerUid:          meta.UID,
+		ThemeId:           meta.ThemeID,
+		GroupId:           meta.GroupID,
+		DocId:             meta.DocID,
+		Mime:              meta.Mime,
+		Size:              meta.Size,
+		EncryptedKey:      meta.EncryptedKey,
+		Iv:                meta.IV,
+		EncryptedMetadata: meta.EncryptedMetadata,
+	}, nil
+}
+
+func (s *Service) DeleteFile(ctx context.Context, req *pb.DeleteFileRequest) (*pb.BasicResponse, error) {
+	uid := getUID(ctx)
+	uoid := getUOID(ctx)
+	log.Infof("[grpc] DeleteFile uid=%s fileId=%s", uid, req.GetFileId())
+	if uid == "" || uoid == primitive.NilObjectID {
+		return &pb.BasicResponse{Err: 1, Msg: "unauthenticated"}, nil
+	}
+	meta, err := modb.FileMetaGet(ctx, req.GetFileId())
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return &pb.BasicResponse{Err: 404, Msg: "not found"}, nil
+		}
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	if meta.UID != uid {
+		if _, err := modb.PermissionGet(uoid, modb.ResourceTypeDoc, meta.DocID); err != nil {
+			return &pb.BasicResponse{Err: 403, Msg: "permission denied"}, nil
+		}
+	}
+	if err := s.deleteOneFile(ctx, meta); err != nil {
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	return &pb.BasicResponse{Err: 0, Msg: "ok"}, nil
+}
+
+// deleteAllFilesForDoc removes all files bound to a doc from minio and mongo.
+func (s *Service) deleteAllFilesForDoc(ctx context.Context, docID string) error {
+	items, err := modb.FileMetaListByDoc(ctx, docID)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil
+		}
+		return err
+	}
+	for _, fm := range items {
+		if err := s.deleteOneFile(ctx, &fm); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Service) deleteOneFile(ctx context.Context, meta *modb.FileMeta) error {
+	if meta == nil {
+		return fmt.Errorf("nil filemeta")
+	}
+	if err := minioSvc.GetClient().DeleteObject(ctx, meta.ObjectPath); err != nil {
+		return err
+	}
+	_, err := modb.FileMetaDelete(ctx, meta.ID)
+	return err
 }
 
 // BackgroundJobService

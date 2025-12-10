@@ -10,7 +10,6 @@ import (
 
 var mongosh *mongo.Client
 var db *mongo.Database
-var indexEndpoint string
 
 func Init(uri string) error {
 	clientOptions := options.Client().ApplyURI(uri)
@@ -29,10 +28,6 @@ func Init(uri string) error {
 	return nil
 }
 
-// SetIndexEndpoint configures the index service base URL for API verification.
-func SetIndexEndpoint(url string) {
-	indexEndpoint = strings.TrimRight(url, "/")
-}
 func Disconnect() error {
 	return mongosh.Disconnect(context.TODO())
 }

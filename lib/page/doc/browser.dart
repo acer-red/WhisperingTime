@@ -18,6 +18,9 @@ import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:provider/provider.dart';
 import 'package:whispering_time/page/group/manager.dart';
 import 'package:whispering_time/page/doc/edit.dart';
+import 'package:whispering_time/util/secure.dart';
+import 'package:http/http.dart' as http;
+import 'package:whispering_time/page/doc/time_display.dart';
 
 class DocList extends StatefulWidget {
   final Group group;
@@ -52,6 +55,11 @@ class _DocListState extends State<DocList> {
   void dispose() {
     docsManager.dispose();
     super.dispose();
+
+    // 如果这个group是已经定格的，就输出日志
+    if (widget.group.isFreezedOrBuf()) {
+      log.d('Group ${widget.group.name} is freezed or buffered');
+    }
   }
 
   @override
@@ -252,10 +260,31 @@ class _DocListState extends State<DocList> {
     }
   }
 
+  // 底部信息栏
+  Widget _buildCardFooter(Doc item) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.bookmark_border, size: 14, color: Colors.grey.shade500),
+            SizedBox(width: 4),
+            Text(
+              Level.l[item.level],
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
+          ],
+        ),
+        TimeDisplay(time: item.createAt),
+      ],
+    );
+  }
+
   // 卡片: 预览模式
   Widget _buildPreviewCard(int index, Doc item) {
     return InkWell(
       onTap: () => toggleExpand(index),
+      borderRadius: BorderRadius.circular(15.0),
       child: Padding(
         padding: EdgeInsets.all(16.0),
         child: Column(
@@ -263,50 +292,27 @@ class _DocListState extends State<DocList> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             // 标题行
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Visibility(
-                    visible: item.title.isNotEmpty ||
-                        (item.title.isEmpty && Config.instance.visualNoneTitle),
-                    child: Text(
-                      item.title.isEmpty ? '未命名' : item.title,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                  ),
+            if (item.title.isNotEmpty || Config.instance.visualNoneTitle) ...[
+              Text(
+                item.title.isEmpty ? '未命名' : item.title,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
                 ),
-              ],
-            ),
-            SizedBox(height: 8),
+              ),
+              SizedBox(height: 8),
+            ],
 
             // 印迹具体内容
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              padding: const EdgeInsets.symmetric(vertical: 4.0),
               child: _buildRichText(item.content, limitLines: true),
             ),
-            // 创建时间
-            Center(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    Level.l[item.level],
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                  ),
-                  Text(" · ",
-                      style:
-                          TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-                  Text(
-                    Time.string(item.createAt),
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                  ),
-                ],
-              ),
-            )
+
+            SizedBox(height: 12),
+
+            // 底部信息
+            _buildCardFooter(item),
           ],
         ),
       ),
@@ -315,79 +321,80 @@ class _DocListState extends State<DocList> {
 
   // 卡片: 展开模式
   Widget _buildExpandedCard(int index, Doc item) {
-    return Padding(
-      padding: EdgeInsets.all(16.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          // 标题和顶部按钮栏
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        // 顶部区域：标题与操作栏
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 18, 12, 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (item.title.isNotEmpty ||
-                  (item.title.isEmpty && Config.instance.visualNoneTitle))
-                Expanded(
-                  child: Text(
-                    item.title.isEmpty ? '未命名' : item.title,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                )
-              else
-                Spacer(),
+              Expanded(
+                child: (item.title.isNotEmpty ||
+                        Config.instance.visualNoneTitle)
+                    ? Padding(
+                        padding: const EdgeInsets.only(top: 4.0, right: 8.0),
+                        child: Text(
+                          item.title.isEmpty ? '未命名' : item.title,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 22,
+                            height: 1.2,
+                          ),
+                        ),
+                      )
+                    : SizedBox.shrink(),
+              ),
+              // Actions
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  IconButton(
-                    icon: Icon(Icons.settings, size: 20),
-                    onPressed: () => enterSettingDialog(item),
-                    tooltip: '设置',
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.edit, size: 20),
-                    onPressed: () => _navigateToEditPage(index, item),
-                    tooltip: '编辑',
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.expand_less, size: 20),
-                    onPressed: () => toggleExpand(null),
-                    tooltip: '收缩',
-                  ),
+                  _buildActionButton(Icons.edit_outlined,
+                      () => _navigateToEditPage(index, item), '编辑'),
+                  _buildActionButton(Icons.settings_outlined,
+                      () => enterSettingDialog(item), '设置'),
+                  _buildActionButton(
+                      Icons.expand_less, () => toggleExpand(null), '收缩'),
                 ],
               ),
             ],
           ),
-          SizedBox(height: 8),
+        ),
 
-          // 完整内容
-          _buildRichText(item.content),
+        // 分割线
+        Divider(
+            height: 1,
+            thickness: 0.5,
+            indent: 20,
+            endIndent: 20,
+            color: Colors.grey.withOpacity(0.2)),
 
-          SizedBox(height: 16),
+        // 完整内容
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+          child: _buildRichText(item.content),
+        ),
 
-          // 创建时间
-          Center(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  Level.l[item.level],
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                ),
-                Text(" · ",
-                    style:
-                        TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-                Text(
-                  Time.string(item.createAt),
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                ),
-              ],
-            ),
-          )
-        ],
-      ),
+        // 底部信息
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+          child: _buildCardFooter(item),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButton(
+      IconData icon, VoidCallback onPressed, String tooltip) {
+    return IconButton(
+      icon: Icon(icon, size: 22, color: Colors.grey.shade700),
+      onPressed: onPressed,
+      tooltip: tooltip,
+      padding: EdgeInsets.zero,
+      constraints: BoxConstraints.tightFor(width: 40, height: 40),
+      visualDensity: VisualDensity.compact,
     );
   }
 
@@ -427,14 +434,17 @@ class _DocListState extends State<DocList> {
         autoFocus: false,
         expands: false,
         padding: EdgeInsets.zero,
-        enableInteractiveSelection: true,
+        enableInteractiveSelection: !limitLines,
       ),
     );
 
     if (maxHeight != null) {
       return SizedBox(
         height: maxHeight,
-        child: ClipRect(child: editor),
+        child: AbsorbPointer(
+          absorbing: true, // let taps fall through to the card to expand
+          child: ClipRect(child: editor),
+        ),
       );
     }
     return editor;
@@ -941,6 +951,10 @@ class _CustomImageEmbedBuilder extends EmbedBuilder {
   ) {
     var imageSource = embedContext.node.value.data as String;
 
+    if (imageSource.startsWith('file:')) {
+      return _EncryptedImage(fileId: imageSource.substring(5));
+    }
+
     // 如果不是完整URL（不以http开头），则拼接服务器地址
     if (!imageSource.startsWith('http://') &&
         !imageSource.startsWith('https://')) {
@@ -991,6 +1005,80 @@ class _CustomImageEmbedBuilder extends EmbedBuilder {
             ],
           ),
         );
+      },
+    );
+  }
+}
+
+class _EncryptedImage extends StatefulWidget {
+  final String fileId;
+
+  const _EncryptedImage({required this.fileId});
+
+  @override
+  State<_EncryptedImage> createState() => _EncryptedImageState();
+}
+
+class _EncryptedImageState extends State<_EncryptedImage> {
+  late Future<Uint8List> _future;
+  final Storage _storage = Storage();
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _load();
+  }
+
+  Future<Uint8List> _load() async {
+    final presign = await Grpc().presignDownloadFile(widget.fileId);
+    if (!presign.isOK ||
+        presign.downloadUrl == null ||
+        presign.encryptedKey == null) {
+      throw Exception(presign.msg.isEmpty ? '无法获取文件' : presign.msg);
+    }
+
+    final resp = await http.get(Uri.parse(presign.downloadUrl!));
+    if (resp.statusCode >= 400) {
+      throw Exception('下载失败: HTTP ${resp.statusCode}');
+    }
+
+    return _storage.envelopeDecrypt(
+      cipherText: Uint8List.fromList(resp.bodyBytes),
+      encryptedKey: presign.encryptedKey!,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Uint8List>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox(
+            height: 120,
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snapshot.hasError) {
+          return Container(
+            padding: const EdgeInsets.all(8),
+            color: Colors.grey[200],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.broken_image, size: 48, color: Colors.grey),
+                const SizedBox(height: 4),
+                Text('图片加载失败',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+              ],
+            ),
+          );
+        }
+        final data = snapshot.data;
+        if (data == null || data.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        return Image.memory(data, fit: BoxFit.contain);
       },
     );
   }

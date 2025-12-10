@@ -411,27 +411,30 @@ class _HomePageState extends State<HomePage> {
                       },
                       decoration: const InputDecoration(hintText: "请输入分组名称"),
                     )
-                  : Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text("若在选定时间未操作，自动进入定格缓冲期。"),
-                        const SizedBox(height: 6),
-                        ...[7, 30, 60, 90].map(
-                          (days) => RadioListTile<int>(
-                            title: Text("$days天"),
-                            value: days,
-                            groupValue: freezeDays,
-                            onChanged: (value) {
-                              if (value != null) {
-                                setState(() {
-                                  freezeDays = value;
-                                });
-                              }
-                            },
+                  : RadioGroup<int>(
+                      groupValue: freezeDays,
+                      onChanged: (value) {
+                        if (value == null) {
+                          return;
+                        }
+                        setState(() {
+                          freezeDays = value;
+                        });
+                      },
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text("若在选定时间未操作，自动进入定格缓冲期。"),
+                          const SizedBox(height: 6),
+                          ...[7, 30, 60, 90].map(
+                            (days) => RadioListTile<int>(
+                              title: Text("$days天"),
+                              value: days,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
               actions: <Widget>[
                 if (step == 1)
@@ -466,22 +469,23 @@ class _HomePageState extends State<HomePage> {
                     }
 
                     // 使用 scaffoldContext 来访问 Provider
-                    if (mounted) {
-                      final ok = await Provider.of<GroupsManager>(
-                              scaffoldContext,
-                              listen: false)
-                          .add(name, freezeDays: freezeDays);
-                      if (!ok) {
-                        if (mounted) {
-                          showErrMsg(context, "创建失败");
-                        }
-                        return;
-                      }
+                    if (!mounted) return;
+
+                    final ok = await Provider.of<GroupsManager>(scaffoldContext,
+                            listen: false)
+                        .add(name, freezeDays: freezeDays);
+
+                    if (!mounted) return;
+
+                    if (!ok) {
+                      if (!context.mounted) return;
+                      showErrMsg(context, "创建失败");
+                      return;
                     }
 
-                    if (mounted) {
-                      Navigator.of(dialogContext).pop();
-                    }
+                    if (!dialogContext.mounted) return;
+
+                    Navigator.of(dialogContext).pop();
                   },
                 ),
               ],

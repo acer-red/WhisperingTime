@@ -2915,6 +2915,649 @@ class ImageUploadChunk extends $pb.GeneratedMessage {
   void clearData() => clearField(3);
 }
 
+/// File service for presigned upload/download
+class PresignUploadFileRequest extends $pb.GeneratedMessage {
+  factory PresignUploadFileRequest({
+    $core.String? themeId,
+    $core.String? groupId,
+    $core.String? docId,
+    $core.String? filename,
+    $core.String? mime,
+    $fixnum.Int64? size,
+    $core.List<$core.int>? encryptedKey,
+    $core.List<$core.int>? iv,
+    $core.List<$core.int>? encryptedMetadata,
+    $fixnum.Int64? expiresInSec,
+  }) {
+    final $result = create();
+    if (themeId != null) {
+      $result.themeId = themeId;
+    }
+    if (groupId != null) {
+      $result.groupId = groupId;
+    }
+    if (docId != null) {
+      $result.docId = docId;
+    }
+    if (filename != null) {
+      $result.filename = filename;
+    }
+    if (mime != null) {
+      $result.mime = mime;
+    }
+    if (size != null) {
+      $result.size = size;
+    }
+    if (encryptedKey != null) {
+      $result.encryptedKey = encryptedKey;
+    }
+    if (iv != null) {
+      $result.iv = iv;
+    }
+    if (encryptedMetadata != null) {
+      $result.encryptedMetadata = encryptedMetadata;
+    }
+    if (expiresInSec != null) {
+      $result.expiresInSec = expiresInSec;
+    }
+    return $result;
+  }
+  PresignUploadFileRequest._() : super();
+  factory PresignUploadFileRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory PresignUploadFileRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'PresignUploadFileRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'themeId')
+    ..aOS(2, _omitFieldNames ? '' : 'groupId')
+    ..aOS(3, _omitFieldNames ? '' : 'docId')
+    ..aOS(4, _omitFieldNames ? '' : 'filename')
+    ..aOS(5, _omitFieldNames ? '' : 'mime')
+    ..aInt64(6, _omitFieldNames ? '' : 'size')
+    ..a<$core.List<$core.int>>(7, _omitFieldNames ? '' : 'encryptedKey', $pb.PbFieldType.OY)
+    ..a<$core.List<$core.int>>(8, _omitFieldNames ? '' : 'iv', $pb.PbFieldType.OY)
+    ..a<$core.List<$core.int>>(9, _omitFieldNames ? '' : 'encryptedMetadata', $pb.PbFieldType.OY)
+    ..aInt64(10, _omitFieldNames ? '' : 'expiresInSec')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  PresignUploadFileRequest clone() => PresignUploadFileRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  PresignUploadFileRequest copyWith(void Function(PresignUploadFileRequest) updates) => super.copyWith((message) => updates(message as PresignUploadFileRequest)) as PresignUploadFileRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static PresignUploadFileRequest create() => PresignUploadFileRequest._();
+  PresignUploadFileRequest createEmptyInstance() => create();
+  static $pb.PbList<PresignUploadFileRequest> createRepeated() => $pb.PbList<PresignUploadFileRequest>();
+  @$core.pragma('dart2js:noInline')
+  static PresignUploadFileRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PresignUploadFileRequest>(create);
+  static PresignUploadFileRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get themeId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set themeId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasThemeId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearThemeId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get groupId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set groupId($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasGroupId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearGroupId() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get docId => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set docId($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasDocId() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearDocId() => clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.String get filename => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set filename($core.String v) { $_setString(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasFilename() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearFilename() => clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.String get mime => $_getSZ(4);
+  @$pb.TagNumber(5)
+  set mime($core.String v) { $_setString(4, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasMime() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearMime() => clearField(5);
+
+  @$pb.TagNumber(6)
+  $fixnum.Int64 get size => $_getI64(5);
+  @$pb.TagNumber(6)
+  set size($fixnum.Int64 v) { $_setInt64(5, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasSize() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearSize() => clearField(6);
+
+  @$pb.TagNumber(7)
+  $core.List<$core.int> get encryptedKey => $_getN(6);
+  @$pb.TagNumber(7)
+  set encryptedKey($core.List<$core.int> v) { $_setBytes(6, v); }
+  @$pb.TagNumber(7)
+  $core.bool hasEncryptedKey() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearEncryptedKey() => clearField(7);
+
+  @$pb.TagNumber(8)
+  $core.List<$core.int> get iv => $_getN(7);
+  @$pb.TagNumber(8)
+  set iv($core.List<$core.int> v) { $_setBytes(7, v); }
+  @$pb.TagNumber(8)
+  $core.bool hasIv() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearIv() => clearField(8);
+
+  @$pb.TagNumber(9)
+  $core.List<$core.int> get encryptedMetadata => $_getN(8);
+  @$pb.TagNumber(9)
+  set encryptedMetadata($core.List<$core.int> v) { $_setBytes(8, v); }
+  @$pb.TagNumber(9)
+  $core.bool hasEncryptedMetadata() => $_has(8);
+  @$pb.TagNumber(9)
+  void clearEncryptedMetadata() => clearField(9);
+
+  @$pb.TagNumber(10)
+  $fixnum.Int64 get expiresInSec => $_getI64(9);
+  @$pb.TagNumber(10)
+  set expiresInSec($fixnum.Int64 v) { $_setInt64(9, v); }
+  @$pb.TagNumber(10)
+  $core.bool hasExpiresInSec() => $_has(9);
+  @$pb.TagNumber(10)
+  void clearExpiresInSec() => clearField(10);
+}
+
+class PresignUploadFileResponse extends $pb.GeneratedMessage {
+  factory PresignUploadFileResponse({
+    $core.int? err,
+    $core.String? msg,
+    $core.String? fileId,
+    $core.String? objectPath,
+    $core.String? uploadUrl,
+    $fixnum.Int64? expiresAt,
+  }) {
+    final $result = create();
+    if (err != null) {
+      $result.err = err;
+    }
+    if (msg != null) {
+      $result.msg = msg;
+    }
+    if (fileId != null) {
+      $result.fileId = fileId;
+    }
+    if (objectPath != null) {
+      $result.objectPath = objectPath;
+    }
+    if (uploadUrl != null) {
+      $result.uploadUrl = uploadUrl;
+    }
+    if (expiresAt != null) {
+      $result.expiresAt = expiresAt;
+    }
+    return $result;
+  }
+  PresignUploadFileResponse._() : super();
+  factory PresignUploadFileResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory PresignUploadFileResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'PresignUploadFileResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
+    ..a<$core.int>(1, _omitFieldNames ? '' : 'err', $pb.PbFieldType.O3)
+    ..aOS(2, _omitFieldNames ? '' : 'msg')
+    ..aOS(3, _omitFieldNames ? '' : 'fileId')
+    ..aOS(4, _omitFieldNames ? '' : 'objectPath')
+    ..aOS(5, _omitFieldNames ? '' : 'uploadUrl')
+    ..aInt64(6, _omitFieldNames ? '' : 'expiresAt')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  PresignUploadFileResponse clone() => PresignUploadFileResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  PresignUploadFileResponse copyWith(void Function(PresignUploadFileResponse) updates) => super.copyWith((message) => updates(message as PresignUploadFileResponse)) as PresignUploadFileResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static PresignUploadFileResponse create() => PresignUploadFileResponse._();
+  PresignUploadFileResponse createEmptyInstance() => create();
+  static $pb.PbList<PresignUploadFileResponse> createRepeated() => $pb.PbList<PresignUploadFileResponse>();
+  @$core.pragma('dart2js:noInline')
+  static PresignUploadFileResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PresignUploadFileResponse>(create);
+  static PresignUploadFileResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.int get err => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set err($core.int v) { $_setSignedInt32(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasErr() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearErr() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get msg => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set msg($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasMsg() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearMsg() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get fileId => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set fileId($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasFileId() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearFileId() => clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.String get objectPath => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set objectPath($core.String v) { $_setString(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasObjectPath() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearObjectPath() => clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.String get uploadUrl => $_getSZ(4);
+  @$pb.TagNumber(5)
+  set uploadUrl($core.String v) { $_setString(4, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasUploadUrl() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearUploadUrl() => clearField(5);
+
+  @$pb.TagNumber(6)
+  $fixnum.Int64 get expiresAt => $_getI64(5);
+  @$pb.TagNumber(6)
+  set expiresAt($fixnum.Int64 v) { $_setInt64(5, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasExpiresAt() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearExpiresAt() => clearField(6);
+}
+
+class PresignDownloadFileRequest extends $pb.GeneratedMessage {
+  factory PresignDownloadFileRequest({
+    $core.String? fileId,
+  }) {
+    final $result = create();
+    if (fileId != null) {
+      $result.fileId = fileId;
+    }
+    return $result;
+  }
+  PresignDownloadFileRequest._() : super();
+  factory PresignDownloadFileRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory PresignDownloadFileRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'PresignDownloadFileRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'fileId')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  PresignDownloadFileRequest clone() => PresignDownloadFileRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  PresignDownloadFileRequest copyWith(void Function(PresignDownloadFileRequest) updates) => super.copyWith((message) => updates(message as PresignDownloadFileRequest)) as PresignDownloadFileRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static PresignDownloadFileRequest create() => PresignDownloadFileRequest._();
+  PresignDownloadFileRequest createEmptyInstance() => create();
+  static $pb.PbList<PresignDownloadFileRequest> createRepeated() => $pb.PbList<PresignDownloadFileRequest>();
+  @$core.pragma('dart2js:noInline')
+  static PresignDownloadFileRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PresignDownloadFileRequest>(create);
+  static PresignDownloadFileRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get fileId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set fileId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasFileId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearFileId() => clearField(1);
+}
+
+class PresignDownloadFileResponse extends $pb.GeneratedMessage {
+  factory PresignDownloadFileResponse({
+    $core.int? err,
+    $core.String? msg,
+    $core.String? fileId,
+    $core.String? objectPath,
+    $core.String? downloadUrl,
+    $fixnum.Int64? expiresAt,
+    $core.String? ownerUid,
+    $core.String? themeId,
+    $core.String? groupId,
+    $core.String? docId,
+    $core.String? mime,
+    $fixnum.Int64? size,
+    $core.List<$core.int>? encryptedKey,
+    $core.List<$core.int>? iv,
+    $core.List<$core.int>? encryptedMetadata,
+  }) {
+    final $result = create();
+    if (err != null) {
+      $result.err = err;
+    }
+    if (msg != null) {
+      $result.msg = msg;
+    }
+    if (fileId != null) {
+      $result.fileId = fileId;
+    }
+    if (objectPath != null) {
+      $result.objectPath = objectPath;
+    }
+    if (downloadUrl != null) {
+      $result.downloadUrl = downloadUrl;
+    }
+    if (expiresAt != null) {
+      $result.expiresAt = expiresAt;
+    }
+    if (ownerUid != null) {
+      $result.ownerUid = ownerUid;
+    }
+    if (themeId != null) {
+      $result.themeId = themeId;
+    }
+    if (groupId != null) {
+      $result.groupId = groupId;
+    }
+    if (docId != null) {
+      $result.docId = docId;
+    }
+    if (mime != null) {
+      $result.mime = mime;
+    }
+    if (size != null) {
+      $result.size = size;
+    }
+    if (encryptedKey != null) {
+      $result.encryptedKey = encryptedKey;
+    }
+    if (iv != null) {
+      $result.iv = iv;
+    }
+    if (encryptedMetadata != null) {
+      $result.encryptedMetadata = encryptedMetadata;
+    }
+    return $result;
+  }
+  PresignDownloadFileResponse._() : super();
+  factory PresignDownloadFileResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory PresignDownloadFileResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'PresignDownloadFileResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
+    ..a<$core.int>(1, _omitFieldNames ? '' : 'err', $pb.PbFieldType.O3)
+    ..aOS(2, _omitFieldNames ? '' : 'msg')
+    ..aOS(3, _omitFieldNames ? '' : 'fileId')
+    ..aOS(4, _omitFieldNames ? '' : 'objectPath')
+    ..aOS(5, _omitFieldNames ? '' : 'downloadUrl')
+    ..aInt64(6, _omitFieldNames ? '' : 'expiresAt')
+    ..aOS(7, _omitFieldNames ? '' : 'ownerUid')
+    ..aOS(8, _omitFieldNames ? '' : 'themeId')
+    ..aOS(9, _omitFieldNames ? '' : 'groupId')
+    ..aOS(10, _omitFieldNames ? '' : 'docId')
+    ..aOS(11, _omitFieldNames ? '' : 'mime')
+    ..aInt64(12, _omitFieldNames ? '' : 'size')
+    ..a<$core.List<$core.int>>(13, _omitFieldNames ? '' : 'encryptedKey', $pb.PbFieldType.OY)
+    ..a<$core.List<$core.int>>(14, _omitFieldNames ? '' : 'iv', $pb.PbFieldType.OY)
+    ..a<$core.List<$core.int>>(15, _omitFieldNames ? '' : 'encryptedMetadata', $pb.PbFieldType.OY)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  PresignDownloadFileResponse clone() => PresignDownloadFileResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  PresignDownloadFileResponse copyWith(void Function(PresignDownloadFileResponse) updates) => super.copyWith((message) => updates(message as PresignDownloadFileResponse)) as PresignDownloadFileResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static PresignDownloadFileResponse create() => PresignDownloadFileResponse._();
+  PresignDownloadFileResponse createEmptyInstance() => create();
+  static $pb.PbList<PresignDownloadFileResponse> createRepeated() => $pb.PbList<PresignDownloadFileResponse>();
+  @$core.pragma('dart2js:noInline')
+  static PresignDownloadFileResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PresignDownloadFileResponse>(create);
+  static PresignDownloadFileResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.int get err => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set err($core.int v) { $_setSignedInt32(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasErr() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearErr() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get msg => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set msg($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasMsg() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearMsg() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get fileId => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set fileId($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasFileId() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearFileId() => clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.String get objectPath => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set objectPath($core.String v) { $_setString(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasObjectPath() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearObjectPath() => clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.String get downloadUrl => $_getSZ(4);
+  @$pb.TagNumber(5)
+  set downloadUrl($core.String v) { $_setString(4, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasDownloadUrl() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearDownloadUrl() => clearField(5);
+
+  @$pb.TagNumber(6)
+  $fixnum.Int64 get expiresAt => $_getI64(5);
+  @$pb.TagNumber(6)
+  set expiresAt($fixnum.Int64 v) { $_setInt64(5, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasExpiresAt() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearExpiresAt() => clearField(6);
+
+  @$pb.TagNumber(7)
+  $core.String get ownerUid => $_getSZ(6);
+  @$pb.TagNumber(7)
+  set ownerUid($core.String v) { $_setString(6, v); }
+  @$pb.TagNumber(7)
+  $core.bool hasOwnerUid() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearOwnerUid() => clearField(7);
+
+  @$pb.TagNumber(8)
+  $core.String get themeId => $_getSZ(7);
+  @$pb.TagNumber(8)
+  set themeId($core.String v) { $_setString(7, v); }
+  @$pb.TagNumber(8)
+  $core.bool hasThemeId() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearThemeId() => clearField(8);
+
+  @$pb.TagNumber(9)
+  $core.String get groupId => $_getSZ(8);
+  @$pb.TagNumber(9)
+  set groupId($core.String v) { $_setString(8, v); }
+  @$pb.TagNumber(9)
+  $core.bool hasGroupId() => $_has(8);
+  @$pb.TagNumber(9)
+  void clearGroupId() => clearField(9);
+
+  @$pb.TagNumber(10)
+  $core.String get docId => $_getSZ(9);
+  @$pb.TagNumber(10)
+  set docId($core.String v) { $_setString(9, v); }
+  @$pb.TagNumber(10)
+  $core.bool hasDocId() => $_has(9);
+  @$pb.TagNumber(10)
+  void clearDocId() => clearField(10);
+
+  @$pb.TagNumber(11)
+  $core.String get mime => $_getSZ(10);
+  @$pb.TagNumber(11)
+  set mime($core.String v) { $_setString(10, v); }
+  @$pb.TagNumber(11)
+  $core.bool hasMime() => $_has(10);
+  @$pb.TagNumber(11)
+  void clearMime() => clearField(11);
+
+  @$pb.TagNumber(12)
+  $fixnum.Int64 get size => $_getI64(11);
+  @$pb.TagNumber(12)
+  set size($fixnum.Int64 v) { $_setInt64(11, v); }
+  @$pb.TagNumber(12)
+  $core.bool hasSize() => $_has(11);
+  @$pb.TagNumber(12)
+  void clearSize() => clearField(12);
+
+  @$pb.TagNumber(13)
+  $core.List<$core.int> get encryptedKey => $_getN(12);
+  @$pb.TagNumber(13)
+  set encryptedKey($core.List<$core.int> v) { $_setBytes(12, v); }
+  @$pb.TagNumber(13)
+  $core.bool hasEncryptedKey() => $_has(12);
+  @$pb.TagNumber(13)
+  void clearEncryptedKey() => clearField(13);
+
+  @$pb.TagNumber(14)
+  $core.List<$core.int> get iv => $_getN(13);
+  @$pb.TagNumber(14)
+  set iv($core.List<$core.int> v) { $_setBytes(13, v); }
+  @$pb.TagNumber(14)
+  $core.bool hasIv() => $_has(13);
+  @$pb.TagNumber(14)
+  void clearIv() => clearField(14);
+
+  @$pb.TagNumber(15)
+  $core.List<$core.int> get encryptedMetadata => $_getN(14);
+  @$pb.TagNumber(15)
+  set encryptedMetadata($core.List<$core.int> v) { $_setBytes(14, v); }
+  @$pb.TagNumber(15)
+  $core.bool hasEncryptedMetadata() => $_has(14);
+  @$pb.TagNumber(15)
+  void clearEncryptedMetadata() => clearField(15);
+}
+
+class DeleteFileRequest extends $pb.GeneratedMessage {
+  factory DeleteFileRequest({
+    $core.String? fileId,
+  }) {
+    final $result = create();
+    if (fileId != null) {
+      $result.fileId = fileId;
+    }
+    return $result;
+  }
+  DeleteFileRequest._() : super();
+  factory DeleteFileRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory DeleteFileRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'DeleteFileRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'fileId')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  DeleteFileRequest clone() => DeleteFileRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  DeleteFileRequest copyWith(void Function(DeleteFileRequest) updates) => super.copyWith((message) => updates(message as DeleteFileRequest)) as DeleteFileRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static DeleteFileRequest create() => DeleteFileRequest._();
+  DeleteFileRequest createEmptyInstance() => create();
+  static $pb.PbList<DeleteFileRequest> createRepeated() => $pb.PbList<DeleteFileRequest>();
+  @$core.pragma('dart2js:noInline')
+  static DeleteFileRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<DeleteFileRequest>(create);
+  static DeleteFileRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get fileId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set fileId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasFileId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearFileId() => clearField(1);
+}
+
 /// Background job service
 class BackgroundJob extends $pb.GeneratedMessage {
   factory BackgroundJob({

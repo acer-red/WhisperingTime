@@ -196,6 +196,51 @@ message ImageUploadChunk {
   bytes data = 3;
 }
 
+// File service for presigned upload/download
+message PresignUploadFileRequest {
+  string theme_id = 1;
+  string group_id = 2;
+  string doc_id = 3;
+  string filename = 4;
+  string mime = 5;
+  int64 size = 6; // ciphertext size
+  bytes encrypted_key = 7; // envelope-encrypted data key
+  bytes iv = 8; // optional IV if caller separates it from ciphertext
+  bytes encrypted_metadata = 9; // encrypted custom metadata from client
+  int64 expires_in_sec = 10; // optional presign TTL, default server value
+}
+
+message PresignUploadFileResponse {
+  int32 err = 1;
+  string msg = 2;
+  string file_id = 3;
+  string object_path = 4;
+  string upload_url = 5;
+  int64 expires_at = 6; // unix seconds
+}
+
+message PresignDownloadFileRequest { string file_id = 1; }
+
+message PresignDownloadFileResponse {
+  int32 err = 1;
+  string msg = 2;
+  string file_id = 3;
+  string object_path = 4;
+  string download_url = 5;
+  int64 expires_at = 6; // unix seconds
+  string owner_uid = 7;
+  string theme_id = 8;
+  string group_id = 9;
+  string doc_id = 10;
+  string mime = 11;
+  int64 size = 12;
+  bytes encrypted_key = 13;
+  bytes iv = 14;
+  bytes encrypted_metadata = 15;
+}
+
+message DeleteFileRequest { string file_id = 1; }
+
 // Background job service
 message BackgroundJob {
   string id = 1;
@@ -224,6 +269,12 @@ service BackgroundJobService {
   rpc DeleteJob(DeleteBackgroundJobRequest) returns (BasicResponse);
   // Per requirement: return bytes (not streaming) for job download
   rpc DownloadJobFile(DownloadBackgroundJobFileRequest) returns (DownloadBackgroundJobFileResponse);
+}
+
+service FileService {
+  rpc PresignUploadFile(PresignUploadFileRequest) returns (PresignUploadFileResponse);
+  rpc PresignDownloadFile(PresignDownloadFileRequest) returns (PresignDownloadFileResponse);
+  rpc DeleteFile(DeleteFileRequest) returns (BasicResponse);
 }
 
 // Shared chunk message for client streaming uploads

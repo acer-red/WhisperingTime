@@ -133,15 +133,17 @@ class DocsManager extends ChangeNotifier {
 
   // 删除文档
   void removeDoc(Doc doc) {
-    _items.remove(doc);
+    // Remove by id to handle cases where the reference in the list has been
+    // replaced (e.g., after save/update) before delete is invoked.
+    _items.removeWhere((d) => d.id == doc.id);
     _allFetchedDocs.removeWhere((d) => d.id == doc.id);
     notifyListeners();
   }
 
   // 仅仅从 items 和 allFetchedDocs 移除（例如取消新建）
   void removeDocFromItemsAndAll(Doc doc) {
-    _items.remove(doc);
-    _allFetchedDocs.remove(doc);
+    _items.removeWhere((d) => d.id == doc.id);
+    _allFetchedDocs.removeWhere((d) => d.id == doc.id);
     notifyListeners();
   }
 

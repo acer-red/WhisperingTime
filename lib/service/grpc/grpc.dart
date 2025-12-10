@@ -23,6 +23,7 @@ class _Grpc {
   late pb.DocServiceClient doc;
   late pb.ImageServiceClient image;
   late pb.BackgroundJobServiceClient job;
+  late pb.FileServiceClient file;
   final Storage _storage = Storage();
 
   static final _Grpc instance = _Grpc._internal();
@@ -45,6 +46,7 @@ class _Grpc {
     doc = pb.DocServiceClient(_channel!);
     image = pb.ImageServiceClient(_channel!);
     job = pb.BackgroundJobServiceClient(_channel!);
+    file = pb.FileServiceClient(_channel!);
   }
 
   // 关键步骤: 构建带认证信息的metadata，对应 engine/grpcserver/auth.go
@@ -362,6 +364,52 @@ class ResponsePostImage extends Basic {
       required this.name,
       required this.url});
   String get imageFullUrl => url;
+}
+
+class ResponsePresignUpload extends Basic {
+  final String? fileId;
+  final String? uploadUrl;
+  final String? objectPath;
+  final int? expiresAt;
+  ResponsePresignUpload(
+      {required super.err,
+      required super.msg,
+      this.fileId,
+      this.uploadUrl,
+      this.objectPath,
+      this.expiresAt});
+}
+
+class ResponsePresignDownload extends Basic {
+  final String? fileId;
+  final String? downloadUrl;
+  final int? expiresAt;
+  final String? ownerUid;
+  final String? themeId;
+  final String? groupId;
+  final String? docId;
+  final String? mime;
+  final int? size;
+  final Uint8List? encryptedKey;
+  final Uint8List? iv;
+  final Uint8List? encryptedMetadata;
+
+  ResponsePresignDownload({
+    required super.err,
+    required super.msg,
+    this.fileId,
+    this.downloadUrl,
+    this.expiresAt,
+    this.ownerUid,
+    this.themeId,
+    this.groupId,
+    this.docId,
+    this.mime,
+    this.size,
+    this.encryptedKey,
+    this.iv,
+    this.encryptedMetadata,
+  });
 }
 
 // 后台任务
@@ -951,6 +999,82 @@ class Grpc {
       options: await _Grpc.instance.authOptions(),
     );
     return ResponseDeleteImage(err: resp.err, msg: resp.msg);
+  }
+
+  Future<ResponsePresignUpload> presignUploadFile({
+    required String filename,
+    required String mime,
+    required int size,
+    required Uint8List encryptedKey,
+    Uint8List? iv,
+    Uint8List? encryptedMetadata,
+    int? expiresInSec,
+  }) async {
+    if (tid == null || gid == null || did == null) {
+      return ResponsePresignUpload(
+          err: 1, msg: 'missing theme/group/doc context');
+    }
+    await _Grpc.instance._ensureReady();
+    final resp = await _Grpc.instance.file.presignUploadFile(
+      pb.PresignUploadFileRequest(
+        themeId: tid!,
+        groupId: gid!,
+        docId: did!,
+        filename: filename,
+        mime: mime,
+        size: Int64(size),
+        encryptedKey: encryptedKey,
+        iv: iv,
+        encryptedMetadata: encryptedMetadata,
+        expiresInSec: expiresInSec != null ? Int64(expiresInSec) : null,
+      ),
+      options: await _Grpc.instance.authOptions(),
+    );
+    return ResponsePresignUpload(
+      err: resp.err,
+      msg: resp.msg,
+      fileId: resp.fileId,
+      uploadUrl: resp.uploadUrl,
+      objectPath: resp.objectPath,
+      expiresAt: resp.expiresAt.toInt(),
+    );
+  }
+
+  Future<ResponsePresignDownload> presignDownloadFile(String fileId) async {
+    await _Grpc.instance._ensureReady();
+    final resp = await _Grpc.instance.file.presignDownloadFile(
+      pb.PresignDownloadFileRequest(fileId: fileId),
+      options: await _Grpc.instance.authOptions(),
+    );
+    return ResponsePresignDownload(
+      err: resp.err,
+      msg: resp.msg,
+      fileId: resp.fileId,
+      downloadUrl: resp.downloadUrl,
+      expiresAt: resp.expiresAt.toInt(),
+      ownerUid: resp.ownerUid,
+      themeId: resp.themeId,
+      groupId: resp.groupId,
+      docId: resp.docId,
+      mime: resp.mime,
+      size: resp.size.toInt(),
+      encryptedKey: resp.encryptedKey.isEmpty
+          ? null
+          : Uint8List.fromList(resp.encryptedKey),
+      iv: resp.iv.isEmpty ? null : Uint8List.fromList(resp.iv),
+      encryptedMetadata: resp.encryptedMetadata.isEmpty
+          ? null
+          : Uint8List.fromList(resp.encryptedMetadata),
+    );
+  }
+
+  Future<Basic> deleteFile(String fileId) async {
+    await _Grpc.instance._ensureReady();
+    final resp = await _Grpc.instance.file.deleteFile(
+      pb.DeleteFileRequest(fileId: fileId),
+      options: await _Grpc.instance.authOptions(),
+    );
+    return Basic(err: resp.err, msg: resp.msg);
   }
 
   // background job

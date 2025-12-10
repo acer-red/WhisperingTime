@@ -10,11 +10,14 @@ import 'package:whispering_time/page/doc/model.dart';
 import 'package:whispering_time/page/group/model.dart';
 import 'package:whispering_time/page/group/manager.dart';
 import 'package:whispering_time/service/grpc/grpc.dart';
-import 'package:whispering_time/service/isar/config.dart';
+import 'package:whispering_time/page/doc/edit_embed.dart';
 import 'package:whispering_time/util/export.dart';
+import 'package:whispering_time/util/secure.dart';
 import 'package:whispering_time/page/doc/setting.dart';
 import 'package:whispering_time/util/env.dart';
 import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
+import 'package:path/path.dart' as p;
 
 class EditPage extends StatefulWidget {
   final Doc doc;
@@ -44,6 +47,7 @@ class _EditPageState extends State<EditPage> {
   bool _isEditingTitle = false;
   Timer? _autoSaveTimer;
   bool _canPop = false;
+  Future<bool>? _creatingDoc;
 
   @override
   void initState() {
@@ -92,6 +96,24 @@ class _EditPageState extends State<EditPage> {
     }
   }
 
+  // 检查正文是否包含有效内容（文本或图片等嵌入）
+  bool _hasMeaningfulContent() {
+    if (quillController.document.toPlainText().trim().isNotEmpty) {
+      return true;
+    }
+
+    final delta = quillController.document.toDelta();
+    for (final op in delta.toList()) {
+      final data = op.data;
+      if (data is Map &&
+          (data.containsKey('image') || data.containsKey('video'))) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   // 监听文档变化，处理图片上传
   void _onDocumentChange(DocChange event) async {
     if (event.source == ChangeSource.local) {
@@ -105,9 +127,25 @@ class _EditPageState extends State<EditPage> {
     for (int i = 0; i < delta.length; i++) {
       final op = delta.elementAt(i);
 
-      if (op.data is Map && (op.data as Map).containsKey('image')) {
+      if (op.data is Map &&
+          ((op.data as Map).containsKey('image') ||
+              (op.data as Map).containsKey('video'))) {
         final imageData = op.data as Map;
-        final imageSource = imageData['image'] as String;
+        final source = imageData['image'] ?? imageData['video'];
+        if (source is! String) {
+          offset += (op.length ?? 1);
+          continue;
+        }
+        final String imageSource = source;
+
+        // 新文档首次插入媒体时，先创建文档以获取 did，避免上传报错
+        if (widget.doc.id.isEmpty) {
+          final created = await _ensureDocCreated(force: true);
+          if (!created) {
+            offset += (op.length ?? 1);
+            continue;
+          }
+        }
 
         // 如果是本地文件路径，则上传
         if (imageSource.startsWith('file://') ||
@@ -138,25 +176,70 @@ class _EditPageState extends State<EditPage> {
               imgType = IMGType.jpg;
             }
 
-            // 上传图片
-            final req = RequestCreateImage(type: imgType, data: bytes);
-            final res = await Grpc(gid: widget.group.id).postImage(req);
+            final storage = Storage();
+            final envelope = await storage.envelopeEncrypt(bytes);
+            final metaJson = jsonEncode({
+              'filename': p.basename(localPath),
+              'mime': imgType == IMGType.png ? 'image/png' : 'image/jpeg',
+              'size': envelope.cipherText.length,
+            });
+            final encryptedMeta = await storage.encryptWithDataKey(
+                envelope.dataKey, utf8.encode(metaJson));
 
-            if (res.isOK) {
-              // 删除旧的图片引用并插入文件名（不是完整URL）
-              quillController.document.delete(offset, 1);
-              quillController.document
-                  .insert(offset, BlockEmbed.image(res.name));
+            if (!mounted) return;
 
-              log.i('图片上传成功，文件名: ${res.name}');
-            } else {
-              log.e('图片上传失败: ${res.msg}');
+            final themeId = context.read<GroupsManager>().tid;
+            final presign = await Grpc(
+                    tid: themeId, gid: widget.group.id, did: widget.doc.id)
+                .presignUploadFile(
+              filename: p.basename(localPath),
+              mime: imgType == IMGType.png ? 'image/png' : 'image/jpeg',
+              size: envelope.cipherText.length,
+              encryptedKey: envelope.encryptedKey,
+              encryptedMetadata: encryptedMeta,
+            );
+
+            if (!mounted) return;
+
+            if (!presign.isOK || presign.uploadUrl == null) {
+              log.e('获取上传URL失败: ${presign.msg}');
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('图片上传失败: ${res.msg}')),
+                  SnackBar(content: Text('图片上传失败: ${presign.msg}')),
                 );
               }
+              offset += (op.length ?? 1);
+              continue;
             }
+
+            final putResp = await http.put(
+              Uri.parse(presign.uploadUrl!),
+              headers: {
+                'Content-Type':
+                    imgType == IMGType.png ? 'image/png' : 'image/jpeg'
+              },
+              body: envelope.cipherText,
+            );
+
+            if (!mounted) return;
+
+            if (putResp.statusCode >= 400) {
+              log.e('上传图片失败: HTTP ${putResp.statusCode}');
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('图片上传失败: HTTP ${putResp.statusCode}')),
+                );
+              }
+              offset += (op.length ?? 1);
+              continue;
+            }
+
+            final fileId = presign.fileId ?? '';
+            quillController.document.delete(offset, 1);
+            quillController.document
+                .insert(offset, BlockEmbed.image('file:$fileId'));
+
+            log.i('图片上传成功，fileId: $fileId');
           } catch (e) {
             log.e('处理图片上传失败: $e');
             if (mounted) {
@@ -252,7 +335,7 @@ class _EditPageState extends State<EditPage> {
   List<EmbedBuilder> _getCustomEmbedBuilders() {
     return [
       // 自定义图片构建器
-      _CustomImageEmbedBuilder(),
+      CustomImageEmbedBuilder(),
       // 添加其他默认的嵌入构建器（视频等）
       ...(kIsWeb
               ? FlutterQuillEmbeds.editorWebBuilders()
@@ -327,17 +410,16 @@ class _EditPageState extends State<EditPage> {
                 },
                 itemBuilder: (BuildContext context) {
                   return [
-                    if (!widget.group.isFreezedOrBuf())
-                      PopupMenuItem<String>(
-                        value: 'settings',
-                        child: Row(
-                          children: [
-                            Icon(Icons.settings, size: 20, color: Colors.grey),
-                            SizedBox(width: 8),
-                            Text('设置'),
-                          ],
-                        ),
+                    PopupMenuItem<String>(
+                      value: 'settings',
+                      child: Row(
+                        children: [
+                          Icon(Icons.settings, size: 20, color: Colors.grey),
+                          SizedBox(width: 8),
+                          Text('设置'),
+                        ],
                       ),
+                    ),
                     PopupMenuItem<String>(
                       value: 'export',
                       child: Row(
@@ -366,10 +448,11 @@ class _EditPageState extends State<EditPage> {
                 children: [
                   // 分级选择按钮
                   TextButton(
-                    onPressed: widget.group.isFreezedOrBuf() &&
-                            widget.doc.id.isNotEmpty
-                        ? null
-                        : _showLevelDialog,
+                    onPressed: widget.doc.id.isEmpty
+                        ? _showLevelDialog
+                        : (widget.group.isFreezedOrBuf()
+                            ? null
+                            : _showLevelDialog),
                     style: TextButton.styleFrom(
                       padding:
                           EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -473,7 +556,18 @@ class _EditPageState extends State<EditPage> {
   // 保存文档
   Future<void> save() async {
     String content = jsonEncode(quillController.document.toDelta().toJson());
+    final oldFileIds = _extractFileIds(widget.doc.content);
+    final newFileIds = _extractFileIds(content);
+    final removedFileIds = oldFileIds.difference(newFileIds);
     bool persisted = false;
+    final bool hasMeaningfulContent = _hasMeaningfulContent();
+
+    // 新文档：若有标题或内容则先创建获取 did
+    if (widget.doc.id.isEmpty &&
+        (titleController.text.trim().isNotEmpty || hasMeaningfulContent)) {
+      final created = await _ensureDocCreated(force: true, content: content);
+      if (!created) return;
+    }
 
     // 如果有ID，更新文档
     if (widget.doc.id.isNotEmpty) {
@@ -511,30 +605,19 @@ class _EditPageState extends State<EditPage> {
         widget.doc.level = level;
       }
     } else {
-      // 创建新文档
-      final req = RequestCreateDoc(
-        content: content,
-        title: titleController.text,
-        level: level,
-        createAt: createAt,
-        config: config,
-      );
-      final ret = await Grpc(gid: widget.group.id).createDoc(req);
-      if (ret.isNotOK) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('创建失败')),
-          );
-        }
-        return;
+      // 无标题且无内容，不落库，仅更新本地
+      if (!hasMeaningfulContent && titleController.text.trim().isEmpty) {
+        widget.doc.title = titleController.text;
+        widget.doc.level = level;
+        widget.doc.content = content;
       }
-      persisted = true;
-      widget.doc.id = ret.id;
-      // Update local doc state
-      widget.doc.content = content;
-      widget.doc.title = titleController.text;
-      widget.doc.level = level;
     }
+
+    if (!persisted) {
+      return;
+    }
+
+    await _deleteRemovedFiles(removedFileIds);
 
     // 返回更新后的文档
     Doc updatedDoc = Doc(
@@ -547,11 +630,102 @@ class _EditPageState extends State<EditPage> {
       config: config,
     );
 
-    if (persisted) {
-      _touchGroupActivity();
-    }
-
+    _touchGroupActivity();
     widget.onSave(updatedDoc);
+  }
+
+  Future<bool> _ensureDocCreated({bool force = false, String? content}) async {
+    if (widget.doc.id.isNotEmpty) return true;
+    if (_creatingDoc != null) return await _creatingDoc!;
+
+    final hasContent = _hasMeaningfulContent();
+    final hasTitle = titleController.text.trim().isNotEmpty;
+    if (!force && !hasContent && !hasTitle) return false;
+
+    final completer = Completer<bool>();
+    _creatingDoc = completer.future;
+
+    final docContent =
+        content ?? jsonEncode(quillController.document.toDelta().toJson());
+    final req = RequestCreateDoc(
+      content: docContent,
+      title: titleController.text,
+      level: level,
+      createAt: createAt,
+      config: config,
+    );
+
+    try {
+      final ret = await Grpc(gid: widget.group.id).createDoc(req);
+      if (ret.isNotOK) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('创建失败: ${ret.msg}')),
+          );
+        }
+        completer.complete(false);
+        return false;
+      }
+
+      widget.doc.id = ret.id;
+      widget.doc.content = docContent;
+      widget.doc.title = titleController.text;
+      widget.doc.level = level;
+
+      final updatedDoc = Doc(
+        id: widget.doc.id,
+        title: titleController.text,
+        content: docContent,
+        level: level,
+        createAt: createAt,
+        updateAt: DateTime.now(),
+        config: config,
+      );
+
+      _touchGroupActivity();
+      widget.onSave(updatedDoc);
+      completer.complete(true);
+      return true;
+    } catch (e) {
+      completer.complete(false);
+      rethrow;
+    } finally {
+      _creatingDoc = null;
+    }
+  }
+
+  Set<String> _extractFileIds(String contentJson) {
+    if (contentJson.isEmpty) return {};
+    try {
+      final data = jsonDecode(contentJson);
+      if (data is! List) return {};
+      final ids = <String>{};
+      for (final op in data) {
+        if (op is Map && op['insert'] is Map) {
+          final insertMap = op['insert'] as Map;
+          if (insertMap['image'] is String) {
+            final src = insertMap['image'] as String;
+            if (src.startsWith('file:')) {
+              ids.add(src.substring(5));
+            }
+          }
+        }
+      }
+      return ids;
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<void> _deleteRemovedFiles(Set<String> ids) async {
+    if (ids.isEmpty) return;
+    for (final id in ids) {
+      try {
+        await Grpc(gid: widget.group.id, did: widget.doc.id).deleteFile(id);
+      } catch (_) {
+        // best effort; ignore
+      }
+    }
   }
 
   // 弹窗: 设置
@@ -622,72 +796,6 @@ class _EditPageState extends State<EditPage> {
           createAt: createAt,
         ),
       ),
-    );
-  }
-}
-
-class _CustomImageEmbedBuilder extends EmbedBuilder {
-  @override
-  String get key => 'image';
-
-  @override
-  Widget build(
-    BuildContext context,
-    EmbedContext embedContext,
-  ) {
-    var imageSource = embedContext.node.value.data as String;
-
-    // 如果不是完整URL（不以http开头），则拼接服务器地址
-    if (!imageSource.startsWith('http://') &&
-        !imageSource.startsWith('https://')) {
-      final serverAddress = Config.instance.serverAddress;
-      final uid = Config.instance.uid;
-      imageSource = '$serverAddress/image/$uid/$imageSource';
-    }
-
-    // 使用默认的图片widget显示
-    return Image.network(
-      imageSource,
-      fit: BoxFit.contain,
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) {
-          return child;
-        }
-        return Container(
-          padding: EdgeInsets.all(16),
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(
-                  value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded /
-                          loadingProgress.expectedTotalBytes!
-                      : null,
-                ),
-                SizedBox(height: 8),
-                Text('图片加载中...',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-              ],
-            ),
-          ),
-        );
-      },
-      errorBuilder: (context, error, stackTrace) {
-        return Container(
-          padding: EdgeInsets.all(8),
-          color: Colors.grey[200],
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.broken_image, size: 48, color: Colors.grey),
-              SizedBox(height: 4),
-              Text('图片加载失败',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-            ],
-          ),
-        );
-      },
     );
   }
 }

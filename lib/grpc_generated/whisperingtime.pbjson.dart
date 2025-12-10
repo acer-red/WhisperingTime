@@ -599,6 +599,109 @@ final $typed_data.Uint8List imageUploadChunkDescriptor = $convert.base64Decode(
     'ChBJbWFnZVVwbG9hZENodW5rEhcKB3VzZXJfaWQYASABKAlSBnVzZXJJZBISCgRtaW1lGAIgAS'
     'gJUgRtaW1lEhIKBGRhdGEYAyABKAxSBGRhdGE=');
 
+@$core.Deprecated('Use presignUploadFileRequestDescriptor instead')
+const PresignUploadFileRequest$json = {
+  '1': 'PresignUploadFileRequest',
+  '2': [
+    {'1': 'theme_id', '3': 1, '4': 1, '5': 9, '10': 'themeId'},
+    {'1': 'group_id', '3': 2, '4': 1, '5': 9, '10': 'groupId'},
+    {'1': 'doc_id', '3': 3, '4': 1, '5': 9, '10': 'docId'},
+    {'1': 'filename', '3': 4, '4': 1, '5': 9, '10': 'filename'},
+    {'1': 'mime', '3': 5, '4': 1, '5': 9, '10': 'mime'},
+    {'1': 'size', '3': 6, '4': 1, '5': 3, '10': 'size'},
+    {'1': 'encrypted_key', '3': 7, '4': 1, '5': 12, '10': 'encryptedKey'},
+    {'1': 'iv', '3': 8, '4': 1, '5': 12, '10': 'iv'},
+    {'1': 'encrypted_metadata', '3': 9, '4': 1, '5': 12, '10': 'encryptedMetadata'},
+    {'1': 'expires_in_sec', '3': 10, '4': 1, '5': 3, '10': 'expiresInSec'},
+  ],
+};
+
+/// Descriptor for `PresignUploadFileRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List presignUploadFileRequestDescriptor = $convert.base64Decode(
+    'ChhQcmVzaWduVXBsb2FkRmlsZVJlcXVlc3QSGQoIdGhlbWVfaWQYASABKAlSB3RoZW1lSWQSGQ'
+    'oIZ3JvdXBfaWQYAiABKAlSB2dyb3VwSWQSFQoGZG9jX2lkGAMgASgJUgVkb2NJZBIaCghmaWxl'
+    'bmFtZRgEIAEoCVIIZmlsZW5hbWUSEgoEbWltZRgFIAEoCVIEbWltZRISCgRzaXplGAYgASgDUg'
+    'RzaXplEiMKDWVuY3J5cHRlZF9rZXkYByABKAxSDGVuY3J5cHRlZEtleRIOCgJpdhgIIAEoDFIC'
+    'aXYSLQoSZW5jcnlwdGVkX21ldGFkYXRhGAkgASgMUhFlbmNyeXB0ZWRNZXRhZGF0YRIkCg5leH'
+    'BpcmVzX2luX3NlYxgKIAEoA1IMZXhwaXJlc0luU2Vj');
+
+@$core.Deprecated('Use presignUploadFileResponseDescriptor instead')
+const PresignUploadFileResponse$json = {
+  '1': 'PresignUploadFileResponse',
+  '2': [
+    {'1': 'err', '3': 1, '4': 1, '5': 5, '10': 'err'},
+    {'1': 'msg', '3': 2, '4': 1, '5': 9, '10': 'msg'},
+    {'1': 'file_id', '3': 3, '4': 1, '5': 9, '10': 'fileId'},
+    {'1': 'object_path', '3': 4, '4': 1, '5': 9, '10': 'objectPath'},
+    {'1': 'upload_url', '3': 5, '4': 1, '5': 9, '10': 'uploadUrl'},
+    {'1': 'expires_at', '3': 6, '4': 1, '5': 3, '10': 'expiresAt'},
+  ],
+};
+
+/// Descriptor for `PresignUploadFileResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List presignUploadFileResponseDescriptor = $convert.base64Decode(
+    'ChlQcmVzaWduVXBsb2FkRmlsZVJlc3BvbnNlEhAKA2VychgBIAEoBVIDZXJyEhAKA21zZxgCIA'
+    'EoCVIDbXNnEhcKB2ZpbGVfaWQYAyABKAlSBmZpbGVJZBIfCgtvYmplY3RfcGF0aBgEIAEoCVIK'
+    'b2JqZWN0UGF0aBIdCgp1cGxvYWRfdXJsGAUgASgJUgl1cGxvYWRVcmwSHQoKZXhwaXJlc19hdB'
+    'gGIAEoA1IJZXhwaXJlc0F0');
+
+@$core.Deprecated('Use presignDownloadFileRequestDescriptor instead')
+const PresignDownloadFileRequest$json = {
+  '1': 'PresignDownloadFileRequest',
+  '2': [
+    {'1': 'file_id', '3': 1, '4': 1, '5': 9, '10': 'fileId'},
+  ],
+};
+
+/// Descriptor for `PresignDownloadFileRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List presignDownloadFileRequestDescriptor = $convert.base64Decode(
+    'ChpQcmVzaWduRG93bmxvYWRGaWxlUmVxdWVzdBIXCgdmaWxlX2lkGAEgASgJUgZmaWxlSWQ=');
+
+@$core.Deprecated('Use presignDownloadFileResponseDescriptor instead')
+const PresignDownloadFileResponse$json = {
+  '1': 'PresignDownloadFileResponse',
+  '2': [
+    {'1': 'err', '3': 1, '4': 1, '5': 5, '10': 'err'},
+    {'1': 'msg', '3': 2, '4': 1, '5': 9, '10': 'msg'},
+    {'1': 'file_id', '3': 3, '4': 1, '5': 9, '10': 'fileId'},
+    {'1': 'object_path', '3': 4, '4': 1, '5': 9, '10': 'objectPath'},
+    {'1': 'download_url', '3': 5, '4': 1, '5': 9, '10': 'downloadUrl'},
+    {'1': 'expires_at', '3': 6, '4': 1, '5': 3, '10': 'expiresAt'},
+    {'1': 'owner_uid', '3': 7, '4': 1, '5': 9, '10': 'ownerUid'},
+    {'1': 'theme_id', '3': 8, '4': 1, '5': 9, '10': 'themeId'},
+    {'1': 'group_id', '3': 9, '4': 1, '5': 9, '10': 'groupId'},
+    {'1': 'doc_id', '3': 10, '4': 1, '5': 9, '10': 'docId'},
+    {'1': 'mime', '3': 11, '4': 1, '5': 9, '10': 'mime'},
+    {'1': 'size', '3': 12, '4': 1, '5': 3, '10': 'size'},
+    {'1': 'encrypted_key', '3': 13, '4': 1, '5': 12, '10': 'encryptedKey'},
+    {'1': 'iv', '3': 14, '4': 1, '5': 12, '10': 'iv'},
+    {'1': 'encrypted_metadata', '3': 15, '4': 1, '5': 12, '10': 'encryptedMetadata'},
+  ],
+};
+
+/// Descriptor for `PresignDownloadFileResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List presignDownloadFileResponseDescriptor = $convert.base64Decode(
+    'ChtQcmVzaWduRG93bmxvYWRGaWxlUmVzcG9uc2USEAoDZXJyGAEgASgFUgNlcnISEAoDbXNnGA'
+    'IgASgJUgNtc2cSFwoHZmlsZV9pZBgDIAEoCVIGZmlsZUlkEh8KC29iamVjdF9wYXRoGAQgASgJ'
+    'UgpvYmplY3RQYXRoEiEKDGRvd25sb2FkX3VybBgFIAEoCVILZG93bmxvYWRVcmwSHQoKZXhwaX'
+    'Jlc19hdBgGIAEoA1IJZXhwaXJlc0F0EhsKCW93bmVyX3VpZBgHIAEoCVIIb3duZXJVaWQSGQoI'
+    'dGhlbWVfaWQYCCABKAlSB3RoZW1lSWQSGQoIZ3JvdXBfaWQYCSABKAlSB2dyb3VwSWQSFQoGZG'
+    '9jX2lkGAogASgJUgVkb2NJZBISCgRtaW1lGAsgASgJUgRtaW1lEhIKBHNpemUYDCABKANSBHNp'
+    'emUSIwoNZW5jcnlwdGVkX2tleRgNIAEoDFIMZW5jcnlwdGVkS2V5Eg4KAml2GA4gASgMUgJpdh'
+    'ItChJlbmNyeXB0ZWRfbWV0YWRhdGEYDyABKAxSEWVuY3J5cHRlZE1ldGFkYXRh');
+
+@$core.Deprecated('Use deleteFileRequestDescriptor instead')
+const DeleteFileRequest$json = {
+  '1': 'DeleteFileRequest',
+  '2': [
+    {'1': 'file_id', '3': 1, '4': 1, '5': 9, '10': 'fileId'},
+  ],
+};
+
+/// Descriptor for `DeleteFileRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List deleteFileRequestDescriptor = $convert.base64Decode(
+    'ChFEZWxldGVGaWxlUmVxdWVzdBIXCgdmaWxlX2lkGAEgASgJUgZmaWxlSWQ=');
+
 @$core.Deprecated('Use backgroundJobDescriptor instead')
 const BackgroundJob$json = {
   '1': 'BackgroundJob',

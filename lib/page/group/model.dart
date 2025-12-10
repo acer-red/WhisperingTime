@@ -28,9 +28,6 @@ class Group {
     if (isManualBufTime()) {
       return 1;
     }
-    if (isAutoBufTime()) {
-      return 1;
-    }
     // 自动定格期已到
     return DateTime.now()
             .isAfter(updateAt.add(Duration(days: config.autoFreezeDays)))
@@ -50,7 +47,8 @@ class Group {
 
   bool isAutoBufTime() {
     final autoDeadline = updateAt.add(Duration(days: config.autoFreezeDays));
-    return autoDeadline.isAfter(DateTime.now());
+    return DateTime.now().isAfter(updateAt) &&
+        DateTime.now().isBefore(autoDeadline);
   }
 
   bool hasManualMark() {

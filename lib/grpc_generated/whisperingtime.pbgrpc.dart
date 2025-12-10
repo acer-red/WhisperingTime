@@ -541,3 +541,81 @@ abstract class BackgroundJobServiceBase extends $grpc.Service {
   $async.Future<$0.BasicResponse> deleteJob($grpc.ServiceCall call, $0.DeleteBackgroundJobRequest request);
   $async.Future<$0.DownloadBackgroundJobFileResponse> downloadJobFile($grpc.ServiceCall call, $0.DownloadBackgroundJobFileRequest request);
 }
+@$pb.GrpcServiceName('whisperingtime.FileService')
+class FileServiceClient extends $grpc.Client {
+  static final _$presignUploadFile = $grpc.ClientMethod<$0.PresignUploadFileRequest, $0.PresignUploadFileResponse>(
+      '/whisperingtime.FileService/PresignUploadFile',
+      ($0.PresignUploadFileRequest value) => value.writeToBuffer(),
+      ($core.List<$core.int> value) => $0.PresignUploadFileResponse.fromBuffer(value));
+  static final _$presignDownloadFile = $grpc.ClientMethod<$0.PresignDownloadFileRequest, $0.PresignDownloadFileResponse>(
+      '/whisperingtime.FileService/PresignDownloadFile',
+      ($0.PresignDownloadFileRequest value) => value.writeToBuffer(),
+      ($core.List<$core.int> value) => $0.PresignDownloadFileResponse.fromBuffer(value));
+  static final _$deleteFile = $grpc.ClientMethod<$0.DeleteFileRequest, $0.BasicResponse>(
+      '/whisperingtime.FileService/DeleteFile',
+      ($0.DeleteFileRequest value) => value.writeToBuffer(),
+      ($core.List<$core.int> value) => $0.BasicResponse.fromBuffer(value));
+
+  FileServiceClient($grpc.ClientChannel channel,
+      {$grpc.CallOptions? options,
+      $core.Iterable<$grpc.ClientInterceptor>? interceptors})
+      : super(channel, options: options,
+        interceptors: interceptors);
+
+  $grpc.ResponseFuture<$0.PresignUploadFileResponse> presignUploadFile($0.PresignUploadFileRequest request, {$grpc.CallOptions? options}) {
+    return $createUnaryCall(_$presignUploadFile, request, options: options);
+  }
+
+  $grpc.ResponseFuture<$0.PresignDownloadFileResponse> presignDownloadFile($0.PresignDownloadFileRequest request, {$grpc.CallOptions? options}) {
+    return $createUnaryCall(_$presignDownloadFile, request, options: options);
+  }
+
+  $grpc.ResponseFuture<$0.BasicResponse> deleteFile($0.DeleteFileRequest request, {$grpc.CallOptions? options}) {
+    return $createUnaryCall(_$deleteFile, request, options: options);
+  }
+}
+
+@$pb.GrpcServiceName('whisperingtime.FileService')
+abstract class FileServiceBase extends $grpc.Service {
+  $core.String get $name => 'whisperingtime.FileService';
+
+  FileServiceBase() {
+    $addMethod($grpc.ServiceMethod<$0.PresignUploadFileRequest, $0.PresignUploadFileResponse>(
+        'PresignUploadFile',
+        presignUploadFile_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) => $0.PresignUploadFileRequest.fromBuffer(value),
+        ($0.PresignUploadFileResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.PresignDownloadFileRequest, $0.PresignDownloadFileResponse>(
+        'PresignDownloadFile',
+        presignDownloadFile_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) => $0.PresignDownloadFileRequest.fromBuffer(value),
+        ($0.PresignDownloadFileResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.DeleteFileRequest, $0.BasicResponse>(
+        'DeleteFile',
+        deleteFile_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) => $0.DeleteFileRequest.fromBuffer(value),
+        ($0.BasicResponse value) => value.writeToBuffer()));
+  }
+
+  $async.Future<$0.PresignUploadFileResponse> presignUploadFile_Pre($grpc.ServiceCall call, $async.Future<$0.PresignUploadFileRequest> request) async {
+    return presignUploadFile(call, await request);
+  }
+
+  $async.Future<$0.PresignDownloadFileResponse> presignDownloadFile_Pre($grpc.ServiceCall call, $async.Future<$0.PresignDownloadFileRequest> request) async {
+    return presignDownloadFile(call, await request);
+  }
+
+  $async.Future<$0.BasicResponse> deleteFile_Pre($grpc.ServiceCall call, $async.Future<$0.DeleteFileRequest> request) async {
+    return deleteFile(call, await request);
+  }
+
+  $async.Future<$0.PresignUploadFileResponse> presignUploadFile($grpc.ServiceCall call, $0.PresignUploadFileRequest request);
+  $async.Future<$0.PresignDownloadFileResponse> presignDownloadFile($grpc.ServiceCall call, $0.PresignDownloadFileRequest request);
+  $async.Future<$0.BasicResponse> deleteFile($grpc.ServiceCall call, $0.DeleteFileRequest request);
+}

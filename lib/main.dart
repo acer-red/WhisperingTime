@@ -51,8 +51,6 @@ class _MyAppState extends State<MyApp>
   void _resetKeyboardState() {
     // ignore: invalid_use_of_visible_for_testing_member
     HardwareKeyboard.instance.clearState();
-    // ignore: invalid_use_of_visible_for_testing_member
-    RawKeyboard.instance.clearKeysPressed();
   }
 
   @override

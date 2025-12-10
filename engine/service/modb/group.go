@@ -11,6 +11,7 @@ import (
 	"mime/multipart"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/tengfei-xy/go-log"
@@ -925,8 +926,13 @@ func GroupImportConfig(uoid, toid primitive.ObjectID, fileHeader *multipart.File
 		if err != nil {
 			continue
 		}
-		if filepath.HasPrefix(relPath, "images"+string(os.PathSeparator)) ||
-			filepath.HasPrefix(relPath, filepath.Join("images")) {
+
+		relPath = filepath.ToSlash(filepath.Clean(relPath))
+		if relPath == ".." || strings.HasPrefix(relPath, "../") {
+			continue // 防止目录穿越
+		}
+
+		if relPath == "images" || strings.HasPrefix(relPath, "images/") {
 			imageFiles = append(imageFiles, filePath)
 		}
 	}

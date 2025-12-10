@@ -311,31 +311,34 @@ class _ConfigManagementDialogState extends State<ConfigManagementDialog> {
         Text('导入选项'),
         const SizedBox(height: 8),
         _StepCard(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _ConflictTile(
-                icon: Icons.auto_fix_high,
-                title: '同名覆盖',
-                subtitle: '当目标存在同名分组时先删除再导入',
-                value: _ImportConflictStrategy.overwrite,
-                groupValue: _conflict,
-                onChanged:
-                    _processing ? null : (v) => setState(() => _conflict = v!),
-                colorScheme: scheme,
-              ),
-              const Divider(height: 12),
-              _ConflictTile(
-                icon: Icons.block,
-                title: '同名跳过',
-                subtitle: '保留现有内容，不导入同名分组',
-                value: _ImportConflictStrategy.skip,
-                groupValue: _conflict,
-                onChanged:
-                    _processing ? null : (v) => setState(() => _conflict = v!),
-                colorScheme: scheme,
-              ),
-            ],
+          child: RadioGroup<_ImportConflictStrategy>(
+            groupValue: _conflict,
+            onChanged: (_ImportConflictStrategy? value) {
+              if (_processing || value == null) {
+                return;
+              }
+              setState(() => _conflict = value);
+            },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _ConflictTile(
+                  icon: Icons.auto_fix_high,
+                  title: '同名覆盖',
+                  subtitle: '当目标存在同名分组时先删除再导入',
+                  value: _ImportConflictStrategy.overwrite,
+                  colorScheme: scheme,
+                ),
+                const Divider(height: 12),
+                _ConflictTile(
+                  icon: Icons.block,
+                  title: '同名跳过',
+                  subtitle: '保留现有内容，不导入同名分组',
+                  value: _ImportConflictStrategy.skip,
+                  colorScheme: scheme,
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -1030,8 +1033,6 @@ class _ConflictTile extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.value,
-    required this.groupValue,
-    required this.onChanged,
     required this.colorScheme,
   });
 
@@ -1039,14 +1040,15 @@ class _ConflictTile extends StatelessWidget {
   final String title;
   final String subtitle;
   final _ImportConflictStrategy value;
-  final _ImportConflictStrategy groupValue;
-  final ValueChanged<_ImportConflictStrategy?>? onChanged;
   final ColorScheme colorScheme;
 
   @override
   Widget build(BuildContext context) {
+    final group = RadioGroup.maybeOf<_ImportConflictStrategy>(context);
+    final handleChanged = group?.onChanged;
+
     return ListTile(
-      onTap: onChanged == null ? null : () => onChanged!(value),
+      onTap: handleChanged == null ? null : () => handleChanged(value),
       leading: Container(
         width: 36,
         height: 36,
@@ -1058,11 +1060,7 @@ class _ConflictTile extends StatelessWidget {
       ),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
       subtitle: Text(subtitle),
-      trailing: Radio<_ImportConflictStrategy>(
-        value: value,
-        groupValue: groupValue,
-        onChanged: onChanged,
-      ),
+      trailing: Radio<_ImportConflictStrategy>(value: value),
       contentPadding: const EdgeInsets.symmetric(horizontal: 4),
     );
   }

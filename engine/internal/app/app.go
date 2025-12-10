@@ -29,10 +29,6 @@ func run(opts Options) error {
 
 	initLog(opts.LogLevel)
 
-	if cfg.Endpoints.Index != "" {
-		modb.SetIndexEndpoint(cfg.Endpoints.Index)
-	}
-
 	if err := initMongo(cfg); err != nil {
 		return err
 	}
