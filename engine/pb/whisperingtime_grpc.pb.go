@@ -24,6 +24,7 @@ const (
 	ThemeService_UpdateTheme_FullMethodName     = "/whisperingtime.ThemeService/UpdateTheme"
 	ThemeService_DeleteTheme_FullMethodName     = "/whisperingtime.ThemeService/DeleteTheme"
 	ThemeService_ExportAllConfig_FullMethodName = "/whisperingtime.ThemeService/ExportAllConfig"
+	ThemeService_DeleteUserData_FullMethodName  = "/whisperingtime.ThemeService/DeleteUserData"
 )
 
 // ThemeServiceClient is the client API for ThemeService service.
@@ -35,6 +36,7 @@ type ThemeServiceClient interface {
 	UpdateTheme(ctx context.Context, in *UpdateThemeRequest, opts ...grpc.CallOption) (*BasicResponse, error)
 	DeleteTheme(ctx context.Context, in *DeleteThemeRequest, opts ...grpc.CallOption) (*BasicResponse, error)
 	ExportAllConfig(ctx context.Context, in *ExportAllConfigRequest, opts ...grpc.CallOption) (*BasicResponse, error)
+	DeleteUserData(ctx context.Context, in *DeleteUserDataRequest, opts ...grpc.CallOption) (*BasicResponse, error)
 }
 
 type themeServiceClient struct {
@@ -95,6 +97,16 @@ func (c *themeServiceClient) ExportAllConfig(ctx context.Context, in *ExportAllC
 	return out, nil
 }
 
+func (c *themeServiceClient) DeleteUserData(ctx context.Context, in *DeleteUserDataRequest, opts ...grpc.CallOption) (*BasicResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BasicResponse)
+	err := c.cc.Invoke(ctx, ThemeService_DeleteUserData_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ThemeServiceServer is the server API for ThemeService service.
 // All implementations must embed UnimplementedThemeServiceServer
 // for forward compatibility.
@@ -104,6 +116,7 @@ type ThemeServiceServer interface {
 	UpdateTheme(context.Context, *UpdateThemeRequest) (*BasicResponse, error)
 	DeleteTheme(context.Context, *DeleteThemeRequest) (*BasicResponse, error)
 	ExportAllConfig(context.Context, *ExportAllConfigRequest) (*BasicResponse, error)
+	DeleteUserData(context.Context, *DeleteUserDataRequest) (*BasicResponse, error)
 	mustEmbedUnimplementedThemeServiceServer()
 }
 
@@ -128,6 +141,9 @@ func (UnimplementedThemeServiceServer) DeleteTheme(context.Context, *DeleteTheme
 }
 func (UnimplementedThemeServiceServer) ExportAllConfig(context.Context, *ExportAllConfigRequest) (*BasicResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExportAllConfig not implemented")
+}
+func (UnimplementedThemeServiceServer) DeleteUserData(context.Context, *DeleteUserDataRequest) (*BasicResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteUserData not implemented")
 }
 func (UnimplementedThemeServiceServer) mustEmbedUnimplementedThemeServiceServer() {}
 func (UnimplementedThemeServiceServer) testEmbeddedByValue()                      {}
@@ -240,6 +256,24 @@ func _ThemeService_ExportAllConfig_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ThemeService_DeleteUserData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteUserDataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ThemeServiceServer).DeleteUserData(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ThemeService_DeleteUserData_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ThemeServiceServer).DeleteUserData(ctx, req.(*DeleteUserDataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ThemeService_ServiceDesc is the grpc.ServiceDesc for ThemeService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -266,6 +300,10 @@ var ThemeService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ExportAllConfig",
 			Handler:    _ThemeService_ExportAllConfig_Handler,
+		},
+		{
+			MethodName: "DeleteUserData",
+			Handler:    _ThemeService_DeleteUserData_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

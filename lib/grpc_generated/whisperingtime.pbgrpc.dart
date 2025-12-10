@@ -41,6 +41,10 @@ class ThemeServiceClient extends $grpc.Client {
       '/whisperingtime.ThemeService/ExportAllConfig',
       ($0.ExportAllConfigRequest value) => value.writeToBuffer(),
       ($core.List<$core.int> value) => $0.BasicResponse.fromBuffer(value));
+  static final _$deleteUserData = $grpc.ClientMethod<$0.DeleteUserDataRequest, $0.BasicResponse>(
+      '/whisperingtime.ThemeService/DeleteUserData',
+      ($0.DeleteUserDataRequest value) => value.writeToBuffer(),
+      ($core.List<$core.int> value) => $0.BasicResponse.fromBuffer(value));
 
   ThemeServiceClient($grpc.ClientChannel channel,
       {$grpc.CallOptions? options,
@@ -66,6 +70,10 @@ class ThemeServiceClient extends $grpc.Client {
 
   $grpc.ResponseFuture<$0.BasicResponse> exportAllConfig($0.ExportAllConfigRequest request, {$grpc.CallOptions? options}) {
     return $createUnaryCall(_$exportAllConfig, request, options: options);
+  }
+
+  $grpc.ResponseFuture<$0.BasicResponse> deleteUserData($0.DeleteUserDataRequest request, {$grpc.CallOptions? options}) {
+    return $createUnaryCall(_$deleteUserData, request, options: options);
   }
 }
 
@@ -109,6 +117,13 @@ abstract class ThemeServiceBase extends $grpc.Service {
         false,
         ($core.List<$core.int> value) => $0.ExportAllConfigRequest.fromBuffer(value),
         ($0.BasicResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.DeleteUserDataRequest, $0.BasicResponse>(
+        'DeleteUserData',
+        deleteUserData_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) => $0.DeleteUserDataRequest.fromBuffer(value),
+        ($0.BasicResponse value) => value.writeToBuffer()));
   }
 
   $async.Future<$0.ListThemesResponse> listThemes_Pre($grpc.ServiceCall call, $async.Future<$0.ListThemesRequest> request) async {
@@ -131,11 +146,16 @@ abstract class ThemeServiceBase extends $grpc.Service {
     return exportAllConfig(call, await request);
   }
 
+  $async.Future<$0.BasicResponse> deleteUserData_Pre($grpc.ServiceCall call, $async.Future<$0.DeleteUserDataRequest> request) async {
+    return deleteUserData(call, await request);
+  }
+
   $async.Future<$0.ListThemesResponse> listThemes($grpc.ServiceCall call, $0.ListThemesRequest request);
   $async.Future<$0.CreateThemeResponse> createTheme($grpc.ServiceCall call, $0.CreateThemeRequest request);
   $async.Future<$0.BasicResponse> updateTheme($grpc.ServiceCall call, $0.UpdateThemeRequest request);
   $async.Future<$0.BasicResponse> deleteTheme($grpc.ServiceCall call, $0.DeleteThemeRequest request);
   $async.Future<$0.BasicResponse> exportAllConfig($grpc.ServiceCall call, $0.ExportAllConfigRequest request);
+  $async.Future<$0.BasicResponse> deleteUserData($grpc.ServiceCall call, $0.DeleteUserDataRequest request);
 }
 @$pb.GrpcServiceName('whisperingtime.GroupService')
 class GroupServiceClient extends $grpc.Client {

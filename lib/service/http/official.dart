@@ -2,12 +2,14 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'base.dart';
 import 'package:whispering_time/util/env.dart';
 import 'package:whispering_time/service/isar/config.dart';
 import 'package:whispering_time/util/secure.dart';
 import 'package:whispering_time/service/sp/sp.dart';
+import 'package:whispering_time/welcome.dart';
 
 // 用户登陆
 class RequestUserLogin {
@@ -292,6 +294,38 @@ class Http {
           );
           break;
       }
+
+      if (response.statusCode == 410) {
+        final cookie = await Storage().readCookie();
+        if (cookie != null && cookie.isNotEmpty) {
+          final context = navigatorKey.currentContext;
+          if (context != null) {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => AlertDialog(
+                title: Text('账号已注销'),
+                content: Text('您的账号已被注销，请重新登录或注册。'),
+                actions: [
+                  TextButton(
+                    onPressed: () async {
+                      await Storage().deleteAll();
+                      SP().over();
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (context) => Welcome()),
+                        (route) => false,
+                      );
+                    },
+                    child: Text('确定'),
+                  ),
+                ],
+              ),
+            );
+          }
+        }
+        return fromJson({'err': 1, 'msg': '账号已注销'});
+      }
+
       if (!err(response.statusCode)) {
         await onResponse?.call(response);
       }
@@ -471,6 +505,40 @@ class Http {
 
     final Map<String, dynamic> json = jsonDecode(responseBody);
     return ReponsePutUserProfile.fromJson(json);
+  }
+
+  // 解绑应用
+  Future<Basic> unbindApp() async {
+    log.i("发送请求 解绑应用");
+    final path = "/api/v1/user/app";
+    final uri = URI().get(serverAddress, path);
+    final Map<String, String> header = {
+      'Cookie': await Storage().readCookie() ?? '',
+      'Content-Type': 'application/json',
+    };
+    return _handleRequest(
+      Method.delete,
+      uri,
+      (g) => Basic.fromJson(g),
+      headers: header,
+      data: {"category": appNameEn},
+    );
+  }
+
+  // 注销账户
+  Future<Basic> deleteAccount() async {
+    log.i("发送请求 注销账户");
+    final path = "/api/v1/user/info";
+    final uri = URI().get(serverAddress, path);
+    final Map<String, String> header = {
+      'Cookie': await Storage().readCookie() ?? '',
+    };
+    return _handleRequest(
+      Method.delete,
+      uri,
+      (g) => Basic.fromJson(g),
+      headers: header,
+    );
   }
 
   String getAPI() {

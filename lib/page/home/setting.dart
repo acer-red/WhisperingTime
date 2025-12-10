@@ -8,6 +8,10 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:path/path.dart' as path;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:whispering_time/welcome.dart';
+import 'package:whispering_time/service/http/official.dart';
+import 'package:whispering_time/service/grpc/grpc.dart';
+import 'package:whispering_time/grpc_generated/whisperingtime.pb.dart';
+import 'package:whispering_time/util/secure.dart';
 
 class SettingPage extends StatefulWidget {
   @override
@@ -89,6 +93,18 @@ class _SettingPageState extends State<SettingPage> {
                 },
               ),
             ],
+          ),
+          ListTile(
+            title: Text(
+              '账号',
+              style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+            ),
+            enabled: false,
+          ),
+          ListTile(
+            title: Text('清空账号'),
+            subtitle: Text('删除应用数据或注销账户'),
+            onTap: _showClearAccountDialog,
           ),
           ListTile(
             title: Text(
@@ -179,6 +195,99 @@ class _SettingPageState extends State<SettingPage> {
     final Uri uri = Uri.parse(url);
     if (!await launchUrl(uri)) {
       throw Exception('Could not launch $url');
+    }
+  }
+
+  void _showClearAccountDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('清空账号'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: Text('删除应用数据'),
+                subtitle: Text('执行后，当前应用的本地数据和云端数据将删除。'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _confirmDelete(false);
+                },
+              ),
+              ListTile(
+                title: Text('删除账户'),
+                subtitle: Text('执行后，当前账号的信息将无法登录任何应用。'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _confirmDelete(true);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _confirmDelete(bool isDeleteAccount) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('确认操作'),
+        content:
+            Text(isDeleteAccount ? '确定要注销账户吗？此操作不可逆。' : '确定要删除应用数据吗？此操作不可逆。'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context), child: Text('取消')),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _executeDelete(isDeleteAccount);
+            },
+            child: Text('确定', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _executeDelete(bool isDeleteAccount) async {
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      // 1. HTTP Request
+      final http = Http();
+      final res =
+          isDeleteAccount ? await http.deleteAccount() : await http.unbindApp();
+      if (res.isNotOK) {
+        Navigator.pop(context); // Dismiss loading
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(res.msg)));
+        return;
+      }
+
+      // 2. gRPC Request
+      final grpcRes = await Grpc().deleteUserData(DeleteUserDataRequest());
+      if (grpcRes.isNotOK) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('服务器数据删除失败: ${grpcRes.msg}')));
+        return;
+      }
+
+      // 3. Clear Local Data
+      await Storage().deleteAll();
+      cleanDatabase();
+    } catch (e) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('发生错误: $e')));
     }
   }
 

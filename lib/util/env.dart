@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 const String organization = "acered";
 const String appNameEn = "whisperingtime";
 const String appNameEnHuman = "Whispering Time";

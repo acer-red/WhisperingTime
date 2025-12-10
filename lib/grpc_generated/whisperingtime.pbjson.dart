@@ -319,6 +319,15 @@ const ExportAllConfigRequest$json = {
 final $typed_data.Uint8List exportAllConfigRequestDescriptor = $convert.base64Decode(
     'ChZFeHBvcnRBbGxDb25maWdSZXF1ZXN0');
 
+@$core.Deprecated('Use deleteUserDataRequestDescriptor instead')
+const DeleteUserDataRequest$json = {
+  '1': 'DeleteUserDataRequest',
+};
+
+/// Descriptor for `DeleteUserDataRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List deleteUserDataRequestDescriptor = $convert.base64Decode(
+    'ChVEZWxldGVVc2VyRGF0YVJlcXVlc3Q=');
+
 @$core.Deprecated('Use listGroupsRequestDescriptor instead')
 const ListGroupsRequest$json = {
   '1': 'ListGroupsRequest',

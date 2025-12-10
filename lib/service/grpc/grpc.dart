@@ -1180,4 +1180,14 @@ class Grpc {
       filename: resp.filename.isEmpty ? null : resp.filename,
     );
   }
+
+  Future<Basic> deleteUserData(pb.DeleteUserDataRequest req) async {
+    log.i("发送请求 删除用户数据(gRPC)");
+    await _Grpc.instance._ensureReady();
+    final resp = await _Grpc.instance.theme.deleteUserData(
+      req,
+      options: await _Grpc.instance.authOptions(),
+    );
+    return Basic(err: resp.err, msg: resp.msg);
+  }
 }

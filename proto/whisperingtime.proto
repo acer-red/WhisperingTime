@@ -113,6 +113,7 @@ message UpdateThemeRequest {
 }
 message DeleteThemeRequest { string id = 1; }
 message ExportAllConfigRequest {}
+message DeleteUserDataRequest {}
 
 service ThemeService {
   rpc ListThemes(ListThemesRequest) returns (ListThemesResponse);
@@ -120,6 +121,7 @@ service ThemeService {
   rpc UpdateTheme(UpdateThemeRequest) returns (BasicResponse);
   rpc DeleteTheme(DeleteThemeRequest) returns (BasicResponse);
   rpc ExportAllConfig(ExportAllConfigRequest) returns (BasicResponse);
+  rpc DeleteUserData(DeleteUserDataRequest) returns (BasicResponse);
 }
 
 // Group service

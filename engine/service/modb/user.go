@@ -87,3 +87,10 @@ func EnsureUser(uid string) (primitive.ObjectID, error) {
 	log.Infof("新用户 uid=%s", uid)
 	return uoid, nil
 }
+
+// UserDelete deletes a user by their object ID.
+func UserDelete(uoid primitive.ObjectID) error {
+	ctx := context.TODO()
+	_, err := db.Collection("user").DeleteOne(ctx, bson.M{"_id": uoid})
+	return err
+}

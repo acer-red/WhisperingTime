@@ -43,6 +43,10 @@ class Storage {
     return keyBytes;
   }
 
+  Future<void> deleteAll() async {
+    await _storage.deleteAll();
+  }
+
   Future<Uint8List> encryptData(Uint8List data) async {
     if (data.isEmpty) {
       return Uint8List(0);
@@ -83,10 +87,6 @@ class Storage {
 
   Future<void> delete(String key) async {
     await _storage.delete(key: key);
-  }
-
-  Future<void> deleteAll() async {
-    await _storage.deleteAll();
   }
 
   Future<void> writeCookie(String value) {

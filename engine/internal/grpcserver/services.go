@@ -287,6 +287,65 @@ func (s *Service) ExportAllConfig(ctx context.Context, _ *pb.ExportAllConfigRequ
 	return &pb.BasicResponse{Err: 0, Msg: taskID}, nil
 }
 
+func (s *Service) DeleteUserData(ctx context.Context, _ *pb.DeleteUserDataRequest) (*pb.BasicResponse, error) {
+	log.Infof("[grpc] DeleteUserData uid=%s", getUID(ctx))
+	uoid := getUOID(ctx)
+	if uoid == primitive.NilObjectID {
+		return &pb.BasicResponse{Err: 1, Msg: "unauthenticated"}, nil
+	}
+
+	// 1. Delete all themes (cascades to groups and docs)
+	themes, err := modb.ThemesGet(uoid)
+	if err != nil {
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	for _, t := range themes {
+		toid, err := modb.GetTOIDFromTID(t.ID)
+		if err != nil {
+			log.Errorf("failed to get toid for tid %s: %v", t.ID, err)
+			continue
+		}
+		if err := modb.ThemeDelete(toid); err != nil {
+			log.Errorf("failed to delete theme %s: %v", t.ID, err)
+			// continue to try deleting others
+		}
+	}
+
+	// 2. Delete all files in Minio and FileMeta
+	uid := getUID(ctx)
+	files, err := modb.FileMetaListByUser(ctx, uid)
+	if err != nil {
+		log.Errorf("failed to list files for user %s: %v", uid, err)
+	} else {
+		for _, f := range files {
+			if err := s.deleteOneFile(ctx, &f); err != nil {
+				log.Errorf("failed to delete file %s: %v", f.ID, err)
+			}
+		}
+	}
+
+	// 3. Delete background jobs
+	jobs, err := modb.BGJobsGet(uoid)
+	if err != nil {
+		log.Errorf("failed to list jobs for user %s: %v", uid, err)
+	} else {
+		for _, j := range jobs {
+			bgjoid, err := modb.GetBGJOIDFromBGJID(j.ID)
+			if err == nil {
+				modb.BGJobDelete(uoid, bgjoid)
+			}
+		}
+	}
+
+	// 4. Delete user record
+	if err := modb.UserDelete(uoid); err != nil {
+		log.Errorf("failed to delete user %s: %v", uid, err)
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+
+	return &pb.BasicResponse{Err: 0, Msg: "ok"}, nil
+}
+
 // GroupService
 func (s *Service) ListGroups(ctx context.Context, req *pb.ListGroupsRequest) (*pb.ListGroupsResponse, error) {
 	log.Infof("[grpc] ListGroups uid=%s themeId=%s", getUID(ctx), req.GetThemeId())

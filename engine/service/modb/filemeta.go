@@ -92,3 +92,25 @@ func FileMetaGet(ctx context.Context, fileID string) (*FileMeta, error) {
 	}
 	return &fm, nil
 }
+
+// FileMetaListByUser returns all filemeta entries bound to a user.
+func FileMetaListByUser(ctx context.Context, uid string) ([]FileMeta, error) {
+	if uid == "" {
+		return nil, errors.New("empty uid")
+	}
+	cursor, err := db.Collection("filemeta").Find(ctx, bson.M{"uid": uid})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var items []FileMeta
+	for cursor.Next(ctx) {
+		var fm FileMeta
+		if err := cursor.Decode(&fm); err != nil {
+			return nil, err
+		}
+		items = append(items, fm)
+	}
+	return items, cursor.Err()
+}

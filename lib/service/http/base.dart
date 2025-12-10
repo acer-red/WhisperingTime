@@ -18,6 +18,13 @@ class Basic {
 
   bool get isOK => err == 0;
 
+  factory Basic.fromJson(Map<String, dynamic> json) {
+    return Basic(
+      err: json['err'] as int,
+      msg: json['msg'] as String,
+    );
+  }
+
   void getmsg() {
     print(msg);
   }

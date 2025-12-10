@@ -9,6 +9,7 @@ import 'package:whispering_time/page/home/appbar.dart';
 import 'package:whispering_time/service/sp/sp.dart';
 import 'package:whispering_time/service/isar/config.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:whispering_time/util/env.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -92,6 +93,7 @@ class _MyAppState extends State<MyApp>
     return ChangeNotifierProvider(
       create: (context) => MyAppState(),
       child: MaterialApp(
+        navigatorKey: navigatorKey,
         title: '枫迹',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(

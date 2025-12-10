@@ -1516,6 +1516,38 @@ class ExportAllConfigRequest extends $pb.GeneratedMessage {
   static ExportAllConfigRequest? _defaultInstance;
 }
 
+class DeleteUserDataRequest extends $pb.GeneratedMessage {
+  factory DeleteUserDataRequest() => create();
+  DeleteUserDataRequest._() : super();
+  factory DeleteUserDataRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory DeleteUserDataRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'DeleteUserDataRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  DeleteUserDataRequest clone() => DeleteUserDataRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  DeleteUserDataRequest copyWith(void Function(DeleteUserDataRequest) updates) => super.copyWith((message) => updates(message as DeleteUserDataRequest)) as DeleteUserDataRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static DeleteUserDataRequest create() => DeleteUserDataRequest._();
+  DeleteUserDataRequest createEmptyInstance() => create();
+  static $pb.PbList<DeleteUserDataRequest> createRepeated() => $pb.PbList<DeleteUserDataRequest>();
+  @$core.pragma('dart2js:noInline')
+  static DeleteUserDataRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<DeleteUserDataRequest>(create);
+  static DeleteUserDataRequest? _defaultInstance;
+}
+
 /// Group service
 class ListGroupsRequest extends $pb.GeneratedMessage {
   factory ListGroupsRequest({
