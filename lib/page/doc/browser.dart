@@ -144,6 +144,57 @@ class _DocListState extends State<DocList> {
   }
 
   void playDocPage() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 16),
+              const Text(
+                '选择播放模式',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.movie_filter,
+                    size: 32, color: Colors.blue),
+                title: const Text('流年'),
+                subtitle: const Text(
+                  '自动上浮，像电影片尾一样播放',
+                  style: TextStyle(color: Colors.grey),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _navigateToScene(SceneMode.scroll);
+                },
+              ),
+              ListTile(
+                leading:
+                    const Icon(Icons.slideshow, size: 32, color: Colors.orange),
+                title: const Text('聚焦'),
+                subtitle: const Text(
+                  '一文一停，专注于每一篇图文细节',
+                  style: TextStyle(color: Colors.grey),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _navigateToScene(SceneMode.focus);
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _navigateToScene(SceneMode mode) {
     const Duration tim = Duration(milliseconds: 800);
     Navigator.push(
         context,
@@ -152,6 +203,7 @@ class _DocListState extends State<DocList> {
             return ScenePage(
               docs: docsManager.items,
               group: widget.group,
+              mode: mode,
             );
           },
           transitionDuration: tim,
@@ -369,7 +421,7 @@ class _DocListState extends State<DocList> {
             thickness: 0.5,
             indent: 20,
             endIndent: 20,
-            color: Colors.grey.withOpacity(0.2)),
+            color: Colors.grey.withValues(alpha: 0.2)),
 
         // 完整内容
         Padding(
@@ -813,7 +865,7 @@ class _DocListState extends State<DocList> {
                     ),
                   );
                 },
-                child: Container(
+                child: SizedBox(
                   width: bubbleWidth,
                   height: bubbleHeight,
                   child: CustomPaint(

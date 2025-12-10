@@ -3,13 +3,13 @@ import 'package:whispering_time/util/time.dart';
 
 class TimeDisplay extends StatefulWidget {
   final DateTime time;
-  const TimeDisplay({Key? key, required this.time}) : super(key: key);
+  const TimeDisplay({Key? key, required this.time});
 
   @override
-  _TimeDisplayState createState() => _TimeDisplayState();
+  TimeDisplayState createState() => TimeDisplayState();
 }
 
-class _TimeDisplayState extends State<TimeDisplay> {
+class TimeDisplayState extends State<TimeDisplay> {
   bool _showAbsolute = false;
 
   String _getRelativeTime(DateTime time) {
@@ -30,14 +30,14 @@ class _TimeDisplayState extends State<TimeDisplay> {
     }
     if (diff.inDays < 30) {
       int weeks = (diff.inDays / 7).floor();
-      return '${weeks}周前';
+      return '$weeks周前';
     }
     if (diff.inDays < 365) {
       int months = (diff.inDays / 30).floor();
-      return '${months}月前';
+      return '$months月前';
     }
     int years = (diff.inDays / 365).floor();
-    return '${years}年前';
+    return '$years年前';
   }
 
   @override

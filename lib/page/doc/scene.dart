@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -6,10 +7,22 @@ import 'package:whispering_time/page/doc/model.dart';
 import 'package:whispering_time/page/group/model.dart';
 import 'package:whispering_time/service/isar/config.dart';
 
+enum SceneMode {
+  scroll, // 流年
+  focus, // 聚焦
+}
+
 class ScenePage extends StatefulWidget {
   final Group group;
   final List<Doc> docs;
-  const ScenePage({super.key, required this.docs, required this.group});
+  final SceneMode mode;
+
+  const ScenePage({
+    super.key,
+    required this.docs,
+    required this.group,
+    this.mode = SceneMode.scroll,
+  });
 
   @override
   State<ScenePage> createState() => _ScenePageState();
@@ -17,14 +30,21 @@ class ScenePage extends StatefulWidget {
 
 class _ScenePageState extends State<ScenePage> with WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
+  late PageController _pageController;
   bool _isPlaying = true;
+  Timer? _slideTimer;
 
   @override
   void initState() {
     super.initState();
+    _pageController = PageController();
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _startAutoScroll(delay: true);
+      if (widget.mode == SceneMode.scroll) {
+        _startAutoScroll(delay: true);
+      } else {
+        _startSlideShow();
+      }
     });
   }
 
@@ -32,6 +52,8 @@ class _ScenePageState extends State<ScenePage> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _scrollController.dispose();
+    _pageController.dispose();
+    _slideTimer?.cancel();
     super.dispose();
   }
 
@@ -40,10 +62,18 @@ class _ScenePageState extends State<ScenePage> with WidgetsBindingObserver {
     if (Config.instance.keepAnimationWhenLostFocus) return;
     if (state == AppLifecycleState.resumed) {
       if (_isPlaying) {
-        _startAutoScroll();
+        if (widget.mode == SceneMode.scroll) {
+          _startAutoScroll();
+        } else {
+          _startSlideShow();
+        }
       }
     } else {
-      _stopAutoScroll();
+      if (widget.mode == SceneMode.scroll) {
+        _stopAutoScroll();
+      } else {
+        _stopSlideShow();
+      }
     }
   }
 
@@ -51,6 +81,33 @@ class _ScenePageState extends State<ScenePage> with WidgetsBindingObserver {
     if (_scrollController.hasClients) {
       _scrollController.jumpTo(_scrollController.offset);
     }
+  }
+
+  void _stopSlideShow() {
+    _slideTimer?.cancel();
+  }
+
+  void _startSlideShow() {
+    if (!mounted || !_isPlaying) return;
+    _slideTimer?.cancel();
+    // 幻灯片：每页停留 5 秒
+    _slideTimer = Timer(const Duration(seconds: 5), () {
+      if (!mounted || !_isPlaying) return;
+      if (_pageController.hasClients &&
+          _pageController.page! < widget.docs.length) {
+        _pageController
+            .nextPage(
+          duration: const Duration(milliseconds: 800),
+          curve: Curves.easeInOut,
+        )
+            .then((_) {
+          if (mounted && _isPlaying) _startSlideShow();
+        });
+      } else {
+        // 播放结束
+        if (mounted) Navigator.of(context).pop();
+      }
+    });
   }
 
   void _startAutoScroll({bool delay = false}) {
@@ -101,9 +158,17 @@ class _ScenePageState extends State<ScenePage> with WidgetsBindingObserver {
       _isPlaying = !_isPlaying;
     });
     if (_isPlaying) {
-      _startAutoScroll();
+      if (widget.mode == SceneMode.scroll) {
+        _startAutoScroll();
+      } else {
+        _startSlideShow();
+      }
     } else {
-      _stopAutoScroll();
+      if (widget.mode == SceneMode.scroll) {
+        _stopAutoScroll();
+      } else {
+        _stopSlideShow();
+      }
     }
   }
 
@@ -116,62 +181,81 @@ class _ScenePageState extends State<ScenePage> with WidgetsBindingObserver {
     return Scaffold(
       body: Stack(
         children: [
+          // Background
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Theme.of(context).colorScheme.surface,
+                  Theme.of(context)
+                      .colorScheme
+                      .surfaceContainerHighest
+                      .withValues(alpha: 0.3),
+                ],
+              ),
+            ),
+          ),
           GestureDetector(
             onTap: _togglePlay,
-            child: ListView(
-              controller: _scrollController,
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
-                Container(
-                  height: screenHeight,
-                  alignment: Alignment.center,
-                  child: _buildTitle(
-                    widget.group.name,
-                    widget.docs.isNotEmpty
-                        ? "始于 ${widget.docs.last.createAtString}"
-                        : "",
-                  ),
-                ),
-                ...widget.docs.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final doc = entry.value;
-                  final previousDocTime =
-                      index > 0 ? widget.docs[index - 1].createAt : null;
-                  return Column(
-                    children: [
-                      DocItemWidget(
-                        doc: doc,
-                        previousDocTime: previousDocTime,
-                      ),
-                      SizedBox(height: gap),
-                    ],
-                  );
-                }),
-                SizedBox(height: screenHeight * 0.5), // 结束位置：让最后一个内容滚出屏幕
-              ],
-            ),
+            child: widget.mode == SceneMode.scroll
+                ? _buildScrollView(screenHeight, gap)
+                : _buildFocusView(),
           ),
           Positioned(
             top: 0,
             left: 0,
+            right: 0,
             child: SafeArea(
               child: IgnorePointer(
                 ignoring: _isPlaying,
                 child: AnimatedOpacity(
                   opacity: _isPlaying ? 0.0 : 1.0,
-                  duration: const Duration(milliseconds: 1000),
-                  child: Container(
-                    margin: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .surface
-                          .withValues(alpha: 0.5),
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.of(context).pop(),
+                  duration: const Duration(milliseconds: 300),
+                  child: Center(
+                    child: Container(
+                      margin: const EdgeInsets.only(top: 20),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .surface
+                            .withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(50),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () => Navigator.of(context).pop(),
+                            tooltip: '退出',
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            "已暂停",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          IconButton(
+                            icon: const Icon(Icons.play_arrow),
+                            onPressed: _togglePlay,
+                            tooltip: '继续',
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -183,10 +267,76 @@ class _ScenePageState extends State<ScenePage> with WidgetsBindingObserver {
     );
   }
 
+  Widget _buildScrollView(double screenHeight, double gap) {
+    return ListView(
+      controller: _scrollController,
+      physics: const NeverScrollableScrollPhysics(),
+      children: [
+        Container(
+          height: screenHeight,
+          alignment: Alignment.center,
+          child: _buildTitle(
+            widget.group.name,
+            widget.docs.isNotEmpty
+                ? "始于 ${widget.docs.last.createAtString}"
+                : "",
+          ),
+        ),
+        ...widget.docs.asMap().entries.map((entry) {
+          final index = entry.key;
+          final doc = entry.value;
+          final previousDocTime =
+              index > 0 ? widget.docs[index - 1].createAt : null;
+          return Column(
+            children: [
+              DocItemWidget(
+                doc: doc,
+                previousDocTime: previousDocTime,
+              ),
+              SizedBox(height: gap),
+            ],
+          );
+        }),
+        SizedBox(height: screenHeight * 0.5), // 结束位置：让最后一个内容滚出屏幕
+      ],
+    );
+  }
+
+  Widget _buildFocusView() {
+    return PageView.builder(
+      controller: _pageController,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: widget.docs.length + 1,
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return Center(
+            child: _buildTitle(
+              widget.group.name,
+              widget.docs.isNotEmpty
+                  ? "始于 ${widget.docs.last.createAtString}"
+                  : "",
+            ),
+          );
+        }
+        final docIndex = index - 1;
+        final doc = widget.docs[docIndex];
+        final previousDocTime =
+            docIndex > 0 ? widget.docs[docIndex - 1].createAt : null;
+        return Center(
+          child: SingleChildScrollView(
+            child: DocItemWidget(
+              doc: doc,
+              previousDocTime: previousDocTime,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildTitle(String title, String subtitle) {
-    const double fontSize = 30;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32.0),
+      padding: const EdgeInsets.symmetric(horizontal: 40.0),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -194,13 +344,35 @@ class _ScenePageState extends State<ScenePage> with WidgetsBindingObserver {
           Text(
             title,
             style: const TextStyle(
-                fontSize: fontSize, fontWeight: FontWeight.bold),
+              fontSize: 32,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.5,
+              height: 1.3,
+            ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 24),
           Text(
             subtitle,
-            style: TextStyle(fontSize: fontSize - 4, color: Colors.grey),
+            style: TextStyle(
+              fontSize: 16,
+              color: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.color
+                  ?.withValues(alpha: 0.6),
+              fontStyle: FontStyle.italic,
+              letterSpacing: 0.5,
+            ),
             textAlign: TextAlign.center,
             maxLines: 10,
             overflow: TextOverflow.ellipsis,
@@ -273,7 +445,6 @@ class _DocItemWidgetState extends State<DocItemWidget> {
 
   @override
   Widget build(BuildContext context) {
-    const double fontSize = 30;
     final relativeTime = _getRelativeTime();
     final exactTime = DateFormat('MM月dd日 HH:mm').format(widget.doc.createAt);
 
@@ -286,40 +457,75 @@ class _DocItemWidgetState extends State<DocItemWidget> {
           Text(
             widget.doc.title,
             style: const TextStyle(
-                fontSize: fontSize, fontWeight: FontWeight.bold),
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              height: 1.4,
+            ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (relativeTime != null) ...[
-                      Text(
-                        relativeTime,
-                        style:
-                            const TextStyle(color: Colors.grey, fontSize: 14),
-                      ),
-                      const SizedBox(width: 8),
-                    ],
-                    Text(
-                      exactTime,
-                      style: const TextStyle(color: Colors.grey, fontSize: 14),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (relativeTime != null) ...[
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .primaryContainer
+                        .withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    relativeTime,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
                     ),
-                  ],
+                  ),
                 ),
-                Text(
-                  widget.doc.levelString,
-                  style: const TextStyle(color: Colors.grey, fontSize: 14),
-                ),
+                const SizedBox(width: 8),
               ],
-            ),
+              Text(
+                exactTime,
+                style: TextStyle(
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.color
+                      ?.withValues(alpha: 0.6),
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                "·",
+                style: TextStyle(
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.color
+                      ?.withValues(alpha: 0.4),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                widget.doc.levelString,
+                style: TextStyle(
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.color
+                      ?.withValues(alpha: 0.6),
+                  fontSize: 13,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 32),
           QuillEditor(
             controller: _controller,
             focusNode: _focusNode,
