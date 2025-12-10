@@ -1,4 +1,4 @@
-package com.example.whisperingtime
+package com.acered.whisperingtime
 
 import io.flutter.embedding.android.FlutterActivity
 
