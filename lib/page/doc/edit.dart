@@ -7,13 +7,17 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
 import 'package:whispering_time/page/doc/model.dart';
+import 'package:whispering_time/page/doc/zk_model.dart';
 import 'package:whispering_time/page/group/model.dart';
 import 'package:whispering_time/page/group/manager.dart';
 import 'package:whispering_time/service/grpc/grpc.dart';
+import 'package:whispering_time/service/scale/scale_service.dart';
+import 'package:whispering_time/service/scale/scale_service_grpc.dart';
 import 'package:whispering_time/page/doc/edit_embed.dart';
+import 'package:whispering_time/page/doc/edit_page_body.dart';
 import 'package:whispering_time/util/export.dart';
 import 'package:whispering_time/util/secure.dart';
-import 'package:whispering_time/page/doc/setting.dart';
+import 'package:whispering_time/util/time.dart';
 import 'package:whispering_time/util/env.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
@@ -36,18 +40,56 @@ class EditPage extends StatefulWidget {
   State<EditPage> createState() => _EditPageState();
 }
 
+class _DocDrawerExpansionTile extends StatelessWidget {
+  final IconData leadingIcon;
+  final String title;
+  final String subtitle;
+  final List<Widget> children;
+
+  const _DocDrawerExpansionTile({
+    required this.leadingIcon,
+    required this.title,
+    required this.subtitle,
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ExpansionTile(
+      leading: Icon(leadingIcon),
+      title: Text(title),
+      subtitle: Text(subtitle),
+      children: children,
+    );
+  }
+}
+
 class _EditPageState extends State<EditPage> {
   late TextEditingController titleController;
   late QuillController quillController;
+  late TextEditingController _markdownController;
   late FocusNode _focusNode;
   late int level;
   late DocConfig config;
   late DateTime createAt;
-  bool isLevelSelected = true;
+  late final DocumentModel _documentModel;
+  late final ScaleService _scaleService;
   bool _isEditingTitle = false;
   Timer? _autoSaveTimer;
   bool _canPop = false;
   Future<bool>? _creatingDoc;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  bool _showScalePanel = true;
+  bool _showImageTextPanel = true;
+
+  ImageTextLayout _imageTextLayout = ImageTextLayout.mixed;
+  TextFormat _textFormat = TextFormat.richText;
+
+  bool get _canEditDocSettings {
+    if (widget.doc.id.isEmpty) return true;
+    return !widget.group.isFreezedOrBuf();
+  }
 
   @override
   void initState() {
@@ -55,15 +97,20 @@ class _EditPageState extends State<EditPage> {
     _focusNode = FocusNode();
     titleController = TextEditingController(text: widget.doc.title);
 
-    // 初始化富文本编辑器
-    if (widget.doc.content.isNotEmpty) {
-      quillController = QuillController(
-        document: Document.fromJson(jsonDecode(widget.doc.content)),
-        selection: const TextSelection.collapsed(offset: 0),
-      );
-    } else {
-      quillController = QuillController.basic();
-    }
+    _scaleService = ScaleServiceGrpc();
+
+    // ZKA payload: scales-only JSON list (preferred), with backward-compatible parsing.
+    final decoded = ZkDocPayload.tryDecodeJson(widget.doc.content);
+    final scales = ZkDocPayload.extractScales(decoded);
+    _documentModel = DocumentModel(scales: scales);
+
+    // 富文本不再参与持久化（仅保留 UI，不保存到服务器）
+    quillController = QuillController.basic();
+
+    // Markdown editor controller (stores plain text; can be synced with quill)
+    _markdownController = TextEditingController(
+      text: quillController.document.toPlainText().trimRight(),
+    );
 
     // 监听文档变化，拦截图片插入
     quillController.document.changes.listen(_onDocumentChange);
@@ -74,6 +121,314 @@ class _EditPageState extends State<EditPage> {
 
     // Default to non-editing title state even for brand new docs; user can tap to edit.
     _isEditingTitle = false;
+  }
+
+  @override
+  void dispose() {
+    titleController.dispose();
+    quillController.dispose();
+    _markdownController.dispose();
+    _focusNode.dispose();
+    _documentModel.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: _canPop,
+      onPopInvokedWithResult: _onPopInvoked,
+      child: Scaffold(
+        key: _scaffoldKey,
+        appBar: AppBar(
+          title: _isEditingTitle
+              ? TextField(
+                  controller: titleController,
+                  autofocus: true,
+                  style: Theme.of(context).textTheme.titleLarge,
+                  textInputAction: TextInputAction.done,
+                  decoration: InputDecoration(
+                    hintText: '未命名的标题',
+                    hintStyle: TextStyle(color: Colors.grey),
+                    border: InputBorder.none,
+                  ),
+                  onSubmitted: (_) {
+                    save();
+                    setState(() {
+                      _isEditingTitle = false;
+                    });
+                  },
+                )
+              : GestureDetector(
+                  onTap: () {
+                    if (!widget.group.isFreezedOrBuf() ||
+                        widget.doc.id.isEmpty) {
+                      setState(() {
+                        _isEditingTitle = true;
+                      });
+                    }
+                  },
+                  child: Text(
+                    titleController.text.isEmpty
+                        ? '未命名的标题'
+                        : titleController.text,
+                    style: TextStyle(
+                      color: titleController.text.isEmpty ? Colors.grey : null,
+                    ),
+                  ),
+                ),
+          actions: [
+            if (_isEditingTitle)
+              IconButton(
+                icon: Icon(Icons.check),
+                onPressed: () {
+                  save();
+                  setState(() {
+                    _isEditingTitle = false;
+                  });
+                },
+                tooltip: '保存标题',
+              )
+            else ...[
+              IconButton(
+                tooltip: '菜单',
+                icon: Icon(Icons.menu),
+                onPressed: () {
+                  _scaffoldKey.currentState?.openEndDrawer();
+                },
+              ),
+            ],
+          ],
+        ),
+        endDrawer: Drawer(
+          child: SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: ListView(
+                    padding: EdgeInsets.zero,
+                    children: [
+                      // 关键UI: 文档抽屉
+                      const Padding(
+                        padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+                        child: Text(
+                          '文档',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      _DocDrawerExpansionTile(
+                        leadingIcon: Icons.layers_outlined,
+                        title: '分级',
+                        subtitle: Level.l[level],
+                        children: [
+                          RadioGroup<int>(
+                            groupValue: level,
+                            onChanged: (v) {
+                              if (!_canEditDocSettings) return;
+                              if (v == null) return;
+                              setState(() {
+                                level = v;
+                              });
+                            },
+                            child: Column(
+                              children: List.generate(
+                                Level.l.length,
+                                (index) => RadioListTile<int>(
+                                  value: index,
+                                  title: Text(Level.l[index]),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.access_time),
+                        title: const Text('创建时间'),
+                        trailing: Text(
+                          Time.string(createAt),
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        enabled: _canEditDocSettings,
+                        onTap: _canEditDocSettings ? _pickCreateTime : null,
+                      ),
+
+                      const Divider(height: 1),
+                      const Padding(
+                        padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+                        child: Text(
+                          '模块',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      SwitchListTile(
+                        secondary: const Icon(Icons.straighten),
+                        value: _showScalePanel,
+                        onChanged: (v) {
+                          setState(() {
+                            _showScalePanel = v;
+                          });
+                        },
+                        title: const Text('刻度面板'),
+                        subtitle: const Text('显示/隐藏刻度面板'),
+                      ),
+                      // 图文面板
+                      SwitchListTile(
+                        secondary: const Icon(Icons.image_outlined),
+                        value: _showImageTextPanel,
+                        onChanged: (v) {
+                          setState(() {
+                            _showImageTextPanel = v;
+                          });
+                        },
+                        title: const Text(
+                          '图文面板',
+                        ),
+                        subtitle: const Text('显示/隐藏图文面板'),
+                      ),
+                      if (_showImageTextPanel) ...[
+                        // 图文排版
+                        _DocDrawerExpansionTile(
+                          leadingIcon: Icons.view_quilt_outlined,
+                          title: '图文排版',
+                          subtitle: _imageTextLayout == ImageTextLayout.mixed
+                              ? '混排'
+                              : '分割',
+                          children: [
+                            RadioGroup<ImageTextLayout>(
+                              groupValue: _imageTextLayout,
+                              onChanged: (v) {
+                                if (v == null) return;
+                                _setImageTextLayout(v);
+                              },
+                              child: Column(
+                                children: const [
+                                  RadioListTile<ImageTextLayout>(
+                                    value: ImageTextLayout.mixed,
+                                    title: Text('混排'),
+                                    subtitle: Text('公众号文章，邮件等'),
+                                  ),
+                                  RadioListTile<ImageTextLayout>(
+                                    value: ImageTextLayout.separated,
+                                    title: Text('分割'),
+                                    subtitle: Text('朋友圈、微博等'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_imageTextLayout == ImageTextLayout.mixed) ...[
+                          _DocDrawerExpansionTile(
+                            leadingIcon: Icons.text_fields,
+                            title: '文本格式',
+                            subtitle: _textFormat == TextFormat.richText
+                                ? '富文本'
+                                : 'Markdown',
+                            children: [
+                              RadioGroup<TextFormat>(
+                                groupValue: _textFormat,
+                                onChanged: (v) {
+                                  if (v == null) return;
+                                  _setTextFormat(v);
+                                },
+                                child: Column(
+                                  children: const [
+                                    RadioListTile<TextFormat>(
+                                      value: TextFormat.richText,
+                                      title: Text('富文本'),
+                                      subtitle: Text('支持图片、格式、工具栏'),
+                                    ),
+                                    RadioListTile<TextFormat>(
+                                      value: TextFormat.markdown,
+                                      title: Text('Markdown'),
+                                      subtitle: Text('纯文本输入，适合快速记录'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          SwitchListTile(
+                            secondary: const Icon(Icons.build),
+                            title: const Text('显示工具栏'),
+                            subtitle: const Text('含图片上传'),
+                            value: config.isShowTool ?? false,
+                            onChanged: (_canEditDocSettings &&
+                                    _textFormat == TextFormat.richText)
+                                ? (value) => _setShowToolbar(value)
+                                : null,
+                          ),
+                        ],
+                      ],
+                      const Divider(height: 1),
+                      const Padding(
+                        padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+                        child: Text(
+                          '其他',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      ListTile(
+                        leading: Icon(Icons.download_outlined),
+                        title: Text('导出'),
+                        trailing: Icon(Icons.chevron_right, size: 18),
+                        onTap: () {
+                          Navigator.of(context).maybePop();
+                          dialogExport();
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.delete, color: Colors.red),
+                  title: const Text(
+                    '删除页面',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  enabled: _canEditDocSettings,
+                  onTap: _canEditDocSettings ? _deleteFromDrawer : null,
+                ),
+              ],
+            ),
+          ),
+        ),
+        body: Padding(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 面板
+              Expanded(
+                child: ChangeNotifierProvider.value(
+                  value: _documentModel,
+                  child: EditPageBody(
+                    quillController: quillController,
+                    focusNode: _focusNode,
+                    showToolbar: _imageTextLayout == ImageTextLayout.mixed &&
+                        _textFormat == TextFormat.richText &&
+                        (config.isShowTool ?? false),
+                    onPaste: paste,
+                    embedBuilders: _getCustomEmbedBuilders(),
+                    scaleService: _scaleService,
+                    showScalePanel: _showScalePanel,
+                    showImageTextPanel: _showImageTextPanel,
+                    imageTextLayout: _imageTextLayout,
+                    textFormat: _textFormat,
+                    markdownController: _markdownController,
+                    onImageTextLayoutChanged: _setImageTextLayout,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _startAutoSaveTimer() {
@@ -98,6 +453,9 @@ class _EditPageState extends State<EditPage> {
 
   // 检查正文是否包含有效内容（文本或图片等嵌入）
   bool _hasMeaningfulContent() {
+    if (_documentModel.scales.isNotEmpty) {
+      return true;
+    }
     if (quillController.document.toPlainText().trim().isNotEmpty) {
       return true;
     }
@@ -323,12 +681,37 @@ class _EditPageState extends State<EditPage> {
     });
   }
 
-  @override
-  void dispose() {
-    titleController.dispose();
-    quillController.dispose();
-    _focusNode.dispose();
-    super.dispose();
+  void _setImageTextLayout(ImageTextLayout next) {
+    if (_imageTextLayout == next) return;
+    setState(() {
+      _imageTextLayout = next;
+    });
+  }
+
+  void _setTextFormat(TextFormat next) {
+    if (_textFormat == next) return;
+
+    // Sync content between editors so switching format reflects latest edits.
+    if (next == TextFormat.markdown) {
+      _markdownController.text =
+          quillController.document.toPlainText().trimRight();
+    } else {
+      final text = _markdownController.text;
+      final currentLen = quillController.document.length;
+      if (currentLen > 0) {
+        quillController.replaceText(0, currentLen, text, null);
+      } else {
+        quillController.document.insert(0, text);
+      }
+      quillController.updateSelection(
+        TextSelection.collapsed(offset: quillController.document.length),
+        ChangeSource.local,
+      );
+    }
+
+    setState(() {
+      _textFormat = next;
+    });
   }
 
   // 获取自定义的嵌入构建器，自动拼接图片服务器地址
@@ -344,221 +727,14 @@ class _EditPageState extends State<EditPage> {
     ];
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return PopScope(
-      canPop: _canPop,
-      onPopInvokedWithResult: _onPopInvoked,
-      child: Scaffold(
-        appBar: AppBar(
-          title: _isEditingTitle
-              ? TextField(
-                  controller: titleController,
-                  autofocus: true,
-                  style: Theme.of(context).textTheme.titleLarge,
-                  textInputAction: TextInputAction.done,
-                  decoration: InputDecoration(
-                    hintText: '未命名的标题',
-                    hintStyle: TextStyle(color: Colors.grey),
-                    border: InputBorder.none,
-                  ),
-                  onSubmitted: (_) {
-                    save();
-                    setState(() {
-                      _isEditingTitle = false;
-                    });
-                  },
-                )
-              : GestureDetector(
-                  onTap: () {
-                    if (!widget.group.isFreezedOrBuf() ||
-                        widget.doc.id.isEmpty) {
-                      setState(() {
-                        _isEditingTitle = true;
-                      });
-                    }
-                  },
-                  child: Text(
-                    titleController.text.isEmpty
-                        ? '未命名的标题'
-                        : titleController.text,
-                    style: TextStyle(
-                      color: titleController.text.isEmpty ? Colors.grey : null,
-                    ),
-                  ),
-                ),
-          actions: [
-            if (_isEditingTitle)
-              IconButton(
-                icon: Icon(Icons.check),
-                onPressed: () {
-                  save();
-                  setState(() {
-                    _isEditingTitle = false;
-                  });
-                },
-                tooltip: '保存标题',
-              )
-            else ...[
-              PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == 'settings') {
-                    dialogSettings();
-                  } else if (value == 'export') {
-                    dialogExport();
-                  }
-                },
-                itemBuilder: (BuildContext context) {
-                  return [
-                    PopupMenuItem<String>(
-                      value: 'settings',
-                      child: Row(
-                        children: [
-                          Icon(Icons.settings, size: 20, color: Colors.grey),
-                          SizedBox(width: 8),
-                          Text('设置'),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem<String>(
-                      value: 'export',
-                      child: Row(
-                        children: [
-                          Icon(Icons.download, size: 20, color: Colors.grey),
-                          SizedBox(width: 8),
-                          Text('导出'),
-                        ],
-                      ),
-                    ),
-                  ];
-                },
-              ),
-            ],
-          ],
-        ),
-        body: Padding(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 标题和分级选择
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // 分级选择按钮
-                  TextButton(
-                    onPressed: widget.doc.id.isEmpty
-                        ? _showLevelDialog
-                        : (widget.group.isFreezedOrBuf()
-                            ? null
-                            : _showLevelDialog),
-                    style: TextButton.styleFrom(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    ),
-                    child: Text(Level.l[level]),
-                  ),
-                ],
-              ),
-              SizedBox(height: 12),
-
-              // 工具栏
-              if (config.isShowTool!)
-                QuillSimpleToolbar(
-                  controller: quillController,
-                  config: QuillSimpleToolbarConfig(
-                    color: Colors.transparent,
-                    toolbarSize: 35,
-                    multiRowsDisplay: false,
-                    embedButtons: FlutterQuillEmbeds.toolbarButtons(),
-                  ),
-                ),
-
-              // 富文本编辑器 - 使用自适应高度
-              Expanded(
-                child: Container(
-                  decoration: !quillController.document.isEmpty()
-                      ? null
-                      : BoxDecoration(
-                          border: Border.all(color: Colors.grey[300]!),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                  child: CallbackShortcuts(
-                    bindings: {
-                      const SingleActivator(LogicalKeyboardKey.keyV,
-                          meta: true): paste,
-                      const SingleActivator(LogicalKeyboardKey.keyV,
-                          control: true): paste,
-                    },
-                    child: QuillEditor(
-                      controller: quillController,
-                      focusNode: _focusNode,
-                      scrollController: ScrollController(),
-                      config: QuillEditorConfig(
-                        embedBuilders: _getCustomEmbedBuilders(),
-                        scrollable: true,
-                        autoFocus: false,
-                        expands: false,
-                        padding: EdgeInsets.all(12),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   // 显示分级选择对话框
-  void _showLevelDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('选择分级'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: List.generate(Level.l.length, (index) {
-              return ListTile(
-                title: Text(Level.l[index]),
-                leading: RadioGroup(
-                  groupValue: level,
-                  onChanged: (int? value) {
-                    if (value != null) {
-                      setState(() {
-                        level = value;
-                      });
-                      Navigator.of(context).pop();
-                    }
-                  },
-                  child: Radio<int>(
-                    value: index,
-                  ),
-                ),
-                onTap: () {
-                  setState(() {
-                    level = index;
-                  });
-                  Navigator.of(context).pop();
-                },
-              );
-            }),
-          ),
-        );
-      },
-    );
-  }
 
   // 保存文档
   Future<void> save() async {
-    String content = jsonEncode(quillController.document.toDelta().toJson());
-    final oldFileIds = _extractFileIds(widget.doc.content);
-    final newFileIds = _extractFileIds(content);
-    final removedFileIds = oldFileIds.difference(newFileIds);
+    // Persist scales only: JSON string of scale instances (no rich text, no version field).
+    final content = jsonEncode(
+      _documentModel.scales.map((s) => s.toJson()).toList(growable: false),
+    );
     bool persisted = false;
     final bool hasMeaningfulContent = _hasMeaningfulContent();
 
@@ -619,7 +795,7 @@ class _EditPageState extends State<EditPage> {
       return;
     }
 
-    await _deleteRemovedFiles(removedFileIds);
+    // Rich text is not persisted anymore, so skip rich-based file cleanup.
 
     // 返回更新后的文档
     Doc updatedDoc = Doc(
@@ -647,8 +823,13 @@ class _EditPageState extends State<EditPage> {
     final completer = Completer<bool>();
     _creatingDoc = completer.future;
 
-    final docContent =
-        content ?? jsonEncode(quillController.document.toDelta().toJson());
+    final docContent = content ??
+        jsonEncode(
+          ZkDocPayload.build(
+            rich: quillController.document.toDelta().toJson(),
+            scales: _documentModel.scales,
+          ),
+        );
     final req = RequestCreateDoc(
       content: docContent,
       title: titleController.text,
@@ -696,93 +877,6 @@ class _EditPageState extends State<EditPage> {
     }
   }
 
-  Set<String> _extractFileIds(String contentJson) {
-    if (contentJson.isEmpty) return {};
-    try {
-      final data = jsonDecode(contentJson);
-      if (data is! List) return {};
-      final ids = <String>{};
-      for (final op in data) {
-        if (op is Map && op['insert'] is Map) {
-          final insertMap = op['insert'] as Map;
-          if (insertMap['image'] is String) {
-            final src = insertMap['image'] as String;
-            if (src.startsWith('file:')) {
-              ids.add(src.substring(5));
-            }
-          }
-        }
-      }
-      return ids;
-    } catch (_) {
-      return {};
-    }
-  }
-
-  Future<void> _deleteRemovedFiles(Set<String> ids) async {
-    if (ids.isEmpty) return;
-    for (final id in ids) {
-      try {
-        await Grpc(gid: widget.group.id, did: widget.doc.id).deleteFile(id);
-      } catch (_) {
-        // best effort; ignore
-      }
-    }
-  }
-
-  // 弹窗: 设置
-  void dialogSettings() async {
-    final groupsManager = context.read<GroupsManager>();
-
-    final result = await showDialog<Map<String, dynamic>>(
-        context: context,
-        builder: (context) => ChangeNotifierProvider.value(
-              value: groupsManager,
-              child: DocSettingsDialog(
-                gid: widget.group.id,
-                did: widget.doc.id.isEmpty ? null : widget.doc.id,
-                createAt: createAt,
-                config: config,
-              ),
-            ));
-
-    if (result != null) {
-      // 如果删除了文档
-      if (result['deleted'] == true) {
-        _touchGroupActivity();
-        widget.onDelete();
-        if (mounted) {
-          Navigator.of(context).pop();
-        }
-        return;
-      }
-
-      // 如果有修改
-      if (result['changed'] == true) {
-        if (widget.doc.id.isNotEmpty) {
-          RequestUpdateDoc req = RequestUpdateDoc(createAt: result['createAt']);
-          req.config = result['config'];
-          final res =
-              await Grpc(gid: widget.group.id, did: widget.doc.id).putDoc(req);
-          if (res.isNotOK) {
-            return;
-          }
-
-          _touchGroupActivity();
-        }
-
-        setState(() {
-          if (result['createAt'] != null) {
-            createAt = result['createAt'];
-          }
-          if (result['config'] != null) {
-            config = result['config'];
-          }
-        });
-      }
-    }
-  }
-
   // 弹窗: 导出
   void dialogExport() {
     showDialog(
@@ -799,5 +893,126 @@ class _EditPageState extends State<EditPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _setShowToolbar(bool value) async {
+    setState(() {
+      config.isShowTool = value;
+    });
+
+    if (widget.doc.id.isEmpty) return;
+
+    final res = await Grpc(gid: widget.group.id, did: widget.doc.id)
+        .putDoc(RequestUpdateDoc(config: DocConfig(isShowTool: value)));
+    if (res.isNotOK) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('设置失败')),
+      );
+      return;
+    }
+
+    _touchGroupActivity();
+  }
+
+  Future<void> _pickCreateTime() async {
+    DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: createAt,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+      locale: const Locale('zh'),
+    );
+
+    pickedDate ??= createAt;
+
+    if (!mounted) return;
+
+    final pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(createAt),
+    );
+
+    final DateTime newCreateAt;
+    if (pickedTime == null) {
+      newCreateAt = DateTime(
+        pickedDate.year,
+        pickedDate.month,
+        pickedDate.day,
+        createAt.hour,
+        createAt.minute,
+        0,
+      );
+    } else {
+      newCreateAt = DateTime(
+        pickedDate.year,
+        pickedDate.month,
+        pickedDate.day,
+        pickedTime.hour,
+        pickedTime.minute,
+        0,
+      );
+    }
+
+    if (createAt == newCreateAt) return;
+
+    setState(() {
+      createAt = newCreateAt;
+    });
+
+    if (widget.doc.id.isEmpty) return;
+
+    final res = await Grpc(gid: widget.group.id, did: widget.doc.id)
+        .putDoc(RequestUpdateDoc(createAt: newCreateAt));
+    if (res.isNotOK) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('时间设置失败')),
+      );
+      return;
+    }
+
+    _touchGroupActivity();
+  }
+
+  Future<void> _deleteFromDrawer() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('确认删除'),
+        content: const Text('确定要删除这篇文档吗？此操作不可恢复。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('删除', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    if (widget.doc.id.isNotEmpty) {
+      final res =
+          await Grpc(gid: widget.group.id, did: widget.doc.id).deleteDoc();
+      if (!mounted) return;
+      if (res.isNotOK) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('删除失败')),
+        );
+        return;
+      }
+
+      _touchGroupActivity();
+    }
+
+    widget.onDelete();
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
   }
 }

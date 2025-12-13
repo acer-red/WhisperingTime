@@ -111,6 +111,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
               leading: Icon(Icons.settings_backup_restore),
               title: Text("配置管理"),
               onTap: () {
+                final navigator = Navigator.of(context);
                 showDialog(
                   context: context,
                   barrierDismissible: true,
@@ -118,8 +119,9 @@ class _HomeDrawerState extends State<HomeDrawer> {
                     return const ConfigManagementDialog();
                   },
                 ).then((needRefresh) {
-                  if (needRefresh == true && mounted) {
-                    Navigator.of(context).pushReplacement(
+                  if (!navigator.mounted) return;
+                  if (needRefresh == true) {
+                    navigator.pushReplacement(
                       MaterialPageRoute(builder: (_) => HomePage()),
                     );
                   }

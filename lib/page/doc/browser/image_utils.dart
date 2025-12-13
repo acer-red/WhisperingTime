@@ -10,9 +10,11 @@ class DocImage extends StatelessWidget {
   final String imageSource;
   final BoxFit fit;
 
-  const DocImage(
-      {Key? key, required this.imageSource, this.fit = BoxFit.contain})
-      : super(key: key);
+  const DocImage({
+    super.key,
+    required this.imageSource,
+    this.fit = BoxFit.contain,
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -24,6 +24,7 @@ class _Grpc {
   late pb.ImageServiceClient image;
   late pb.BackgroundJobServiceClient job;
   late pb.FileServiceClient file;
+  late pb.ScaleServiceClient scale;
   final Storage _storage = Storage();
 
   static final _Grpc instance = _Grpc._internal();
@@ -47,6 +48,7 @@ class _Grpc {
     image = pb.ImageServiceClient(_channel!);
     job = pb.BackgroundJobServiceClient(_channel!);
     file = pb.FileServiceClient(_channel!);
+    scale = pb.ScaleServiceClient(_channel!);
   }
 
   // 关键步骤: 构建带认证信息的metadata，对应 engine/grpcserver/auth.go
@@ -73,6 +75,16 @@ class _Grpc {
     final metadata = await _buildMetadata(extra: extra);
     return CallOptions(metadata: metadata);
   }
+}
+
+// Public helpers for other modules (avoid depending on private _Grpc type).
+Future<pb.ScaleServiceClient> grpcScaleClient() async {
+  await _Grpc.instance._ensureReady();
+  return _Grpc.instance.scale;
+}
+
+Future<CallOptions> grpcAuthOptions({Map<String, String>? extra}) {
+  return _Grpc.instance.authOptions(extra: extra);
 }
 
 // theme
@@ -481,12 +493,12 @@ class _CipherWithKey {
 
 class _DocCipher {
   final Uint8List title;
-  final Uint8List rich;
+  final Uint8List scales;
   final Uint8List level;
   final Uint8List encryptedKey;
   _DocCipher({
     required this.title,
-    required this.rich,
+    required this.scales,
     required this.level,
     required this.encryptedKey,
   });
@@ -510,18 +522,18 @@ class Grpc {
   }
 
   Future<_DocCipher> _encryptDocContent(
-      String title, String content, int level) async {
+      String title, String scalesJson, int level) async {
     final dataKey = Uint8List.fromList(await KeyManager.generateAES());
     final encryptedKey = await _storage.wrapDataKey(dataKey);
     final titleCipher =
         await _storage.encryptWithDataKey(dataKey, utf8.encode(title));
-    final richCipher =
-        await _storage.encryptWithDataKey(dataKey, utf8.encode(content));
+    final scalesCipher =
+        await _storage.encryptWithDataKey(dataKey, utf8.encode(scalesJson));
     final levelCipher =
         await _storage.encryptWithDataKey(dataKey, utf8.encode('$level'));
     return _DocCipher(
         title: titleCipher,
-        rich: richCipher,
+        scales: scalesCipher,
         level: levelCipher,
         encryptedKey: encryptedKey);
   }
@@ -632,7 +644,7 @@ class Grpc {
           final titleBytes = await _decryptBytes(
               Uint8List.fromList(d.content.title), d.permission);
           final contentBytes = await _decryptBytes(
-              Uint8List.fromList(d.content.rich), d.permission);
+              Uint8List.fromList(d.content.scales), d.permission);
           final level = await _decryptLevel(d.content.level, d.permission);
           return DDoc(
             title: utf8.decode(titleBytes),
@@ -746,8 +758,8 @@ class Grpc {
     final docs = await Future.wait(g.docs.map((d) async {
       final titleBytes = await _decryptBytes(
           Uint8List.fromList(d.content.title), d.permission);
-      final contentBytes =
-          await _decryptBytes(Uint8List.fromList(d.content.rich), d.permission);
+      final contentBytes = await _decryptBytes(
+          Uint8List.fromList(d.content.scales), d.permission);
       final level = await _decryptLevel(d.content.level, d.permission);
       return DDoc(
         title: utf8.decode(titleBytes),
@@ -877,12 +889,12 @@ class Grpc {
       try {
         final titleBytes = await _decryptBytes(
             Uint8List.fromList(d.content.title), d.permission);
-        final richBytes = await _decryptBytes(
-            Uint8List.fromList(d.content.rich), d.permission);
+        final scalesBytes = await _decryptBytes(
+            Uint8List.fromList(d.content.scales), d.permission);
         final level = await _decryptLevel(d.content.level, d.permission);
         return Doc(
           title: utf8.decode(titleBytes),
-          content: utf8.decode(richBytes),
+          content: utf8.decode(scalesBytes),
           level: level,
           createAt:
               DateTime.fromMillisecondsSinceEpoch(d.createAt.toInt() * 1000),
@@ -925,7 +937,7 @@ class Grpc {
     final content = pb.Content();
     content
       ..title = docCipher.title
-      ..rich = docCipher.rich
+      ..scales = docCipher.scales
       ..level = docCipher.level;
 
     final resp = await _Grpc.instance.doc.createDoc(
@@ -959,7 +971,7 @@ class Grpc {
             await _storage.encryptWithDataKey(dataKey, utf8.encode(req.title!));
       }
       if (req.content != null) {
-        content.rich = await _storage.encryptWithDataKey(
+        content.scales = await _storage.encryptWithDataKey(
             dataKey, utf8.encode(req.content!));
       }
       if (req.level != null) {

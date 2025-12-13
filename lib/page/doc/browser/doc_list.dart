@@ -315,7 +315,6 @@ class _DocListState extends State<DocList> {
             child: DocSettingsDialog(
                 gid: widget.group.id,
                 did: item.id,
-                createAt: item.createAt,
                 config: item.config,
                 fromBrowser: true)));
     if (result == null) return;
@@ -330,9 +329,6 @@ class _DocListState extends State<DocList> {
 
     if (result['changed'] == true) {
       setState(() {
-        if (result['createAt'] != null) {
-          item.createAt = result['createAt'];
-        }
         if (result['config'] != null) {
           item.config = result['config'];
         }

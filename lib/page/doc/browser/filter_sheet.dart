@@ -9,18 +9,18 @@ class FilterBottomSheet extends StatefulWidget {
   final Function(int, int, List<bool>) onChanged;
 
   const FilterBottomSheet({
-    Key? key,
+    super.key,
     required this.initialViewType,
     required this.initialSortType,
     required this.initialLevels,
     required this.onChanged,
-  }) : super(key: key);
+  });
 
   @override
-  _FilterBottomSheetState createState() => _FilterBottomSheetState();
+  State<FilterBottomSheet> createState() => FilterBottomSheetState();
 }
 
-class _FilterBottomSheetState extends State<FilterBottomSheet> {
+class FilterBottomSheetState extends State<FilterBottomSheet> {
   late int viewType;
   late int sortType;
   late List<bool> levels;

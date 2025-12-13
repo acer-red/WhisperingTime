@@ -1395,8 +1395,17 @@ class PDF {
           });
 
           // 创建印迹内容
+          final decoded = jsonDecode(doc.content);
+          final rich = (decoded is Map && decoded['rich'] is List)
+              ? decoded['rich']
+              : (decoded is List &&
+                      (decoded.isEmpty ||
+                          (decoded.first is Map &&
+                              (decoded.first as Map).containsKey('insert'))))
+                  ? decoded
+                  : <dynamic>[];
           QuillController edit = QuillController(
-              document: Document.fromJson(jsonDecode(doc.content)),
+              document: Document.fromJson(rich is List ? rich : <dynamic>[]),
               selection: const TextSelection.collapsed(offset: 0));
 
           content.add(pw.Column(
@@ -1619,8 +1628,17 @@ class PDF {
       });
 
       // 创建印迹内容
+      final decoded = jsonDecode(doc.content);
+      final rich = (decoded is Map && decoded['rich'] is List)
+          ? decoded['rich']
+          : (decoded is List &&
+                  (decoded.isEmpty ||
+                      (decoded.first is Map &&
+                          (decoded.first as Map).containsKey('insert'))))
+              ? decoded
+              : <dynamic>[];
       QuillController edit = QuillController(
-          document: Document.fromJson(jsonDecode(doc.content)),
+          document: Document.fromJson(rich is List ? rich : <dynamic>[]),
           selection: const TextSelection.collapsed(offset: 0));
 
       content.add(
@@ -1760,8 +1778,17 @@ class PDF {
   }
 
   Future<void> one(ExportData doc, {String? savePath}) async {
+    final decoded = jsonDecode(doc.content);
+    final rich = (decoded is Map && decoded['rich'] is List)
+        ? decoded['rich']
+        : (decoded is List &&
+                (decoded.isEmpty ||
+                    (decoded.first is Map &&
+                        (decoded.first as Map).containsKey('insert'))))
+            ? decoded
+            : <dynamic>[];
     QuillController edit = QuillController(
-        document: Document.fromJson(jsonDecode(doc.content)),
+        document: Document.fromJson(rich is List ? rich : <dynamic>[]),
         selection: const TextSelection.collapsed(offset: 0));
 
     final pdf = pw.Document();
@@ -1905,8 +1932,17 @@ class PDF {
   }
 
   Future<void> docSplit(ExportData doc, {String? savePath}) async {
+    final decoded = jsonDecode(doc.content);
+    final rich = (decoded is Map && decoded['rich'] is List)
+        ? decoded['rich']
+        : (decoded is List &&
+                (decoded.isEmpty ||
+                    (decoded.first is Map &&
+                        (decoded.first as Map).containsKey('insert'))))
+            ? decoded
+            : <dynamic>[];
     QuillController edit = QuillController(
-        document: Document.fromJson(jsonDecode(doc.content)),
+        document: Document.fromJson(rich is List ? rich : <dynamic>[]),
         selection: const TextSelection.collapsed(offset: 0));
 
     final pdf = pw.Document();

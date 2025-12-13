@@ -298,8 +298,10 @@ class Http {
       if (response.statusCode == 410) {
         final cookie = await Storage().readCookie();
         if (cookie != null && cookie.isNotEmpty) {
-          final context = navigatorKey.currentContext;
-          if (context != null) {
+          final navigator = navigatorKey.currentState;
+          if (navigator != null && navigator.mounted) {
+            final context = navigator.context;
+            if (!context.mounted) return fromJson({'err': 1, 'msg': '账号已注销'});
             showDialog(
               context: context,
               barrierDismissible: false,
@@ -309,9 +311,11 @@ class Http {
                 actions: [
                   TextButton(
                     onPressed: () async {
+                      final nav = Navigator.of(context);
                       await Storage().deleteAll();
                       SP().over();
-                      Navigator.of(context).pushAndRemoveUntil(
+                      if (!nav.mounted) return;
+                      nav.pushAndRemoveUntil(
                         MaterialPageRoute(builder: (context) => Welcome()),
                         (route) => false,
                       );

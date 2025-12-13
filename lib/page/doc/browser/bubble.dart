@@ -202,8 +202,13 @@ void showDocsBubble({
 
                                   String plainText = "";
                                   try {
+                                    final decoded = jsonDecode(doc.content);
+                                    final rich = (decoded is Map &&
+                                            decoded['rich'] is List)
+                                        ? decoded['rich']
+                                        : decoded;
                                     final document = Document.fromJson(
-                                        jsonDecode(doc.content));
+                                        rich is List ? rich : <dynamic>[]);
                                     plainText = document.toPlainText().trim();
                                   } catch (e) {
                                     plainText = doc.content;
@@ -377,7 +382,9 @@ void showDocsBubble({
 
 List<String> extractImages(String content) {
   try {
-    var json = jsonDecode(content);
+    final decoded = jsonDecode(content);
+    final json =
+        (decoded is Map && decoded['rich'] is List) ? decoded['rich'] : decoded;
     if (json is List) {
       List<String> images = [];
       for (var op in json) {
@@ -389,6 +396,8 @@ List<String> extractImages(String content) {
       }
       return images;
     }
-  } catch (e) {}
+  } catch (_) {
+    // best effort: ignore invalid/legacy payload
+  }
   return [];
 }

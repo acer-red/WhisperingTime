@@ -8,17 +8,17 @@ class DocDatePickerDialog extends StatefulWidget {
   final ValueChanged<DateTime> onConfirm;
 
   const DocDatePickerDialog({
-    Key? key,
+    super.key,
     required this.docsManager,
     required this.initialDate,
     required this.onConfirm,
-  }) : super(key: key);
+  });
 
   @override
-  _DocDatePickerDialogState createState() => _DocDatePickerDialogState();
+  State<DocDatePickerDialog> createState() => DocDatePickerDialogState();
 }
 
-class _DocDatePickerDialogState extends State<DocDatePickerDialog> {
+class DocDatePickerDialogState extends State<DocDatePickerDialog> {
   late int selectedYear;
   late int selectedMonth;
   late List<int> years;

@@ -22,7 +22,7 @@ class DocCardList extends StatefulWidget {
   final Function(String, bool) onFlip;
 
   const DocCardList({
-    Key? key,
+    super.key,
     required this.docsManager,
     required this.expandedIndex,
     required this.flippedStates,
@@ -30,7 +30,7 @@ class DocCardList extends StatefulWidget {
     required this.onEdit,
     required this.onSetting,
     required this.onFlip,
-  }) : super(key: key);
+  });
 
   @override
   State<DocCardList> createState() => _DocCardListState();

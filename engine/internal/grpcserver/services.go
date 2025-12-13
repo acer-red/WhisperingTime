@@ -36,8 +36,89 @@ type Service struct {
 	pb.UnimplementedImageServiceServer
 	pb.UnimplementedBackgroundJobServiceServer
 	pb.UnimplementedFileServiceServer
+	pb.UnimplementedScaleServiceServer
 
 	publicHTTPBase string
+}
+
+// ------------------------------
+// Zero-Knowledge Scale Templates
+// ------------------------------
+
+func (s *Service) ListScaleTemplates(ctx context.Context, req *pb.ListScaleTemplatesRequest) (*pb.ListScaleTemplatesResponse, error) {
+	log.Infof("[grpc] ListScaleTemplates uid=%s", getUID(ctx))
+	uoid := getUOID(ctx)
+	if uoid == primitive.NilObjectID {
+		return &pb.ListScaleTemplatesResponse{Err: 1, Msg: "unauthenticated"}, nil
+	}
+
+	records, err := modb.ScaleTemplatesList(uoid)
+	if err != nil {
+		return &pb.ListScaleTemplatesResponse{Err: 1, Msg: err.Error()}, nil
+	}
+
+	res := make([]*pb.ScaleTemplate, 0, len(records))
+	for _, r := range records {
+		res = append(res, &pb.ScaleTemplate{
+			Id:                r.ID,
+			EncryptedMetadata: r.EncryptedMetadata,
+			CreatedAt:         r.CreateAt.Unix(),
+		})
+	}
+	return &pb.ListScaleTemplatesResponse{Err: 0, Msg: "ok", Templates: res}, nil
+}
+
+func (s *Service) CreateScaleTemplate(ctx context.Context, req *pb.CreateScaleTemplateRequest) (*pb.CreateScaleTemplateResponse, error) {
+	log.Infof("[grpc] CreateScaleTemplate uid=%s", getUID(ctx))
+	uoid := getUOID(ctx)
+	if uoid == primitive.NilObjectID {
+		return &pb.CreateScaleTemplateResponse{Err: 1, Msg: "unauthenticated"}, nil
+	}
+
+	if len(req.GetEncryptedMetadata()) == 0 {
+		return &pb.CreateScaleTemplateResponse{Err: 1, Msg: "encrypted_metadata is empty"}, nil
+	}
+
+	id, err := modb.ScaleTemplateCreate(uoid, req.GetEncryptedMetadata())
+	if err != nil {
+		return &pb.CreateScaleTemplateResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	return &pb.CreateScaleTemplateResponse{Err: 0, Msg: "ok", Id: id}, nil
+}
+
+func (s *Service) UpdateScaleTemplate(ctx context.Context, req *pb.UpdateScaleTemplateRequest) (*pb.BasicResponse, error) {
+	log.Infof("[grpc] UpdateScaleTemplate uid=%s id=%s", getUID(ctx), req.GetId())
+	uoid := getUOID(ctx)
+	if uoid == primitive.NilObjectID {
+		return &pb.BasicResponse{Err: 1, Msg: "unauthenticated"}, nil
+	}
+	if req.GetId() == "" {
+		return &pb.BasicResponse{Err: 1, Msg: "id is empty"}, nil
+	}
+	if len(req.GetEncryptedMetadata()) == 0 {
+		return &pb.BasicResponse{Err: 1, Msg: "encrypted_metadata is empty"}, nil
+	}
+
+	if err := modb.ScaleTemplateUpdate(uoid, req.GetId(), req.GetEncryptedMetadata()); err != nil {
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	return &pb.BasicResponse{Err: 0, Msg: "ok"}, nil
+}
+
+func (s *Service) DeleteScaleTemplate(ctx context.Context, req *pb.DeleteScaleTemplateRequest) (*pb.BasicResponse, error) {
+	log.Infof("[grpc] DeleteScaleTemplate uid=%s id=%s", getUID(ctx), req.GetId())
+	uoid := getUOID(ctx)
+	if uoid == primitive.NilObjectID {
+		return &pb.BasicResponse{Err: 1, Msg: "unauthenticated"}, nil
+	}
+	if req.GetId() == "" {
+		return &pb.BasicResponse{Err: 1, Msg: "id is empty"}, nil
+	}
+
+	if err := modb.ScaleTemplateDelete(uoid, req.GetId()); err != nil {
+		return &pb.BasicResponse{Err: 1, Msg: err.Error()}, nil
+	}
+	return &pb.BasicResponse{Err: 0, Msg: "ok"}, nil
 }
 
 func toGroupConfig(cfg m.GroupConfig) *pb.GroupConfig {
@@ -133,9 +214,9 @@ func (s *Service) ListThemes(ctx context.Context, req *pb.ListThemesRequest) (*p
 					gd.Docs = append(gd.Docs, &pb.DocDetail{
 						Id: d.Did,
 						Content: &pb.Content{
-							Title: d.Content.Title,
-							Rich:  d.Content.Rich,
-							Level: levelBytes(d.Content.Level, d.Legacy),
+							Title:  d.Content.Title,
+							Scales: firstNonEmptyBytes(d.Content.Scales, d.Content.Rich),
+							Level:  levelBytes(d.Content.Level, d.Legacy),
 						},
 						CreateAt:   d.CreateAt.Time().Unix(),
 						UpdateAt:   d.UpdateAt.Time().Unix(),
@@ -194,7 +275,7 @@ func (s *Service) ListThemes(ctx context.Context, req *pb.ListThemesRequest) (*p
 			for _, d := range g.Docs {
 				gd.Docs = append(gd.Docs, &pb.DocDetail{
 					Id:         d.Did,
-					Content:    &pb.Content{Title: d.Content.Title, Rich: d.Content.Rich, Level: levelBytes(d.Content.Level, d.Legacy)},
+					Content:    &pb.Content{Title: d.Content.Title, Scales: firstNonEmptyBytes(d.Content.Scales, d.Content.Rich), Level: levelBytes(d.Content.Level, d.Legacy)},
 					CreateAt:   d.CreateAt.Time().Unix(),
 					UpdateAt:   d.UpdateAt.Time().Unix(),
 					Permission: permissionEnvelopeFromMap(docPerms, d.Did),
@@ -408,7 +489,7 @@ func (s *Service) GetGroup(ctx context.Context, req *pb.GetGroupRequest) (*pb.Ge
 		for _, d := range g.Docs {
 			gd.Docs = append(gd.Docs, &pb.DocDetail{
 				Id:         d.ID,
-				Content:    &pb.Content{Title: d.Content.Title, Rich: d.Content.Rich, Level: levelBytes(d.Content.Level, d.LegacyLevel)},
+				Content:    &pb.Content{Title: d.Content.Title, Rich: d.Content.Rich, Scales: firstNonEmptyBytes(d.Content.Scales, d.Content.Rich), Level: levelBytes(d.Content.Level, d.LegacyLevel)},
 				CreateAt:   d.CreateAt.Unix(),
 				UpdateAt:   d.UpdateAt.Unix(),
 				Permission: permissionEnvelopeFromMap(permMap, d.ID),
@@ -623,9 +704,9 @@ func (s *Service) ListDocs(ctx context.Context, req *pb.ListDocsRequest) (*pb.Li
 		res = append(res, &pb.DocSummary{
 			Id: d.ID,
 			Content: &pb.Content{
-				Title: d.Content.Title,
-				Rich:  d.Content.Rich,
-				Level: levelBytes(d.Content.Level, d.LegacyLevel),
+				Title:  d.Content.Title,
+				Scales: firstNonEmptyBytes(d.Content.Scales, d.Content.Rich),
+				Level:  levelBytes(d.Content.Level, d.LegacyLevel),
 			},
 			CreateAt:   d.CreateAt.Unix(),
 			UpdateAt:   d.UpdateAt.Unix(),
@@ -651,9 +732,9 @@ func (s *Service) CreateDoc(ctx context.Context, req *pb.CreateDocRequest) (*pb.
 	}
 	r := modb.RequestDocPost{}
 	r.Data.Content = m.DocContent{
-		Title: req.GetContent().GetTitle(),
-		Rich:  req.GetContent().GetRich(),
-		Level: req.GetContent().GetLevel(),
+		Title:  req.GetContent().GetTitle(),
+		Scales: req.GetContent().GetScales(),
+		Level:  req.GetContent().GetLevel(),
 	}
 	r.Data.CreateAt = fmt.Sprintf("%d", req.GetCreateAt())
 	if req.GetConfig() != nil {
@@ -697,6 +778,9 @@ func (s *Service) UpdateDoc(ctx context.Context, req *pb.UpdateDocRequest) (*pb.
 		if req.GetContent().Rich != nil {
 			c.Rich = req.GetContent().Rich
 		}
+		if req.GetContent().Scales != nil {
+			c.Scales = req.GetContent().Scales
+		}
 		if req.GetContent().Level != nil {
 			c.Level = req.GetContent().Level
 		}
@@ -730,6 +814,13 @@ func levelBytes(contentLevel []byte, legacyLevel int32) []byte {
 		return contentLevel
 	}
 	return []byte(strconv.Itoa(int(legacyLevel)))
+}
+
+func firstNonEmptyBytes(primary []byte, fallback []byte) []byte {
+	if len(primary) > 0 {
+		return primary
+	}
+	return fallback
 }
 
 func (s *Service) DeleteDoc(ctx context.Context, req *pb.DeleteDocRequest) (*pb.BasicResponse, error) {

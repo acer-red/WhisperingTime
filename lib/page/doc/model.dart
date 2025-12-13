@@ -35,7 +35,8 @@ class Doc {
       parsedLevel = int.tryParse(levelValue) ?? 0;
     }
     final title = contentMap['title'] ?? json['title'] ?? '';
-    final body = contentMap['rich'] ?? json['content'] ?? '';
+    final body =
+        contentMap['scales'] ?? contentMap['rich'] ?? json['content'] ?? '';
 
     return Doc(
       title: title as String,

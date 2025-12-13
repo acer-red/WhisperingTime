@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:whispering_time/page/group/manager.dart';
 import 'package:whispering_time/service/grpc/grpc.dart';
-import 'package:whispering_time/util/time.dart';
 import 'package:whispering_time/util/env.dart';
 import 'package:whispering_time/page/doc/model.dart';
 
@@ -17,13 +16,11 @@ class DocSettingsDialog extends StatefulWidget {
   final String gid;
   final String? did;
   final DocConfig config;
-  final DateTime createAt;
   final bool fromBrowser;
 
   DocSettingsDialog({
     required this.gid,
     required this.did,
-    required this.createAt,
     required this.config,
     this.fromBrowser = false,
   });
@@ -33,9 +30,7 @@ class DocSettingsDialog extends StatefulWidget {
 }
 
 class _DocSettingsDialogState extends State<DocSettingsDialog> {
-  late bool isShowTool;
   late int displayPriority;
-  late DateTime createAt;
   bool isChanged = false;
 
   void _touchGroup() {
@@ -46,9 +41,7 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
   @override
   void initState() {
     super.initState();
-    isShowTool = widget.config.isShowTool ?? false;
     displayPriority = widget.config.displayPriority ?? 0;
-    createAt = widget.createAt;
   }
 
   @override
@@ -60,43 +53,20 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 创建时间设置
             ListTile(
-              leading: Icon(Icons.access_time),
-              title: Text('创建时间'),
-              trailing: TextButton(
-                onPressed: () => _setCreateTime(),
-                child: Text(
-                  Time.string(createAt),
-                  style: TextStyle(fontSize: 14),
-                ),
+              leading: Icon(Icons.visibility),
+              title: Text('显示优先'),
+              subtitle: Text(_getDisplayPriorityDesc(displayPriority)),
+              trailing: DropdownButton<int>(
+                value: displayPriority,
+                onChanged: (value) => _setDisplayPriority(value),
+                items: [
+                  DropdownMenuItem(value: 0, child: Text('完整')),
+                  DropdownMenuItem(value: 1, child: Text('文字优先')),
+                  DropdownMenuItem(value: 2, child: Text('媒体优先')),
+                ],
               ),
             ),
-            Divider(height: 1),
-            // 显示工具栏开关
-            if (!widget.fromBrowser)
-              SwitchListTile(
-                secondary: Icon(Icons.build),
-                title: Text('显示工具栏'),
-                subtitle: Text('含图片上传'),
-                value: isShowTool,
-                onChanged: (value) => _setTool(value),
-              ),
-            if (widget.fromBrowser)
-              ListTile(
-                leading: Icon(Icons.visibility),
-                title: Text('显示优先'),
-                subtitle: Text(_getDisplayPriorityDesc(displayPriority)),
-                trailing: DropdownButton<int>(
-                  value: displayPriority,
-                  onChanged: (value) => _setDisplayPriority(value),
-                  items: [
-                    DropdownMenuItem(value: 0, child: Text('完整')),
-                    DropdownMenuItem(value: 1, child: Text('文字优先')),
-                    DropdownMenuItem(value: 2, child: Text('媒体优先')),
-                  ],
-                ),
-              ),
             Divider(height: 1),
             // 删除文档按钮
             if (widget.did != null)
@@ -127,9 +97,7 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
           onPressed: () {
             Navigator.of(context).pop({
               'changed': isChanged,
-              'createAt': createAt,
-              'config': DocConfig(
-                  isShowTool: isShowTool, displayPriority: displayPriority),
+              'config': DocConfig(displayPriority: displayPriority),
             });
           },
           child: Text('确定'),
@@ -172,96 +140,6 @@ class _DocSettingsDialogState extends State<DocSettingsDialog> {
         return '媒体为主，文字最小化显示';
       default:
         return '';
-    }
-  }
-
-  // 设置工具栏显示
-  void _setTool(bool value) async {
-    isChanged = true;
-    if (widget.did != null) {
-      final res = await Grpc(gid: widget.gid, did: widget.did)
-          .putDoc(RequestUpdateDoc(config: DocConfig(isShowTool: value)));
-      if (res.isNotOK) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('设置失败')),
-          );
-        }
-        return;
-      }
-
-      _touchGroup();
-    }
-
-    setState(() {
-      isShowTool = value;
-    });
-  }
-
-  // 设置创建时间
-  void _setCreateTime() async {
-    DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: createAt,
-      firstDate: DateTime(2000),
-      lastDate: DateTime.now(),
-      locale: const Locale('zh'),
-    );
-
-    pickedDate ??= createAt;
-
-    if (!mounted) return;
-
-    TimeOfDay? pickedTime = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(createAt),
-    );
-
-    DateTime newCreateAt;
-    if (pickedTime == null) {
-      newCreateAt = DateTime(
-        pickedDate.year,
-        pickedDate.month,
-        pickedDate.day,
-        createAt.hour,
-        createAt.minute,
-        0,
-      );
-    } else {
-      newCreateAt = DateTime(
-        pickedDate.year,
-        pickedDate.month,
-        pickedDate.day,
-        pickedTime.hour,
-        pickedTime.minute,
-        0,
-      );
-    }
-
-    if (createAt == newCreateAt) {
-      return;
-    }
-
-    isChanged = true;
-
-    setState(() {
-      createAt = newCreateAt;
-    });
-
-    // 如果文档已保存，立即更新到服务器
-    if (widget.did != null) {
-      final res = await Grpc(gid: widget.gid, did: widget.did)
-          .putDoc(RequestUpdateDoc(createAt: newCreateAt));
-      if (res.isNotOK) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('时间设置失败')),
-          );
-        }
-        return;
-      }
-
-      _touchGroup();
     }
   }
 

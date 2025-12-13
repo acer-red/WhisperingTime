@@ -639,3 +639,101 @@ abstract class FileServiceBase extends $grpc.Service {
   $async.Future<$0.PresignDownloadFileResponse> presignDownloadFile($grpc.ServiceCall call, $0.PresignDownloadFileRequest request);
   $async.Future<$0.BasicResponse> deleteFile($grpc.ServiceCall call, $0.DeleteFileRequest request);
 }
+@$pb.GrpcServiceName('whisperingtime.ScaleService')
+class ScaleServiceClient extends $grpc.Client {
+  static final _$listScaleTemplates = $grpc.ClientMethod<$0.ListScaleTemplatesRequest, $0.ListScaleTemplatesResponse>(
+      '/whisperingtime.ScaleService/ListScaleTemplates',
+      ($0.ListScaleTemplatesRequest value) => value.writeToBuffer(),
+      ($core.List<$core.int> value) => $0.ListScaleTemplatesResponse.fromBuffer(value));
+  static final _$createScaleTemplate = $grpc.ClientMethod<$0.CreateScaleTemplateRequest, $0.CreateScaleTemplateResponse>(
+      '/whisperingtime.ScaleService/CreateScaleTemplate',
+      ($0.CreateScaleTemplateRequest value) => value.writeToBuffer(),
+      ($core.List<$core.int> value) => $0.CreateScaleTemplateResponse.fromBuffer(value));
+  static final _$updateScaleTemplate = $grpc.ClientMethod<$0.UpdateScaleTemplateRequest, $0.BasicResponse>(
+      '/whisperingtime.ScaleService/UpdateScaleTemplate',
+      ($0.UpdateScaleTemplateRequest value) => value.writeToBuffer(),
+      ($core.List<$core.int> value) => $0.BasicResponse.fromBuffer(value));
+  static final _$deleteScaleTemplate = $grpc.ClientMethod<$0.DeleteScaleTemplateRequest, $0.BasicResponse>(
+      '/whisperingtime.ScaleService/DeleteScaleTemplate',
+      ($0.DeleteScaleTemplateRequest value) => value.writeToBuffer(),
+      ($core.List<$core.int> value) => $0.BasicResponse.fromBuffer(value));
+
+  ScaleServiceClient($grpc.ClientChannel channel,
+      {$grpc.CallOptions? options,
+      $core.Iterable<$grpc.ClientInterceptor>? interceptors})
+      : super(channel, options: options,
+        interceptors: interceptors);
+
+  $grpc.ResponseFuture<$0.ListScaleTemplatesResponse> listScaleTemplates($0.ListScaleTemplatesRequest request, {$grpc.CallOptions? options}) {
+    return $createUnaryCall(_$listScaleTemplates, request, options: options);
+  }
+
+  $grpc.ResponseFuture<$0.CreateScaleTemplateResponse> createScaleTemplate($0.CreateScaleTemplateRequest request, {$grpc.CallOptions? options}) {
+    return $createUnaryCall(_$createScaleTemplate, request, options: options);
+  }
+
+  $grpc.ResponseFuture<$0.BasicResponse> updateScaleTemplate($0.UpdateScaleTemplateRequest request, {$grpc.CallOptions? options}) {
+    return $createUnaryCall(_$updateScaleTemplate, request, options: options);
+  }
+
+  $grpc.ResponseFuture<$0.BasicResponse> deleteScaleTemplate($0.DeleteScaleTemplateRequest request, {$grpc.CallOptions? options}) {
+    return $createUnaryCall(_$deleteScaleTemplate, request, options: options);
+  }
+}
+
+@$pb.GrpcServiceName('whisperingtime.ScaleService')
+abstract class ScaleServiceBase extends $grpc.Service {
+  $core.String get $name => 'whisperingtime.ScaleService';
+
+  ScaleServiceBase() {
+    $addMethod($grpc.ServiceMethod<$0.ListScaleTemplatesRequest, $0.ListScaleTemplatesResponse>(
+        'ListScaleTemplates',
+        listScaleTemplates_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) => $0.ListScaleTemplatesRequest.fromBuffer(value),
+        ($0.ListScaleTemplatesResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.CreateScaleTemplateRequest, $0.CreateScaleTemplateResponse>(
+        'CreateScaleTemplate',
+        createScaleTemplate_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) => $0.CreateScaleTemplateRequest.fromBuffer(value),
+        ($0.CreateScaleTemplateResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.UpdateScaleTemplateRequest, $0.BasicResponse>(
+        'UpdateScaleTemplate',
+        updateScaleTemplate_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) => $0.UpdateScaleTemplateRequest.fromBuffer(value),
+        ($0.BasicResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.DeleteScaleTemplateRequest, $0.BasicResponse>(
+        'DeleteScaleTemplate',
+        deleteScaleTemplate_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) => $0.DeleteScaleTemplateRequest.fromBuffer(value),
+        ($0.BasicResponse value) => value.writeToBuffer()));
+  }
+
+  $async.Future<$0.ListScaleTemplatesResponse> listScaleTemplates_Pre($grpc.ServiceCall call, $async.Future<$0.ListScaleTemplatesRequest> request) async {
+    return listScaleTemplates(call, await request);
+  }
+
+  $async.Future<$0.CreateScaleTemplateResponse> createScaleTemplate_Pre($grpc.ServiceCall call, $async.Future<$0.CreateScaleTemplateRequest> request) async {
+    return createScaleTemplate(call, await request);
+  }
+
+  $async.Future<$0.BasicResponse> updateScaleTemplate_Pre($grpc.ServiceCall call, $async.Future<$0.UpdateScaleTemplateRequest> request) async {
+    return updateScaleTemplate(call, await request);
+  }
+
+  $async.Future<$0.BasicResponse> deleteScaleTemplate_Pre($grpc.ServiceCall call, $async.Future<$0.DeleteScaleTemplateRequest> request) async {
+    return deleteScaleTemplate(call, await request);
+  }
+
+  $async.Future<$0.ListScaleTemplatesResponse> listScaleTemplates($grpc.ServiceCall call, $0.ListScaleTemplatesRequest request);
+  $async.Future<$0.CreateScaleTemplateResponse> createScaleTemplate($grpc.ServiceCall call, $0.CreateScaleTemplateRequest request);
+  $async.Future<$0.BasicResponse> updateScaleTemplate($grpc.ServiceCall call, $0.UpdateScaleTemplateRequest request);
+  $async.Future<$0.BasicResponse> deleteScaleTemplate($grpc.ServiceCall call, $0.DeleteScaleTemplateRequest request);
+}

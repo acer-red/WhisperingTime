@@ -658,6 +658,7 @@ class Content extends $pb.GeneratedMessage {
     $core.List<$core.int>? title,
     $core.List<$core.int>? rich,
     $core.List<$core.int>? level,
+    $core.List<$core.int>? scales,
   }) {
     final $result = create();
     if (title != null) {
@@ -669,6 +670,9 @@ class Content extends $pb.GeneratedMessage {
     if (level != null) {
       $result.level = level;
     }
+    if (scales != null) {
+      $result.scales = scales;
+    }
     return $result;
   }
   Content._() : super();
@@ -679,6 +683,7 @@ class Content extends $pb.GeneratedMessage {
     ..a<$core.List<$core.int>>(1, _omitFieldNames ? '' : 'title', $pb.PbFieldType.OY)
     ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'rich', $pb.PbFieldType.OY)
     ..a<$core.List<$core.int>>(3, _omitFieldNames ? '' : 'level', $pb.PbFieldType.OY)
+    ..a<$core.List<$core.int>>(4, _omitFieldNames ? '' : 'scales', $pb.PbFieldType.OY)
     ..hasRequiredFields = false
   ;
 
@@ -729,6 +734,15 @@ class Content extends $pb.GeneratedMessage {
   $core.bool hasLevel() => $_has(2);
   @$pb.TagNumber(3)
   void clearLevel() => clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.List<$core.int> get scales => $_getN(3);
+  @$pb.TagNumber(4)
+  set scales($core.List<$core.int> v) { $_setBytes(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasScales() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearScales() => clearField(4);
 }
 
 class DocDetail extends $pb.GeneratedMessage {
@@ -4304,6 +4318,483 @@ class BytesChunk extends $pb.GeneratedMessage {
   $core.bool hasData() => $_has(0);
   @$pb.TagNumber(1)
   void clearData() => clearField(1);
+}
+
+/// Stored as encrypted bytes only (server is blind storage).
+class ScaleTemplate extends $pb.GeneratedMessage {
+  factory ScaleTemplate({
+    $core.String? id,
+    $core.List<$core.int>? encryptedMetadata,
+    $fixnum.Int64? createdAt,
+  }) {
+    final $result = create();
+    if (id != null) {
+      $result.id = id;
+    }
+    if (encryptedMetadata != null) {
+      $result.encryptedMetadata = encryptedMetadata;
+    }
+    if (createdAt != null) {
+      $result.createdAt = createdAt;
+    }
+    return $result;
+  }
+  ScaleTemplate._() : super();
+  factory ScaleTemplate.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory ScaleTemplate.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ScaleTemplate', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'id')
+    ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'encryptedMetadata', $pb.PbFieldType.OY)
+    ..aInt64(3, _omitFieldNames ? '' : 'createdAt')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  ScaleTemplate clone() => ScaleTemplate()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  ScaleTemplate copyWith(void Function(ScaleTemplate) updates) => super.copyWith((message) => updates(message as ScaleTemplate)) as ScaleTemplate;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ScaleTemplate create() => ScaleTemplate._();
+  ScaleTemplate createEmptyInstance() => create();
+  static $pb.PbList<ScaleTemplate> createRepeated() => $pb.PbList<ScaleTemplate>();
+  @$core.pragma('dart2js:noInline')
+  static ScaleTemplate getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ScaleTemplate>(create);
+  static ScaleTemplate? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get id => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set id($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.List<$core.int> get encryptedMetadata => $_getN(1);
+  @$pb.TagNumber(2)
+  set encryptedMetadata($core.List<$core.int> v) { $_setBytes(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasEncryptedMetadata() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearEncryptedMetadata() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $fixnum.Int64 get createdAt => $_getI64(2);
+  @$pb.TagNumber(3)
+  set createdAt($fixnum.Int64 v) { $_setInt64(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasCreatedAt() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearCreatedAt() => clearField(3);
+}
+
+class ListScaleTemplatesRequest extends $pb.GeneratedMessage {
+  factory ListScaleTemplatesRequest() => create();
+  ListScaleTemplatesRequest._() : super();
+  factory ListScaleTemplatesRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory ListScaleTemplatesRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ListScaleTemplatesRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  ListScaleTemplatesRequest clone() => ListScaleTemplatesRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  ListScaleTemplatesRequest copyWith(void Function(ListScaleTemplatesRequest) updates) => super.copyWith((message) => updates(message as ListScaleTemplatesRequest)) as ListScaleTemplatesRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ListScaleTemplatesRequest create() => ListScaleTemplatesRequest._();
+  ListScaleTemplatesRequest createEmptyInstance() => create();
+  static $pb.PbList<ListScaleTemplatesRequest> createRepeated() => $pb.PbList<ListScaleTemplatesRequest>();
+  @$core.pragma('dart2js:noInline')
+  static ListScaleTemplatesRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ListScaleTemplatesRequest>(create);
+  static ListScaleTemplatesRequest? _defaultInstance;
+}
+
+class ListScaleTemplatesResponse extends $pb.GeneratedMessage {
+  factory ListScaleTemplatesResponse({
+    $core.int? err,
+    $core.String? msg,
+    $core.Iterable<ScaleTemplate>? templates,
+  }) {
+    final $result = create();
+    if (err != null) {
+      $result.err = err;
+    }
+    if (msg != null) {
+      $result.msg = msg;
+    }
+    if (templates != null) {
+      $result.templates.addAll(templates);
+    }
+    return $result;
+  }
+  ListScaleTemplatesResponse._() : super();
+  factory ListScaleTemplatesResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory ListScaleTemplatesResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ListScaleTemplatesResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
+    ..a<$core.int>(1, _omitFieldNames ? '' : 'err', $pb.PbFieldType.O3)
+    ..aOS(2, _omitFieldNames ? '' : 'msg')
+    ..pc<ScaleTemplate>(3, _omitFieldNames ? '' : 'templates', $pb.PbFieldType.PM, subBuilder: ScaleTemplate.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  ListScaleTemplatesResponse clone() => ListScaleTemplatesResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  ListScaleTemplatesResponse copyWith(void Function(ListScaleTemplatesResponse) updates) => super.copyWith((message) => updates(message as ListScaleTemplatesResponse)) as ListScaleTemplatesResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ListScaleTemplatesResponse create() => ListScaleTemplatesResponse._();
+  ListScaleTemplatesResponse createEmptyInstance() => create();
+  static $pb.PbList<ListScaleTemplatesResponse> createRepeated() => $pb.PbList<ListScaleTemplatesResponse>();
+  @$core.pragma('dart2js:noInline')
+  static ListScaleTemplatesResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ListScaleTemplatesResponse>(create);
+  static ListScaleTemplatesResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.int get err => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set err($core.int v) { $_setSignedInt32(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasErr() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearErr() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get msg => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set msg($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasMsg() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearMsg() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.List<ScaleTemplate> get templates => $_getList(2);
+}
+
+class CreateScaleTemplateRequest extends $pb.GeneratedMessage {
+  factory CreateScaleTemplateRequest({
+    $core.List<$core.int>? encryptedMetadata,
+  }) {
+    final $result = create();
+    if (encryptedMetadata != null) {
+      $result.encryptedMetadata = encryptedMetadata;
+    }
+    return $result;
+  }
+  CreateScaleTemplateRequest._() : super();
+  factory CreateScaleTemplateRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory CreateScaleTemplateRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'CreateScaleTemplateRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
+    ..a<$core.List<$core.int>>(1, _omitFieldNames ? '' : 'encryptedMetadata', $pb.PbFieldType.OY)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  CreateScaleTemplateRequest clone() => CreateScaleTemplateRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  CreateScaleTemplateRequest copyWith(void Function(CreateScaleTemplateRequest) updates) => super.copyWith((message) => updates(message as CreateScaleTemplateRequest)) as CreateScaleTemplateRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static CreateScaleTemplateRequest create() => CreateScaleTemplateRequest._();
+  CreateScaleTemplateRequest createEmptyInstance() => create();
+  static $pb.PbList<CreateScaleTemplateRequest> createRepeated() => $pb.PbList<CreateScaleTemplateRequest>();
+  @$core.pragma('dart2js:noInline')
+  static CreateScaleTemplateRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<CreateScaleTemplateRequest>(create);
+  static CreateScaleTemplateRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.List<$core.int> get encryptedMetadata => $_getN(0);
+  @$pb.TagNumber(1)
+  set encryptedMetadata($core.List<$core.int> v) { $_setBytes(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasEncryptedMetadata() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearEncryptedMetadata() => clearField(1);
+}
+
+class CreateScaleTemplateResponse extends $pb.GeneratedMessage {
+  factory CreateScaleTemplateResponse({
+    $core.int? err,
+    $core.String? msg,
+    $core.String? id,
+  }) {
+    final $result = create();
+    if (err != null) {
+      $result.err = err;
+    }
+    if (msg != null) {
+      $result.msg = msg;
+    }
+    if (id != null) {
+      $result.id = id;
+    }
+    return $result;
+  }
+  CreateScaleTemplateResponse._() : super();
+  factory CreateScaleTemplateResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory CreateScaleTemplateResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'CreateScaleTemplateResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
+    ..a<$core.int>(1, _omitFieldNames ? '' : 'err', $pb.PbFieldType.O3)
+    ..aOS(2, _omitFieldNames ? '' : 'msg')
+    ..aOS(3, _omitFieldNames ? '' : 'id')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  CreateScaleTemplateResponse clone() => CreateScaleTemplateResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  CreateScaleTemplateResponse copyWith(void Function(CreateScaleTemplateResponse) updates) => super.copyWith((message) => updates(message as CreateScaleTemplateResponse)) as CreateScaleTemplateResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static CreateScaleTemplateResponse create() => CreateScaleTemplateResponse._();
+  CreateScaleTemplateResponse createEmptyInstance() => create();
+  static $pb.PbList<CreateScaleTemplateResponse> createRepeated() => $pb.PbList<CreateScaleTemplateResponse>();
+  @$core.pragma('dart2js:noInline')
+  static CreateScaleTemplateResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<CreateScaleTemplateResponse>(create);
+  static CreateScaleTemplateResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.int get err => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set err($core.int v) { $_setSignedInt32(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasErr() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearErr() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get msg => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set msg($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasMsg() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearMsg() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get id => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set id($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasId() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearId() => clearField(3);
+}
+
+class UpdateScaleTemplateRequest extends $pb.GeneratedMessage {
+  factory UpdateScaleTemplateRequest({
+    $core.String? id,
+    $core.List<$core.int>? encryptedMetadata,
+  }) {
+    final $result = create();
+    if (id != null) {
+      $result.id = id;
+    }
+    if (encryptedMetadata != null) {
+      $result.encryptedMetadata = encryptedMetadata;
+    }
+    return $result;
+  }
+  UpdateScaleTemplateRequest._() : super();
+  factory UpdateScaleTemplateRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory UpdateScaleTemplateRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'UpdateScaleTemplateRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'id')
+    ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'encryptedMetadata', $pb.PbFieldType.OY)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  UpdateScaleTemplateRequest clone() => UpdateScaleTemplateRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  UpdateScaleTemplateRequest copyWith(void Function(UpdateScaleTemplateRequest) updates) => super.copyWith((message) => updates(message as UpdateScaleTemplateRequest)) as UpdateScaleTemplateRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static UpdateScaleTemplateRequest create() => UpdateScaleTemplateRequest._();
+  UpdateScaleTemplateRequest createEmptyInstance() => create();
+  static $pb.PbList<UpdateScaleTemplateRequest> createRepeated() => $pb.PbList<UpdateScaleTemplateRequest>();
+  @$core.pragma('dart2js:noInline')
+  static UpdateScaleTemplateRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<UpdateScaleTemplateRequest>(create);
+  static UpdateScaleTemplateRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get id => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set id($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.List<$core.int> get encryptedMetadata => $_getN(1);
+  @$pb.TagNumber(2)
+  set encryptedMetadata($core.List<$core.int> v) { $_setBytes(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasEncryptedMetadata() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearEncryptedMetadata() => clearField(2);
+}
+
+class DeleteScaleTemplateRequest extends $pb.GeneratedMessage {
+  factory DeleteScaleTemplateRequest({
+    $core.String? id,
+  }) {
+    final $result = create();
+    if (id != null) {
+      $result.id = id;
+    }
+    return $result;
+  }
+  DeleteScaleTemplateRequest._() : super();
+  factory DeleteScaleTemplateRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory DeleteScaleTemplateRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'DeleteScaleTemplateRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'id')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  DeleteScaleTemplateRequest clone() => DeleteScaleTemplateRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  DeleteScaleTemplateRequest copyWith(void Function(DeleteScaleTemplateRequest) updates) => super.copyWith((message) => updates(message as DeleteScaleTemplateRequest)) as DeleteScaleTemplateRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static DeleteScaleTemplateRequest create() => DeleteScaleTemplateRequest._();
+  DeleteScaleTemplateRequest createEmptyInstance() => create();
+  static $pb.PbList<DeleteScaleTemplateRequest> createRepeated() => $pb.PbList<DeleteScaleTemplateRequest>();
+  @$core.pragma('dart2js:noInline')
+  static DeleteScaleTemplateRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<DeleteScaleTemplateRequest>(create);
+  static DeleteScaleTemplateRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get id => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set id($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearId() => clearField(1);
+}
+
+/// DocContent is defined explicitly for ZKA data-flow documentation.
+/// In practice it is carried as Content.scales.
+class DocContent extends $pb.GeneratedMessage {
+  factory DocContent({
+    $core.List<$core.int>? scales,
+  }) {
+    final $result = create();
+    if (scales != null) {
+      $result.scales = scales;
+    }
+    return $result;
+  }
+  DocContent._() : super();
+  factory DocContent.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory DocContent.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'DocContent', package: const $pb.PackageName(_omitMessageNames ? '' : 'whisperingtime'), createEmptyInstance: create)
+    ..a<$core.List<$core.int>>(1, _omitFieldNames ? '' : 'scales', $pb.PbFieldType.OY)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  DocContent clone() => DocContent()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  DocContent copyWith(void Function(DocContent) updates) => super.copyWith((message) => updates(message as DocContent)) as DocContent;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static DocContent create() => DocContent._();
+  DocContent createEmptyInstance() => create();
+  static $pb.PbList<DocContent> createRepeated() => $pb.PbList<DocContent>();
+  @$core.pragma('dart2js:noInline')
+  static DocContent getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<DocContent>(create);
+  static DocContent? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.List<$core.int> get scales => $_getN(0);
+  @$pb.TagNumber(1)
+  set scales($core.List<$core.int> v) { $_setBytes(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasScales() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearScales() => clearField(1);
 }
 
 

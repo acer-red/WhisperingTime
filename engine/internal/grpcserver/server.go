@@ -36,6 +36,7 @@ func Init(cfg Config) error {
 	pb.RegisterImageServiceServer(s, svc)
 	pb.RegisterBackgroundJobServiceServer(s, svc)
 	pb.RegisterFileServiceServer(s, svc)
+	pb.RegisterScaleServiceServer(s, svc)
 
 	log.Infof("gRPC listening on %s", addr)
 	return s.Serve(lis)

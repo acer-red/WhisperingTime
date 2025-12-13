@@ -16,7 +16,7 @@ class DocCalendarView extends StatefulWidget {
   final Function(Doc) onSetting;
 
   const DocCalendarView({
-    Key? key,
+    super.key,
     required this.docsManager,
     required this.pickedDate,
     required this.expandedRanges,
@@ -25,7 +25,7 @@ class DocCalendarView extends StatefulWidget {
     required this.onGapExpanded,
     required this.onEdit,
     required this.onSetting,
-  }) : super(key: key);
+  });
 
   @override
   State<DocCalendarView> createState() => _DocCalendarViewState();

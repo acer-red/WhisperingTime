@@ -80,9 +80,10 @@ func DocsGet(goid primitive.ObjectID, f DocFilter) ([]m.Doc, error) {
 		}
 		results = append(results, m.Doc{
 			Content: m.DocContent{
-				Title: contentM["title"].(primitive.Binary).Data,
-				Rich:  contentM["rich"].(primitive.Binary).Data,
-				Level: levelBytes,
+				Title:  extractBinaryBytes(contentM, "title"),
+				Scales: extractBinaryBytes(contentM, "scales"),
+				Rich:   extractBinaryBytes(contentM, "rich"),
+				Level:  levelBytes,
 			},
 			CreateAt: doc["createAt"].(primitive.DateTime).Time(),
 			UpdateAt: doc["updateAt"].(primitive.DateTime).Time(),
@@ -141,6 +142,9 @@ func DocPut(goid primitive.ObjectID, doid primitive.ObjectID, req *RequestDocPut
 		if (*req).Doc.Content.Rich != nil {
 			m["content.rich"] = (*req).Doc.Content.Rich
 		}
+		if (*req).Doc.Content.Scales != nil {
+			m["content.scales"] = (*req).Doc.Content.Scales
+		}
 		if (*req).Doc.Content.Level != nil {
 			m["content.level"] = (*req).Doc.Content.Level
 		}
@@ -197,6 +201,21 @@ func extractLevelBytes(content bson.M, doc bson.M) []byte {
 		}
 	}
 
+	return nil
+}
+
+func extractBinaryBytes(content bson.M, key string) []byte {
+	if content == nil {
+		return nil
+	}
+	if raw, ok := content[key]; ok {
+		switch v := raw.(type) {
+		case primitive.Binary:
+			return v.Data
+		case []byte:
+			return v
+		}
+	}
 	return nil
 }
 func DocDelete(goid primitive.ObjectID, doid primitive.ObjectID) error {

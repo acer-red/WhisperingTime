@@ -146,19 +146,21 @@ const Content$json = {
     {'1': 'title', '3': 1, '4': 1, '5': 12, '9': 0, '10': 'title', '17': true},
     {'1': 'rich', '3': 2, '4': 1, '5': 12, '9': 1, '10': 'rich', '17': true},
     {'1': 'level', '3': 3, '4': 1, '5': 12, '9': 2, '10': 'level', '17': true},
+    {'1': 'scales', '3': 4, '4': 1, '5': 12, '9': 3, '10': 'scales', '17': true},
   ],
   '8': [
     {'1': '_title'},
     {'1': '_rich'},
     {'1': '_level'},
+    {'1': '_scales'},
   ],
 };
 
 /// Descriptor for `Content`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List contentDescriptor = $convert.base64Decode(
     'CgdDb250ZW50EhkKBXRpdGxlGAEgASgMSABSBXRpdGxliAEBEhcKBHJpY2gYAiABKAxIAVIEcm'
-    'ljaIgBARIZCgVsZXZlbBgDIAEoDEgCUgVsZXZlbIgBAUIICgZfdGl0bGVCBwoFX3JpY2hCCAoG'
-    'X2xldmVs');
+    'ljaIgBARIZCgVsZXZlbBgDIAEoDEgCUgVsZXZlbIgBARIbCgZzY2FsZXMYBCABKAxIA1IGc2Nh'
+    'bGVziAEBQggKBl90aXRsZUIHCgVfcmljaEIICgZfbGV2ZWxCCQoHX3NjYWxlcw==');
 
 @$core.Deprecated('Use docDetailDescriptor instead')
 const DocDetail$json = {
@@ -848,4 +850,110 @@ const BytesChunk$json = {
 /// Descriptor for `BytesChunk`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List bytesChunkDescriptor = $convert.base64Decode(
     'CgpCeXRlc0NodW5rEhIKBGRhdGEYASABKAxSBGRhdGE=');
+
+@$core.Deprecated('Use scaleTemplateDescriptor instead')
+const ScaleTemplate$json = {
+  '1': 'ScaleTemplate',
+  '2': [
+    {'1': 'id', '3': 1, '4': 1, '5': 9, '10': 'id'},
+    {'1': 'encrypted_metadata', '3': 2, '4': 1, '5': 12, '10': 'encryptedMetadata'},
+    {'1': 'created_at', '3': 3, '4': 1, '5': 3, '10': 'createdAt'},
+  ],
+};
+
+/// Descriptor for `ScaleTemplate`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List scaleTemplateDescriptor = $convert.base64Decode(
+    'Cg1TY2FsZVRlbXBsYXRlEg4KAmlkGAEgASgJUgJpZBItChJlbmNyeXB0ZWRfbWV0YWRhdGEYAi'
+    'ABKAxSEWVuY3J5cHRlZE1ldGFkYXRhEh0KCmNyZWF0ZWRfYXQYAyABKANSCWNyZWF0ZWRBdA==');
+
+@$core.Deprecated('Use listScaleTemplatesRequestDescriptor instead')
+const ListScaleTemplatesRequest$json = {
+  '1': 'ListScaleTemplatesRequest',
+};
+
+/// Descriptor for `ListScaleTemplatesRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List listScaleTemplatesRequestDescriptor = $convert.base64Decode(
+    'ChlMaXN0U2NhbGVUZW1wbGF0ZXNSZXF1ZXN0');
+
+@$core.Deprecated('Use listScaleTemplatesResponseDescriptor instead')
+const ListScaleTemplatesResponse$json = {
+  '1': 'ListScaleTemplatesResponse',
+  '2': [
+    {'1': 'err', '3': 1, '4': 1, '5': 5, '10': 'err'},
+    {'1': 'msg', '3': 2, '4': 1, '5': 9, '10': 'msg'},
+    {'1': 'templates', '3': 3, '4': 3, '5': 11, '6': '.whisperingtime.ScaleTemplate', '10': 'templates'},
+  ],
+};
+
+/// Descriptor for `ListScaleTemplatesResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List listScaleTemplatesResponseDescriptor = $convert.base64Decode(
+    'ChpMaXN0U2NhbGVUZW1wbGF0ZXNSZXNwb25zZRIQCgNlcnIYASABKAVSA2VychIQCgNtc2cYAi'
+    'ABKAlSA21zZxI7Cgl0ZW1wbGF0ZXMYAyADKAsyHS53aGlzcGVyaW5ndGltZS5TY2FsZVRlbXBs'
+    'YXRlUgl0ZW1wbGF0ZXM=');
+
+@$core.Deprecated('Use createScaleTemplateRequestDescriptor instead')
+const CreateScaleTemplateRequest$json = {
+  '1': 'CreateScaleTemplateRequest',
+  '2': [
+    {'1': 'encrypted_metadata', '3': 1, '4': 1, '5': 12, '10': 'encryptedMetadata'},
+  ],
+};
+
+/// Descriptor for `CreateScaleTemplateRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List createScaleTemplateRequestDescriptor = $convert.base64Decode(
+    'ChpDcmVhdGVTY2FsZVRlbXBsYXRlUmVxdWVzdBItChJlbmNyeXB0ZWRfbWV0YWRhdGEYASABKA'
+    'xSEWVuY3J5cHRlZE1ldGFkYXRh');
+
+@$core.Deprecated('Use createScaleTemplateResponseDescriptor instead')
+const CreateScaleTemplateResponse$json = {
+  '1': 'CreateScaleTemplateResponse',
+  '2': [
+    {'1': 'err', '3': 1, '4': 1, '5': 5, '10': 'err'},
+    {'1': 'msg', '3': 2, '4': 1, '5': 9, '10': 'msg'},
+    {'1': 'id', '3': 3, '4': 1, '5': 9, '10': 'id'},
+  ],
+};
+
+/// Descriptor for `CreateScaleTemplateResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List createScaleTemplateResponseDescriptor = $convert.base64Decode(
+    'ChtDcmVhdGVTY2FsZVRlbXBsYXRlUmVzcG9uc2USEAoDZXJyGAEgASgFUgNlcnISEAoDbXNnGA'
+    'IgASgJUgNtc2cSDgoCaWQYAyABKAlSAmlk');
+
+@$core.Deprecated('Use updateScaleTemplateRequestDescriptor instead')
+const UpdateScaleTemplateRequest$json = {
+  '1': 'UpdateScaleTemplateRequest',
+  '2': [
+    {'1': 'id', '3': 1, '4': 1, '5': 9, '10': 'id'},
+    {'1': 'encrypted_metadata', '3': 2, '4': 1, '5': 12, '10': 'encryptedMetadata'},
+  ],
+};
+
+/// Descriptor for `UpdateScaleTemplateRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List updateScaleTemplateRequestDescriptor = $convert.base64Decode(
+    'ChpVcGRhdGVTY2FsZVRlbXBsYXRlUmVxdWVzdBIOCgJpZBgBIAEoCVICaWQSLQoSZW5jcnlwdG'
+    'VkX21ldGFkYXRhGAIgASgMUhFlbmNyeXB0ZWRNZXRhZGF0YQ==');
+
+@$core.Deprecated('Use deleteScaleTemplateRequestDescriptor instead')
+const DeleteScaleTemplateRequest$json = {
+  '1': 'DeleteScaleTemplateRequest',
+  '2': [
+    {'1': 'id', '3': 1, '4': 1, '5': 9, '10': 'id'},
+  ],
+};
+
+/// Descriptor for `DeleteScaleTemplateRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List deleteScaleTemplateRequestDescriptor = $convert.base64Decode(
+    'ChpEZWxldGVTY2FsZVRlbXBsYXRlUmVxdWVzdBIOCgJpZBgBIAEoCVICaWQ=');
+
+@$core.Deprecated('Use docContentDescriptor instead')
+const DocContent$json = {
+  '1': 'DocContent',
+  '2': [
+    {'1': 'scales', '3': 1, '4': 1, '5': 12, '10': 'scales'},
+  ],
+};
+
+/// Descriptor for `DocContent`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List docContentDescriptor = $convert.base64Decode(
+    'CgpEb2NDb250ZW50EhYKBnNjYWxlcxgBIAEoDFIGc2NhbGVz');
 

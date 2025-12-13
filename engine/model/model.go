@@ -9,8 +9,11 @@ import (
 
 type DocContent struct {
 	Title []byte `json:"title" bson:"title"`
-	Rich  []byte `json:"rich" bson:"rich"`
-	Level []byte `json:"level,omitempty" bson:"level"`
+	// Legacy rich text payload (deprecated).
+	Rich []byte `json:"rich,omitempty" bson:"rich,omitempty"`
+	// Encrypted scales payload (JSON string bytes encrypted on client).
+	Scales []byte `json:"scales,omitempty" bson:"scales,omitempty"`
+	Level  []byte `json:"level,omitempty" bson:"level"`
 }
 
 type Doc struct {

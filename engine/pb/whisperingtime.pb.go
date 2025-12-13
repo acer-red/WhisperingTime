@@ -515,6 +515,7 @@ type Content struct {
 	Title         []byte                 `protobuf:"bytes,1,opt,name=title,proto3,oneof" json:"title,omitempty"`
 	Rich          []byte                 `protobuf:"bytes,2,opt,name=rich,proto3,oneof" json:"rich,omitempty"`
 	Level         []byte                 `protobuf:"bytes,3,opt,name=level,proto3,oneof" json:"level,omitempty"`
+	Scales        []byte                 `protobuf:"bytes,4,opt,name=scales,proto3,oneof" json:"scales,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -566,6 +567,13 @@ func (x *Content) GetRich() []byte {
 func (x *Content) GetLevel() []byte {
 	if x != nil {
 		return x.Level
+	}
+	return nil
+}
+
+func (x *Content) GetScales() []byte {
+	if x != nil {
+		return x.Scales
 	}
 	return nil
 }
@@ -3293,6 +3301,409 @@ func (x *BytesChunk) GetData() []byte {
 	return nil
 }
 
+// Stored as encrypted bytes only (server is blind storage).
+type ScaleTemplate struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	Id                string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	EncryptedMetadata []byte                 `protobuf:"bytes,2,opt,name=encrypted_metadata,json=encryptedMetadata,proto3" json:"encrypted_metadata,omitempty"`
+	CreatedAt         int64                  `protobuf:"varint,3,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *ScaleTemplate) Reset() {
+	*x = ScaleTemplate{}
+	mi := &file_whisperingtime_proto_msgTypes[52]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ScaleTemplate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ScaleTemplate) ProtoMessage() {}
+
+func (x *ScaleTemplate) ProtoReflect() protoreflect.Message {
+	mi := &file_whisperingtime_proto_msgTypes[52]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ScaleTemplate.ProtoReflect.Descriptor instead.
+func (*ScaleTemplate) Descriptor() ([]byte, []int) {
+	return file_whisperingtime_proto_rawDescGZIP(), []int{52}
+}
+
+func (x *ScaleTemplate) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *ScaleTemplate) GetEncryptedMetadata() []byte {
+	if x != nil {
+		return x.EncryptedMetadata
+	}
+	return nil
+}
+
+func (x *ScaleTemplate) GetCreatedAt() int64 {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return 0
+}
+
+type ListScaleTemplatesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListScaleTemplatesRequest) Reset() {
+	*x = ListScaleTemplatesRequest{}
+	mi := &file_whisperingtime_proto_msgTypes[53]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListScaleTemplatesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListScaleTemplatesRequest) ProtoMessage() {}
+
+func (x *ListScaleTemplatesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_whisperingtime_proto_msgTypes[53]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListScaleTemplatesRequest.ProtoReflect.Descriptor instead.
+func (*ListScaleTemplatesRequest) Descriptor() ([]byte, []int) {
+	return file_whisperingtime_proto_rawDescGZIP(), []int{53}
+}
+
+type ListScaleTemplatesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Err           int32                  `protobuf:"varint,1,opt,name=err,proto3" json:"err,omitempty"`
+	Msg           string                 `protobuf:"bytes,2,opt,name=msg,proto3" json:"msg,omitempty"`
+	Templates     []*ScaleTemplate       `protobuf:"bytes,3,rep,name=templates,proto3" json:"templates,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListScaleTemplatesResponse) Reset() {
+	*x = ListScaleTemplatesResponse{}
+	mi := &file_whisperingtime_proto_msgTypes[54]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListScaleTemplatesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListScaleTemplatesResponse) ProtoMessage() {}
+
+func (x *ListScaleTemplatesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_whisperingtime_proto_msgTypes[54]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListScaleTemplatesResponse.ProtoReflect.Descriptor instead.
+func (*ListScaleTemplatesResponse) Descriptor() ([]byte, []int) {
+	return file_whisperingtime_proto_rawDescGZIP(), []int{54}
+}
+
+func (x *ListScaleTemplatesResponse) GetErr() int32 {
+	if x != nil {
+		return x.Err
+	}
+	return 0
+}
+
+func (x *ListScaleTemplatesResponse) GetMsg() string {
+	if x != nil {
+		return x.Msg
+	}
+	return ""
+}
+
+func (x *ListScaleTemplatesResponse) GetTemplates() []*ScaleTemplate {
+	if x != nil {
+		return x.Templates
+	}
+	return nil
+}
+
+type CreateScaleTemplateRequest struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	EncryptedMetadata []byte                 `protobuf:"bytes,1,opt,name=encrypted_metadata,json=encryptedMetadata,proto3" json:"encrypted_metadata,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *CreateScaleTemplateRequest) Reset() {
+	*x = CreateScaleTemplateRequest{}
+	mi := &file_whisperingtime_proto_msgTypes[55]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateScaleTemplateRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateScaleTemplateRequest) ProtoMessage() {}
+
+func (x *CreateScaleTemplateRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_whisperingtime_proto_msgTypes[55]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateScaleTemplateRequest.ProtoReflect.Descriptor instead.
+func (*CreateScaleTemplateRequest) Descriptor() ([]byte, []int) {
+	return file_whisperingtime_proto_rawDescGZIP(), []int{55}
+}
+
+func (x *CreateScaleTemplateRequest) GetEncryptedMetadata() []byte {
+	if x != nil {
+		return x.EncryptedMetadata
+	}
+	return nil
+}
+
+type CreateScaleTemplateResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Err           int32                  `protobuf:"varint,1,opt,name=err,proto3" json:"err,omitempty"`
+	Msg           string                 `protobuf:"bytes,2,opt,name=msg,proto3" json:"msg,omitempty"`
+	Id            string                 `protobuf:"bytes,3,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateScaleTemplateResponse) Reset() {
+	*x = CreateScaleTemplateResponse{}
+	mi := &file_whisperingtime_proto_msgTypes[56]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateScaleTemplateResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateScaleTemplateResponse) ProtoMessage() {}
+
+func (x *CreateScaleTemplateResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_whisperingtime_proto_msgTypes[56]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateScaleTemplateResponse.ProtoReflect.Descriptor instead.
+func (*CreateScaleTemplateResponse) Descriptor() ([]byte, []int) {
+	return file_whisperingtime_proto_rawDescGZIP(), []int{56}
+}
+
+func (x *CreateScaleTemplateResponse) GetErr() int32 {
+	if x != nil {
+		return x.Err
+	}
+	return 0
+}
+
+func (x *CreateScaleTemplateResponse) GetMsg() string {
+	if x != nil {
+		return x.Msg
+	}
+	return ""
+}
+
+func (x *CreateScaleTemplateResponse) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type UpdateScaleTemplateRequest struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	Id                string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	EncryptedMetadata []byte                 `protobuf:"bytes,2,opt,name=encrypted_metadata,json=encryptedMetadata,proto3" json:"encrypted_metadata,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *UpdateScaleTemplateRequest) Reset() {
+	*x = UpdateScaleTemplateRequest{}
+	mi := &file_whisperingtime_proto_msgTypes[57]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateScaleTemplateRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateScaleTemplateRequest) ProtoMessage() {}
+
+func (x *UpdateScaleTemplateRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_whisperingtime_proto_msgTypes[57]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateScaleTemplateRequest.ProtoReflect.Descriptor instead.
+func (*UpdateScaleTemplateRequest) Descriptor() ([]byte, []int) {
+	return file_whisperingtime_proto_rawDescGZIP(), []int{57}
+}
+
+func (x *UpdateScaleTemplateRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *UpdateScaleTemplateRequest) GetEncryptedMetadata() []byte {
+	if x != nil {
+		return x.EncryptedMetadata
+	}
+	return nil
+}
+
+type DeleteScaleTemplateRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteScaleTemplateRequest) Reset() {
+	*x = DeleteScaleTemplateRequest{}
+	mi := &file_whisperingtime_proto_msgTypes[58]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteScaleTemplateRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteScaleTemplateRequest) ProtoMessage() {}
+
+func (x *DeleteScaleTemplateRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_whisperingtime_proto_msgTypes[58]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteScaleTemplateRequest.ProtoReflect.Descriptor instead.
+func (*DeleteScaleTemplateRequest) Descriptor() ([]byte, []int) {
+	return file_whisperingtime_proto_rawDescGZIP(), []int{58}
+}
+
+func (x *DeleteScaleTemplateRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+// DocContent is defined explicitly for ZKA data-flow documentation.
+// In practice it is carried as Content.scales.
+type DocContent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Scales        []byte                 `protobuf:"bytes,1,opt,name=scales,proto3" json:"scales,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DocContent) Reset() {
+	*x = DocContent{}
+	mi := &file_whisperingtime_proto_msgTypes[59]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DocContent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DocContent) ProtoMessage() {}
+
+func (x *DocContent) ProtoReflect() protoreflect.Message {
+	mi := &file_whisperingtime_proto_msgTypes[59]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DocContent.ProtoReflect.Descriptor instead.
+func (*DocContent) Descriptor() ([]byte, []int) {
+	return file_whisperingtime_proto_rawDescGZIP(), []int{59}
+}
+
+func (x *DocContent) GetScales() []byte {
+	if x != nil {
+		return x.Scales
+	}
+	return nil
+}
+
 var File_whisperingtime_proto protoreflect.FileDescriptor
 
 const file_whisperingtime_proto_rawDesc = "" +
@@ -3336,14 +3747,16 @@ const file_whisperingtime_proto_rawDesc = "" +
 	"\n" +
 	"permission\x18\a \x01(\v2\".whisperingtime.PermissionEnvelopeR\n" +
 	"permission\x121\n" +
-	"\x06config\x18\b \x01(\v2\x19.whisperingtime.DocConfigR\x06configJ\x04\b\x04\x10\x05\"u\n" +
+	"\x06config\x18\b \x01(\v2\x19.whisperingtime.DocConfigR\x06configJ\x04\b\x04\x10\x05\"\x9d\x01\n" +
 	"\aContent\x12\x19\n" +
 	"\x05title\x18\x01 \x01(\fH\x00R\x05title\x88\x01\x01\x12\x17\n" +
 	"\x04rich\x18\x02 \x01(\fH\x01R\x04rich\x88\x01\x01\x12\x19\n" +
-	"\x05level\x18\x03 \x01(\fH\x02R\x05level\x88\x01\x01B\b\n" +
+	"\x05level\x18\x03 \x01(\fH\x02R\x05level\x88\x01\x01\x12\x1b\n" +
+	"\x06scales\x18\x04 \x01(\fH\x03R\x06scales\x88\x01\x01B\b\n" +
 	"\x06_titleB\a\n" +
 	"\x05_richB\b\n" +
-	"\x06_level\"\x85\x02\n" +
+	"\x06_levelB\t\n" +
+	"\a_scales\"\x85\x02\n" +
 	"\tDocDetail\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x121\n" +
 	"\acontent\x18\x02 \x01(\v2\x17.whisperingtime.ContentR\acontent\x12\x1b\n" +
@@ -3552,7 +3965,31 @@ const file_whisperingtime_proto_rawDesc = "" +
 	"\bfilename\x18\x04 \x01(\tR\bfilename\" \n" +
 	"\n" +
 	"BytesChunk\x12\x12\n" +
-	"\x04data\x18\x01 \x01(\fR\x04data2\x91\x04\n" +
+	"\x04data\x18\x01 \x01(\fR\x04data\"m\n" +
+	"\rScaleTemplate\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12-\n" +
+	"\x12encrypted_metadata\x18\x02 \x01(\fR\x11encryptedMetadata\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\x03 \x01(\x03R\tcreatedAt\"\x1b\n" +
+	"\x19ListScaleTemplatesRequest\"}\n" +
+	"\x1aListScaleTemplatesResponse\x12\x10\n" +
+	"\x03err\x18\x01 \x01(\x05R\x03err\x12\x10\n" +
+	"\x03msg\x18\x02 \x01(\tR\x03msg\x12;\n" +
+	"\ttemplates\x18\x03 \x03(\v2\x1d.whisperingtime.ScaleTemplateR\ttemplates\"K\n" +
+	"\x1aCreateScaleTemplateRequest\x12-\n" +
+	"\x12encrypted_metadata\x18\x01 \x01(\fR\x11encryptedMetadata\"Q\n" +
+	"\x1bCreateScaleTemplateResponse\x12\x10\n" +
+	"\x03err\x18\x01 \x01(\x05R\x03err\x12\x10\n" +
+	"\x03msg\x18\x02 \x01(\tR\x03msg\x12\x0e\n" +
+	"\x02id\x18\x03 \x01(\tR\x02id\"[\n" +
+	"\x1aUpdateScaleTemplateRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12-\n" +
+	"\x12encrypted_metadata\x18\x02 \x01(\fR\x11encryptedMetadata\",\n" +
+	"\x1aDeleteScaleTemplateRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"$\n" +
+	"\n" +
+	"DocContent\x12\x16\n" +
+	"\x06scales\x18\x01 \x01(\fR\x06scales2\x91\x04\n" +
 	"\fThemeService\x12S\n" +
 	"\n" +
 	"ListThemes\x12!.whisperingtime.ListThemesRequest\x1a\".whisperingtime.ListThemesResponse\x12V\n" +
@@ -3588,7 +4025,12 @@ const file_whisperingtime_proto_rawDesc = "" +
 	"\x11PresignUploadFile\x12(.whisperingtime.PresignUploadFileRequest\x1a).whisperingtime.PresignUploadFileResponse\x12n\n" +
 	"\x13PresignDownloadFile\x12*.whisperingtime.PresignDownloadFileRequest\x1a+.whisperingtime.PresignDownloadFileResponse\x12N\n" +
 	"\n" +
-	"DeleteFile\x12!.whisperingtime.DeleteFileRequest\x1a\x1d.whisperingtime.BasicResponseBP\n" +
+	"DeleteFile\x12!.whisperingtime.DeleteFileRequest\x1a\x1d.whisperingtime.BasicResponse2\xaf\x03\n" +
+	"\fScaleService\x12k\n" +
+	"\x12ListScaleTemplates\x12).whisperingtime.ListScaleTemplatesRequest\x1a*.whisperingtime.ListScaleTemplatesResponse\x12n\n" +
+	"\x13CreateScaleTemplate\x12*.whisperingtime.CreateScaleTemplateRequest\x1a+.whisperingtime.CreateScaleTemplateResponse\x12`\n" +
+	"\x13UpdateScaleTemplate\x12*.whisperingtime.UpdateScaleTemplateRequest\x1a\x1d.whisperingtime.BasicResponse\x12`\n" +
+	"\x13DeleteScaleTemplate\x12*.whisperingtime.DeleteScaleTemplateRequest\x1a\x1d.whisperingtime.BasicResponseBP\n" +
 	"\x17dev.whisperingtime.grpcP\x01Z3github.com/tengfei-xy/whisperingtime/engine/grpc/pbb\x06proto3"
 
 var (
@@ -3603,7 +4045,7 @@ func file_whisperingtime_proto_rawDescGZIP() []byte {
 	return file_whisperingtime_proto_rawDescData
 }
 
-var file_whisperingtime_proto_msgTypes = make([]protoimpl.MessageInfo, 52)
+var file_whisperingtime_proto_msgTypes = make([]protoimpl.MessageInfo, 60)
 var file_whisperingtime_proto_goTypes = []any{
 	(*BasicResponse)(nil),                     // 0: whisperingtime.BasicResponse
 	(*Empty)(nil),                             // 1: whisperingtime.Empty
@@ -3657,6 +4099,14 @@ var file_whisperingtime_proto_goTypes = []any{
 	(*DownloadBackgroundJobFileRequest)(nil),  // 49: whisperingtime.DownloadBackgroundJobFileRequest
 	(*DownloadBackgroundJobFileResponse)(nil), // 50: whisperingtime.DownloadBackgroundJobFileResponse
 	(*BytesChunk)(nil),                        // 51: whisperingtime.BytesChunk
+	(*ScaleTemplate)(nil),                     // 52: whisperingtime.ScaleTemplate
+	(*ListScaleTemplatesRequest)(nil),         // 53: whisperingtime.ListScaleTemplatesRequest
+	(*ListScaleTemplatesResponse)(nil),        // 54: whisperingtime.ListScaleTemplatesResponse
+	(*CreateScaleTemplateRequest)(nil),        // 55: whisperingtime.CreateScaleTemplateRequest
+	(*CreateScaleTemplateResponse)(nil),       // 56: whisperingtime.CreateScaleTemplateResponse
+	(*UpdateScaleTemplateRequest)(nil),        // 57: whisperingtime.UpdateScaleTemplateRequest
+	(*DeleteScaleTemplateRequest)(nil),        // 58: whisperingtime.DeleteScaleTemplateRequest
+	(*DocContent)(nil),                        // 59: whisperingtime.DocContent
 }
 var file_whisperingtime_proto_depIdxs = []int32{
 	4,  // 0: whisperingtime.GroupSummary.config:type_name -> whisperingtime.GroupConfig
@@ -3682,63 +4132,72 @@ var file_whisperingtime_proto_depIdxs = []int32{
 	8,  // 20: whisperingtime.UpdateDocRequest.content:type_name -> whisperingtime.Content
 	5,  // 21: whisperingtime.UpdateDocRequest.config:type_name -> whisperingtime.DocConfig
 	44, // 22: whisperingtime.ListBackgroundJobsResponse.jobs:type_name -> whisperingtime.BackgroundJob
-	12, // 23: whisperingtime.ThemeService.ListThemes:input_type -> whisperingtime.ListThemesRequest
-	14, // 24: whisperingtime.ThemeService.CreateTheme:input_type -> whisperingtime.CreateThemeRequest
-	16, // 25: whisperingtime.ThemeService.UpdateTheme:input_type -> whisperingtime.UpdateThemeRequest
-	17, // 26: whisperingtime.ThemeService.DeleteTheme:input_type -> whisperingtime.DeleteThemeRequest
-	18, // 27: whisperingtime.ThemeService.ExportAllConfig:input_type -> whisperingtime.ExportAllConfigRequest
-	19, // 28: whisperingtime.ThemeService.DeleteUserData:input_type -> whisperingtime.DeleteUserDataRequest
-	20, // 29: whisperingtime.GroupService.ListGroups:input_type -> whisperingtime.ListGroupsRequest
-	22, // 30: whisperingtime.GroupService.GetGroup:input_type -> whisperingtime.GetGroupRequest
-	24, // 31: whisperingtime.GroupService.CreateGroup:input_type -> whisperingtime.CreateGroupRequest
-	26, // 32: whisperingtime.GroupService.UpdateGroup:input_type -> whisperingtime.UpdateGroupRequest
-	27, // 33: whisperingtime.GroupService.DeleteGroup:input_type -> whisperingtime.DeleteGroupRequest
-	28, // 34: whisperingtime.GroupService.ExportGroupConfig:input_type -> whisperingtime.ExportGroupConfigRequest
-	51, // 35: whisperingtime.GroupService.ImportGroupConfig:input_type -> whisperingtime.BytesChunk
-	30, // 36: whisperingtime.DocService.ListDocs:input_type -> whisperingtime.ListDocsRequest
-	32, // 37: whisperingtime.DocService.CreateDoc:input_type -> whisperingtime.CreateDocRequest
-	34, // 38: whisperingtime.DocService.UpdateDoc:input_type -> whisperingtime.UpdateDocRequest
-	35, // 39: whisperingtime.DocService.DeleteDoc:input_type -> whisperingtime.DeleteDocRequest
-	38, // 40: whisperingtime.ImageService.UploadImage:input_type -> whisperingtime.ImageUploadChunk
-	37, // 41: whisperingtime.ImageService.DeleteImage:input_type -> whisperingtime.DeleteImageRequest
-	45, // 42: whisperingtime.BackgroundJobService.ListJobs:input_type -> whisperingtime.ListBackgroundJobsRequest
-	47, // 43: whisperingtime.BackgroundJobService.GetJob:input_type -> whisperingtime.GetBackgroundJobRequest
-	48, // 44: whisperingtime.BackgroundJobService.DeleteJob:input_type -> whisperingtime.DeleteBackgroundJobRequest
-	49, // 45: whisperingtime.BackgroundJobService.DownloadJobFile:input_type -> whisperingtime.DownloadBackgroundJobFileRequest
-	39, // 46: whisperingtime.FileService.PresignUploadFile:input_type -> whisperingtime.PresignUploadFileRequest
-	41, // 47: whisperingtime.FileService.PresignDownloadFile:input_type -> whisperingtime.PresignDownloadFileRequest
-	43, // 48: whisperingtime.FileService.DeleteFile:input_type -> whisperingtime.DeleteFileRequest
-	13, // 49: whisperingtime.ThemeService.ListThemes:output_type -> whisperingtime.ListThemesResponse
-	15, // 50: whisperingtime.ThemeService.CreateTheme:output_type -> whisperingtime.CreateThemeResponse
-	0,  // 51: whisperingtime.ThemeService.UpdateTheme:output_type -> whisperingtime.BasicResponse
-	0,  // 52: whisperingtime.ThemeService.DeleteTheme:output_type -> whisperingtime.BasicResponse
-	0,  // 53: whisperingtime.ThemeService.ExportAllConfig:output_type -> whisperingtime.BasicResponse
-	0,  // 54: whisperingtime.ThemeService.DeleteUserData:output_type -> whisperingtime.BasicResponse
-	21, // 55: whisperingtime.GroupService.ListGroups:output_type -> whisperingtime.ListGroupsResponse
-	23, // 56: whisperingtime.GroupService.GetGroup:output_type -> whisperingtime.GetGroupResponse
-	25, // 57: whisperingtime.GroupService.CreateGroup:output_type -> whisperingtime.CreateGroupResponse
-	0,  // 58: whisperingtime.GroupService.UpdateGroup:output_type -> whisperingtime.BasicResponse
-	0,  // 59: whisperingtime.GroupService.DeleteGroup:output_type -> whisperingtime.BasicResponse
-	0,  // 60: whisperingtime.GroupService.ExportGroupConfig:output_type -> whisperingtime.BasicResponse
-	29, // 61: whisperingtime.GroupService.ImportGroupConfig:output_type -> whisperingtime.ImportGroupConfigResponse
-	31, // 62: whisperingtime.DocService.ListDocs:output_type -> whisperingtime.ListDocsResponse
-	33, // 63: whisperingtime.DocService.CreateDoc:output_type -> whisperingtime.CreateDocResponse
-	0,  // 64: whisperingtime.DocService.UpdateDoc:output_type -> whisperingtime.BasicResponse
-	0,  // 65: whisperingtime.DocService.DeleteDoc:output_type -> whisperingtime.BasicResponse
-	36, // 66: whisperingtime.ImageService.UploadImage:output_type -> whisperingtime.UploadImageResponse
-	0,  // 67: whisperingtime.ImageService.DeleteImage:output_type -> whisperingtime.BasicResponse
-	46, // 68: whisperingtime.BackgroundJobService.ListJobs:output_type -> whisperingtime.ListBackgroundJobsResponse
-	44, // 69: whisperingtime.BackgroundJobService.GetJob:output_type -> whisperingtime.BackgroundJob
-	0,  // 70: whisperingtime.BackgroundJobService.DeleteJob:output_type -> whisperingtime.BasicResponse
-	50, // 71: whisperingtime.BackgroundJobService.DownloadJobFile:output_type -> whisperingtime.DownloadBackgroundJobFileResponse
-	40, // 72: whisperingtime.FileService.PresignUploadFile:output_type -> whisperingtime.PresignUploadFileResponse
-	42, // 73: whisperingtime.FileService.PresignDownloadFile:output_type -> whisperingtime.PresignDownloadFileResponse
-	0,  // 74: whisperingtime.FileService.DeleteFile:output_type -> whisperingtime.BasicResponse
-	49, // [49:75] is the sub-list for method output_type
-	23, // [23:49] is the sub-list for method input_type
-	23, // [23:23] is the sub-list for extension type_name
-	23, // [23:23] is the sub-list for extension extendee
-	0,  // [0:23] is the sub-list for field type_name
+	52, // 23: whisperingtime.ListScaleTemplatesResponse.templates:type_name -> whisperingtime.ScaleTemplate
+	12, // 24: whisperingtime.ThemeService.ListThemes:input_type -> whisperingtime.ListThemesRequest
+	14, // 25: whisperingtime.ThemeService.CreateTheme:input_type -> whisperingtime.CreateThemeRequest
+	16, // 26: whisperingtime.ThemeService.UpdateTheme:input_type -> whisperingtime.UpdateThemeRequest
+	17, // 27: whisperingtime.ThemeService.DeleteTheme:input_type -> whisperingtime.DeleteThemeRequest
+	18, // 28: whisperingtime.ThemeService.ExportAllConfig:input_type -> whisperingtime.ExportAllConfigRequest
+	19, // 29: whisperingtime.ThemeService.DeleteUserData:input_type -> whisperingtime.DeleteUserDataRequest
+	20, // 30: whisperingtime.GroupService.ListGroups:input_type -> whisperingtime.ListGroupsRequest
+	22, // 31: whisperingtime.GroupService.GetGroup:input_type -> whisperingtime.GetGroupRequest
+	24, // 32: whisperingtime.GroupService.CreateGroup:input_type -> whisperingtime.CreateGroupRequest
+	26, // 33: whisperingtime.GroupService.UpdateGroup:input_type -> whisperingtime.UpdateGroupRequest
+	27, // 34: whisperingtime.GroupService.DeleteGroup:input_type -> whisperingtime.DeleteGroupRequest
+	28, // 35: whisperingtime.GroupService.ExportGroupConfig:input_type -> whisperingtime.ExportGroupConfigRequest
+	51, // 36: whisperingtime.GroupService.ImportGroupConfig:input_type -> whisperingtime.BytesChunk
+	30, // 37: whisperingtime.DocService.ListDocs:input_type -> whisperingtime.ListDocsRequest
+	32, // 38: whisperingtime.DocService.CreateDoc:input_type -> whisperingtime.CreateDocRequest
+	34, // 39: whisperingtime.DocService.UpdateDoc:input_type -> whisperingtime.UpdateDocRequest
+	35, // 40: whisperingtime.DocService.DeleteDoc:input_type -> whisperingtime.DeleteDocRequest
+	38, // 41: whisperingtime.ImageService.UploadImage:input_type -> whisperingtime.ImageUploadChunk
+	37, // 42: whisperingtime.ImageService.DeleteImage:input_type -> whisperingtime.DeleteImageRequest
+	45, // 43: whisperingtime.BackgroundJobService.ListJobs:input_type -> whisperingtime.ListBackgroundJobsRequest
+	47, // 44: whisperingtime.BackgroundJobService.GetJob:input_type -> whisperingtime.GetBackgroundJobRequest
+	48, // 45: whisperingtime.BackgroundJobService.DeleteJob:input_type -> whisperingtime.DeleteBackgroundJobRequest
+	49, // 46: whisperingtime.BackgroundJobService.DownloadJobFile:input_type -> whisperingtime.DownloadBackgroundJobFileRequest
+	39, // 47: whisperingtime.FileService.PresignUploadFile:input_type -> whisperingtime.PresignUploadFileRequest
+	41, // 48: whisperingtime.FileService.PresignDownloadFile:input_type -> whisperingtime.PresignDownloadFileRequest
+	43, // 49: whisperingtime.FileService.DeleteFile:input_type -> whisperingtime.DeleteFileRequest
+	53, // 50: whisperingtime.ScaleService.ListScaleTemplates:input_type -> whisperingtime.ListScaleTemplatesRequest
+	55, // 51: whisperingtime.ScaleService.CreateScaleTemplate:input_type -> whisperingtime.CreateScaleTemplateRequest
+	57, // 52: whisperingtime.ScaleService.UpdateScaleTemplate:input_type -> whisperingtime.UpdateScaleTemplateRequest
+	58, // 53: whisperingtime.ScaleService.DeleteScaleTemplate:input_type -> whisperingtime.DeleteScaleTemplateRequest
+	13, // 54: whisperingtime.ThemeService.ListThemes:output_type -> whisperingtime.ListThemesResponse
+	15, // 55: whisperingtime.ThemeService.CreateTheme:output_type -> whisperingtime.CreateThemeResponse
+	0,  // 56: whisperingtime.ThemeService.UpdateTheme:output_type -> whisperingtime.BasicResponse
+	0,  // 57: whisperingtime.ThemeService.DeleteTheme:output_type -> whisperingtime.BasicResponse
+	0,  // 58: whisperingtime.ThemeService.ExportAllConfig:output_type -> whisperingtime.BasicResponse
+	0,  // 59: whisperingtime.ThemeService.DeleteUserData:output_type -> whisperingtime.BasicResponse
+	21, // 60: whisperingtime.GroupService.ListGroups:output_type -> whisperingtime.ListGroupsResponse
+	23, // 61: whisperingtime.GroupService.GetGroup:output_type -> whisperingtime.GetGroupResponse
+	25, // 62: whisperingtime.GroupService.CreateGroup:output_type -> whisperingtime.CreateGroupResponse
+	0,  // 63: whisperingtime.GroupService.UpdateGroup:output_type -> whisperingtime.BasicResponse
+	0,  // 64: whisperingtime.GroupService.DeleteGroup:output_type -> whisperingtime.BasicResponse
+	0,  // 65: whisperingtime.GroupService.ExportGroupConfig:output_type -> whisperingtime.BasicResponse
+	29, // 66: whisperingtime.GroupService.ImportGroupConfig:output_type -> whisperingtime.ImportGroupConfigResponse
+	31, // 67: whisperingtime.DocService.ListDocs:output_type -> whisperingtime.ListDocsResponse
+	33, // 68: whisperingtime.DocService.CreateDoc:output_type -> whisperingtime.CreateDocResponse
+	0,  // 69: whisperingtime.DocService.UpdateDoc:output_type -> whisperingtime.BasicResponse
+	0,  // 70: whisperingtime.DocService.DeleteDoc:output_type -> whisperingtime.BasicResponse
+	36, // 71: whisperingtime.ImageService.UploadImage:output_type -> whisperingtime.UploadImageResponse
+	0,  // 72: whisperingtime.ImageService.DeleteImage:output_type -> whisperingtime.BasicResponse
+	46, // 73: whisperingtime.BackgroundJobService.ListJobs:output_type -> whisperingtime.ListBackgroundJobsResponse
+	44, // 74: whisperingtime.BackgroundJobService.GetJob:output_type -> whisperingtime.BackgroundJob
+	0,  // 75: whisperingtime.BackgroundJobService.DeleteJob:output_type -> whisperingtime.BasicResponse
+	50, // 76: whisperingtime.BackgroundJobService.DownloadJobFile:output_type -> whisperingtime.DownloadBackgroundJobFileResponse
+	40, // 77: whisperingtime.FileService.PresignUploadFile:output_type -> whisperingtime.PresignUploadFileResponse
+	42, // 78: whisperingtime.FileService.PresignDownloadFile:output_type -> whisperingtime.PresignDownloadFileResponse
+	0,  // 79: whisperingtime.FileService.DeleteFile:output_type -> whisperingtime.BasicResponse
+	54, // 80: whisperingtime.ScaleService.ListScaleTemplates:output_type -> whisperingtime.ListScaleTemplatesResponse
+	56, // 81: whisperingtime.ScaleService.CreateScaleTemplate:output_type -> whisperingtime.CreateScaleTemplateResponse
+	0,  // 82: whisperingtime.ScaleService.UpdateScaleTemplate:output_type -> whisperingtime.BasicResponse
+	0,  // 83: whisperingtime.ScaleService.DeleteScaleTemplate:output_type -> whisperingtime.BasicResponse
+	54, // [54:84] is the sub-list for method output_type
+	24, // [24:54] is the sub-list for method input_type
+	24, // [24:24] is the sub-list for extension type_name
+	24, // [24:24] is the sub-list for extension extendee
+	0,  // [0:24] is the sub-list for field type_name
 }
 
 func init() { file_whisperingtime_proto_init() }
@@ -3753,9 +4212,9 @@ func file_whisperingtime_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_whisperingtime_proto_rawDesc), len(file_whisperingtime_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   52,
+			NumMessages:   60,
 			NumExtensions: 0,
-			NumServices:   6,
+			NumServices:   7,
 		},
 		GoTypes:           file_whisperingtime_proto_goTypes,
 		DependencyIndexes: file_whisperingtime_proto_depIdxs,

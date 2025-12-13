@@ -265,6 +265,7 @@ class _SettingPageState extends State<SettingPage> {
       final http = Http();
       final res =
           isDeleteAccount ? await http.deleteAccount() : await http.unbindApp();
+      if (!mounted) return;
       if (res.isNotOK) {
         Navigator.pop(context); // Dismiss loading
         ScaffoldMessenger.of(context)
@@ -274,6 +275,7 @@ class _SettingPageState extends State<SettingPage> {
 
       // 2. gRPC Request
       final grpcRes = await Grpc().deleteUserData(DeleteUserDataRequest());
+      if (!mounted) return;
       if (grpcRes.isNotOK) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context)
@@ -285,6 +287,7 @@ class _SettingPageState extends State<SettingPage> {
       await Storage().deleteAll();
       cleanDatabase();
     } catch (e) {
+      if (!mounted) return;
       Navigator.pop(context);
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('发生错误: $e')));

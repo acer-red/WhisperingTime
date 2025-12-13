@@ -405,7 +405,10 @@ class _DocItemWidgetState extends State<DocItemWidget> {
   void _initController() {
     try {
       if (widget.doc.content.isNotEmpty) {
-        final json = jsonDecode(widget.doc.content);
+        final decoded = jsonDecode(widget.doc.content);
+        final json = (decoded is Map && decoded['rich'] is List)
+            ? decoded['rich']
+            : decoded;
         _controller = QuillController(
           document: Document.fromJson(json),
           selection: const TextSelection.collapsed(offset: 0),

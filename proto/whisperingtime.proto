@@ -60,6 +60,7 @@ message Content {
   optional bytes title = 1;
   optional bytes rich = 2;
   optional bytes level = 3;
+  optional bytes scales = 4;
 }
 
 message DocDetail {
@@ -290,3 +291,48 @@ service FileService {
 
 // Shared chunk message for client streaming uploads
 message BytesChunk { bytes data = 1; }
+
+// ------------------------------
+// Zero-Knowledge Scale Templates
+// ------------------------------
+
+// Stored as encrypted bytes only (server is blind storage).
+message ScaleTemplate {
+  string id = 1;
+  bytes encrypted_metadata = 2;
+  int64 created_at = 3;
+}
+
+message ListScaleTemplatesRequest {}
+message ListScaleTemplatesResponse {
+  int32 err = 1;
+  string msg = 2;
+  repeated ScaleTemplate templates = 3;
+}
+
+message CreateScaleTemplateRequest { bytes encrypted_metadata = 1; }
+message CreateScaleTemplateResponse {
+  int32 err = 1;
+  string msg = 2;
+  string id = 3;
+}
+
+message UpdateScaleTemplateRequest {
+  string id = 1;
+  bytes encrypted_metadata = 2;
+}
+
+message DeleteScaleTemplateRequest { string id = 1; }
+
+// DocContent is defined explicitly for ZKA data-flow documentation.
+// In practice it is carried as Content.scales.
+message DocContent { bytes scales = 1; }
+
+service ScaleService {
+  rpc ListScaleTemplates(ListScaleTemplatesRequest)
+      returns (ListScaleTemplatesResponse);
+  rpc CreateScaleTemplate(CreateScaleTemplateRequest)
+      returns (CreateScaleTemplateResponse);
+  rpc UpdateScaleTemplate(UpdateScaleTemplateRequest) returns (BasicResponse);
+  rpc DeleteScaleTemplate(DeleteScaleTemplateRequest) returns (BasicResponse);
+}

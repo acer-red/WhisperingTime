@@ -1383,3 +1383,219 @@ var FileService_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "whisperingtime.proto",
 }
+
+const (
+	ScaleService_ListScaleTemplates_FullMethodName  = "/whisperingtime.ScaleService/ListScaleTemplates"
+	ScaleService_CreateScaleTemplate_FullMethodName = "/whisperingtime.ScaleService/CreateScaleTemplate"
+	ScaleService_UpdateScaleTemplate_FullMethodName = "/whisperingtime.ScaleService/UpdateScaleTemplate"
+	ScaleService_DeleteScaleTemplate_FullMethodName = "/whisperingtime.ScaleService/DeleteScaleTemplate"
+)
+
+// ScaleServiceClient is the client API for ScaleService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type ScaleServiceClient interface {
+	ListScaleTemplates(ctx context.Context, in *ListScaleTemplatesRequest, opts ...grpc.CallOption) (*ListScaleTemplatesResponse, error)
+	CreateScaleTemplate(ctx context.Context, in *CreateScaleTemplateRequest, opts ...grpc.CallOption) (*CreateScaleTemplateResponse, error)
+	UpdateScaleTemplate(ctx context.Context, in *UpdateScaleTemplateRequest, opts ...grpc.CallOption) (*BasicResponse, error)
+	DeleteScaleTemplate(ctx context.Context, in *DeleteScaleTemplateRequest, opts ...grpc.CallOption) (*BasicResponse, error)
+}
+
+type scaleServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewScaleServiceClient(cc grpc.ClientConnInterface) ScaleServiceClient {
+	return &scaleServiceClient{cc}
+}
+
+func (c *scaleServiceClient) ListScaleTemplates(ctx context.Context, in *ListScaleTemplatesRequest, opts ...grpc.CallOption) (*ListScaleTemplatesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListScaleTemplatesResponse)
+	err := c.cc.Invoke(ctx, ScaleService_ListScaleTemplates_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *scaleServiceClient) CreateScaleTemplate(ctx context.Context, in *CreateScaleTemplateRequest, opts ...grpc.CallOption) (*CreateScaleTemplateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateScaleTemplateResponse)
+	err := c.cc.Invoke(ctx, ScaleService_CreateScaleTemplate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *scaleServiceClient) UpdateScaleTemplate(ctx context.Context, in *UpdateScaleTemplateRequest, opts ...grpc.CallOption) (*BasicResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BasicResponse)
+	err := c.cc.Invoke(ctx, ScaleService_UpdateScaleTemplate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *scaleServiceClient) DeleteScaleTemplate(ctx context.Context, in *DeleteScaleTemplateRequest, opts ...grpc.CallOption) (*BasicResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BasicResponse)
+	err := c.cc.Invoke(ctx, ScaleService_DeleteScaleTemplate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ScaleServiceServer is the server API for ScaleService service.
+// All implementations must embed UnimplementedScaleServiceServer
+// for forward compatibility.
+type ScaleServiceServer interface {
+	ListScaleTemplates(context.Context, *ListScaleTemplatesRequest) (*ListScaleTemplatesResponse, error)
+	CreateScaleTemplate(context.Context, *CreateScaleTemplateRequest) (*CreateScaleTemplateResponse, error)
+	UpdateScaleTemplate(context.Context, *UpdateScaleTemplateRequest) (*BasicResponse, error)
+	DeleteScaleTemplate(context.Context, *DeleteScaleTemplateRequest) (*BasicResponse, error)
+	mustEmbedUnimplementedScaleServiceServer()
+}
+
+// UnimplementedScaleServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedScaleServiceServer struct{}
+
+func (UnimplementedScaleServiceServer) ListScaleTemplates(context.Context, *ListScaleTemplatesRequest) (*ListScaleTemplatesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListScaleTemplates not implemented")
+}
+func (UnimplementedScaleServiceServer) CreateScaleTemplate(context.Context, *CreateScaleTemplateRequest) (*CreateScaleTemplateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateScaleTemplate not implemented")
+}
+func (UnimplementedScaleServiceServer) UpdateScaleTemplate(context.Context, *UpdateScaleTemplateRequest) (*BasicResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateScaleTemplate not implemented")
+}
+func (UnimplementedScaleServiceServer) DeleteScaleTemplate(context.Context, *DeleteScaleTemplateRequest) (*BasicResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteScaleTemplate not implemented")
+}
+func (UnimplementedScaleServiceServer) mustEmbedUnimplementedScaleServiceServer() {}
+func (UnimplementedScaleServiceServer) testEmbeddedByValue()                      {}
+
+// UnsafeScaleServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ScaleServiceServer will
+// result in compilation errors.
+type UnsafeScaleServiceServer interface {
+	mustEmbedUnimplementedScaleServiceServer()
+}
+
+func RegisterScaleServiceServer(s grpc.ServiceRegistrar, srv ScaleServiceServer) {
+	// If the following call pancis, it indicates UnimplementedScaleServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&ScaleService_ServiceDesc, srv)
+}
+
+func _ScaleService_ListScaleTemplates_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListScaleTemplatesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ScaleServiceServer).ListScaleTemplates(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ScaleService_ListScaleTemplates_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ScaleServiceServer).ListScaleTemplates(ctx, req.(*ListScaleTemplatesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ScaleService_CreateScaleTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateScaleTemplateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ScaleServiceServer).CreateScaleTemplate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ScaleService_CreateScaleTemplate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ScaleServiceServer).CreateScaleTemplate(ctx, req.(*CreateScaleTemplateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ScaleService_UpdateScaleTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateScaleTemplateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ScaleServiceServer).UpdateScaleTemplate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ScaleService_UpdateScaleTemplate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ScaleServiceServer).UpdateScaleTemplate(ctx, req.(*UpdateScaleTemplateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ScaleService_DeleteScaleTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteScaleTemplateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ScaleServiceServer).DeleteScaleTemplate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ScaleService_DeleteScaleTemplate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ScaleServiceServer).DeleteScaleTemplate(ctx, req.(*DeleteScaleTemplateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// ScaleService_ServiceDesc is the grpc.ServiceDesc for ScaleService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var ScaleService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "whisperingtime.ScaleService",
+	HandlerType: (*ScaleServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ListScaleTemplates",
+			Handler:    _ScaleService_ListScaleTemplates_Handler,
+		},
+		{
+			MethodName: "CreateScaleTemplate",
+			Handler:    _ScaleService_CreateScaleTemplate_Handler,
+		},
+		{
+			MethodName: "UpdateScaleTemplate",
+			Handler:    _ScaleService_UpdateScaleTemplate_Handler,
+		},
+		{
+			MethodName: "DeleteScaleTemplate",
+			Handler:    _ScaleService_DeleteScaleTemplate_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "whisperingtime.proto",
+}
