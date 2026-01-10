@@ -161,15 +161,9 @@ class _GroupSettingsState extends State<GroupSettings> {
   /// 按钮：删除分组
   /// 位置：在设置中
   void clickDeleteGroup() async {
-    final length = context.read<GroupsManager>().length;
     final id = context.read<GroupsManager>().id;
     final tid = context.read<GroupsManager>().tid;
     final idx = context.read<GroupsManager>().idx;
-
-    if (length == 1) {
-      Msg.diy(context, "无法删除，请保留至少一个项目。");
-      return;
-    }
 
     if (!(await showConfirmationDialog(
         context, MyDialog(content: "是否删除？", title: "提示")))) {

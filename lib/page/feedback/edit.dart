@@ -310,14 +310,11 @@ class _EditState extends State<Edit> {
       req.images = images;
     }
     Http().postFeedback(req).then((value) {
-      if (value.isNotOK) {
-        msg('提交失败');
-      } else {
-        msg('提交成功');
-        // if (mounted) {
-        //   Navigator.pop(context);
-        // }
-      }
+      if (value.isNotOK) return;
+      msg('提交成功');
+      // if (mounted) {
+      //   Navigator.pop(context);
+      // }
     });
   }
 

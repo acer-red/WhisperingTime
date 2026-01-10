@@ -3,35 +3,33 @@ package model
 import (
 	"encoding/json"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type DocContent struct {
-	Title []byte `json:"title" bson:"title"`
+	Title []byte `json:"title"`
 	// Legacy rich text payload (deprecated).
-	Rich []byte `json:"rich,omitempty" bson:"rich,omitempty"`
+	Rich []byte `json:"rich,omitempty"`
 	// Encrypted scales payload (JSON string bytes encrypted on client).
-	Scales []byte `json:"scales,omitempty" bson:"scales,omitempty"`
-	Level  []byte `json:"level,omitempty" bson:"level"`
+	Scales []byte `json:"scales,omitempty"`
+	Level  []byte `json:"level,omitempty"`
 }
 
 type Doc struct {
-	Content     DocContent         `json:"content" bson:"content"`
-	CreateAt    time.Time          `json:"createAt" bson:"createAt"`
-	UpdateAt    time.Time          `json:"updateAt" bson:"updateAt"`
-	Config      *DocConfig         `json:"config,omitempty" bson:"config"`
-	ID          string             `json:"id" bson:"did"`
-	OID         primitive.ObjectID `json:"-" bson:"_id"`
-	LegacyLevel int32              `json:"-" bson:"level,omitempty"`
+	Content  DocContent `json:"content"`
+	CreateAt time.Time  `json:"created_at"`
+	UpdateAt time.Time  `json:"updated_at"`
+	Config   *DocConfig `json:"config,omitempty"`
+	ID       string     `json:"id"`
+	// OID removed
+	LegacyLevel int32 `json:"-"`
 }
 
 // MarshalJSON 自定义 JSON 序列化,将时间格式化为字符串
 func (d Doc) MarshalJSON() ([]byte, error) {
 	type Alias Doc
 	return json.Marshal(&struct {
-		CreateAt string `json:"createAt"`
-		UpdateAt string `json:"updateAt"`
+		CreateAt string `json:"created_at"`
+		UpdateAt string `json:"updated_at"`
 		*Alias
 	}{
 		CreateAt: d.CreateAt.Format("2006-01-02 15:04:05"),
@@ -44,8 +42,8 @@ func (d Doc) MarshalJSON() ([]byte, error) {
 func (d *Doc) UnmarshalJSON(data []byte) error {
 	type Alias Doc
 	aux := &struct {
-		CreateAt string `json:"createAt"`
-		UpdateAt string `json:"updateAt"`
+		CreateAt string `json:"created_at"`
+		UpdateAt string `json:"updated_at"`
 		*Alias
 	}{
 		Alias: (*Alias)(d),
@@ -72,31 +70,31 @@ func (d *Doc) UnmarshalJSON(data []byte) error {
 }
 
 type Group struct {
-	Name     []byte      `json:"name" bson:"name"`
-	ID       string      `json:"id" bson:"gid"`
-	CreateAt string      `json:"createAt" bson:"createAt"`
-	UpdateAt string      `json:"updateAt" bson:"updateAt"`
-	OverAt   string      `json:"overAt,omitempty" bson:"overAt,omitempty"`
+	Name     []byte      `json:"name"`
+	ID       string      `json:"id"`
+	CreateAt string      `json:"created_at"`
+	UpdateAt string      `json:"updated_at"`
+	OverAt   string      `json:"over_at,omitempty"`
 	Config   GroupConfig `json:"config"`
 }
 type GroupAndDocs struct {
-	GID      string      `json:"gid" bson:"gid"`
-	Name     []byte      `json:"name" bson:"name,omitempty"` // 来自 A 集合的 name 字段
-	Docs     []Doc       `json:"docs" bson:"docs,omitempty"` // 关联查询到的 B 集合印迹数组
-	Default  bool        `json:"default" bson:"default,omitempty"`
-	CreateAt string      `json:"createAt" bson:"createAt"`
-	UpdateAt string      `json:"updateAt" bson:"updateAt"`
-	OverAt   string      `json:"overAt,omitempty" bson:"overAt,omitempty"`
-	Config   GroupConfig `json:"group_config" bson:"group_config"`
+	GID      string      `json:"gid"`
+	Name     []byte      `json:"name"` // 来自 A 集合的 name 字段
+	Docs     []Doc       `json:"docs"` // 关联查询到的 B 集合印迹数组
+	Default  bool        `json:"default"`
+	CreateAt string      `json:"created_at"`
+	UpdateAt string      `json:"updated_at"`
+	OverAt   string      `json:"over_at,omitempty"`
+	Config   GroupConfig `json:"group_config"`
 }
 type GroupConfig struct {
-	Levels         []bool `json:"levels" bson:"levels"`
-	View_type      int    `json:"view_type" bson:"view_type"`
-	Sort_type      int    `json:"sort_type" bson:"sort_type"`
-	AutoFreezeDays int    `json:"auto_freeze_days" bson:"auto_freeze_days"`
+	Levels         []bool `json:"levels"`
+	View_type      int    `json:"view_type"`
+	Sort_type      int    `json:"sort_type"`
+	AutoFreezeDays int    `json:"auto_freeze_days"`
 }
 
 type DocConfig struct {
-	IsShowTool      bool `json:"is_show_tool" bson:"is_show_tool"`
-	DisplayPriority int  `json:"display_priority" bson:"display_priority"`
+	IsShowTool      bool `json:"is_show_tool"`
+	DisplayPriority int  `json:"display_priority"`
 }

@@ -292,12 +292,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
         official.RequestUpdateUserProfile(bytes: bytes, ext: ext);
 
     official.Http().userProfile(req).then((value) {
-      if (value.isNotOK) {
-        if (mounted) {
-          showErrMsg(context, "上传失败");
-        }
-        return;
-      }
+      if (value.isNotOK) return;
       if (mounted) {
         showSuccessMsg(context, "上传成功");
       }
@@ -313,12 +308,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
         official.RequestUpdateUserProfile(nickname: value);
 
     official.Http().userProfile(req).then((onValue) {
-      if (onValue.isNotOK) {
-        if (mounted) {
-          showErrMsg(context, "上传失败");
-        }
-        return;
-      }
+      if (onValue.isNotOK) return;
       if (mounted) {
         showSuccessMsg(context, "上传成功");
       }

@@ -98,4 +98,16 @@ class SP {
   Future<bool> setString(String s, String str) {
     return _prefs!.setString(s, str);
   }
+
+  Future<bool> setLanguageCode(String code) {
+    return Future.value(_prefs!.setString("language_code", code));
+  }
+
+  String getLanguageCode() {
+    final v = _prefs!.getString("language_code");
+    if (v == null || v.isEmpty) {
+      return "en";
+    }
+    return v;
+  }
 }

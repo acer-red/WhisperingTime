@@ -11,12 +11,11 @@ import (
 	"unicode/utf8"
 
 	"github.com/acer-red/whisperingtime/engine/service/cache"
-	"github.com/acer-red/whisperingtime/engine/service/modb"
+	"github.com/acer-red/whisperingtime/engine/service/db"
 	"github.com/acer-red/whisperingtime/engine/util"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/redis/go-redis/v9"
 	log "github.com/tengfei-xy/go-log"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -96,7 +95,7 @@ func withAuth(ctx context.Context) (context.Context, error) {
 		return ctx, status.Error(codes.Unauthenticated, "invalid uid encoding")
 	}
 
-	uoid, err := modb.GetUOIDFromUID(uid)
+	uoid, err := db.GetUOIDFromUID(uid)
 	if err != nil {
 
 		return ctx, status.Error(codes.Unauthenticated, err.Error())
@@ -104,7 +103,7 @@ func withAuth(ctx context.Context) (context.Context, error) {
 
 	ctx = context.WithValue(ctx, ctxUOIDKey, uoid)
 	ctx = context.WithValue(ctx, ctxUID, uid)
-	log.Debug3f("验证完成 uid=%s,", uid)
+	log.Debug3f("验证完成 uid=%s,uoid=%s", uid, uoid)
 
 	return ctx, nil
 }
@@ -150,13 +149,13 @@ func getUID(ctx context.Context) string {
 	return ""
 }
 
-func getUOID(ctx context.Context) primitive.ObjectID {
+func getUOID(ctx context.Context) string {
 	if v := ctx.Value(ctxUOIDKey); v != nil {
-		if id, ok := v.(primitive.ObjectID); ok {
+		if id, ok := v.(string); ok {
 			return id
 		}
 	}
-	return primitive.NilObjectID
+	return ""
 }
 
 // AddrHelper extracts host from configured address for logging.

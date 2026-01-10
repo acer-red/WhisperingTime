@@ -135,3 +135,8 @@ func (m *MinioClient) PresignGet(ctx context.Context, objectName string, expires
 func (m *MinioClient) DeleteObject(ctx context.Context, objectName string) error {
 	return m.client.RemoveObject(ctx, m.bucketName, objectName, minio.RemoveObjectOptions{})
 }
+
+// DownloadObject downloads an object to a local file.
+func (m *MinioClient) DownloadObject(ctx context.Context, objectName string, filePath string) error {
+	return m.client.FGetObject(ctx, m.bucketName, objectName, filePath, minio.GetObjectOptions{})
+}

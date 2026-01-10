@@ -8,8 +8,8 @@ import (
 
 	grpcserver "github.com/acer-red/whisperingtime/engine/internal/grpcserver"
 	"github.com/acer-red/whisperingtime/engine/service/cache"
+	"github.com/acer-red/whisperingtime/engine/service/db"
 	"github.com/acer-red/whisperingtime/engine/service/minio"
-	"github.com/acer-red/whisperingtime/engine/service/modb"
 	"github.com/acer-red/whisperingtime/engine/util"
 	log "github.com/tengfei-xy/go-log"
 )
@@ -29,7 +29,7 @@ func run(opts Options) error {
 
 	initLog(opts.LogLevel)
 
-	if err := initMongo(cfg); err != nil {
+	if err := initDB(cfg); err != nil {
 		return err
 	}
 	if err := initMinio(cfg); err != nil {
@@ -52,12 +52,12 @@ func initEnv() {
 		panic("HOME_JWT_SECRET unset")
 	}
 }
-func initMongo(cfg Config) error {
-	log.Infof("mongo连接中...")
-	if err := modb.Init(cfg.mongoURI()); err != nil {
-		return fmt.Errorf("init mongo: %w", err)
+func initDB(cfg Config) error {
+	log.Infof("数据库连接中...")
+	if err := db.Init(cfg.postgresDSN()); err != nil {
+		return fmt.Errorf("init db: %w", err)
 	}
-	log.Infof("mongo连接成功!!")
+	log.Infof("数据库连接成功!!")
 	return nil
 }
 
@@ -85,7 +85,7 @@ func waitForSignals() {
 	sig := <-sigs
 	log.Infof("收到信号: %s", sig)
 
-	if err := modb.Disconnect(); err != nil {
+	if err := db.Disconnect(); err != nil {
 		log.Error(err)
 	}
 	os.Exit(0)

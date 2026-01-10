@@ -10,6 +10,7 @@ import 'package:whispering_time/service/isar/config.dart';
 import 'package:whispering_time/util/secure.dart';
 import 'package:whispering_time/service/sp/sp.dart';
 import 'package:whispering_time/welcome.dart';
+import 'package:whispering_time/util/app_error.dart';
 
 // 用户登陆
 class RequestUserLogin {
@@ -54,14 +55,12 @@ class RequestCreateUserRegister {
   final String username;
   final String email;
   final String password;
-  final String uid;
   final List<int> publicKey;
   RequestCreateUserRegister({
     required this.username,
     required this.email,
     required this.password,
     required this.publicKey,
-    required this.uid,
   });
   Map<String, dynamic> toJson() {
     return {
@@ -69,31 +68,34 @@ class RequestCreateUserRegister {
       'password': password,
       'email': email,
       'category': appNameEn,
-      'uid': uid,
       'public_key': base64Encode(publicKey),
     };
   }
 }
 
 class ReponsePostUserRegister extends Basic {
+  // id等同于uniID
   final String id;
-  final List<API> apis;
+  final String uniID;
+  final String productID;
+  final String deviceID;
   ReponsePostUserRegister({
     required super.err,
     required super.msg,
-    required this.id,
-    required this.apis,
+    required this.uniID,
+    required this.productID,
+    required this.deviceID,
+    this.id = '',
   });
   factory ReponsePostUserRegister.fromJson(Map<String, dynamic> g) {
     return ReponsePostUserRegister(
-        err: g['err'] as int,
-        msg: g['msg'] as String,
-        id: g['data'] != null ? g['data']['id'] : '',
-        apis: g['data'] != null && g['data']['api'] != null
-            ? (g['data']['api'] as List<dynamic>)
-                .map((e) => API.fromJson(e as Map<String, dynamic>))
-                .toList()
-            : []);
+      err: g['err'] as int,
+      msg: g['msg'] as String,
+      uniID: g['data'] != null ? g['data']['user_id'] : '',
+      id: g['data'] != null ? g['data']['user_id'] : '',
+      productID: g['data'] != null ? g['data']['product_id'] : '',
+      deviceID: g['data'] != null ? g['data']['device_id'] : '',
+    );
   }
 }
 
@@ -127,7 +129,7 @@ class ReponseGetUserInfo extends Basic {
       msg: g['msg'],
       username: g['data'] != null ? g['data']['username'] : '',
       email: g['data'] != null ? g['data']['email'] : '',
-      createAt: g['data'] != null ? g['data']['createAt'] : '',
+      createAt: g['data'] != null ? g['data']['created_at'] : '',
       profile: g['data'] != null && g['data']['profile'] != null
           ? Profile.fromJson(g['data']['profile'])
           : Profile(nickname: '', avatar: Avatar(name: "", url: "url")),
@@ -190,8 +192,8 @@ class FeedBack {
       images: json['images'] != null
           ? (json['images'] as List<dynamic>).map((e) => e as String).toList()
           : null,
-      createAt: json['createAt'] as String,
-      updateAt: json['updateAt'] as String,
+      createAt: json['created_at'] as String,
+      updateAt: json['updated_at'] as String,
     );
   }
 }
@@ -301,7 +303,9 @@ class Http {
           final navigator = navigatorKey.currentState;
           if (navigator != null && navigator.mounted) {
             final context = navigator.context;
-            if (!context.mounted) return fromJson({'err': 1, 'msg': '账号已注销'});
+            if (!context.mounted) {
+              return fromJson({'err': AppErrCode.noFound, 'msg': '账号已注销'});
+            }
             showDialog(
               context: context,
               barrierDismissible: false,
@@ -327,31 +331,54 @@ class Http {
             );
           }
         }
-        return fromJson({'err': 1, 'msg': '账号已注销'});
-      }
-
-      if (!err(response.statusCode)) {
-        await onResponse?.call(response);
-      }
-      if (err(response.statusCode)) {
-        return fromJson({'err': 1, 'msg': getMsg(response.statusCode)});
+        final fallback = {
+          'err': AppErrCode.noFound,
+          'msg': '账号已注销',
+          'data': {}
+        };
+        AppError.notifyFromJson(fallback);
+        return fromJson(fallback);
       }
     } catch (e) {
       log.e("请求失败\n${e.toString()}");
-      return fromJson({'err': 1, 'msg': '登陆失败，请稍后尝试'});
+      final fallback = {
+        'err': AppErrCode.internalServer,
+        'msg': '请求失败，请稍后尝试',
+        'data': {}
+      };
+      AppError.notifyFromJson(fallback);
+      return fromJson(fallback);
     }
+
+    if (response.body.isEmpty) {
+      final fallback = {
+        'err': AppErrCode.formatError,
+        'msg': '响应为空',
+        'data': {}
+      };
+      AppError.notifyFromJson(fallback);
+      return fromJson(fallback);
+    }
+
+    Map<String, dynamic> j;
     try {
-      final j = jsonDecode(response.body);
-      // log.i("请求路径:${u.path}  \n原始响应数据:\n${response.body}\nJOSN响应数据:\n${const JsonEncoder.withIndent('  ').convert(j)}");
-      return fromJson(j);
+      j = jsonDecode(response.body) as Map<String, dynamic>;
     } catch (e) {
       log.e("解析数据失败 ${e.toString()}\n${response.body}");
-      return fromJson({'err': 1, 'msg': '未知错误'});
+      final fallback = {
+        'err': AppErrCode.formatError,
+        'msg': '解析数据失败',
+        'data': {}
+      };
+      AppError.notifyFromJson(fallback);
+      return fromJson(fallback);
     }
-  }
 
-  bool err(int statusCode) {
-    return statusCode >= 400;
+    await onResponse?.call(response);
+
+    AppError.notifyFromJson(j);
+
+    return fromJson(j);
   }
 
   Future<ResponsePostFeedback> postFeedback(RequestCreateFeedback req) async {
@@ -383,8 +410,31 @@ class Http {
 
     var response = await request.send();
     var responseBody = await response.stream.bytesToString();
-    final Map<String, dynamic> json = jsonDecode(responseBody);
-    return ResponsePostFeedback.fromJson(json);
+    if (responseBody.isEmpty) {
+      final fallback = {
+        'err': AppErrCode.formatError,
+        'msg': '响应为空',
+        'data': {'id': ''}
+      };
+      AppError.notifyFromJson(fallback);
+      return ResponsePostFeedback.fromJson(fallback);
+    }
+
+    try {
+      final Map<String, dynamic> json =
+          jsonDecode(responseBody) as Map<String, dynamic>;
+      AppError.notifyFromJson(json);
+      return ResponsePostFeedback.fromJson(json);
+    } catch (e) {
+      log.e("解析数据失败 ${e.toString()}\n$responseBody");
+      final fallback = {
+        'err': AppErrCode.formatError,
+        'msg': '解析数据失败',
+        'data': {'id': ''}
+      };
+      AppError.notifyFromJson(fallback);
+      return ResponsePostFeedback.fromJson(fallback);
+    }
   }
 
   Future<ResponseGetFeedbacks> getFeedbacks({String? text}) async {
@@ -499,16 +549,32 @@ class Http {
     }
 
     final http.StreamedResponse response = await request.send();
-    if (response.statusCode != 200) {
-      return ReponsePutUserProfile(err: 1, msg: getMsg(response.statusCode));
-    }
     final String responseBody = await response.stream.bytesToString();
     if (responseBody.isEmpty) {
-      return ReponsePutUserProfile(err: 1, msg: '未知错误');
+      final fallback = {
+        'err': AppErrCode.formatError,
+        'msg': '响应为空',
+        'data': {}
+      };
+      AppError.notifyFromJson(fallback);
+      return ReponsePutUserProfile.fromJson(fallback);
     }
 
-    final Map<String, dynamic> json = jsonDecode(responseBody);
-    return ReponsePutUserProfile.fromJson(json);
+    try {
+      final Map<String, dynamic> json =
+          jsonDecode(responseBody) as Map<String, dynamic>;
+      AppError.notifyFromJson(json);
+      return ReponsePutUserProfile.fromJson(json);
+    } catch (e) {
+      log.e("解析数据失败 ${e.toString()}\n$responseBody");
+      final fallback = {
+        'err': AppErrCode.formatError,
+        'msg': '解析数据失败',
+        'data': {}
+      };
+      AppError.notifyFromJson(fallback);
+      return ReponsePutUserProfile.fromJson(fallback);
+    }
   }
 
   // 解绑应用
@@ -552,25 +618,6 @@ class Http {
       return '';
     }
     return api;
-  }
-
-  String getMsg(int statusCode) {
-    final String msg;
-    switch (statusCode) {
-      case 400:
-        msg = "用户名或密码错误";
-        break;
-      case 409:
-        msg = "已存在";
-        break;
-      case 500:
-        msg = "服务器错误";
-        break;
-      default:
-        msg = "未知错误，稍后重试";
-        break;
-    }
-    return msg;
   }
 
   // 关键步骤: 客户端保存cookie

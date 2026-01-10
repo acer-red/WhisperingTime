@@ -555,8 +555,13 @@ class Grpc {
 
   Future<String> _decryptText(
       List<int> data, pb.PermissionEnvelope? permission) async {
-    final plain = await _decryptBytes(data, permission);
-    return utf8.decode(plain);
+    try {
+      final plain = await _decryptBytes(data, permission);
+      return utf8.decode(plain);
+    } catch (e) {
+      log.e("Decryption failed: $e");
+      return "解密失败";
+    }
   }
 
   Future<int> _decryptLevel(

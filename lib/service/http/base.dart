@@ -24,10 +24,6 @@ class Basic {
       msg: json['msg'] as String,
     );
   }
-
-  void getmsg() {
-    print(msg);
-  }
 }
 
 class URI {

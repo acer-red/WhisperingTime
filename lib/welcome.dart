@@ -317,12 +317,7 @@ class _Welcome extends State<Welcome> {
 
       Http().userRegisterVisitor().then((value) async {
         final newVisitorId = value.id;
-        if (value.isNotOK) {
-          if (mounted) {
-            showErrMsg(context, value.msg);
-          }
-          return;
-        }
+        if (value.isNotOK) return;
         if (value.id.isEmpty) {
           if (mounted) {
             showErrMsg(context, '用户不存在');
@@ -333,7 +328,7 @@ class _Welcome extends State<Welcome> {
         SP().setVisitorUID(value.id);
         SP().setIsVisitorLogged(true);
         await Config().init(newVisitorId);
-        Config.instance.setAPIs(value.apis);
+        // Config.instance.setAPIs(value.apis);
 
         if (mounted) {
           Navigator.pushReplacement(
@@ -409,10 +404,6 @@ class _Welcome extends State<Welcome> {
               builder: (context) => HomePage(),
             ),
           );
-        }
-      } else {
-        if (mounted) {
-          showErrMsg(context, value.msg);
         }
       }
     });
@@ -547,7 +538,7 @@ class _Welcome extends State<Welcome> {
     final String email = emailController.text;
     final String password = registerPasswordController.text;
     final List<int> publicKey = await generateKey();
-    final uid = SP().getUID();
+    // final uid = SP().getUID();
     Http()
         .userRegister(
       RequestCreateUserRegister(
@@ -555,7 +546,6 @@ class _Welcome extends State<Welcome> {
         email: email,
         password: password,
         publicKey: publicKey,
-        uid: uid,
       ),
     )
         .then((value) async {
@@ -571,7 +561,7 @@ class _Welcome extends State<Welcome> {
         SP().setUID(registerUserId);
         SP().setIsVisitorLogged(false);
         await Config().init(registerUserId);
-        Config.instance.setAPIs(value.apis);
+        // Config.instance.setAPIs(value.apis);
 
         if (mounted) {
           Navigator.pushReplacement(
@@ -580,10 +570,6 @@ class _Welcome extends State<Welcome> {
               builder: (context) => HomePage(),
             ),
           );
-        }
-      } else {
-        if (mounted) {
-          showErrMsg(context, value.msg);
         }
       }
     });

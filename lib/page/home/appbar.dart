@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:whispering_time/page/theme/browser.dart';
 import 'package:whispering_time/page/home/drawer.dart';
-import 'package:whispering_time/service/isar/font.dart';
-import 'package:whispering_time/service/isar/config.dart';
 import 'package:whispering_time/util/ui.dart';
+import 'package:whispering_time/util/app_font.dart';
 import 'package:whispering_time/util/env.dart';
+import 'package:whispering_time/service/sp/sp.dart';
 import 'package:whispering_time/service/http/base.dart';
 import 'package:whispering_time/service/http/official.dart' as official;
 import 'package:whispering_time/service/grpc/grpc.dart';
@@ -22,9 +22,7 @@ class _HomePageState extends State<HomePage> {
   GlobalKey<ScaffoldState> scaffoldKey = GlobalKey();
   GlobalKey iconAddKey = GlobalKey();
   late Future<UserBasicInfo> _userInfoFuture;
-  late Future<void> _initFontFuture;
   late Future<List<ThemeItem>> _initThemeFuture;
-  bool _fontInitScheduled = false;
   UserBasicInfo userinfo = UserBasicInfo(
       email: "",
       profile:
@@ -34,10 +32,6 @@ class _HomePageState extends State<HomePage> {
   Future<UserBasicInfo> init() async {
     final value = await official.Http().userInfo();
     if (value.isNotOK) {
-      if (mounted) {
-        showErrMsg(context, "服务器连接失败");
-        return userinfo;
-      }
       return userinfo;
     }
 
@@ -55,42 +49,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_fontInitScheduled) {
-      _initFontFuture = initAppFont();
-      _fontInitScheduled = true;
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return FutureBuilder<void>(
-      future: _initFontFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(
-              child: SizedBox(
-                height: 48,
-                width: 48,
-                child: CircularProgressIndicator(),
-              ),
-            ),
-          );
-        } else if (snapshot.hasError) {
-          log.e(snapshot.error);
-          return const Scaffold(
-            body: Center(
-              child: Text("字体加载失败"),
-            ),
-          );
-        } else if (snapshot.connectionState == ConnectionState.done) {
-          return body();
-        }
-        return const SizedBox.shrink();
-      },
-    );
+    return body();
   }
 
   Widget body() {
@@ -174,8 +134,11 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget appBarTitle() {
-    return Text(getAppName(human: true),
-        style: TextStyle(fontFamily: getAppFontFamily(), fontSize: 30));
+    final languageCode = Localizations.localeOf(context).languageCode;
+    SP().setLanguageCode(languageCode);
+    return Text(
+      getAppName(languageCode: languageCode, human: true),
+    );
   }
 
   Widget appBarAvator() {
@@ -245,58 +208,6 @@ class _HomePageState extends State<HomePage> {
     }
     // 移除这里的 Provider 访问，改为在 FutureBuilder 完成后设置
     return themes;
-
-    // setState(() {
-    //   _titems = themes;
-    //   _tabController.dispose();
-    //   _tabController = TabController(length: _titems.length, vsync: this);
-    // });
-  }
-
-  Future<void> initAppFont() async {
-    final languageCode = Localizations.localeOf(context).languageCode;
-    final serverAddress = Config.fontHubServerAddress;
-    final downloadURL =
-        "$serverAddress/api/app?name=${getAppName()}&language=$languageCode";
-    final font = Font(
-        name: "appfont-$languageCode",
-        downloadURL: downloadURL,
-        fileName: "AppFont-$languageCode",
-        fullName: "AppFont-$languageCode");
-
-    final isExist = await font.isExist();
-    if (isExist) {
-      await font.load();
-      return;
-    }
-    final ok = await font.download();
-    if (!ok) {
-      throw Exception("应用字体下载失败");
-    }
-    try {
-      await font.upload();
-      await font.load();
-    } catch (e) {
-      log.e("保存应用字体失败,${e.toString()}");
-      return;
-    }
-  }
-
-  String getAppFontFamily() {
-    final languageCode = Localizations.localeOf(context).languageCode;
-    return "AppFont-$languageCode";
-  }
-
-  String getAppName({bool human = false}) {
-    final languageCode = Localizations.localeOf(context).languageCode;
-    switch (languageCode) {
-      case "zh":
-        return human ? appNameZhHuman : appNameZh;
-      case "en":
-        return human ? appNameEnHuman : appNameEn;
-      default:
-        return appNameEn;
-    }
   }
 
   void dialogAdd(RenderBox button) {

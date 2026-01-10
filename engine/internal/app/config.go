@@ -92,13 +92,13 @@ func (w WebConfig) FullAddress() string {
 	return fmt.Sprintf("%s://%s:%d", scheme, w.Address, w.Port)
 }
 
-// mongoURI builds the mongo connection string from config values.
-func (cfg Config) mongoURI() string {
-	return fmt.Sprintf("mongodb://%s:%s@%s:%d/%s",
+// postgresDSN builds the postgres connection string from config values.
+func (cfg Config) postgresDSN() string {
+	return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable TimeZone=Asia/Shanghai",
+		cfg.DB.Address,
 		cfg.DB.User,
 		cfg.DB.Password,
-		cfg.DB.Address,
-		cfg.DB.Port,
 		cfg.DB.Database,
+		cfg.DB.Port,
 	)
 }

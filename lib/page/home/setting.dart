@@ -268,8 +268,6 @@ class _SettingPageState extends State<SettingPage> {
       if (!mounted) return;
       if (res.isNotOK) {
         Navigator.pop(context); // Dismiss loading
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(res.msg)));
         return;
       }
 

@@ -91,8 +91,8 @@ class API {
   API({required this.key, required this.expiresAt});
   factory API.fromJson(Map<String, dynamic> g) {
     return API(
-      key: g['apikey'],
-      expiresAt: g['expiresAt'],
+      key: g['api_key'] ?? "",
+      expiresAt: g['expires_at'] ?? "",
     );
   }
 }
